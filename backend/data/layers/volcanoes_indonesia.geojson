@@ -1,0 +1,471 @@
+{
+  "type": "FeatureCollection",
+  "name": "volcanoes_indonesia_pvmbg",
+  "metadata": {
+    "source": "Pusat Vulkanologi dan Mitigasi Bencana Geologi (PVMBG) - Badan Geologi ESDM",
+    "updated_at": "2026-10-05T21:00:00Z",
+    "total_volcanoes": 20
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "lewotobi_laki_laki",
+        "name": "G. Lewotobi Laki-laki",
+        "province": "Nusa Tenggara Timur",
+        "elevation_m": 1584,
+        "level": 4,
+        "level_name": "Level IV (Awas)",
+        "color": "#ef4444",
+        "radius_bahaya_km": 7.0,
+        "last_vona": "2026-09-07 15:35 UTC (Tinggi kolom 8.000m)",
+        "has_event": true,
+        "event_id": "lewotobi_laki_laki"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          122.768,
+          -8.538
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "anak_krakatau_2026_09",
+        "name": "G. Anak Krakatau",
+        "province": "Lampung / Selat Sunda",
+        "elevation_m": 110,
+        "level": 3,
+        "level_name": "Level III (Siaga)",
+        "color": "#f97316",
+        "radius_bahaya_km": 5.0,
+        "last_vona": "2026-09-04 16:07 UTC (Tinggi abu 15.200m ASL)",
+        "has_event": true,
+        "event_id": "anak_krakatau_2026_09"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          105.423,
+          -6.102
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "merapi_yogyakarta",
+        "name": "G. Merapi",
+        "province": "Jawa Tengah / DIY",
+        "elevation_m": 2968,
+        "level": 3,
+        "level_name": "Level III (Siaga)",
+        "color": "#f97316",
+        "radius_bahaya_km": 7.0,
+        "last_vona": "2026-09-10 02:30 UTC (Awan Panas Guguran)",
+        "has_event": true,
+        "event_id": "merapi_yogyakarta"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          110.446,
+          -7.54
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "marapi_sumatera",
+        "name": "G. Marapi",
+        "province": "Sumatera Barat",
+        "elevation_m": 2891,
+        "level": 3,
+        "level_name": "Level III (Siaga)",
+        "color": "#f97316",
+        "radius_bahaya_km": 4.5,
+        "last_vona": "2026-09-08 06:00 UTC (Erupsi Eksplosif)",
+        "has_event": true,
+        "event_id": "marapi_sumatera"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          100.473,
+          -0.381
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "semeru",
+        "name": "G. Semeru",
+        "province": "Jawa Timur",
+        "elevation_m": 3676,
+        "level": 3,
+        "level_name": "Level III (Siaga)",
+        "color": "#f97316",
+        "radius_bahaya_km": 5.0,
+        "last_vona": "Aktivitas vulkanik APG Besuk Kobokan",
+        "has_event": true,
+        "event_id": "semeru"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          112.922,
+          -8.108
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "ibu",
+        "name": "G. Ibu",
+        "province": "Halmahera, Maluku Utara",
+        "elevation_m": 1325,
+        "level": 3,
+        "level_name": "Level III (Siaga)",
+        "color": "#f97316",
+        "radius_bahaya_km": 5.0,
+        "last_vona": "Erupsi abu vertikal 4.000m",
+        "has_event": true,
+        "event_id": "ibu"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          127.63,
+          1.488
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "ruang",
+        "name": "G. Ruang",
+        "province": "Kep. Sitaro, Sulawesi Utara",
+        "elevation_m": 725,
+        "level": 3,
+        "level_name": "Level III (Siaga)",
+        "color": "#f97316",
+        "radius_bahaya_km": 4.0,
+        "last_vona": "Erupsi eksplosif paroksimal",
+        "has_event": true,
+        "event_id": "ruang"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          125.37,
+          2.303
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "sinabung",
+        "name": "G. Sinabung",
+        "province": "Sumatera Utara",
+        "elevation_m": 2460,
+        "level": 2,
+        "level_name": "Level II (Waspada)",
+        "color": "#eab308",
+        "radius_bahaya_km": 3.0,
+        "last_vona": "Emisi asap kawah putih sedang",
+        "has_event": true,
+        "event_id": "sinabung"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          98.392,
+          3.17
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "kerinci",
+        "name": "G. Kerinci",
+        "province": "Jambi / Sumatera Barat",
+        "elevation_m": 3805,
+        "level": 2,
+        "level_name": "Level II (Waspada)",
+        "color": "#eab308",
+        "radius_bahaya_km": 3.0,
+        "last_vona": "Emisi gas sulfatara kelabu",
+        "has_event": true,
+        "event_id": "kerinci"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          101.264,
+          -1.697
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "bromo",
+        "name": "G. Bromo",
+        "province": "Jawa Timur",
+        "elevation_m": 2329,
+        "level": 2,
+        "level_name": "Level II (Waspada)",
+        "color": "#eab308",
+        "radius_bahaya_km": 1.0,
+        "last_vona": "Aktivitas kawah aktif",
+        "has_event": true,
+        "event_id": "bromo"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          112.95,
+          -7.942
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "karangetang",
+        "name": "G. Karangetang",
+        "province": "Sulawesi Utara",
+        "elevation_m": 1784,
+        "level": 3,
+        "level_name": "Level III (Siaga)",
+        "color": "#f97316",
+        "radius_bahaya_km": 3.5,
+        "last_vona": "Leleran lava pijar aktif",
+        "has_event": true,
+        "event_id": "karangetang"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          125.405,
+          2.781
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "dukono",
+        "name": "G. Dukono",
+        "province": "Halmahera Utara, Maluku Utara",
+        "elevation_m": 1229,
+        "level": 2,
+        "level_name": "Level II (Waspada)",
+        "color": "#eab308",
+        "radius_bahaya_km": 3.0,
+        "last_vona": "Letusan menerus abu vulkanik",
+        "has_event": true,
+        "event_id": "dukono"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          127.894,
+          1.693
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "soputan",
+        "name": "G. Soputan",
+        "province": "Sulawesi Utara",
+        "elevation_m": 1785,
+        "level": 2,
+        "level_name": "Level II (Waspada)",
+        "color": "#eab308",
+        "radius_bahaya_km": 2.0,
+        "last_vona": "Emisi asap kawah putih tipis",
+        "has_event": true,
+        "event_id": "soputan"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          124.737,
+          1.112
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "lokon",
+        "name": "G. Lokon",
+        "province": "Tomohon, Sulawesi Utara",
+        "elevation_m": 1580,
+        "level": 2,
+        "level_name": "Level II (Waspada)",
+        "color": "#eab308",
+        "radius_bahaya_km": 1.5,
+        "last_vona": "Peningkatan kegempaan vulkanik",
+        "has_event": true,
+        "event_id": "lokon"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          124.793,
+          1.358
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "rinjani",
+        "name": "G. Rinjani",
+        "province": "Lombok, Nusa Tenggara Barat",
+        "elevation_m": 3726,
+        "level": 1,
+        "level_name": "Level I (Normal)",
+        "color": "#22c55e",
+        "radius_bahaya_km": 1.5,
+        "last_vona": "Aktivitas kawah Segara Anak tenang",
+        "has_event": true,
+        "event_id": "rinjani"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          116.458,
+          -8.42
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "agung",
+        "name": "G. Agung",
+        "province": "Bali",
+        "elevation_m": 3142,
+        "level": 1,
+        "level_name": "Level I (Normal)",
+        "color": "#22c55e",
+        "radius_bahaya_km": 2.0,
+        "last_vona": "Aktivitas vulkanik normal dasar",
+        "has_event": true,
+        "event_id": "agung"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          115.508,
+          -8.343
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "kelud",
+        "name": "G. Kelud",
+        "province": "Kediri / Blitar, Jawa Timur",
+        "elevation_m": 1731,
+        "level": 1,
+        "level_name": "Level I (Normal)",
+        "color": "#22c55e",
+        "radius_bahaya_km": 1.5,
+        "last_vona": "Normal pasca erupsi 2014",
+        "has_event": true,
+        "event_id": "kelud"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          112.308,
+          -7.93
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "tangkuban_parahu",
+        "name": "G. Tangkuban Parahu",
+        "province": "Bandung Barat, Jawa Barat",
+        "elevation_m": 2084,
+        "level": 1,
+        "level_name": "Level I (Normal)",
+        "color": "#22c55e",
+        "radius_bahaya_km": 1.0,
+        "last_vona": "Kawah Ratu normal terbuka",
+        "has_event": true,
+        "event_id": "tangkuban_parahu"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          107.6,
+          -6.77
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "gede",
+        "name": "G. Gede",
+        "province": "Cianjur / Bogor, Jawa Barat",
+        "elevation_m": 2958,
+        "level": 1,
+        "level_name": "Level I (Normal)",
+        "color": "#22c55e",
+        "radius_bahaya_km": 1.0,
+        "last_vona": "Aktivitas kawah normal",
+        "has_event": true,
+        "event_id": "gede"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.983,
+          -6.783
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "salak",
+        "name": "G. Salak",
+        "province": "Sukabumi / Bogor, Jawa Barat",
+        "elevation_m": 2211,
+        "level": 1,
+        "level_name": "Level I (Normal)",
+        "color": "#22c55e",
+        "radius_bahaya_km": 1.0,
+        "last_vona": "Kawah Ratu aktif normal",
+        "has_event": true,
+        "event_id": "salak"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.733,
+          -6.717
+        ]
+      }
+    }
+  ]
+}
