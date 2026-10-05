@@ -1,0 +1,36 @@
+# Environment & Secrets (AGENTS.md Prinsip 5)
+.env
+.env.*
+!.env.example
+
+# IDE & AI Assistant Caches
+.cursor/
+.claude/
+.deepeval/
+.vscode/
+.idea/
+
+# Python Caches & Compiled Files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.ruff_cache/
+
+# Large Simulation Outputs & Raw Data (Keep repo lightweight)
+data/runs/*.json
+**/data/runs/*.json
+data/raw/
+**/data/raw/
+important-file/
+
+# OS Specific
+.DS_Store
+Thumbs.db
+
+# Frontend Dependencies
+node_modules/
+dist/
+build/
+
