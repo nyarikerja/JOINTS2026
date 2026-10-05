@@ -1,84 +1,217 @@
-# [DOKUMEN SPESIFIKASI TEKNIS] UdaraSiaga Indonesia — Grand Design & Frontend Architecture Specification
+# UdaraSiaga Indonesia: Platform Komando Pemodelan Sebaran Atmosfer & Aksi Dini Multi-Bahaya
 
-> **Dokumen Panduan Resmi Desain Sistem, Alur Pengguna (User Flow), dan Kontrak Integrasi API untuk Pengembang Frontend (FE)**  
-> *JOINTS UGM 2026 Hackathon — Enterprise Multi-Hazard Atmospheric Dispersion & Early Action Platform*
+> **Platform Komando Simulasi Sains & Sistem Pendukung Keputusan Kesiapsiagaan Dini terhadap Erupsi Gunung Api (Abu Vulkanik) dan Kebakaran Hutan/Lahan (Asap PM2.5)**  
+> *Dikembangkan untuk Hackathon JOINTS UGM 2026 — Track Multi-Hazard Atmospheric Dispersion & Early Action Protocol*
+
+---
+
+> [!IMPORTANT]
+> **DISCLAIMER RESMI:**  
+> UdaraSiaga Indonesia adalah platform estimasi sains terkomputasi untuk pembelajaran, perencanaan kontinjensi, dan protokol kesiapsiagaan aksi dini. Aplikasi ini **BUKAN PERINGATAN RESMI**. Untuk komando evakuasi darurat, status kedaruratan, dan kebijakan kebencanaan di lapangan, seluruh pihak tetap merujuk pada arahan otoritatif resmi dari **PVMBG Badan Geologi**, **BMKG**, dan **BNPB / BPBD**.
 
 ---
 
 ## Panduan Menjalankan Cepat (Quickstart Guide)
 
-### 1. Menjalankan Server & Antarmuka GIS (Hanya 1 Perintah)
+### 1. Menjalankan Server & Antarmuka Aplikasi
+Aplikasi dirancang ringan tanpa dependensi build kompleks (*zero build step*):
+
 ```bash
-# Masuk ke folder backend lalu jalankan server uvicorn
+# 1. Masuk ke direktori backend
 cd backend
+
+# 2. Pasang dependensi Python (FastAPI, NumPy, SciPy, Shapely, Rasterio)
+pip install -r requirements.txt
+
+# 3. Jalankan server aplikasi
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
-- **Platform Komando GIS Taktis (Frontend Dummy)**: [http://127.0.0.1:8000/dummy/](http://127.0.0.1:8000/dummy/)
-- **Dokumentasi REST API Interaktif (Swagger UI)**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-- **Status Kesehatan & Disclaimer**: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
 
-### 2. Pengujian Unit & Validasi Integritas Kode
+- **Akses Dashboard Web Taktis**: [http://127.0.0.1:8000/dummy/](http://127.0.0.1:8000/dummy/)
+- **Dokumentasi REST API Interaktif (Swagger UI)**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+- **Endpoint Status Sistem & Telemetri**: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
+
+### 2. Menjalankan Pengujian Otomatis (Test Suite)
 ```bash
-# Jalankan seluruh 29 pengujian otomatis (fisika, lapis 2, lapis 3, integritas)
+# Eksekusi seluruh 29 pengujian unit, fisika, lapis 2, dan lapis 3
 pytest tests/
 
-# Pemeriksaan linter Python
+# Pemeriksaan linter kode Python (Ruff)
 ruff check app/
 ```
-*Hasil Uji Terkini: 29/29 PASSED (100% lolos dalam 3.7 detik), 0 warning linter.*
+*Hasil Verifikasi: 29/29 PASSED (100% lulus dalam ~3.8 detik), 0 lint warning.*
 
 ---
 
-## Diagram Arsitektur Sistem End-to-End
+## Diagram Alur Kerja Sistem (End-to-End Architecture)
 
 ```
 +-------------------------------------------------------------------------------------------------+
-|                                LAPISAN SUMBER DATA OTORITATIF                                   |
-|  [PVMBG MAGMA] 20 Gunung Api  *  [NASA FIRMS] VIIRS FRP Hotspots  *  [Open-Meteo] Angin Ensemble|
-|  [WorldPop] Grid Kepadatan Penduduk (100m)  *  [OSM Overpass] Faskes, Sekolah, Bandara Rujukan  |
+|                                1. SUMBER DATA OTORITATIF (INGEST)                               |
+|  - PVMBG MAGMA: Elevasi kawah, koordinat vent, radius KRB, laporan VONA resmi                  |
+|  - NASA FIRMS: Deteksi titik api NRT satelit VIIRS SNPP/NOAA-20 beserta Fire Radiative Power    |
+|  - Open-Meteo: Vektor angin atmosfer multi-level (u, v) dan presipitasi hujan (15-51 ensemble) |
+|  - WorldPop: Grid densitas kependudukan resolusi 100m (total jiwa, demografi anak & lansia)     |
+|  - OpenStreetMap (Overpass): Fasilitas publik (sekolah, puskesmas, rumah sakit rujukan, bandara)|
 +-------------------------------------------------------------------------------------------------+
                                                 |
                                                 v
 +-------------------------------------------------------------------------------------------------+
-|                            MESIN DISPERSI LAGRANGIAN MULTI-BAHAYA                               |
+|                         2. MESIN DISPERSI LAGRANGIAN RK2 (PHYSICS ENGINE)                       |
 |  - Erupsi Vulkanik: Laju Emisi Massa Mastin et al. (2009) [M = 140.85 * H^4.15 kg/s]            |
 |  - Karhutla Gambut: Konversi FRP Wooster et al. (2005) [0.27 - 0.37 - 0.45 kg/MJ]               |
-|  - Adveksi Atmosferik: Integrasi Runge-Kutta Ordo 2 (RK2) + Difusi Turbulen (80 m2/s)           |
-|  - Pencucian Presipitasi: Model Wet Deposition Lambda = a * R^b + Peringatan Lahar Hujan        |
-|  - Penghalusan Spasial: Gaussian Kernel Filter + Ekstraksi Poligon Vektor Shapely MultiPolygon  |
+|  - Adveksi-Difusi: Integrasi Runge-Kutta Ordo 2 (RK2) + Difusi Turbulen Atmosfer (80 m2/s)      |
+|  - Pencucian Presipitasi: Wet Scavenging Lambda = a * R^b + Peringatan Lahar Hujan Lereng       |
+|  - Agregasi Probabilitas: Difusi Gaussian Kontinu + Poligon Vektor Shapely MultiPolygon         |
 +-------------------------------------------------------------------------------------------------+
                                                 |
                                                 v
 +-------------------------------------------------------------------------------------------------+
-|                             REST API FASTAPI & MESIN TRIASE DAMPAK                              |
-|  - Rentang Ketidakpastian P5 - P50 - P95 (Total Penduduk, Anak <15 Th, Lansia >=65 Th)          |
-|  - Triase Kebijakan Sekolah: Rekomendasi PJJ Daring (>=40%) / Hentikan Outdoor (15-39%)         |
-|  - Triase Faskes: Klasifikasi RS Aman Bebas Abu vs Penyangga + Penentuan Rute Evakuasi (km)    |
-|  - Audit & Transparansi Sains: Fractions Skill Score (FSS), Kurva Sensitivitas, Katalog Asumsi  |
+|                         3. ESTIMASI DAMPAK & PROTOKOL AKSI DINI (IMPACT)                        |
+|  - Kuantifikasi Ketidakpastian: Rentang P5 (Min) - P50 (Median) - P95 (Max)                     |
+|  - Triase Sekolah: Rekomendasi PJJ Daring (>=40%) / Pembatasan Luar Ruang (15-39%)             |
+|  - Triase Evakuasi Faskes: Klasifikasi RS Aman Bebas Abu vs Penyangga + Rute Terukur (km)       |
+|  - Dampak Lingkungan: Hektare sawah/kebun, sumber air minum, tonase emisi karbon gambut        |
+|  - Integritas Etika: Penonaktifan ISPU transparan selama faktor emisi masih placeholder        |
 +-------------------------------------------------------------------------------------------------+
                                                 |
                                                 v
 +-------------------------------------------------------------------------------------------------+
-|                        ANTARMUKA KOMANDO GIS TAKTIS (4-ZONE CANVAS)                             |
-|  [Header Taktis]  *  [Panel Kontrol Kiri]  *  [Peta Leaflet Full-Bleed]  *  [Laci 5 Tab Kanan]  |
-|  Diferensiasi Visual: Merah Vulkanik (#991b1b) vs Coklat Jelaga (#78350f) - Opasitas Bertingkat |
+|                        4. PLATFORM KOMANDO GIS TAKTIS (4-ZONE COMMAND CANVAS)                   |
+|  - Zone A: Tactical Header & Telemetri Nasional (WIB & UTC)                                     |
+|  - Zone B: Panel Konfigurasi Kejadian Melayang (Gunung PVMBG vs Karhutla FIRMS)                |
+|  - Zone C: Peta Interaktif Leaflet Dark Mode, Palet Hazard-Aware, & Timeline Player 48 Jam      |
+|  - Zone D: Laci Analitik 5 Tab (Dampak, Sekolah, Rujukan Medis, Edukasi APD, Audit Sains)       |
 +-------------------------------------------------------------------------------------------------+
 ```
 
 ---
 
-## 1. Visi Produk & Filosofi UI/UX
+## Alur Lengkap Cara Kerja Web UdaraSiaga
 
-**UdaraSiaga Indonesia** adalah platform komando pemodelan dispersi atmosfer (abu vulkanik gunung api & asap karhutla) berstandar industri (*enterprise-grade* setara MAGMA PVMBG ESDM, BMKG, dan Copernicus EMS). 
+Aplikasi web UdaraSiaga beroperasi melalui 8 tahapan alur kerja terpadu dari hulu data hingga aksi lapangan:
 
-### Mengapa UI/UX Sebelumnya Perlu Ditingkatkan?
-Sebelumnya, seluruh kontrol konfigurasi, belasan kartu dampak, edukasi masker, hingga tabel validasi ditumpuk dalam **satu laci vertikal (*drawer*) yang sangat panjang (>2.500px)**. Hal ini menyebabkan:
-1. Pengguna mengalami *cognitive overload* (kebingungan membedakan mana input, mana hasil, mana edukasi).
-2. Peta tertutup oleh laci raksasa sehingga konteks spasial hilang.
-3. Alur aksi evakuasi darurat (sekolah & rumah sakit) terkubur di bawah.
+### Langkah 1: Pengguna Memilih Kejadian & Mode Pemodelan
+Pengguna mengakses antarmuka dan mengatur parameter skenario melalui **Panel Kontrol Melayang (Zone B)**:
+1. **Pilihan Jenis Bahaya Atmosfer**:
+   - **Erupsi Gunung Api (Abu Vulkanik)**: Menargetkan partikulat silika tajam dan gas vulkanik.
+   - **Kebakaran Hutan & Lahan (Asap Karhutla)**: Menargetkan kabut asap organik dan partikel $PM_{2.5}$.
+2. **Pilihan Lokasi Kejadian (Nasional)**:
+   - Menjangkau 20 gunung api aktif nasional berstatus Level I s.d. Level IV (Anak Krakatau, Merapi, Lewotobi Laki-Laki, Marapi Sumatera, Semeru, Ibu, Ruang, Lokon, Sinabung, dll.) atau Karhutla Gambut Kalimantan.
+3. **Pilihan Mode Operasional**:
+   - **Mode Otomatis (Data Nyata Otoritatif)**: Mengunci input sesuai laporan observasi riil PVMBG/FIRMS dan cuaca aktual.
+   - **Mode Coba-coba (Eksperimen PVMBG)**: Membuka kontrol eksperimen untuk skenario perencanaan:
+     - Tinggi kolom erupsi ($1 - 25\text{ km}$ di atas kawah).
+     - Pembalik arah angin troposfer ($180^\circ$).
+     - Presipitasi hujan pencuci ($0 - 50\text{ mm/jam}$).
 
-### Solusi: Layout Spasial 4-Zona (The 4-Zone Command Canvas)
-UI modern membagi antarmuka menjadi 4 zona yang memiliki fungsi spesifik dan independen:
+---
+
+### Langkah 2: Pengambilan & Sinkronisasi Sumber Data Otoritatif
+Ketika skenario dijalankan, backend melakukan agregasi data dari berbagai sumber resmi:
+- **Laporan VONA / PVMBG**: Memuat koordinat kawah, elevasi puncak, dan riwayat letusan.
+- **NASA FIRMS (VIIRS SNPP/NOAA-20)**: Memuat titik api aktif dan nilai *Fire Radiative Power* (FRP dalam satuan Megawatt).
+- **Open-Meteo Weather Ensemble**: Mengunduh komponen angin zona zonal ($u$) dan meridional ($v$) pada berbagai aras ketinggian atmosfer serta laju curah hujan per jam.
+- **WorldPop & OSM**: Menyiapkan grid populasi dan titik koordinat fasilitas publik (sekolah, puskesmas, rumah sakit rujukan, bandara).
+- *Dukungan Offline*: Seluruh data acuan telah disimpan dalam cache lokal (`data/events/` dan `data/layers/`) sehingga sistem dapat berjalan tanpa koneksi internet.
+
+---
+
+### Langkah 3: Eksekusi Mesin Fisika Partikel Lagrangian RK2
+Inti komputasi aplikasi digerakkan oleh mesin partikel fisik terpadu di [simulator.py](file:///c:/Users/arya4/JOINTS2026/backend/app/engine/simulator.py):
+1. **Pelepasan Partikel Sumber**:
+   - *Gunung Api*: Mengonversi tinggi kolom letusan ($H$) menjadi laju pelepasan massa (*Mass Eruption Rate* / MER) menggunakan hukum empiris Mastin et al. (2009):
+     $$M = 140.85 \times H^{4.15}\text{ kg/s}$$
+     dengan variasi acak distribusi lognormal untuk mengakomodasi ketidakpastian dinamika erupsi.
+   - *Karhutla*: Mengonversi FRP satelit menjadi laju emisi massa $PM_{2.5}$ berdasarkan distribusi segitiga Wooster et al. (2005) ($0.27 - 0.37 - 0.45\text{ kg/MJ}$).
+2. **Adveksi & Difusi Atmosferik**:
+   - Melacak lintasan ribuan paket partikel secara deterministik menggunakan skema integrasi waktu Runge-Kutta Ordo 2 (RK2).
+   - Menambahkan difusi turbulen acak ($K = 80\text{ m}^2/\text{s}$) untuk memodelkan turbulensi atmosferik.
+3. **Pencucian oleh Hujan (*Wet Scavenging*) & Peringatan Lahar**:
+   - Menghitung pengendapan partikel akibat guyuran hujan $\Lambda = a \cdot R^b$.
+   - Jika intensitas hujan lebat terjadi di sekitar endapan abu tebal, sistem secara otomatis menerbitkan peringatan sekunder bahaya **Lahar Hujan (Cold Lahar Flow)** di alur sungai lereng gunung.
+4. **Prakiraan Berulang (Ensemble Simulation)**:
+   - Dijalankan sebanyak 15 hingga 51 anggota ansambel secara paralel untuk memetakan rentang kemungkinan spasial.
+
+---
+
+### Langkah 4: Visualisasi Peta Spasial & Player Waktu (Zone C)
+Hasil pemodelan diproyeksikan langsung ke peta taktis Leaflet interaktif:
+1. **Agregasi Kontur Tiga Tingkat Probabilitas**:
+   - Probabilitas sel grid dihaluskan menggunakan filter Gaussian ($\sigma = 1.2$) untuk mengeliminasi sudut 90 derajat kotak piksel raster, lalu diekstrak menjadi poligon vektor *MultiPolygon* bersih:
+     - **Tingkat Minimum (P90 - Hampir Pasti)**: Area yang terkena pada $\ge 90\%$ anggota ansambel (zona inti bahaya tinggi).
+     - **Tingkat Menengah (P50 - Kemungkinan Besar)**: Area yang terkena pada $\ge 50\%$ anggota ansambel (zona waspada).
+     - **Tingkat Maksimum (P05 - Mungkin Terkena)**: Area terluar yang terkena pada $\ge 5\%$ anggota ansambel (zona siaga dini).
+2. **Diferensiasi Visual Multi-Bahaya ("Semakin Tebal Semakin Berbahaya")**:
+   - **Abu Vulkanik**: Menggunakan palet merah silika pekat (`#991b1b`, 60% opasitas) $\rightarrow$ merah waspada (`#dc2626`, 35%) $\rightarrow$ kuning belerang (`#f59e0b`, 15%).
+   - **Asap Karhutla**: Menggunakan palet coklat jelaga pekat (`#78350f`, 60% opasitas) $\rightarrow$ coklat kabut (`#92400e`, 35%) $\rightarrow$ haze tipis (`#a16207`, 15%).
+   - Tipe garis: 2.5px solid (P90), 1.8px garis putus (P50), dan 1.0px garis titik halus (P05).
+3. **Legenda Dinamis Real-Time**:
+   - Kotak legenda di kiri bawah peta otomatis memperbarui judul, label intensitas, dan swatch warna sesuai bencana yang dipilih.
+4. **Timeline Scrubber 48 Jam**:
+   - Slider melayang memungkinkan pengguna melihat posisi sebaran dari jam ke-$0$ hingga jam ke-$48$.
+   - Tombol Play/Pause otomatis memutar langkah simulasi dengan tombol langkah cepat (`T+0h`, `T+6h`, `T+12h`, `T+24h`, `T+36h`, `T+48h`) yang menyala aktif.
+
+---
+
+### Langkah 5: Estimasi Dampak Multi-Sektor (Tab 1)
+Laci analitik kanan otomatis terbuka dan menyajikan estimasi dampak:
+1. **Penyajian Rentang Ketidakpastian (P5 – P50 – P95)**:
+   - Mematuhi prinsip data integrity: **tidak pernah menampilkan angka tunggal**. Seluruh metrik disajikan dalam batas bawah (P5), median (P50), dan batas atas (P95).
+2. **Demografi Kependudukan**:
+   - Estimasi total jiwa terpapar berdasarkan grid WorldPop.
+   - Perhitungan kelompok rentan khusus: Anak-anak ($< 15\text{ tahun}$) dan Lansia ($\ge 65\text{ tahun}$).
+3. **Dampak Lingkungan & Pertanian**:
+   - Luas sawah dan kebun terdampak abu (hektare berisiko gagal panen).
+   - Sumber air minum dan DAS hulu berisiko tercemar asam abu.
+   - Tonase emisi karbon kebakaran hutan ($CO_2e$ gambut dan non-gambut).
+4. **Transparansi Kategori ISPU**:
+   - Sesuai prinsip etika sains, kategori ISPU dinonaktifkan secara jujur dan transparan selama faktor emisi $PM_{2.5}$ gambut masih berstatus placeholder literatur.
+
+---
+
+### Langkah 6: Protokol Triase Aksi Dini & Rute Evakuasi Medis (Tab 2 & 3)
+Aplikasi menurunkan estimasi sains menjadi protokol kesiapsiagaan operasional:
+1. **Triase Kebijakan Sekolah (Pendidikan)**:
+   - Peluang $\ge 40\%$: Instruksi tegas `[AWAS] SEGERA ALIHKAN KE PJJ DARING` sebelum abu tiba, wajib pemakaian masker respirator N95 bagi seluruh warga sekolah.
+   - Peluang $15\% - 39\%$: `[WASPADA] HENTIKAN AKTIVITAS OUTDOOR` (dilarang olahraga dan upacara luar kelas).
+   - Dilengkapi estimasi waktu tiba partikel tercepat (*Earliest Arrival Time*) dalam hitungan jam ($T + \text{jam}$).
+2. **Triase Rumah Sakit Rujukan Bebas Abu (Kesehatan)**:
+   - Menghubungkan sekolah terdampak ke fasilitas kesehatan terdekat yang **berada di luar zona sebaran abu** (`[RUJUKAN UTAMA] RS Aman Bebas Abu`).
+   - Mencegah evakuasi korban sesak napas akut ke rumah sakit yang udaranya justru tercemar abu pekat.
+3. **Visualisasi Rute Evakuasi Interaktif**:
+   - Mengklik tombol **"Rute Evakuasi"** pada kartu sekolah langsung memusatkan (*flyTo*) peta dan melukiskan garis rute darurat putus-putus berwarna hijau ke rumah sakit rujukan terdekat beserta jarak kilometer dan koordinasi hotline SPGDT 119.
+
+---
+
+### Langkah 7: Edukasi APD Kesehatan Masyarakat (Tab 4)
+Menyajikan panduan perlindungan diri berbasis standar medis otoritatif (IVHHN, WHO, dan BNPB):
+1. **Komparasi Masker Bedah vs Respirator N95**:
+   - **Masker Kain & Masker Bedah Biasa**: Diklasifikasikan `[TIDAK MEMENUHI STANDAR] DILARANG` karena kebocoran samping mencapai $30\% - 50\%$ dan pori-pori terlalu besar sehingga partikel silika mikroskopis tetap menembus saluran napas bawah.
+   - **Masker Partikulat N95 / KN95 / FFP2**: Diklasifikasikan `[STANDAR RESMI OTORITATIF] WAJIB` dengan filtrasi $\ge 95\%$ partikel hingga $0.3\text{ mikron}$ dengan segel rapat di hidung dan pipi.
+2. **Peringatan Medis Kritis: Larangan Lensa Kontak (Softlens)**:
+   - Memberikan peringatan tegas larangan memakai lensa kontak saat terjadi hujan abu. Pecahan kristal silika memiliki sudut tajam yang dapat terperangkap di bawah softlens dan menyebabkan luka robek kornea mata (**abrasi kornea permanen**) hingga kebutaan. Dianjurkan memakai *Safety Goggles*.
+
+---
+
+### Langkah 8: Validasi Sains, Uji Sensitivitas, & Transparansi Asumsi (Tab 5)
+Membuktikan akurasi dan akuntabilitas ilmiah model:
+1. **Evaluasi Lapangan Lapis 3**:
+   - Menguji akurasi model terhadap kejadian historis (misal: Erupsi Anak Krakatau 2026 atau Karhutla Kalimantan) menggunakan metrik *Fractions Skill Score* (FSS) dan *District Hit Rate* per kabupaten.
+2. **Kurva Sensitivitas Parameter (Bar Chart Visual)**:
+   - Pengguna dapat menjalankan sapuan sensitivitas (*parameter sweep*) untuk parameter tinggi kolom letusan atau curah hujan.
+   - Hasilnya ditampilkan dalam grafik batang horizontal bergradien biru yang membandingkan dampak populasi terpapar secara visual.
+3. **Simulasi Intervensi Pemadaman Titik Api (*Cluster Extinguishment Delta*)**:
+   - Pada kejadian karhutla, pengguna dapat menekan tombol pemadaman klaster titik api teratas. Sistem menghitung seketika penurunan FRP (%), jumlah penduduk yang terlindungi, dan tonase emisi gas rumah kaca yang dicegah.
+4. **Katalog Transparansi Asumsi (D01 s.d. D24)**:
+   - Menampilkan status setiap parameter pemodelan (`sourced`, `sourced_secondary`, `assumption_placeholder`) beserta tautan referensi jurnal dan catatan batas model.
+
+---
+
+## Arsitektur Antarmuka: The 4-Zone Command Canvas
+
+Antarmuka web UdaraSiaga mengadopsi tata letak kanvas komando terpadu untuk mencegah beban kognitif (*cognitive overload*):
+
 ```
 +-----------------------------------------------------------------------------------+
 | ZONE A: TACTICAL COMMAND HEADER (Brand, Live Sync Ping, KPI Status Nasional)      |
@@ -87,330 +220,49 @@ UI modern membagi antarmuka menjadi 4 zona yang memiliki fungsi spesifik dan ind
 +-------------------+-------------------------------------------+-------------------+
 | ZONE B:           | ZONE C: INTERACTIVE GIS WORKSPACE         | ZONE D:           |
 | FLOATING CONTROL  |                                           | TABBED INSPECTION |
-| (Panel Konfigurasi| - Peta Taktis Gelap (Full Bleed)          | DOCK (Laci Kanan) |
-|  Bahaya, Dropdown | - Lapisan Poligon Partikel (Tiers P90/P50)|                   |
-|  Gunung Nasional, | - Layer Hotspot NASA & Fasilitas Publik   | [Tab 1: Dampak]   |
-|  Mode Otomatis/   | - Interaksi Klik Poligon & Fasilitas      | [Tab 2: Sekolah]  |
-|  Eksperimen,      |                                           | [Tab 3: Evakuasi] |
-|  Tombol Jalankan) | +---------------------------------------+ | [Tab 4: Edukasi]  |
-|                   | | TIMELINE PLAYER (T+0 s.d. T+48 Jam)   | | [Tab 5: Audit]    |
-| (Dapat Diciutkan) | +---------------------------------------+ | (Terstruktur Rapi)|
+| (Panel Bencana,   | - Peta Taktis Gelap (Full Bleed Leaflet)  | DOCK (Laci Kanan) |
+|  20 Gunung PVMBG, | - Poligon Dispersi Berwarna Hazard-Aware  |                   |
+|  Mode Eksperimen, | - Hotspot NASA & Titik Fasilitas Publik   | [Tab 1: Dampak]   |
+|  Jalankan Sim)    | - Legenda Dinamis Kiri Bawah              | [Tab 2: Sekolah]  |
+|                   | +---------------------------------------+ | [Tab 3: Evakuasi] |
+| (Dapat Diciutkan) | | TIMELINE PLAYER (T+0 s.d. T+48 Jam)   | | [Tab 4: Edukasi]  |
+|                   | +---------------------------------------+ | [Tab 5: Audit]    |
 +-------------------+-------------------------------------------+-------------------+
 ```
 
----
-
-## 2. Pembagian 4 Zona Antarmuka
-
-### Zona A: Tactical Command Header
-Terletak di bagian paling atas layar, selalu terlihat (*sticky*):
-- **Logo & Identitas:** `UdaraSiaga INDONESIA` dengan lencana status operasional `SIAGA 24/7`.
-- **Live Telemetry Ticker (KPI Nasional Dinamis):**
-  - `[GUNUNG API] Status Siaga/Awas`: Jumlah gunung api Level 3 & 4 aktif di Indonesia (otomatis dari GeoJSON PVMBG).
-  - `[HOTSPOT] Titik Api (24h)`: Jumlah deteksi sensor VIIRS satelit NASA FIRMS.
-- **Tombol Aksi Cepat:**
-  - `[SYNC] Sinkronisasi`: Melakukan ping riil ke server Open-Meteo & NASA FIRMS, menampilkan latensi milidetik (*ms*).
-  - `[DEMO] Putar Demo`: Otomatisasi simulasi 48 jam untuk presentasi juri.
-  - `[CETAK] Ekspor Laporan`: Menghasilkan dokumen cetak resmi / PDF kesiapsiagaan darurat.
-  - Jam ganda: Waktu Indonesia Barat (**WIB**) & Waktu Universal (**UTC**).
-
-### Zona B: Floating Tactical Controller (Panel Konfigurasi Kiri)
-Kartu kaca melayang (*glassmorphism floating card*) di sisi kiri atas peta:
-1. **Pilihan Bahaya:** Tab tombol `Erupsi Gunung Api` atau `Karhutla Gambut`.
-2. **Pilihan Lokasi (Nasional):** Dropdown mencakup 20 gunung api aktif di seluruh Indonesia (Anak Krakatau, Merapi, Lewotobi, Marapi, Semeru, Lokon, dll.) dan Karhutla Kalimantan.
-3. **Pilihan Mode:**
-   - **Mode Otomatis (Data Nyata):** Menggunakan tinggi kolom erupsi PVMBG dan cuaca angin riil dari Open-Meteo.
-   - **Mode Coba-coba (Eksperimen):** Membuka slider interaktif:
-     - Tinggi Kolom Erupsi (1 – 25 km di atas kawah)
-     - Pembalik Arah Angin (180° Troposfer)
-     - Simulasi Hujan Pencuci (*Rain Scavenging*, 0 – 50 mm/jam)
-4. **Tombol Eksekusi:** `JALANKAN SIMULASI SEBARAN` (dengan animasi status progress bar).
-5. Tombol ciutkan (*collapse toggle*) agar peta dapat dinikmati secara leluasa.
-
-### Zona C: Interactive GIS Workspace & Timeline Player
-Layar peta utama (Leaflet / MapLibre) dengan fitur:
-- **Dark Tactical Basemap:** Mengurangi kelelahan mata dan membuat warna poligon bahaya menonjol.
-- **Layer Manager (Pojok Kanan Atas Peta):**
-  - `[x]` Poligon Dispersi Abu/Asap (Tiga Tingkat Probabilitas)
-  - `[x]` Gunungapi Aktif PVMBG (Titik berkode warna Level I s.d. IV)
-  - `[x]` Titik Api NASA FIRMS (Ikon siluet titik api)
-  - `[x]` Fasilitas Publik (Sekolah hijau, Faskes biru, Bandara kuning)
-- **Timeline Player (Melayang di Bawah Peta):**
-  - Tombol Play/Pause (animasi otomatis 1 jam per langkah).
-  - Slider 48 jam dengan penanda waktu: `T+0h`, `T+6h`, `T+12h`, `T+24h`, `T+36h`, `T+48h`.
-  - Label jam terpilih (contoh: `T + 12:00 Jam Pasca Erupsi`).
-- **Garis Rute Evakuasi Interaktif:** Garis putus-putus (*dashed polyline*) otomatis terlukis di peta ketika pengguna menekan "Rute Evakuasi" dari sekolah terdampak ke rumah sakit rujukan terdekat.
-
-### Zona D: Tabbed Inspection Dock (Laci Analitik Kanan)
-Laci analitik yang terbuka otomatis saat simulasi selesai, dibagi menjadi **5 Tab Spesifik**:
-
-#### Tab 1: Ringkasan Dampak & Populasi
-- **Kartu Rentang P5 – P50 – P95:**
-  - Penduduk Terpapar (Total Jiwa berdasarkan grid WorldPop).
-  - Kelompok Sangat Rentan: Anak-anak (<15 Th) & Lansia (≥65 Th).
-  - Luas Area Terpapar (*Footprint* km²).
-- **Dampak Sektor Vital:**
-  - Luas Sawah & Kebun Tertimpa Abu (Hektare berisiko gagal panen).
-  - Sumber Air Minum & DAS Hulu berisiko terkontaminasi asam abu.
-- **Modul Meteorologi Pencucian Hujan (*Rain Scavenging*):**
-  - Penurunan paparan akibat hujan & peringatan bahaya **Lahar Hujan (Cold Lahar Flow)** di sungai lereng.
-
-#### Tab 2: Protokol Aksi Sekolah (PJJ Daring)
-- **Status Tindakan Cepat Sekolah:**
-  - $\ge 40\%$ Peluang: `[AWAS] SEGERA ALIHKAN KE PJJ DARING` (instruksi pulangkan siswa sebelum abu tiba, wajib N95).
-  - $15\% - 39\%$ Peluang: `[WASPADA] HENTIKAN AKTIVITAS OUTDOOR` (dilarang olahraga/upacara luar ruang).
-  - $< 15\%$ Peluang: `[MONITORING] SIAGA DINI - MONITORING TELEMETRI`.
-- **Daftar Sekolah Terdampak:**
-  - Nama Sekolah, Kabupaten, Peluang Terpapar (%), Estimasi Waktu Tiba Partikel (ETA Jam).
-  - **Rumah Sakit Evakuasi Terdekat:** Menampilkan langsung RS rujukan terdekat untuk masing-masing sekolah jika ada siswa yang mengalami sesak napas akut.
-  - Tombol **"Lihat di Peta"**: Memusatkan peta (*flyTo*) ke sekolah tersebut.
-
-#### Tab 3: Rujukan Medis & Evakuasi Darurat
-- **Prinsip Utama:** Menghubungkan korban bencana (pasien sesak napas akut/asma, kelompok lansia/anak) langsung ke fasilitas kesehatan yang paling siap dan aman.
-- **Klasifikasi Zona Rumah Sakit:**
-  - `[RUJUKAN UTAMA] RS Aman Bebas Abu`: Rumah sakit berada di luar sebaran abu, pasokan udara steril, prioritas rujukan evakuasi utama.
-  - `[TRIASE LAPANGAN] RS Siaga Penyangga`: Rumah sakit di perbatasan; siaga stabilisasi oksigen pertama sebelum rujukan lanjutan.
-  - `[TERDAMPAK] RS Zona Bahaya Abu`: RS sendiri terpapar abu pekat; pasien di RS ini membutuhkan perlindungan ekstra.
-- **Detail Fasilitas Kesehatan:** Jarak dari episentrum/sekolah (km), Ketersediaan Oksigen Medis & Ruang Perawatan ISPA, Hotline SPGDT 119, dan tombol **"[RUTE] Gambar Rute Evakuasi di Peta"**.
-
-#### Tab 4: Edukasi Masker Khusus & Bahaya Softlens
-- **Komparasi Edukasi Ilmiah:**
-  - **[DILARANG / TIDAK EFEKTIF] Masker Kain & Masker Bedah Biasa**  
-    Pori-pori terlalu besar (3–100 mikron) dengan kebocoran samping mencapai 30–50%. Debu silika tajam $PM_{2.5}$ tetap masuk ke bronkus paru-paru. Memberikan rasa aman palsu.
-  - **[STANDAR RESMI WAJIB] Masker Partikulat N95 / KN95 / FFP2**  
-    Filtrasi $\ge 95\%$ partikel mikro hingga ukuran 0.3 mikron dengan segel rapat di hidung dan pipi.
-  - **[PERINGATAN MEDIS KRITIS] Larangan Pemakaian Lensa Kontak (Softlens):**  
-    Partikel abu vulkanik mengandung pecahan kaca silika tajam mikroskopis. Menggunakan softlens menyebabkan partikel terperangkap di bawah lensa, memicu gesekan yang merobek kornea mata (*abrasi kornea*) dan kebutaan. Wajib memakai kacamata pelindung (*safety goggles*).
-
-#### Tab 5: Validasi Lapangan & Transparansi Sains
-- **Validasi Lapangan (Lapis 3):** Skor Fractions Skill Score (FSS) dan Hit Rate per kabupaten untuk membuktikan akurasi simulasi terhadap observasi satelit.
-- **Kurva Sensitivitas:** Grafik respons perubahan luas wilayah terhadap variasi tinggi kolom letusan.
-- **Transparansi Asumsi Pemodelan:** Daftar kode sumber terverifikasi (D01 s.d. D24) serta batasan model sesuai standar ilmiah.
+- **Zone A (Tactical Header)**: Logo platform, lencana status `SIAGA 24/7`, telemetri ticker nasional (jumlah gunung api Level 3/4 dan titik api satelit FIRMS), tombol uji latensi sinkronisasi, tombol putar demo otomatis, dan jam digital ganda (WIB & UTC).
+- **Zone B (Floating Control Dock)**: Panel kaca melayang di kiri atas peta untuk konfigurasi cepat skenario erupsi/karhutla tanpa menutup pandangan peta. Dapat diciutkan dengan satu klik.
+- **Zone C (Interactive GIS Workspace)**: Peta layar penuh berbasis Leaflet taktis gelap, kontrol layer independen, legenda dinamis, dan pemutar garis waktu melayang di bawah tengah peta.
+- **Zone D (Tabbed Inspection Dock)**: Laci samping kanan dengan 5 tab terstruktur (Dampak, Sekolah, Evakuasi, Edukasi APD, dan Audit Sains).
 
 ---
 
-## 3. Kontrak Integrasi API (Panduan Developer Frontend)
+## Tabel Sumber Data & Atribusi Resmi
 
-Base URL Backend: `http://127.0.0.1:8000` (atau `http://localhost:8000`)
-
-### 1. Inisialisasi & Data Telemetri Nasional
-#### `GET /health`
-Mengecek status backend dan disclaimer kesiapsiagaan bencana.
-```json
-{
-  "status": "healthy",
-  "project": "UdaraSiaga",
-  "version": "0.1.0",
-  "disclaimer": "Sistem ini adalah platform estimasi sains untuk kesiapsiagaan dini & protokol aksi pencegahan bencana..."
-}
-```
-
-#### `GET /layers/summary-kpi`
-Mengambil angka ringkasan nasional untuk pil telemetri di header:
-```json
-{
-  "volcanoes_monitored_total": 20,
-  "status_counts": {
-    "Level 4 - AWAS": 2,
-    "Level 3 - SIAGA": 5,
-    "Level 2 - WASPADA": 9,
-    "Level 1 - NORMAL": 4
-  },
-  "hotspots_total_firms": 42
-}
-```
-
-#### `POST /layers/sync-live`
-Dipanggil saat pengguna menekan tombol Sinkronisasi Live:
-```json
-{
-  "status": "synchronized",
-  "sources": { "open_meteo": "active", "firms_viirs": "active" },
-  "latency_ms": 94,
-  "timestamp": "2026-10-05T22:30:00Z"
-}
-```
+| Kategori Data | Variabel / Parameter | Sumber Data Otoritatif | Lisensi / Keterangan |
+| :--- | :--- | :--- | :--- |
+| **Vulkanologi** | Koordinat kawah, elevasi puncak, status level (I–IV), radius bahaya KRB, laporan letusan VONA | **PVMBG Badan Geologi ESDM** (MAGMA Indonesia) | Data Terbuka Pemerintah Indonesia |
+| **Kebakaran Hutan** | Koordinat titik api, Fire Radiative Power (FRP), tingkat keyakinan sensor | **NASA FIRMS** (Satelit VIIRS SNPP & NOAA-20) | NASA Earthdata Open Access |
+| **Meteorologi** | Vektor kecepatan & arah angin ($u, v$) multi-aras, curah hujan presipitasi | **Open-Meteo Ensemble API** (ECMWF & GFS) | CC BY 4.0 |
+| **Kependudukan** | Estimasi total penduduk, struktur usia anak-anak ($<15$ th) dan lansia ($\ge 65$ th) per grid 100m | **WorldPop Project** | CC BY 4.0 |
+| **Infrastruktur Publik**| Lokasi sekolah, puskesmas, rumah sakit rujukan darurat, bandara | **OpenStreetMap Contributors** (via Overpass API) | Open Database License (ODbL) |
+| **Fisika Erupsi** | Laju Pelepasan Massa (*Mass Eruption Rate* / MER) berdasarkan tinggi kolom | **Mastin et al. (2009)**, *J. Volcanol. Geotherm. Res.* | DOI: 10.1016/j.jvolgeores.2009.01.008 |
+| **Fisika Biomassa** | Faktor konversi FRP ke biomassa terbakar dan laju emisi partikulat $PM_{2.5}$ | **Wooster et al. (2005)** & **Li et al. (2018)** | Wooster (2005) doi:10.1029/2005JD006318 |
+| **Standar Kualitas Udara** | Rentang konsentrasi $PM_{2.5}$ dan pedoman mitigasi kesehatan | **Permen LHK No. P.14/2020** (ISPU) & **WHO Air Quality Guidelines** | Regulasi Resmi RI & WHO |
+| **Pedoman Abu & Masker** | Rekomendasi respirator partikulat N95/KN95 dan mitigasi abrasi kornea | **International Volcanic Health Hazard Network (IVHHN)** & **BNPB** | Standar Konsorsium Internasional |
 
 ---
 
-### 2. Lapisan GIS Peta
-- `GET /layers/volcanoes`: GeoJSON titik gunung api nasional (Level 1–4, koordinat, radius bahaya).
-- `GET /layers/hotspots`: GeoJSON titik api satelit NASA FIRMS VIIRS.
-- `GET /layers/facilities`: GeoJSON 57 fasilitas publik nasional (sekolah, RS/puskesmas, bandara).
-- `GET /layers/coastline`: GeoJSON garis pantai kepulauan Indonesia (fallback offline).
+## Matriks Penilaian & Kesiapan Pitching Juri JOINTS 2026
+
+| Kriteria Penilaian | Bobot | Pembuktian Implementasi Nyata di UdaraSiaga Indonesia |
+| :--- | :---: | :--- |
+| **Inovasi & Relevansi Bencana** | 25% | Platform multi-bahaya pertama yang menyatukan pemodelan dispersi abu vulkanik dan asap karhutla dalam satu mesin partikel fisika terintegrasi dengan pencucian hujan dan peringatan bahaya lahar dingin. |
+| **Ketepatan Sains & Rekayasa Data** | 25% | Mengimplementasikan formula Mastin et al. (2009) dan Wooster et al. (2005), kuantifikasi ketidakpastian rentang P5–P50–P95, penghalusan difusi Gaussian, dan kepatuhan etika data menolak kategori ISPU palsu. |
+| **UI/UX & Desain Taktis** | 25% | Mengadopsi arsitektur *The 4-Zone Command Canvas*, palet warna hazard-aware (*semakin tebal semakin berbahaya*), scrubber waktu 48 jam, 0 emoji kartun kasual (100% lencana teks otoritatif dan siluet SVG taktis). |
+| **Aksi Nyata & Mitigasi Publik** | 15% | Bukan sekadar visualisasi pasif: menghasilkan triase otomatis sekolah (PJJ Daring $\ge 40\%$), penentuan rute evakuasi darurat ke RS aman bebas abu, dan simulasi pemadaman titik api terukur. |
+| **Kualitas Kode & Dokumentasi** | 10% | 29 dari 29 test pytest lolos 100%, linter ruff bersih tanpa error/warning, REST API FastAPI terdokumentasi otomatis di `/docs`, dan dokumentasi alur kerja komprehensif. |
 
 ---
 
-### 3. Eksekusi Simulasi Sebaran
-#### `POST /simulate`
-Mengirim parameter simulasi dan menghasilkan `run_id`.
-```json
-// Request Body
-{
-  "hazard": "volcano",          // "volcano" | "fire"
-  "mode": "auto",               // "auto" | "experiment"
-  "source": {
-    "event_id": "anak_krakatau_2026_09"
-  },
-  "horizon_hours": 48,
-  "n_members": 15,              // Rekomendasi UI: 15 anggota untuk respons instan ~1.5s
-  "seed": 42,
-  "thresholds": { "min": 0.9, "mid": 0.5, "max": 0.05 },
-  "overrides": null             // Isi objek jika mode: "experiment"
-}
-```
-
-```json
-// Response Body
-{
-  "run_id": "run_9a8b7c6d5e4f",
-  "hazard": "volcano",
-  "status": "completed",
-  "n_members": 15,
-  "scenario_label": "kejadian observasi",
-  "hourly_tiers": { ... }       // GeoJSON kontur per jam (0 s.d. 48)
-}
-```
-
----
-
-### 4. Pengambilan Data Pasca-Simulasi (Tab Analytics)
-
-#### `GET /runs/{run_id}/impact`
-Mengisi data **Tab 1 (Ringkasan Dampak & Populasi)**:
-```json
-{
-  "run_id": "run_9a8b7c6d5e4f",
-  "population_exposed": { "min": 358581, "median": 620353, "max": 1233302 },
-  "children_exposed":   { "min": 86059,  "median": 148885, "max": 295993 },
-  "elderly_exposed":    { "min": 23308,  "median": 40323,  "max": 80165 },
-  "area_exposed_km2":   { "min": 1787,   "median": 3167,   "max": 6112 },
-  "schools_exposed":    { "min": 0, "median": 2, "max": 5 },
-  "healthcare_exposed": { "min": 0, "median": 3, "max": 4 }
-}
-```
-
-#### `GET /runs/{run_id}/facilities-impacted`
-Mengisi data **Tab 2 (Sekolah)** dan **Tab 3 (Evakuasi Medis)**:
-```json
-{
-  "total_schools_at_risk": 2,
-  "total_healthcare_at_risk": 2,
-  "total_evacuation_hospitals": 5,
-  "schools": [
-    {
-      "facility_id": "fac_sch_sunda_02",
-      "name": "SMP Negeri 1 Rajabasa",
-      "district": "Lampung Selatan",
-      "latitude": -5.812,
-      "longitude": 105.620,
-      "exposure_pct": 65,
-      "alert_level": "SIAGA TINGGI",
-      "badge_color": "#ef4444",
-      "recommendation": "ALIHKAN KE PJJ DARING (BELAJAR DARI RUMAH)",
-      "arrival_time_earliest_h": 4.5,
-      "nearest_safe_hospital": {
-        "name": "RSUD Bob Bazar Kalianda",
-        "distance_km": 12.4,
-        "latitude": -5.728,
-        "longitude": 105.592,
-        "status_badge": "[RUJUKAN UTAMA] Zona Aman Bebas Abu"
-      },
-      "evacuation_protocol": "Jika ada siswa/guru sesak napas akut, evakuasi segera ke RSUD Bob Bazar Kalianda (12.4 km). Hubungi SPGDT 119."
-    }
-  ],
-  "evacuation_referral_hospitals": [
-    {
-      "facility_id": "fac_hc_sunda_01",
-      "name": "RSUD Bob Bazar Kalianda",
-      "district": "Lampung Selatan",
-      "latitude": -5.728,
-      "longitude": 105.592,
-      "distance_from_epicenter_km": 42.1,
-      "is_safe": true,
-      "status_badge": "[RUJUKAN UTAMA] Zona Aman Bebas Abu",
-      "badge_color": "#10b981",
-      "evac_recommendation": "Prioritas rujukan utama evakuasi. Udara bersih, kapasitas IGD & O2 aman.",
-      "capabilities": ["IGD 24 Jam", "Pasokan O2 Medis", "Ruang Rawat ISPA", "Unit Ambulans"]
-    }
-  ]
-}
-```
-
-#### `GET /runs/{run_id}/health-guidance`
-Mengisi data **Tab 4 (Edukasi Masker & Softlens)**:
-```json
-{
-  "hazard": "volcano",
-  "mask_guidance": {
-    "required_mask_type": "N95 / KN95 / FFP2 (Respirator Partikulat)",
-    "surgical_mask_warning": "Masker bedah & masker kain TIDAK MAMPU menyaring partikel debu silika...",
-    "filtration_efficiency": "≥ 95% untuk partikel berukuran hingga 0.3 mikron"
-  },
-  "eye_safety": {
-    "softlens_prohibited": true,
-    "softlens_warning": "DILARANG KERAS MEMAKAI SOFTLENS: Debu silika tajam memicu abrasi kornea permanen...",
-    "recommended_eyewear": "Safety Goggles (Kacamata Pelindung Tertutup)"
-  }
-}
-```
-
----
-
-## 4. Design System & Token Visual
-
-| Token | Nilai CSS | Peruntukan |
-| :--- | :--- | :--- |
-| `--bg-base` | `#0b1120` (Dark Void Navy) | Latar belakang kanvas utama |
-| `--bg-surface` | `rgba(15, 23, 42, 0.88)` | Panel kaca melayang (*glassmorphism*) |
-| `--border-subtle` | `rgba(255, 255, 255, 0.08)` | Garis pembatas kartu & pemisah tab |
-| `--color-accent` | `#0284c7` (Sky Blue) | Tombol aksi utama & tautan navigasi |
-| `--color-red` | `#ef4444` (Crimson Alert) | Lencana Level IV Awas, PJJ Daring, Zona Bahaya |
-| `--color-orange` | `#f59e0b` (Amber Warning) | Lencana Level III Siaga, Hentikan Outdoor |
-| `--color-green` | `#10b981` (Emerald Safe) | RS Rujukan Aman, Level I Normal |
-| `--font-sans` | `'Inter', system-ui, sans-serif`| Teks deskriptif & judul antarmuka |
-| `--font-mono` | `'JetBrains Mono', 'Fira Code', monospace` | Angka koordinat, timer T+, latensi ms |
-
----
-
-## 5. Checklist Implementasi Frontend (FE Roadmap)
-
-1. [x] **Setup Layout 4-Zona**: Header, Floating Control Panel Kiri, Peta Layar Penuh, Laci Tab Kanan.
-2. [x] **Integrasi Leaflet / MapLibre**: Tile layer OpenStreetMap dengan filter dark mode taktikal.
-3. [x] **Koneksi Telemetri Header**: Menampilkan KPI dinamis dari `/layers/summary-kpi` dan aksi tombol `POST /layers/sync-live`.
-4. [x] **Panel Kontrol Kiri**: Dropdown 20+ kejadian nasional, toggle mode eksperimen, dan pemicu simulasi `POST /simulate`.
-5. [x] **Player Timeline Bawah**: Slider 0 s.d. 48 jam dengan tombol play/pause otomatis.
-6. [x] **Laci Tab Analitik (5 Tab)**:
-   - Tab 1: Ringkasan Dampak P5-P50-P95 & Hujan
-   - Tab 2: Protokol Sekolah & Rekomendasi PJJ
-   - Tab 3: Matriks Evakuasi Medis & Tombol Rute Evakuasi
-   - Tab 4: Modul Edukasi Masker N95 vs Bedah & Softlens
-   - Tab 5: Audit Sains, FSS & Sensitivitas
-7. [x] **Interaksi Spasial Dua Arah**:
-   - Menekan poligon abu di peta -> langsung membuka laci analitik ke fasilitas terdampak.
-   - Menekan kartu sekolah -> peta otomatis memusatkan (*flyTo*) ke sekolah dan menggambar garis rute evakuasi darurat ke rumah sakit rujukan terdekat.
-8. [x] **Diferensiasi Visual Multi-Hazard**:
-   - Skema warna ilmiah kontras: Merah Silika Erupsi vs Coklat Jelaga Karhutla.
-   - Ketebalan opasitas bertingkat (60% P90, 35% P50, 15% P05) berprinsip "Semakin tebal semakin berbahaya".
-
----
-
-## 6. Matriks Penilaian Rubrik Hackathon (Target 100/100)
-
-| Kriteria Penilaian Juri | Bobot | Bukti Implementasi Teknis & Kesiapan | Nilai Target |
-| :--- | :---: | :--- | :---: |
-| **Inovasi & Relevansi Bencana** | 25% | Simulator sebaran multi-bahaya (abu vulkanik & asap karhutla) pertama dengan adveksi RK2, pencucian presipitasi, dan peringatan bahaya lahar dingin sekunder. | **100 / 100** |
-| **Ketepatan Sains & Rekayasa Data** | 25% | Mengintegrasikan formula Mastin et al. (2009) dan Wooster et al. (2005), rentang P5–P50–P95 ensemble 15–51 anggota, dan penolakan kategori ISPU palsu. | **100 / 100** |
-| **UI/UX & Desain Taktis (The 4-Zone Canvas)** | 25% | Arsitektur 4-zona zero-overload, player timeline 48 jam, diferensiasi warna bahaya, 0 emoji kartun (100% badge otoritatif), dan respons interaktif instan. | **100 / 100** |
-| **Aksi Nyata & Mitigasi Publik** | 15% | Triase otomatis sekolah (PJJ Daring $\ge 40\%$), penentuan rute evakuasi ke RS aman bebas abu, edukasi respirator N95 vs bedah, dan larangan softlens. | **100 / 100** |
-| **Kualitas Kode & Dokumentasi** | 10% | 29/29 pytest passed (100%), 0 ruff error, REST API OpenAPI lengkap, arsitektur modular, dokumentasi spesifikasi teknis 400+ baris. | **100 / 100** |
-
----
-
-## 7. Sumber Data & Atribusi Resmi (Attributions)
-
-- **PVMBG Badan Geologi ESDM**: Data koordinat kawah, elevasi, radius Kawasan Rawan Bencana (KRB), dan status aktivitas gunung api nasional (MAGMA Indonesia).
-- **NASA FIRMS**: Data satelit deteksi titik api NRT (*Near Real-Time*) sensor VIIRS SNPP / NOAA-20.
-- **Open-Meteo**: Data prakiraan cuaca angin (*wind u/v*) dan presipitasi ensemble global.
-- **WorldPop Project**: Dataset estimasi kepadatan populasi resolusi 100 meter (Lisensi CC BY 4.0).
-- **OpenStreetMap Contributors**: Dataset fasilitas publik sekolah, puskesmas, rumah sakit, dan bandara (Lisensi ODbL).
+*UdaraSiaga Indonesia — Mengubah Estimasi Sains Dispersi Atmosferik Menjadi Aksi Perlindungan Nyata Bagi Warga, Sekolah, dan Tenaga Kesehatan.*
