@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>UdaraSiaga Indonesia | Pusat Pemodelan &amp; Dispersi Bahaya Atmosfer Nasional</title>
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="enterprise-magma">
+  <!-- Bilah Navigasi & Telemetri Darurat Atas (MAGMA Tactical Header) -->
+  <header class="tactical-navbar">
+    <div class="nav-left">
+      <div class="brand-group">
+        <div class="esdm-crest">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
+            <polygon points="12 2 2 22 22 22 12 2"></polygon>
+            <circle cx="12" cy="14" r="3" fill="#ef4444"></circle>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">UdaraSiaga <span class="badge-country">INDONESIA</span></span>
+          <span class="brand-desc">Sistem Pemodelan Dispersi Atmosfer Erupsi &amp; Karhutla Nasional</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Telemetry Ticker (MAGMA KPI Dinamis) -->
+    <div class="telemetry-bar">
+      <div class="kpi-pill kpi-volcano" id="kpiVolcano" title="Status Gunungapi Aktif PVMBG">
+        <svg class="silhouette-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
+          <path d="M2 22L12 2l10 20H2z"/>
+          <path d="M12 9v4"/>
+        </svg>
+        <span class="kpi-label">Gunung Siaga / Awas:</span>
+        <strong class="kpi-val mono" id="kpiVolcanoCount">7</strong>
+      </div>
+      <div class="kpi-pill kpi-fire" id="kpiFire" title="Deteksi Titik Api Satelit NASA FIRMS VIIRS">
+        <svg class="silhouette-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2">
+          <path d="M12 2c-4 4-6 8-6 12 0 4.4 3.6 8 8 8s8-3.6 8-8c0-3-2-6-5-8-1 3-3 4-5 2z"/>
+        </svg>
+        <span class="kpi-label">Titik Api Aktif (24h):</span>
+        <strong class="kpi-val mono" id="kpiFireCount">1.680</strong>
+      </div>
+      <div class="kpi-pill kpi-status">
+        <span class="pulse-indicator"></span>
+        <span class="kpi-label">Status Telemetri:</span>
+        <strong class="kpi-val" style="color:#10b981;">SIAGA OPERASIONAL 24/7</strong>
+      </div>
+    </div>
+
+    <!-- Quick Actions & Clocks -->
+    <div class="nav-right">
+      <div class="clock-box mono">
+        <div id="liveClockWib">--:--:-- WIB</div>
+        <div id="liveClockUtc" class="clock-sub">--:--:-- UTC</div>
+      </div>
+      <button id="btnLiveSync" class="nav-btn" title="Sinkronisasi sensor NASA & Open-Meteo secara real-time">
+        <svg class="silhouette-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <polyline points="1 20 1 14 7 14"></polyline>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        </svg>
+        <span>Live Sync</span>
+      </button>
+      <button id="btnOpenLegend" class="nav-btn" title="Legenda Tingkat Aktivitas Otoritatif">
+        <svg class="silhouette-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+        </svg>
+        <span>Legenda</span>
+      </button>
+      <button id="btnResetView" class="nav-btn" title="Pusatkan Tampilan ke Wilayah Indonesia">
+        <svg class="silhouette-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+        </svg>
+        <span>Indonesia</span>
+      </button>
+      <button id="btnToggleDrawer" class="nav-btn btn-highlight" title="Buka/Tutup Laci Analitik">
+        <svg class="silhouette-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="9" y1="3" x2="9" y2="21"></line>
+        </svg>
+        <span>Laci Analitik</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Bilah Peringatan Dini & Protokol Aksi Pencegahan Cepat -->
+  <div class="authoritative-strip proactive-alert-strip">
+    <span class="strip-tag pulse-tag">PROTOKOL AKSI PENCEGAHAN BENCANA</span>
+    <span class="strip-text">
+      Sistem Peringatan Dini Dispersi Atmosfer: Mengotomatisasi instruksi <strong>Peralihan KBM Sekolah ke PJJ Daring</strong>, 
+      mandat kewajiban <strong>Masker Respirator Partikulat N95/KN95</strong>, serta rute <strong>Evakuasi Medis ke Rumah Sakit Bebas Abu</strong> sebelum partikel tiba di pemukiman. Selaras dengan standar <strong>PVMBG</strong>, <strong>BMKG</strong>, dan <strong>BPBD</strong>.
+    </span>
+  </div>
+
+  <!-- Workspace Peta & Panel Melayang -->
+  <div class="tactical-workspace">
+    <main class="full-map-container">
+      <div id="map"></div>
+
+      <!-- 1. Floating Control Dock (Kiri Atas Peta - Konfigurasi Skenario Ramping) -->
+      <div class="floating-control-dock" id="floatingControlDock">
+        <div class="control-dock-header">
+          <div class="dock-title-group">
+            <svg class="silhouette-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            <div>
+              <span class="dock-title">Pusat Kendali Simulasi</span>
+              <small class="dock-sub">Model Lagrangian RK2 (Ansambel 48 Jam)</small>
+            </div>
+          </div>
+          <button id="btnToggleDock" class="dock-minimize-btn" title="Ciutkan/Buka Panel">&minus;</button>
+        </div>
+
+        <div class="control-dock-body" id="controlDockBody">
+          <!-- Pilihan Bahaya -->
+          <div class="dock-field">
+            <label for="hazardSelect">Jenis Bahaya Atmosfer:</label>
+            <select id="hazardSelect" class="select-box">
+              <option value="volcano">Erupsi Gunung Api (Abu Vulkanik)</option>
+              <option value="fire">Kebakaran Hutan &amp; Lahan (Asap PM2.5)</option>
+            </select>
+          </div>
+
+          <!-- Pilihan Kejadian Nasional -->
+          <div class="dock-field">
+            <label for="eventSelect">Lokasi Kejadian (Nasional):</label>
+            <select id="eventSelect" class="select-box">
+              <option value="anak_krakatau_2026_09">[Level III] G. Anak Krakatau (Selat Sunda)</option>
+              <option value="merapi_yogyakarta">[Level III] G. Merapi (Jawa Tengah / DIY)</option>
+              <option value="marapi_sumatera">[Level III] G. Marapi (Sumatera Barat)</option>
+              <option value="lewotobi_laki_laki">[Level IV] G. Lewotobi Laki-laki (Flores Timur, NTT)</option>
+              <option value="live_kalimantan">Karhutla Kalimantan (NASA FIRMS Live / NRT)</option>
+            </select>
+          </div>
+
+          <!-- Mode Pemodelan -->
+          <div class="dock-field">
+            <label>Mode Pemodelan:</label>
+            <div class="segmented-control">
+              <label class="seg-btn">
+                <input type="radio" name="simMode" value="auto" checked>
+                <span>Otomatis (Data Nyata)</span>
+              </label>
+              <label class="seg-btn">
+                <input type="radio" name="simMode" value="experiment">
+                <span>Coba-coba (Eksperimen)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Parameter Mode Eksperimen -->
+          <div id="experimentPanel" class="experiment-drawer hidden">
+            <div class="exp-header">Parameter Skenario Eksperimental</div>
+            
+            <div id="volcanoExpControls">
+              <div class="input-row">
+                <label>Tinggi Kolom (km di atas kawah):</label>
+                <input type="number" id="expColumnHeight" value="12" min="1" max="25" step="0.5" class="num-box mono">
+              </div>
+            </div>
+
+            <div id="fireExpControls" class="hidden">
+              <div class="input-row">
+                <label>Skala Daya Termal Api (FRP %):</label>
+                <input type="range" id="expFrpScale" min="20" max="200" value="100" class="range-slider">
+              </div>
+            </div>
+
+            <div class="input-row-check">
+              <label><input type="checkbox" id="expWindReverse"> Balikkan Arah Angin Troposfer (180°)</label>
+            </div>
+
+            <div class="input-row">
+              <label>Curah Hujan Pencuci (mm/jam):</label>
+              <input type="number" id="expRainMm" value="0" min="0" max="50" step="5" class="num-box mono">
+            </div>
+          </div>
+
+          <!-- Tombol Eksekusi Utama -->
+          <button id="btnRunSim" class="action-btn btn-primary-pulse">
+            <svg class="silhouette-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            <span>JALANKAN SIMULASI SEBARAN</span>
+          </button>
+          
+          <div class="quick-action-row">
+            <button id="btnPlayDemo" class="action-btn btn-secondary">
+              <svg class="silhouette-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              <span>Putar Demo</span>
+            </button>
+            <button id="btnExportPrint" class="action-btn btn-secondary">
+              <svg class="silhouette-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                <rect x="6" y="14" width="12" height="8"></rect>
+              </svg>
+              <span>Ekspor Laporan</span>
+            </button>
+          </div>
+
+          <!-- Indikator Loading & Status Komputasi -->
+          <div id="runProgressBox" class="progress-container">
+            <div id="runProgressBar" class="progress-bar-inner"></div>
+            <div id="runProgressText" class="progress-label mono">Pilih kejadian dan jalankan simulasi.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Floating Map Layer Controls (Kanan Atas Peta) -->
+      <div class="map-overlay-controls">
+        <div class="overlay-card">
+          <div class="overlay-title">Lapisan Spasial Aktif</div>
+          <label class="toggle-row">
+            <input type="checkbox" id="layerToggleVolcanoes" checked>
+            <span class="toggle-dot dot-volcano"></span>
+            <span>Gunungapi PVMBG (Nasional)</span>
+          </label>
+          <label class="toggle-row">
+            <input type="checkbox" id="layerToggleHotspots" checked>
+            <span class="toggle-dot dot-fire"></span>
+            <span>Titik Api NASA FIRMS</span>
+          </label>
+          <label class="toggle-row">
+            <input type="checkbox" id="layerTogglePlume" checked>
+            <span class="toggle-dot dot-plume"></span>
+            <span>Poligon Peluang Dispersi</span>
+          </label>
+          <label class="toggle-row">
+            <input type="checkbox" id="layerToggleFacilities" checked>
+            <span class="toggle-dot dot-facility"></span>
+            <span>Sekolah &amp; Faskes Rujukan</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 3. Mini Legenda Aktivitas (Kiri Bawah Peta) -->
+      <div class="map-mini-legend">
+        <div class="mini-leg-title">Status Gunungapi PVMBG</div>
+        <div class="mini-leg-grid">
+          <span class="leg-pill level-4"><span class="badge-sq bg-red"></span> Level IV (Awas)</span>
+          <span class="leg-pill level-3"><span class="badge-sq bg-orange"></span> Level III (Siaga)</span>
+          <span class="leg-pill level-2"><span class="badge-sq bg-yellow"></span> Level II (Waspada)</span>
+          <span class="leg-pill level-1"><span class="badge-sq bg-green"></span> Level I (Normal)</span>
+        </div>
+
+        <!-- Legenda Intensitas Sebaran (Dinamis per Hazard) -->
+        <div class="mini-leg-title" id="plumeLegendLabel" style="margin-top:10px;">Sebaran Abu Vulkanik</div>
+        <div class="mini-leg-grid" id="plumeLegendGrid">
+          <span class="leg-pill"><span class="badge-sq plume-swatch-1" id="plumeSwatch1"></span> <span id="plumeLabel1">Abu Tebal (P90)</span></span>
+          <span class="leg-pill"><span class="badge-sq plume-swatch-2" id="plumeSwatch2"></span> <span id="plumeLabel2">Abu Sedang (P50)</span></span>
+          <span class="leg-pill"><span class="badge-sq plume-swatch-3" id="plumeSwatch3"></span> <span id="plumeLabel3">Debu Halus (P05)</span></span>
+        </div>
+      </div>
+
+      <!-- 4. Slider Waktu Melayang di Bawah Peta -->
+      <div class="floating-time-bar">
+        <div class="time-header-row">
+          <div class="time-label-group">
+            <button id="btnPlayPauseTime" class="time-play-btn" title="Putar Animasi Jam">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+            </button>
+            <span class="time-title">Horizon Waktu:</span>
+            <span id="timeDisplay" class="time-badge mono">T + 00:00 Jam</span>
+          </div>
+          <div class="time-quick-steps">
+            <button class="step-btn" data-hour="0">T+0h</button>
+            <button class="step-btn" data-hour="6">T+6h</button>
+            <button class="step-btn" data-hour="12">T+12h</button>
+            <button class="step-btn" data-hour="24">T+24h</button>
+            <button class="step-btn" data-hour="36">T+36h</button>
+            <button class="step-btn" data-hour="48">T+48h</button>
+          </div>
+        </div>
+        <div class="time-slider-track">
+          <input type="range" id="timeSlider" min="0" max="48" value="0" step="1">
+          <div class="slider-marks mono">
+            <span>00:00 (Awal)</span>
+            <span>12:00</span>
+            <span>24:00</span>
+            <span>36:00</span>
+            <span>48:00 (Akhir)</span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- 5. Tactical Analytics Dock (Laci Samping Kanan dengan 5 Tab Terstruktur) -->
+    <aside class="command-drawer" id="commandDrawer">
+      <div class="drawer-header">
+        <div class="drawer-title">
+          <span>Laci Analitik &amp; Aksi Dini</span>
+          <small class="drawer-sub">Hasil Ansambel Multi-Bahaya 48 Jam</small>
+        </div>
+        <button id="btnCloseDrawer" class="drawer-close-btn" title="Kecilkan Panel">&times;</button>
+      </div>
+
+      <!-- Bilah Tab Navigasi Terstruktur (5 Tab) -->
+      <nav class="drawer-tab-nav">
+        <button class="d-tab-btn active" data-tab="tabPaneImpact">
+          <svg class="silhouette-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+          <span>Dampak</span>
+        </button>
+        <button class="d-tab-btn" data-tab="tabPaneSchools">
+          <svg class="silhouette-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+          </svg>
+          <span>Sekolah &amp; PJJ</span>
+        </button>
+        <button class="d-tab-btn" data-tab="tabPaneEvac">
+          <svg class="silhouette-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="6" width="20" height="14" rx="2"></rect>
+            <path d="M12 10v6"></path>
+            <path d="M9 13h6"></path>
+          </svg>
+          <span>Evakuasi RS</span>
+        </button>
+        <button class="d-tab-btn" data-tab="tabPaneHealth">
+          <svg class="silhouette-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+          <span>Edukasi APD</span>
+        </button>
+        <button class="d-tab-btn" data-tab="tabPaneScience">
+          <svg class="silhouette-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 14 14"></polyline>
+          </svg>
+          <span>Sains &amp; Audit</span>
+        </button>
+      </nav>
+
+      <div class="drawer-body">
+        <!-- TAB 1: RINGKASAN DAMPAK & POPULASI -->
+        <div id="tabPaneImpact" class="tab-pane active">
+          <section class="drawer-section">
+            <div class="section-badge badge-green">METRIK POPULASI</div>
+            <h2 class="section-heading">Estimasi Dampak (Rentang P5 &ndash; P50 &ndash; P95)</h2>
+            <div class="section-note">Seluruh metrik dampak disajikan dalam rentang ketidakpastian ansambel.</div>
+
+            <div class="kpi-metric-cards">
+              <div class="metric-tile">
+                <div class="tile-header">
+                  <span class="tile-title">Penduduk Terpapar (Total)</span>
+                  <span class="tile-tag">WorldPop</span>
+                </div>
+                <div class="tile-val mono" id="mPopRange">- / - / -</div>
+                <div class="tile-sub">Jiwa di jalur sebaran abu/asap</div>
+              </div>
+
+              <div class="tile-split">
+                <div class="metric-tile">
+                  <div class="tile-header"><span class="tile-title">Anak-anak (&lt;15 Th)</span></div>
+                  <div class="tile-val mono" id="mChildRange">- / - / -</div>
+                </div>
+                <div class="metric-tile">
+                  <div class="tile-header"><span class="tile-title">Lansia (&ge;65 Th)</span></div>
+                  <div class="tile-val mono" id="mElderRange">- / - / -</div>
+                </div>
+              </div>
+
+              <div class="metric-tile">
+                <div class="tile-header">
+                  <span class="tile-title">Infrastruktur Berisiko</span>
+                  <span class="tile-tag">OSM</span>
+                </div>
+                <div class="tile-val mono" id="mFacRange">Sekolah: - | Faskes: -</div>
+                <div class="tile-sub">Fasilitas publik dalam zona bahaya</div>
+              </div>
+
+              <div class="metric-tile">
+                <div class="tile-header"><span class="tile-title">Luas Area Footprint (km²)</span></div>
+                <div class="tile-val mono" id="mAreaRange">- / - / -</div>
+              </div>
+
+              <div class="metric-tile status-tile">
+                <div class="tile-header"><span class="tile-title">Indeks Kualitas Udara (ISPU PM2.5)</span></div>
+                <div id="mIspuStatus" class="tile-sub-warn">Memeriksa ketersediaan faktor emisi lapangan...</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Dampak Sawah & Air (Gunung) -->
+          <section id="landWaterSection" class="drawer-section">
+            <div class="section-badge badge-orange">SEKTOR PERTANIAN &amp; AIR</div>
+            <h2 class="section-heading">Lahan Produktif &amp; Sumber Air Minum</h2>
+            <div class="metric-tile">
+              <div class="tile-header"><span class="tile-title">Luas Sawah &amp; Kebun Tertimpa Abu</span></div>
+              <div class="tile-val mono" id="mCropland">- / - / -</div>
+              <div class="tile-sub">Hektare (ha) lahan produktif berpotensi gagal panen</div>
+            </div>
+            <div class="metric-tile">
+              <div class="tile-header"><span class="tile-title">Sumber Air Minum DAS Hulu</span></div>
+              <div class="tile-val mono" id="mWaterSources">- / - / -</div>
+              <div class="tile-sub">Titik air minum berisiko terkontaminasi asam abu</div>
+            </div>
+            <div id="ashWetnessWarning" class="alert-box-warning">
+              PERINGATAN STRUKTUR &amp; LAHAR: Abu vulkanik basah akibat hujan menambah beban atap hingga 2x lipat dan memicu potensi aliran lahar dingin di daerah aliran sungai (DAS).
+            </div>
+          </section>
+
+          <!-- Fitur Karhutla (Pemadaman & Karbon) -->
+          <section id="fireRankingSection" class="drawer-section hidden">
+            <div class="section-badge badge-red">ANALISIS KARHUTLA</div>
+            <h2 class="section-heading">Prioritas Sumber Emisi &amp; Pemadaman</h2>
+            <div id="rankingList" class="cluster-ranking-box">
+              <div class="empty-state">Jalankan simulasi kebakaran untuk melihat peringkat klaster.</div>
+            </div>
+            <button id="btnExtinguishTop" class="action-btn btn-extinguish hidden">
+              Simulasikan Pemadaman Klaster Teratas
+            </button>
+            <div id="extinguishDeltaResult" class="delta-box hidden"></div>
+          </section>
+
+          <section id="carbonSection" class="drawer-section hidden">
+            <div class="section-badge badge-red">EMISI GAS RUMAH KACA</div>
+            <h2 class="section-heading">Estimasi Pelepasan Karbon (CO2e)</h2>
+            <div class="metric-tile">
+              <div class="tile-header"><span class="tile-title">Total Emisi Karbon Terlepas</span></div>
+              <div class="tile-val mono" id="mCarbonTotal">- / - / -</div>
+              <div class="tile-sub">Ton CO2e (Model Wooster 2005 / Li 2018)</div>
+              <div class="tile-split" style="margin-top:6px;">
+                <div><small>Lahan Gambut:</small> <span class="mono" id="mCarbonPeat">-</span></div>
+                <div><small>Non-Gambut:</small> <span class="mono" id="mCarbonNonPeat">-</span></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Pencucian Hujan -->
+          <section class="drawer-section">
+            <div class="section-badge badge-blue">METEOROLOGI</div>
+            <h2 class="section-heading">Efek Pencucian Hujan (Rain Scavenging)</h2>
+            <div class="metric-tile">
+              <div class="tile-header"><span class="tile-title">Pengurangan Paparan Penduduk karena Hujan</span></div>
+              <div class="tile-val mono" id="mRainPopReduced">- / - / -</div>
+              <div class="tile-header" style="margin-top:6px;"><span class="tile-title">Pengurangan Luas Footprint Udara</span></div>
+              <div class="tile-val mono" id="mRainAreaReduced">- / - / -</div>
+              <div id="rainCaveatText" class="tile-sub" style="margin-top:6px;">-</div>
+            </div>
+          </section>
+        </div>
+
+        <!-- TAB 2: PROTOKOL AKSI SEKOLAH & PJJ DARING -->
+        <div id="tabPaneSchools" class="tab-pane">
+          <section class="drawer-section">
+            <div class="section-badge badge-purple">EARLY ACTION SEKOLAH</div>
+            <h2 class="section-heading">Sekolah di Jalur Bahaya &amp; Mandat PJJ</h2>
+            <div class="section-note">
+              Rekomendasi operasional perlindungan siswa sebelum abu/asap tiba di lokasi gedung sekolah:
+            </div>
+
+            <div class="alert-box-info" style="margin-bottom:12px;">
+              <strong style="color:#38bdf8;">Panduan Standar Tindakan Sekolah:</strong>
+              <ul style="margin:4px 0 0 16px;font-size:11px;line-height:1.5;">
+                <li><strong>Peluang &ge; 40%:</strong> <span style="color:#ef4444;font-weight:600;">[SIAGA TINGGI]</span> Segera pulangkan siswa atau alihkan ke PJJ Daring. Wajib N95.</li>
+                <li><strong>Peluang 15% - 39%:</strong> <span style="color:#f59e0b;font-weight:600;">[WASPADA]</span> Hentikan KBM dan aktivitas luar ruang (olahraga/upacara).</li>
+                <li><strong>Peluang &lt; 15%:</strong> <span style="color:#10b981;font-weight:600;">[SIAGA DINI]</span> KBM normal dengan kewaspadaan telemetri.</li>
+              </ul>
+            </div>
+
+            <div id="schoolsListContainer" class="facilities-impacted-box">
+              <div class="empty-state">Jalankan simulasi untuk memuat daftar sekolah terdampak.</div>
+            </div>
+          </section>
+        </div>
+
+        <!-- TAB 3: RUJUKAN MEDIS & EVAKUASI DARURAT -->
+        <div id="tabPaneEvac" class="tab-pane">
+          <section class="drawer-section">
+            <div class="section-badge badge-green">RUJUKAN KESEHATAN</div>
+            <h2 class="section-heading">Matriks Rumah Sakit Rujukan Evakuasi</h2>
+            <div class="section-note">
+              Pasien gawat darurat (sesak napas akut, asma berat, kelompok rentan) diarahkan ke <strong>Rumah Sakit Rujukan Aman</strong> yang berada di luar zona bahaya partikulat:
+            </div>
+
+            <div class="evacuation-legend-box">
+              <span class="evac-legend-tag tag-safe">[ZONA AMAN] RS Rujukan Utama</span>
+              <span class="evac-legend-tag tag-triage">[TRIASE LAPANGAN] RS Penyangga</span>
+              <span class="evac-legend-tag tag-danger">[ZONA BAHAYA] RS Terdampak Abu</span>
+            </div>
+
+            <div id="evacHospitalsList" class="evac-hospitals-container">
+              <div class="empty-state">Jalankan simulasi untuk menghitung rumah sakit rujukan terdekat dan teraman.</div>
+            </div>
+          </section>
+
+          <!-- Detail Fasilitas yang Diklik di Peta -->
+          <section class="drawer-section">
+            <div class="section-badge badge-purple">DETAIL TITIK TERPILIH</div>
+            <h2 class="section-heading">Kartu Evaluasi Fasilitas di Peta</h2>
+            <div id="decisionCardContent" class="decision-card-box">
+              Klik salah satu titik fasilitas (sekolah, rumah sakit, bandara) di peta untuk melihat detail evaluasi dampak spasial.
+            </div>
+          </section>
+        </div>
+
+        <!-- TAB 4: EDUKASI MASKER KHUSUS & PERLINDUNGAN APD -->
+        <div id="tabPaneHealth" class="tab-pane">
+          <section class="drawer-section">
+            <div class="section-badge badge-orange">STANDAR PERLINDUNGAN DIRI</div>
+            <h2 class="section-heading">Spesifikasi Masker Wajib &amp; Perlindungan Organ</h2>
+            <div class="section-note">
+              Debu silika vulkanik &amp; partikel mikro PM2.5 memerlukan perlindungan respirator bersertifikasi dengan segel rapat di wajah.
+            </div>
+
+            <div class="mask-comparison-grid">
+              <div class="mask-card mask-bad">
+                <div class="mask-status-badge badge-bad">[TIDAK MEMENUHI STANDAR] DILARANG</div>
+                <strong>Masker Bedah &amp; Masker Kain Biasa</strong>
+                <p>Pori-pori terlalu besar (3–100 mikron) dan memiliki kebocoran samping mencapai 30%–50%. Partikel debu silika tajam PM2.5 tetap menembus ke saluran napas dalam.</p>
+                <div class="mask-card-note">Memberikan rasa aman palsu (false sense of security).</div>
+              </div>
+              <div class="mask-card mask-good">
+                <div class="mask-status-badge badge-good">[STANDAR RESMI OTORITATIF] WAJIB</div>
+                <strong>Masker Partikulat N95 / KN95 / FFP2</strong>
+                <p>Efisiensi filtrasi &ge; 95% partikel mikro (0.3 mikron). Klip kawat hidung wajib ditekan rapat tanpa celah di pipi dan dagu.</p>
+                <div class="mask-card-note">Wajib bagi anak-anak, lansia, dan warga di jalur sebaran abu.</div>
+              </div>
+            </div>
+
+            <div class="eye-alert-box" style="margin-top:14px;">
+              <div style="font-size:12px;font-weight:700;color:#ef4444;margin-bottom:4px;text-transform:uppercase;">
+                PERINGATAN KESELAMATAN: DILARANG KERAS MEMAKAI LENSA KONTAK (SOFTLENS)
+              </div>
+              Pecahan kristal silika pada abu vulkanik memiliki sudut kaca mikroskopis yang sangat tajam. Gesekan lensa kontak dapat merobek kornea mata (<strong>abrasi kornea permanen</strong>) dan menyebabkan infeksi kebutaan. Gunakan <strong>Safety Goggles</strong> atau kacamata pelindung tertutup.
+            </div>
+          </section>
+
+          <section class="drawer-section">
+            <div class="section-badge badge-teal">KESIAPSIAGAAN RESMI</div>
+            <h2 class="section-heading">Saran Tindakan Terverifikasi Otoritas (D16)</h2>
+            <div id="adviceContent" class="advice-container">
+              Jalankan simulasi untuk memuat anjuran kesehatan resmi IVHHN &amp; BNPB.
+            </div>
+          </section>
+        </div>
+
+        <!-- TAB 5: SAINS, VALIDASI & TRANSPARANSI ASUMSI -->
+        <div id="tabPaneScience" class="tab-pane">
+          <section class="drawer-section">
+            <div class="section-badge badge-gray">VALIDASI LAPIS 3</div>
+            <h2 class="section-heading">Bukti Validasi Lapangan (FSS)</h2>
+            <button id="btnCheckValidation" class="action-btn btn-secondary" style="width:100%;">
+              Evaluasi Validasi Kejadian Lapangan
+            </button>
+            <div id="validationResultBox" class="validation-box">
+              Klik tombol di atas untuk melihat skor Fractions Skill Score dan hit rate observasi.
+            </div>
+          </section>
+
+          <section class="drawer-section">
+            <div class="section-badge badge-gray">SENSITIVITAS</div>
+            <h2 class="section-heading">Kurva Sensitivitas Parameter</h2>
+            <div class="input-field">
+              <select id="sensitivityParamSelect" class="select-box">
+                <option value="column_height_km">Tinggi Kolom Erupsi (km)</option>
+                <option value="rain_intensity_mm_h">Intensitas Hujan Pencuci (mm/jam)</option>
+              </select>
+            </div>
+            <button id="btnRunSensitivity" class="action-btn btn-secondary" style="width:100%;">
+              Hitung Sapuan Sensitivitas
+            </button>
+            <div id="sensitivityChartBox" class="sensitivity-box hidden"></div>
+          </section>
+
+          <section class="drawer-section">
+            <div class="section-badge badge-gray">TRANSPARANSI DATA</div>
+            <h2 class="section-heading">Asumsi Pemodelan &amp; Sumber Otoritatif</h2>
+            <div class="section-note">Daftar kode verifikasi data (D01 s.d. D24) sesuai kaidah integritas:</div>
+            <div id="transparencyBox" class="transparency-list mono">
+              Memuat katalog transparansi asumsi...
+            </div>
+          </section>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Modal Bantuan Legenda Status PVMBG & Tiers Plume -->
+  <div id="legendModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Legenda Otoritatif PVMBG &amp; Tingkat Peluang Dispersi</h3>
+        <button id="btnCloseLegend" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="legend-group">
+          <h4>Tingkat Aktivitas Gunungapi (PVMBG ESDM)</h4>
+          <div class="leg-item"><span class="badge-sq bg-red"></span> <strong>Level IV (AWAS):</strong> Letusan utama sedang berlangsung / imminent. Bahaya radius &ge; 7-10 km.</div>
+          <div class="leg-item"><span class="badge-sq bg-orange"></span> <strong>Level III (SIAGA):</strong> Peningkatan seismik intensif, erupsi abu dapat terjadi kapan saja.</div>
+          <div class="leg-item"><span class="badge-sq bg-yellow"></span> <strong>Level II (WASPADA):</strong> Aktivitas di atas normal. Pengamatan telemetri kontinu.</div>
+          <div class="leg-item"><span class="badge-sq bg-green"></span> <strong>Level I (NORMAL):</strong> Aktivitas dasar gunung api tanpa ancaman erupsi terdekat.</div>
+        </div>
+        <div class="legend-group">
+          <h4>Tingkat Peluang Dispersi Abu / Asap</h4>
+          <div class="leg-item"><span class="badge-sq" style="background:#dc2626;"></span> <strong>P90 (Inti Bahaya):</strong> Peluang terpapar &ge; 90%. Konsentrasi partikulat ekstrem. Wajib masker N95 &amp; evakuasi.</div>
+          <div class="leg-item"><span class="badge-sq" style="background:#f59e0b;"></span> <strong>P50 (Area Waspada):</strong> Peluang terpapar 50%&ndash;89%. Wilayah potensi hujan abu lebat.</div>
+          <div class="leg-item"><span class="badge-sq" style="background:#fbbf24;"></span> <strong>P5 (Jangkauan Maksimum):</strong> Peluang 5%&ndash;49%. Area terluar sebaran abu halus tertiup angin.</div>
+        </div>
+        <div class="legend-group">
+          <h4>Simbol Fasilitas Publik</h4>
+          <div class="leg-item"><span class="badge-sq" style="background:#10b981;"></span> <strong>Sekolah:</strong> Sekolah dasar, menengah, dan kejuruan di jalur bahaya.</div>
+          <div class="leg-item"><span class="badge-sq" style="background:#3b82f6;"></span> <strong>Fasilitas Kesehatan:</strong> Rumah Sakit &amp; Puskesmas rujukan penanganan ISPA.</div>
+          <div class="leg-item"><span class="badge-sq" style="background:#f59e0b;"></span> <strong>Bandara:</strong> Peringatan bahaya partikel abu abrasif bagi ruang udara &amp; mesin pesawat.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
