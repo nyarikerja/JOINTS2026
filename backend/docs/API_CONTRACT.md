@@ -24,28 +24,48 @@ Seluruh contoh respons bersumber dari fixture uji nyata di `docs/fixtures/`.
 
 ---
 
-## 2. Ringkasan Endpoint
+## 2. Ringkasan Seluruh Endpoint Backend (Lapis 1, 2, 3 & Lapisan Spasial)
 
-| Lapisan | Method | Endpoint | Deskripsi |
+| Kategori | Method | Endpoint | Deskripsi Ringkas |
 |---|---|---|---|
-| **Inti (L1)** | `GET` | `/health` | Pemeriksaan kesehatan layanan, status offline, rincian sumber |
-| **Inti (L1)** | `GET` | `/events` | Daftar kejadian pramuat beserta status data |
-| **Inti (L1)** | `GET` | `/events/{event_id}` | Rincian metadata dan titik sumber suatu kejadian |
-| **Inti (L1)** | `POST` | `/simulate` | Memulai komputasi simulasi dispersi partikel ansambel |
-| **Inti (L1)** | `GET` | `/runs/{run_id}` | Memeriksa status dan progres simulasi |
-| **Inti (L1)** | `GET` | `/runs/{run_id}/tiers?t={hour}` | Poligon GeoJSON tiga tingkat peluang (min $\subseteq$ mid $\subseteq$ max) |
-| **Inti (L1)** | `GET` | `/runs/{run_id}/impact` | Estimasi dampak agregat (rentang {min, median, max}) |
-| **Inti (L1)** | `GET` | `/runs/{run_id}/location/{facility_id}` | Kartu keputusan untuk fasilitas (waktu tiba & probabilitas) |
-| **Inti (L1)** | `GET` | `/layers/{layer_name}` | Layer spasial pendukung (hotspots, population, schools, etc.) |
-| **Inti (L1)** | `GET` | `/attributions` | Daftar atribusi sumber data terbuka dan lisensi |
-| **Pembeda (L2)** | `GET` | `/runs/{run_id}/ranking` | Peringkat klaster titik api berdasarkan paparan penduduk |
-| **Pembeda (L2)** | `POST` | `/fire/extinguish` | Simulasi kontra-faktual pemadaman klaster terpilih |
-| **Pembeda (L2)** | `GET` | `/runs/{run_id}/carbon` | Estimasi pelepasan gas karbon CO2e (gambut vs non-gambut) |
-| **Pembeda (L2)** | `GET` | `/runs/{run_id}/land-water` | Dampak abu vulkanik terhadap lahan sawah & sumber air DAS |
-| **Pembeda (L2)** | `GET` | `/runs/{run_id}/rain-effect` | Analisis komparatif pencucian polutan oleh curah hujan |
-| **Pembeda (L2)** | `POST` | `/runs/compare` | Komparasi berdampingan dua skenario run |
-| **Pembeda (L2)** | `POST` | `/runs/sensitivity` | Analisis sensitivitas satu parameter |
-| **Pembeda (L2)** | `GET` | `/runs/{run_id}/advice` | Saran tindakan terverifikasi literatur (D16) |
+| **Sistem & Diagnostik** | `GET` | `/health` | Pemeriksaan kesehatan layanan, status offline, rincian sumber |
+| **Sistem & Diagnostik** | `GET` | `/attributions` | Daftar atribusi sumber data terbuka (PVMBG, BMKG, NASA, WorldPop, OSM) |
+| **Sistem & Diagnostik** | `GET` | `/limits` | Batas komputasi, batas domain spasial, dan transparansi asumsi ilmiah |
+| **Sistem & Diagnostik** | `GET` | `/sources` | Katalog sumber data terbuka terverifikasi & status lisensi |
+| **Katalog Kejadian** | `GET` | `/events` | Daftar lengkap kejadian siap pakai (70 Gunung Api + 36 Hutan Konservasi) |
+| **Katalog Kejadian** | `GET` | `/events/{event_id}` | Rincian metadata geografis, elevasi, koordinat, dan status data kejadian |
+| **Lapisan Peta (GIS)** | `GET` | `/layers/volcanoes-national` | Katalog spasial 70 gunung api aktif PVMBG se-Indonesia (GeoJSON) |
+| **Lapisan Peta (GIS)** | `GET` | `/layers/forests-national` | Katalog spasial 36 kawasan hutan & konservasi nasional (JSON) |
+| **Lapisan Peta (GIS)** | `GET` | `/layers/facilities` | Fasilitas publik nasional (sekolah, RS/faskes, bandara) dalam bbox |
+| **Lapisan Peta (GIS)** | `GET` | `/layers/hotspots?event_id={id}` | Kluster titik api satelit NASA FIRMS (VIIRS & MODIS) |
+| **Lapisan Peta (GIS)** | `GET` | `/layers/coastline` | Garis pantai kepulauan Nusantara resolusi tinggi (GeoJSON) |
+| **Telemetri & Sinkronisasi** | `GET` | `/layers/summary-kpi` | Nilai telemetri KPI dinamis nasional (jumlah gunung per level, total hotspot) |
+| **Telemetri & Sinkronisasi** | `POST` | `/layers/sync-live` | Pemicu sinkronisasi data cuaca & titik api langsung ke API eksternal |
+| **Simulasi Partikel (L1)** | `POST` | `/simulate` | Eksekusi simulasi ansambel adveksi Lagrangian RK2 (Auto / Experiment) |
+| **Simulasi Partikel (L1)** | `GET` | `/runs/{run_id}` | Status dan metadata hasil eksekusi simulasi |
+| **Simulasi Partikel (L1)** | `GET` | `/runs/{run_id}/tiers?t={hour}` | Poligon GeoJSON sebaran abu/asap (P5/Max, P50/Mid, P90/Min) jam T+0 s.d. T+48 |
+| **Simulasi Partikel (L1)** | `GET` | `/runs/{run_id}/particles` | Titik koordinat partikel individu untuk inspeksi & debug |
+| **Estimasi Dampak (L1)** | `GET` | `/runs/{run_id}/impact` | Estimasi dampak agregat berentang `{min, median, max}` (penduduk & faskes) |
+| **Estimasi Dampak (L1)** | `GET` | `/runs/{run_id}/facilities-impacted` | Rincian fasilitas publik terpapar, probabilitas, ETA, & rekomendasi |
+| **Estimasi Dampak (L1)** | `GET` | `/runs/{run_id}/district-summaries` | Ringkasan dampak agregat per kabupaten/kota terdampak |
+| **Fitur Pembeda (L2)** | `GET` | `/runs/{run_id}/ranking` | Peringkat prioritas klaster karhutla berdasarkan risiko paparan populasi |
+| **Fitur Pembeda (L2)** | `POST` | `/fire/extinguish` | Simulasi interaktif kontra-faktual pemadaman titik api terpilih |
+| **Fitur Pembeda (L2)** | `GET` | `/runs/{run_id}/carbon` | Estimasi pelepasan emisi karbon CO2e (lahan gambut vs non-gambut) |
+| **Fitur Pembeda (L2)** | `GET` | `/runs/{run_id}/land-water` | Estimasi dampak abu vulkanik pada lahan pertanian dan air DAS |
+| **Fitur Pembeda (L2)** | `GET` | `/runs/{run_id}/rain-effect` | Analisis komparatif pencucian polutan atmosfer oleh curah hujan |
+| **Fitur Pembeda (L2)** | `POST` | `/runs/compare` | Komparasi berdampingan dua skenario simulasi yang berbeda |
+| **Fitur Pembeda (L2)** | `POST` | `/runs/sensitivity` | Analisis sensitivitas sapuan parameter fisik (tinggi kolom, hujan) |
+| **Fitur Pembeda (L2)** | `GET` | `/runs/{run_id}/advice` | Protokol aksi dini & rekomendasi operasional berbasis bukti |
+| **Fitur Pembeda (L2)** | `GET` | `/runs/{run_id}/severity?t={h}` | Ringkasan metrik keparahan persentil beban abu/konsentrasi PM2.5 |
+| **Fitur Pembeda (L2)** | `GET` | `/runs/{run_id}/arrival` | Peta waktu tiba (*time-of-arrival*) polutan per sektor wilayah |
+| **Bukti Kepercayaan (L3)** | `GET` | `/validation/{event_id}` | Evaluasi validasi lapangan (District Hit Rate, FSS, dampak bandara) |
+| **Bukti Kepercayaan (L3)** | `GET` | `/demo/play/{event_id}` | Urutan keyframe playback pratinjau otomatis untuk demonstrasi juri |
+| **Bukti Kepercayaan (L3)** | `GET` | `/runs/{run_id}/export?format={json\|html}` | Ekspor ringkasan satu halaman (JSON terstruktur & HTML siap cetak) |
+| **Bukti Kepercayaan (L3)** | `GET` | `/runs/{run_id}/lahar-warning` | Analisis peringatan dini potensi lahar hujan sekunder di DAS sungai |
+| **Kesehatan Masyarakat (L3)** | `GET` | `/runs/{run_id}/health-guidance` | Rekomendasi masker (N95 vs bedah), peringatan lensa kontak, & kelompok rentan |
+| **Kesiapsiagaan Dini (L3)** | `GET` | `/runs/{run_id}/decision-matrix` | Matriks pemicu aksi (*Trigger Action Matrix*) & checklist kesiapsiagaan |
+| **Kesiapsiagaan Dini (L3)** | `GET` | `/runs/{run_id}/cross-border` | Analisis pelacakan risiko asap lintas batas (*Transboundary Haze*) |
+| **Kesiapsiagaan Dini (L3)** | `GET` | `/runs/{run_id}/evacuation-routes` | Peta rute evakuasi aman dan penetapan zona larangan (KRB Buffer) |
 
 ---
 
