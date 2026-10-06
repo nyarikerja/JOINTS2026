@@ -8,14 +8,69 @@ import json
 
 from fastapi import APIRouter, HTTPException
 
-from app.core.config import EVENTS_DIR
+from app.core.config import BACKEND_DIR, EVENTS_DIR
 
 router = APIRouter(tags=["events"])
+
+NATIONAL_KARHUTLA = {
+    "live_kalimantan": {
+        "event_id": "live_kalimantan",
+        "hazard": "fire",
+        "name": "Karhutla Gambut Kalimantan (NASA FIRMS NRT)",
+        "province": "Kalimantan Tengah",
+        "coordinates": {"latitude": -2.5, "longitude": 113.5}
+    },
+    "karhutla_riau": {
+        "event_id": "karhutla_riau",
+        "hazard": "fire",
+        "name": "Karhutla Gambut Riau (Siak & Pelalawan)",
+        "province": "Riau",
+        "coordinates": {"latitude": 0.75, "longitude": 101.85}
+    },
+    "karhutla_sumsel": {
+        "event_id": "karhutla_sumsel",
+        "hazard": "fire",
+        "name": "Karhutla Gambut Sumatera Selatan (OKI)",
+        "province": "Sumatera Selatan",
+        "coordinates": {"latitude": -3.45, "longitude": 105.15}
+    },
+    "karhutla_jambi": {
+        "event_id": "karhutla_jambi",
+        "hazard": "fire",
+        "name": "Karhutla Gambut Jambi (Muaro Jambi)",
+        "province": "Jambi",
+        "coordinates": {"latitude": -1.45, "longitude": 103.80}
+    },
+    "karhutla_kalbar": {
+        "event_id": "karhutla_kalbar",
+        "hazard": "fire",
+        "name": "Karhutla Gambut Kalimantan Barat (Ketapang)",
+        "province": "Kalimantan Barat",
+        "coordinates": {"latitude": -1.85, "longitude": 109.85}
+    },
+    "karhutla_kalsel": {
+        "event_id": "karhutla_kalsel",
+        "hazard": "fire",
+        "name": "Karhutla Gambut Kalimantan Selatan (Banjarbaru)",
+        "province": "Kalimantan Selatan",
+        "coordinates": {"latitude": -3.45, "longitude": 114.85}
+    },
+    "karhutla_papua": {
+        "event_id": "karhutla_papua",
+        "hazard": "fire",
+        "name": "Karhutla Savana Papua Selatan (Merauke)",
+        "province": "Papua Selatan",
+        "coordinates": {"latitude": -8.45, "longitude": 140.40}
+    }
+}
 
 
 @router.get("/events")
 def list_events():
     events_list = []
+    seen_ids = set()
+
+    # 1. Muat event yang sudah memiliki direktori di data/events/
     if EVENTS_DIR.exists():
         for d in sorted(EVENTS_DIR.iterdir()):
             if d.is_dir():
@@ -23,8 +78,9 @@ def list_events():
                 if meta_file.exists():
                     try:
                         meta = json.loads(meta_file.read_text(encoding="utf-8"))
+                        eid = meta.get("event_id", d.name)
                         events_list.append({
-                            "event_id": meta.get("event_id", d.name),
+                            "event_id": eid,
                             "hazard": meta.get("hazard"),
                             "name": meta.get("name"),
                             "start_utc": meta.get("start_utc"),
@@ -33,14 +89,88 @@ def list_events():
                             "n_members": meta.get("n_members"),
                             "data_status": meta.get("data_status"),
                         })
+                        seen_ids.add(eid)
                     except Exception:
                         pass
+
+    # 2. Tambahkan seluruh gunung api dari katalog 70 gunung api nasional
+    volc_path = BACKEND_DIR / "data" / "layers" / "volcanoes_indonesia.geojson"
+    if volc_path.exists():
+        try:
+            geo = json.loads(volc_path.read_text(encoding="utf-8"))
+            for f in geo.get("features", []):
+                p = f.get("properties", {})
+                eid = p.get("id") or p.get("event_id")
+                if eid and eid not in seen_ids:
+                    events_list.append({
+                        "event_id": eid,
+                        "hazard": "volcano",
+                        "name": f"[{p.get('level_name', 'Level I')}] {p.get('name')} ({p.get('province')})",
+                        "region": p.get("region", "Indonesia"),
+                        "elevation_m": p.get("elevation_m"),
+                        "members_source": "open_meteo_live_forecast_api",
+                        "n_members": 51,
+                        "data_status": {"weather": "open_meteo_live_or_ensemble", "vona": "pvmbg_national_catalog"}
+                    })
+                    seen_ids.add(eid)
+        except Exception:
+            pass
+
+    # 3. Tambahkan seluruh zona karhutla nasional
+    for eid, k in NATIONAL_KARHUTLA.items():
+        if eid not in seen_ids:
+            events_list.append({
+                "event_id": eid,
+                "hazard": "fire",
+                "name": k["name"],
+                "province": k["province"],
+                "members_source": "open_meteo_live_forecast_api",
+                "n_members": 51,
+                "data_status": {"weather": "open_meteo_live_or_ensemble", "firms": "live_nrt_cluster"}
+            })
+            seen_ids.add(eid)
+
     return {"events": events_list}
 
 
 @router.get("/events/{event_id}")
 def get_event_detail(event_id: str):
     meta_file = EVENTS_DIR / event_id / "meta.json"
-    if not meta_file.exists():
-        raise HTTPException(status_code=404, detail=f"Event '{event_id}' tidak ditemukan.")
-    return json.loads(meta_file.read_text(encoding="utf-8"))
+    if meta_file.exists():
+        return json.loads(meta_file.read_text(encoding="utf-8"))
+
+    # Cari di katalog gunung api nasional
+    volc_path = BACKEND_DIR / "data" / "layers" / "volcanoes_indonesia.geojson"
+    if volc_path.exists():
+        try:
+            geo = json.loads(volc_path.read_text(encoding="utf-8"))
+            for f in geo.get("features", []):
+                p = f.get("properties", {})
+                if p.get("id") == event_id or p.get("event_id") == event_id:
+                    c = f["geometry"]["coordinates"]
+                    return {
+                        "event_id": event_id,
+                        "hazard": "volcano",
+                        "name": f"Erupsi {p.get('name')} ({p.get('province')})",
+                        "elevation_m": p.get("elevation_m"),
+                        "alert_level_at_event": p.get("level_name"),
+                        "restricted_radius_km": p.get("radius_bahaya_km", 5.0),
+                        "coordinates": {"latitude": c[1], "longitude": c[0]},
+                        "source": "PVMBG Badan Geologi ESDM RI (Katalog 70 Gunung Api Nasional)"
+                    }
+        except Exception:
+            pass
+
+    # Cari di katalog karhutla nasional
+    if event_id in NATIONAL_KARHUTLA:
+        k = NATIONAL_KARHUTLA[event_id]
+        return {
+            "event_id": event_id,
+            "hazard": "fire",
+            "name": k["name"],
+            "province": k["province"],
+            "coordinates": k["coordinates"],
+            "source": "NASA FIRMS NRT (Zona Karhutla Nasional)"
+        }
+
+    raise HTTPException(status_code=404, detail=f"Event '{event_id}' tidak ditemukan di katalog nasional.")

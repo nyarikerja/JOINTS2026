@@ -208,6 +208,9 @@ def get_exposed_facilities_list(
     # Muat seluruh fasilitas nasional untuk kalkulasi rujukan evakuasi terdekat & aman
     all_facilities = OverpassIngest.load_all_facilities()
     all_hospitals = [f for f in all_facilities if f.get("facility_type") == "healthcare"]
+    for f in facilities:
+        if f.get("facility_type") == "healthcare" and f not in all_hospitals:
+            all_hospitals.append(f)
 
     # Evaluasi status paparan & keamanan untuk seluruh rumah sakit
     hospital_eval_list = []
