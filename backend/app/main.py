@@ -45,6 +45,20 @@ if frontend_dummy_dir.exists():
     app.mount("/dummy", StaticFiles(directory=str(frontend_dummy_dir), html=True), name="dummy")
 
 
+from fastapi.responses import Response
+
+FAVICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="6" fill="#0f172a"/>
+  <polygon points="16,4 4,28 28,28" fill="#f59e0b" stroke="#ffffff" stroke-width="1.5"/>
+  <circle cx="16" cy="18" r="3.5" fill="#ef4444"/>
+</svg>"""
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+def get_favicon():
+    return Response(content=FAVICON_SVG, media_type="image/svg+xml", headers={"Cache-Control": "public, max-age=86400"})
+
+
 @app.get("/")
 def root():
     return {

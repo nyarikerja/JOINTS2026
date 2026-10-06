@@ -9,7 +9,8 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException, Query
 
-from app.core.config import EVENTS_DIR, RUNS_DIR
+from app.api.events import NATIONAL_KARHUTLA
+from app.core.config import BACKEND_DIR, EVENTS_DIR, RUNS_DIR
 from app.engine.grid import SimulationGrid
 from app.engine.simulator import SimulationRunner
 from app.impact.exposure import (
@@ -24,27 +25,21 @@ from app.schemas.simulation import SimulationRequest
 
 router = APIRouter(tags=["simulation"])
 
-# In-memory store untuk run aktif yang membawa array lengkap
+# In-memory store untuk run aktif yang membawa array lengkap (dibatasi 10 entri untuk mencegah kebocoran memori)
 RUNS_CACHE: Dict[str, Dict[str, Any]] = {}
-
-
-NATIONAL_KARHUTLA = {
-    "karhutla_riau": {"name": "Karhutla Gambut Riau (Siak & Pelalawan)", "lat": 0.75, "lon": 101.85, "province": "Riau"},
-    "karhutla_sumsel": {"name": "Karhutla Gambut Sumatera Selatan (OKI)", "lat": -3.45, "lon": 105.15, "province": "Sumatera Selatan"},
-    "karhutla_jambi": {"name": "Karhutla Gambut Jambi (Muaro Jambi)", "lat": -1.45, "lon": 103.80, "province": "Jambi"},
-    "karhutla_kalbar": {"name": "Karhutla Gambut Kalimantan Barat (Ketapang)", "lat": -1.85, "lon": 109.85, "province": "Kalimantan Barat"},
-    "karhutla_kalsel": {"name": "Karhutla Gambut Kalimantan Selatan (Banjarbaru)", "lat": -3.45, "lon": 114.85, "province": "Kalimantan Selatan"},
-    "karhutla_papua": {"name": "Karhutla Savana Papua Selatan (Merauke)", "lat": -8.45, "lon": 140.40, "province": "Papua Selatan"},
-}
 
 
 @router.post("/simulate")
 def start_simulation(req: SimulationRequest):
     import datetime
     import json
+
     import numpy as np
 
-    event_id = req.source.event_id
+    event_id = (req.source.event_id or "").strip()
+    if not event_id and (req.source.latitude is None or req.source.longitude is None):
+        event_id = "hutan_sebangau" if req.hazard == "fire" else "anak_krakatau_2026_09"
+
     event_dir = EVENTS_DIR / event_id
     meta_file = event_dir / "meta.json"
 
@@ -98,14 +93,18 @@ def start_simulation(req: SimulationRequest):
 
         elif event_id in NATIONAL_KARHUTLA:
             k = NATIONAL_KARHUTLA[event_id]
+            coords = k.get("coordinates", {})
+            k_lat = float(coords.get("latitude") if "latitude" in coords else k.get("lat", -2.5))
+            k_lon = float(coords.get("longitude") if "longitude" in coords else k.get("lon", 113.5))
             event_meta = {
                 "event_id": event_id,
                 "hazard": "fire",
                 "name": k["name"],
+                "province": k.get("province", "Indonesia"),
                 "start_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                 "duration_h": 24.0,
-                "coordinates": {"latitude": k["lat"], "longitude": k["lon"]},
-                "bbox": [k["lon"] - 0.7, k["lat"] - 0.7, k["lon"] + 0.7, k["lat"] + 0.7],
+                "coordinates": {"latitude": k_lat, "longitude": k_lon},
+                "bbox": [k_lon - 0.7, k_lat - 0.7, k_lon + 0.7, k_lat + 0.7],
                 "source": "NASA FIRMS NRT (Zona Karhutla Nasional)",
                 "members_source": "open_meteo_live_forecast_api",
                 "n_members": req.n_members,
@@ -138,8 +137,42 @@ def start_simulation(req: SimulationRequest):
             }
             event_dir.mkdir(parents=True, exist_ok=True)
             meta_file.write_text(json.dumps(event_meta, indent=2, ensure_ascii=False), encoding="utf-8")
+
         else:
-            raise HTTPException(status_code=404, detail=f"Event '{event_id}' tidak ditemukan di data/events/ maupun katalog nasional.")
+            # Cek katalog 36 hutan nasional
+            forest_path = BACKEND_DIR / "data" / "layers" / "forests_indonesia.json"
+            forest_obj = None
+            if forest_path.exists():
+                try:
+                    f_data = json.loads(forest_path.read_text(encoding="utf-8"))
+                    for f_item in f_data.get("forests", []):
+                        if f_item.get("id") == event_id:
+                            forest_obj = f_item
+                            break
+                except Exception:
+                    pass
+
+            if forest_obj:
+                f_lat = float(forest_obj["lat"])
+                f_lon = float(forest_obj["lon"])
+                event_meta = {
+                    "event_id": event_id,
+                    "hazard": "fire",
+                    "name": forest_obj["name"],
+                    "province": forest_obj.get("province", "Indonesia"),
+                    "start_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                    "duration_h": 24.0,
+                    "coordinates": {"latitude": f_lat, "longitude": f_lon},
+                    "bbox": [f_lon - 0.7, f_lat - 0.7, f_lon + 0.7, f_lat + 0.7],
+                    "source": "Katalog 36 Kawasan Hutan & Konservasi Nasional",
+                    "members_source": "open_meteo_live_forecast_api",
+                    "n_members": req.n_members,
+                    "data_status": {"weather": "open_meteo_live_or_ensemble", "firms": "live_nrt_cluster"}
+                }
+                event_dir.mkdir(parents=True, exist_ok=True)
+                meta_file.write_text(json.dumps(event_meta, indent=2, ensure_ascii=False), encoding="utf-8")
+            else:
+                raise HTTPException(status_code=404, detail=f"Event '{event_id}' tidak ditemukan di data/events/ maupun katalog nasional.")
 
     # 2. Muat data cuaca
     try:
@@ -180,7 +213,10 @@ def start_simulation(req: SimulationRequest):
     runner = SimulationRunner(req)
     run_output = runner.run(event_meta, weather_data, hotspots)
 
-    # Simpan di memori
+    # Simpan di memori dengan pembatasan LRU (maksimal 10 run)
+    if len(RUNS_CACHE) >= 10:
+        oldest_key = next(iter(RUNS_CACHE))
+        del RUNS_CACHE[oldest_key]
     RUNS_CACHE[runner.run_id] = run_output
 
     return {

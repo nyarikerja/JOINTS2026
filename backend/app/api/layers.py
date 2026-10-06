@@ -24,10 +24,11 @@ def get_layer(
         parts = [float(p.strip()) for p in bbox.split(",")]
         w, s, e, n = parts[0], parts[1], parts[2], parts[3]
     else:
-        # Default cakupan Indonesia barat-tengah
-        w, s, e, n = 95.0, -11.0, 120.0, 6.0
+        # Cakupan Penuh Wilayah Kedaulatan Republik Indonesia (Sabang s.d. Merauke: 94° - 142° BT)
+        w, s, e, n = 94.0, -12.0, 142.0, 7.0
 
     if name == "facilities":
+        # Muat fasilitas di dalam bbox (sekarang mencakup seluruh Indonesia)
         facilities = OverpassIngest.get_facilities_in_bbox(s, n, w, e)
         features = []
         for fac in facilities:
@@ -47,7 +48,8 @@ def get_layer(
         return {"type": "FeatureCollection", "features": features}
 
     elif name == "hotspots":
-        hotspots = FirmsIngest.load_event_hotspots(event_id or "live_kalimantan")
+        target_event = event_id if event_id and event_id not in ["all", "national", "indonesia"] else "national"
+        hotspots = FirmsIngest.load_event_hotspots(target_event)
         features = []
         for h in hotspots:
             lat = h["latitude"]
@@ -69,12 +71,19 @@ def get_layer(
         return {"type": "FeatureCollection", "features": features}
 
     elif name == "coastline":
-        # Garis pantai sederhana untuk basemap cadangan offline
-        # Menghubungkan titik garis pantai utama Selat Sunda dan Kalimantan
+        import json
+
+        from app.core.config import BACKEND_DIR
+        coast_path = BACKEND_DIR / "data" / "layers" / "indonesia_coastline.geojson"
+        if coast_path.exists():
+            try:
+                return json.loads(coast_path.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+
+        # Fallback garis pantai sederhana Selat Sunda
         sunda_coast = [
-            # Garis pantai Banten
             [[105.8, -6.0], [105.9, -6.3], [105.8, -6.5], [105.5, -6.8], [105.2, -6.9]],
-            # Garis pantai Lampung Selatan
             [[105.2, -5.4], [105.5, -5.6], [105.7, -5.8], [105.8, -5.9]]
         ]
         features = []
@@ -98,6 +107,16 @@ def get_layer(
             with open(volc_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {"type": "FeatureCollection", "features": []}
+
+    elif name in ["forests", "forests-national"]:
+        import json
+
+        from app.core.config import BACKEND_DIR
+        forest_path = BACKEND_DIR / "data" / "layers" / "forests_indonesia.json"
+        if forest_path.exists():
+            with open(forest_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        return {"forests": []}
 
     elif name == "summary-kpi":
         import datetime
@@ -123,9 +142,9 @@ def get_layer(
                     else:
                         lvl1 += 1
 
-        hotspots = FirmsIngest.load_event_hotspots("live_kalimantan")
+        hotspots = FirmsIngest.load_event_hotspots("national")
         n_hotspots = len(hotspots)
-        high_conf = sum(1 for h in hotspots if h.get("confidence") == "high" or (isinstance(h.get("confidence"), (int, float)) and h.get("confidence") > 70))
+        high_conf = sum(1 for h in hotspots if h.get("confidence") in ["high", "h"] or (isinstance(h.get("confidence"), (int, float)) and h.get("confidence") > 70))
         high_pct = round((high_conf / n_hotspots * 100), 1) if n_hotspots > 0 else 0.0
 
         now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
@@ -164,7 +183,7 @@ def trigger_live_sync():
         openmeteo_status = "cached_offline"
     latency_ms = round((time.perf_counter() - t0) * 1000, 1)
 
-    hotspots = FirmsIngest.load_event_hotspots("live_kalimantan")
+    hotspots = FirmsIngest.load_event_hotspots("national")
     now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
     return {
         "status": "synchronized",

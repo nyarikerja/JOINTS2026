@@ -61,8 +61,24 @@ NATIONAL_KARHUTLA = {
         "name": "Karhutla Savana Papua Selatan (Merauke)",
         "province": "Papua Selatan",
         "coordinates": {"latitude": -8.45, "longitude": 140.40}
-    }
 }
+
+# Muat 36 Kawasan Hutan & Konservasi Nasional dari forests_indonesia.json jika tersedia
+_forests_path = BACKEND_DIR / "data" / "layers" / "forests_indonesia.json"
+if _forests_path.exists():
+    try:
+        _f_list = json.loads(_forests_path.read_text(encoding="utf-8"))
+        for _f in _f_list:
+            NATIONAL_KARHUTLA[_f["id"]] = {
+                "event_id": _f["id"],
+                "hazard": "fire",
+                "name": _f["name"],
+                "forest_type": _f.get("forest_type", "Kawasan Hutan"),
+                "province": _f["province"],
+                "coordinates": {"latitude": _f["lat"], "longitude": _f["lon"]}
+            }
+    except Exception:
+        pass
 
 
 @router.get("/events")
