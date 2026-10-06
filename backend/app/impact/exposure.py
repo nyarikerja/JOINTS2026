@@ -48,7 +48,22 @@ def calculate_impact_ranges(
     Menghitung rentang dampak lintas anggota ensemble.
     Semua metrik dikembalikan dalam bentuk {min, median, max}.
     """
+    if "impact" in run_output and isinstance(run_output["impact"], dict) and "population_exposed" in run_output["impact"]:
+        return run_output["impact"]
+
     hourly_masks = run_output.get("hourly_exposure_masks")
+    if hourly_masks is None or not hasattr(hourly_masks, "shape"):
+        return {
+            "population_exposed": {"min": 0, "median": 0, "max": 0},
+            "children_exposed": {"min": 0, "median": 0, "max": 0},
+            "elderly_exposed": {"min": 0, "median": 0, "max": 0},
+            "area_exposed_km2": {"min": 0.0, "median": 0.0, "max": 0.0},
+            "schools_exposed": {"min": 0, "median": 0, "max": 0},
+            "healthcare_exposed": {"min": 0, "median": 0, "max": 0},
+            "airports_exposed": {"min": 0, "median": 0, "max": 0},
+            "ispu": {"available": False, "reason": "Matriks simulasi tidak tersedia pada ringkasan run."}
+        }
+
     n_hours, n_members, n_lat, n_lon = hourly_masks.shape
 
     # Masker kumulatif per anggota: sel yang pernah terkena setidaknya satu jam

@@ -289,6 +289,10 @@ class SimulationRunner:
             }
         }
 
+        # Precompute impact ranges agar selalu tersimpan di berkas JSON disk
+        from app.impact.exposure import calculate_impact_ranges
+        run_output["impact"] = calculate_impact_ranges(run_output, grid)
+
         # Simpan ke data/runs/{run_id}.json
         save_path = RUNS_DIR / f"{self.run_id}.json"
         # Buat representasi json yang ringan tanpa array numpy raksasa

@@ -217,23 +217,28 @@ def start_simulation(req: SimulationRequest):
     hotspots = []
     if req.hazard == "fire":
         hotspots = FirmsIngest.load_event_hotspots(event_id, overrides=req.overrides)
-        if not hotspots:
+        total_frp = sum(float(h.get("frp", 0.0)) for h in hotspots)
+
+        # Jika mode 'experiment' (skenario uji coba) atau custom point dan belum ada titik api signifikan (< 40 MW),
+        # sediakan klaster titik api skenario agar pengguna dapat mengamati simulasi dispersi asap
+        if (req.mode == "experiment" and total_frp < 40.0) or (not hotspots and req.mode == "experiment") or (not hotspots and req.source.latitude is not None):
             coords = event_meta.get("coordinates", {})
             c_lat = coords.get("latitude") or coords.get("center_lat", -2.5)
             c_lon = coords.get("longitude") or coords.get("center_lon", 113.5)
             rng_f = np.random.default_rng(req.seed)
+            hotspots = []
             for i in range(18):
-                d_lat = rng_f.normal(0, 0.05)
-                d_lon = rng_f.normal(0, 0.05)
-                frp_val = float(rng_f.uniform(25.0, 180.0))
+                d_lat = float(rng_f.normal(0, 0.04))
+                d_lon = float(rng_f.normal(0, 0.04))
+                frp_val = float(rng_f.uniform(45.0, 160.0))
                 hotspots.append({
-                    "id": f"hotspot_{i}",
+                    "id": f"scenario_hotspot_{i}",
                     "latitude": float(c_lat + d_lat),
                     "longitude": float(c_lon + d_lon),
                     "frp": frp_val,
                     "confidence": "high",
-                    "acq_date": "live_nrt",
-                    "acq_time": "0600",
+                    "acq_date": "scenario_experiment",
+                    "acq_time": "1200",
                     "is_active": True
                 })
 
