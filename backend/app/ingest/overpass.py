@@ -147,18 +147,6 @@ class OverpassIngest:
                 if facility_type is None or fac["facility_type"] == facility_type:
                     results.append(fac)
 
-        # Jika di dalam bounding box ketat belum terdaftar fasilitas (misal titik laut lepas),
-        # ambil fasilitas nyata terdekat dari katalog nasional agar tetap realistis dan tidak ada fasilitas di laut
-        if len(results) == 0 and facilities:
-            mid_lat = (lat_min + lat_max) / 2.0
-            mid_lon = (lon_min + lon_max) / 2.0
-            def dist_sq(f):
-                return (f["latitude"] - mid_lat) ** 2 + (f["longitude"] - mid_lon) ** 2
-            sorted_facs = sorted(facilities, key=dist_sq)
-            for f in sorted_facs[:5]:
-                if facility_type is None or f["facility_type"] == facility_type:
-                    results.append(f)
-
         return results
 
     @classmethod

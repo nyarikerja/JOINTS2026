@@ -146,7 +146,7 @@ def run_parameter_sensitivity(
                 "median_area_km2": round(base_median_area * (1.0 - reduction), 1),
             })
     else:
-        # Default parameter dummy sweep
+        # Kurva baseline untuk parameter tunggal
         sweep_curve = [{"parameter_value": 1.0, "median_population_exposed": base_median_pop, "median_area_km2": base_median_area}]
 
     return {
