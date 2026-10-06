@@ -106,6 +106,7 @@ DEMO_FACILITIES = [
 class OverpassIngest:
     _cached_facilities: List[Dict[str, Any]] | None = None
     _cached_mtime: float = 0.0
+    _synth_cache: Dict[str, Dict[str, Any]] = {}
 
     @classmethod
     def load_all_facilities(cls, force_reload: bool = False) -> List[Dict[str, Any]]:
@@ -200,6 +201,7 @@ class OverpassIngest:
                 }
             ]
             for s in synth:
+                cls._synth_cache[s["facility_id"]] = s
                 if facility_type is None or s["facility_type"] == facility_type:
                     results.append(s)
 
@@ -207,6 +209,8 @@ class OverpassIngest:
 
     @classmethod
     def get_facility_by_id(cls, facility_id: str) -> Dict[str, Any] | None:
+        if facility_id in cls._synth_cache:
+            return cls._synth_cache[facility_id]
         facilities = cls.load_all_facilities()
         for fac in facilities:
             if fac["facility_id"] == facility_id:

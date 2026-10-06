@@ -20,7 +20,7 @@ class RangeMetric(BaseModel):
 
 
 class SimulationSource(BaseModel):
-    event_id: str = Field(..., description="ID event terdaftar di data/events/ atau ID kustom")
+    event_id: Optional[str] = Field(None, description="ID event terdaftar di data/events/ atau ID kustom")
     latitude: Optional[float] = Field(None, ge=-12.0, le=7.0, description="Lintang kustom (-12 s.d. 7)")
     longitude: Optional[float] = Field(None, ge=94.0, le=142.0, description="Bujur kustom (94 s.d. 142)")
     name: Optional[str] = Field(None, description="Nama lokasi kustom")

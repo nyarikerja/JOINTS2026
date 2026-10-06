@@ -256,7 +256,7 @@ class SimulationRunner:
             "run_id": self.run_id,
             "hazard": hazard,
             "mode": self.request.mode,
-            "event_id": self.request.source.event_id,
+            "event_id": event_meta.get("event_id") or self.request.source.event_id,
             "status": "completed",
             "scenario_label": scenario_label,
             "members_source": members_source,

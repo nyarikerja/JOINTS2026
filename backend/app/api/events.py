@@ -67,8 +67,8 @@ NATIONAL_KARHUTLA = {
 # Muat 36 Kawasan Hutan & Konservasi Nasional dari forests_indonesia.json jika tersedia
 _forests_path = BACKEND_DIR / "data" / "layers" / "forests_indonesia.json"
 if _forests_path.exists():
-    try:
-        _f_list = json.loads(_forests_path.read_text(encoding="utf-8"))
+        _f_data = json.loads(_forests_path.read_text(encoding="utf-8"))
+        _f_list = _f_data if isinstance(_f_data, list) else _f_data.get("forests", [])
         for _f in _f_list:
             NATIONAL_KARHUTLA[_f["id"]] = {
                 "event_id": _f["id"],
@@ -152,6 +152,10 @@ def list_events():
 
 @router.get("/events/{event_id}")
 def get_event_detail(event_id: str):
+    clean_id = (event_id or "").strip()
+    if not clean_id:
+        raise HTTPException(status_code=400, detail="ID event tidak boleh kosong.")
+    event_id = clean_id
     meta_file = EVENTS_DIR / event_id / "meta.json"
     if meta_file.exists():
         return json.loads(meta_file.read_text(encoding="utf-8"))
@@ -195,7 +199,8 @@ def get_event_detail(event_id: str):
     if forest_path.exists():
         try:
             f_data = json.loads(forest_path.read_text(encoding="utf-8"))
-            for f_item in f_data:
+            f_list = f_data if isinstance(f_data, list) else f_data.get("forests", [])
+            for f_item in f_list:
                 if f_item.get("id") == event_id:
                     return {
                         "event_id": event_id,

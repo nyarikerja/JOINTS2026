@@ -37,8 +37,13 @@ def start_simulation(req: SimulationRequest):
     import numpy as np
 
     event_id = (req.source.event_id or "").strip()
-    if not event_id and (req.source.latitude is None or req.source.longitude is None):
-        event_id = "hutan_sebangau" if req.hazard == "fire" else "anak_krakatau_2026_09"
+    if not event_id:
+        if req.source.latitude is not None and req.source.longitude is not None:
+            import hashlib
+            coord_hash = hashlib.md5(f"{float(req.source.latitude):.4f}_{float(req.source.longitude):.4f}".encode()).hexdigest()[:8]
+            event_id = f"custom_{req.hazard}_{coord_hash}"
+        else:
+            event_id = "hutan_sebangau" if req.hazard == "fire" else "anak_krakatau_2026_09"
 
     event_dir = EVENTS_DIR / event_id
     meta_file = event_dir / "meta.json"
@@ -143,9 +148,9 @@ def start_simulation(req: SimulationRequest):
             forest_path = BACKEND_DIR / "data" / "layers" / "forests_indonesia.json"
             forest_obj = None
             if forest_path.exists():
-                try:
                     f_data = json.loads(forest_path.read_text(encoding="utf-8"))
-                    for f_item in f_data.get("forests", []):
+                    f_list = f_data if isinstance(f_data, list) else f_data.get("forests", [])
+                    for f_item in f_list:
                         if f_item.get("id") == event_id:
                             forest_obj = f_item
                             break

@@ -23,6 +23,8 @@ class OpenMeteoIngest:
             meta_file = EVENTS_DIR / event_id / "meta.json"
             if meta_file.exists():
                 try:
+                    from app.core.offline import assert_online_allowed
+                    assert_online_allowed("Open-Meteo Live API")
                     import urllib.request
                     meta = json.loads(meta_file.read_text(encoding="utf-8"))
                     coords = meta.get("coordinates", {})
