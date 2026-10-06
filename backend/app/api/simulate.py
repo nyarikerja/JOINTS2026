@@ -148,6 +148,7 @@ def start_simulation(req: SimulationRequest):
             forest_path = BACKEND_DIR / "data" / "layers" / "forests_indonesia.json"
             forest_obj = None
             if forest_path.exists():
+                try:
                     f_data = json.loads(forest_path.read_text(encoding="utf-8"))
                     f_list = f_data if isinstance(f_data, list) else f_data.get("forests", [])
                     for f_item in f_list:

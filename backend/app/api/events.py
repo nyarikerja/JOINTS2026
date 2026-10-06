@@ -67,6 +67,7 @@ NATIONAL_KARHUTLA = {
 # Muat 36 Kawasan Hutan & Konservasi Nasional dari forests_indonesia.json jika tersedia
 _forests_path = BACKEND_DIR / "data" / "layers" / "forests_indonesia.json"
 if _forests_path.exists():
+    try:
         _f_data = json.loads(_forests_path.read_text(encoding="utf-8"))
         _f_list = _f_data if isinstance(_f_data, list) else _f_data.get("forests", [])
         for _f in _f_list:
