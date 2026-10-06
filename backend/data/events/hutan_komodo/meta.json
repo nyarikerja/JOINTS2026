@@ -1,0 +1,26 @@
+﻿{
+    "area_ha":  173300,
+    "bbox":  [
+                 118.85,
+                 -9.25,
+                 120.25,
+                 -7.85
+             ],
+    "duration_h":  24,
+    "start_utc":  "2026-10-06T00:00:00Z",
+    "coordinates":  {
+                        "longitude":  119.55,
+                        "center_lon":  119.55,
+                        "center_lat":  -8.55,
+                        "latitude":  -8.55
+                    },
+    "risk_level":  "Rawan",
+    "name":  "Sabana Padar \u0026 Loh Liang - TN Komodo (NTT)",
+    "province":  "Nusa Tenggara Timur",
+    "forest_type":  "Sabana Kepulauan Kering",
+    "region":  "Bali \u0026 Nusa Tenggara",
+    "hazard":  "fire",
+    "event_id":  "hutan_komodo",
+    "description":  "Sabana padang rumput kepulauan habitat komodo dengan curah hujan tahunan sangat rendah.",
+    "source":  "NASA FIRMS NRT (Satelit VIIRS SNPP \u0026 NOAA-20)"
+}

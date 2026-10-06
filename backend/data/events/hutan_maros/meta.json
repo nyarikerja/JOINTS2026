@@ -1,0 +1,26 @@
+﻿{
+    "area_ha":  43750,
+    "bbox":  [
+                 119.05,
+                 -5.65,
+                 120.45,
+                 -4.25
+             ],
+    "duration_h":  24,
+    "start_utc":  "2026-10-06T00:00:00Z",
+    "coordinates":  {
+                        "longitude":  119.75,
+                        "center_lon":  119.75,
+                        "center_lat":  -4.95,
+                        "latitude":  -4.95
+                    },
+    "risk_level":  "Waspada",
+    "name":  "Hutan Karst Bantimurung (Maros, Sulsel)",
+    "province":  "Sulawesi Selatan",
+    "forest_type":  "Hutan Karst \u0026 Lindung Perbukitan",
+    "region":  "Sulawesi",
+    "hazard":  "fire",
+    "event_id":  "hutan_maros",
+    "description":  "Kawasan menara karst terluas kedua di dunia dengan serasah kering di ceruk-ceruk tebing kapur.",
+    "source":  "NASA FIRMS NRT (Satelit VIIRS SNPP \u0026 NOAA-20)"
+}

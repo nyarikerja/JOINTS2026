@@ -1,0 +1,27 @@
+{
+  "event_id": "karhutla_jambi",
+  "hazard": "fire",
+  "name": "Karhutla Gambut Jambi (Muaro Jambi)",
+  "province": "Jambi",
+  "start_utc": "2026-10-06T00:00:00Z",
+  "duration_h": 24.0,
+  "coordinates": {
+    "latitude": -1.45,
+    "longitude": 103.8,
+    "center_lat": -1.45,
+    "center_lon": 103.8
+  },
+  "bbox": [
+    103.0,
+    -2.25,
+    104.6,
+    -0.65
+  ],
+  "source": "NASA FIRMS NRT (Satelit VIIRS SNPP & NOAA-20)",
+  "members_source": "open_meteo_live_forecast_api",
+  "description": "Kebakaran semak belukar dan gambut di kawasan penyangga Muaro Jambi dan Tanjung Jabung Timur.",
+  "data_status": {
+    "weather": "open_meteo_live_or_ensemble",
+    "firms": "calibrated_nrt_cluster"
+  }
+}

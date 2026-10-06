@@ -1,0 +1,26 @@
+﻿{
+    "area_ha":  71645,
+    "bbox":  [
+                 117.3,
+                 -8.95,
+                 118.7,
+                 -7.55
+             ],
+    "duration_h":  24,
+    "start_utc":  "2026-10-06T00:00:00Z",
+    "coordinates":  {
+                        "longitude":  118,
+                        "center_lon":  118,
+                        "center_lat":  -8.25,
+                        "latitude":  -8.25
+                    },
+    "risk_level":  "Rawan",
+    "name":  "Sabana Kaldera TN Gunung Tambora (Bima, NTB)",
+    "province":  "Nusa Tenggara Barat",
+    "forest_type":  "Sabana Lereng Gunung \u0026 Kaldera",
+    "region":  "Bali \u0026 Nusa Tenggara",
+    "hazard":  "fire",
+    "event_id":  "hutan_tambora",
+    "description":  "Padang rumput Doro Ncanga di kaki Tambora tempat penggembalaan ternak dengan sabana mudah terbakar.",
+    "source":  "NASA FIRMS NRT (Satelit VIIRS SNPP \u0026 NOAA-20)"
+}

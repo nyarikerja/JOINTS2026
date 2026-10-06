@@ -1,0 +1,26 @@
+﻿{
+    "area_ha":  1375350,
+    "bbox":  [
+                 100.75,
+                 -2.85,
+                 102.15,
+                 -1.45
+             ],
+    "duration_h":  24,
+    "start_utc":  "2026-10-06T00:00:00Z",
+    "coordinates":  {
+                        "longitude":  101.45,
+                        "center_lon":  101.45,
+                        "center_lat":  -2.15,
+                        "latitude":  -2.15
+                    },
+    "risk_level":  "Waspada",
+    "name":  "TN Kerinci Seblat (Jambi \u0026 Sumbar)",
+    "province":  "Jambi",
+    "forest_type":  "Hutan Pegunungan Tropis",
+    "region":  "Sumatera",
+    "hazard":  "fire",
+    "event_id":  "hutan_kerinci_seblat",
+    "description":  "Taman nasional terluas di Sumatera dengan risiko kebakaran pada zona perladangan lereng curam.",
+    "source":  "NASA FIRMS NRT (Satelit VIIRS SNPP \u0026 NOAA-20)"
+}

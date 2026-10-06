@@ -1,0 +1,26 @@
+﻿{
+    "area_ha":  87984,
+    "bbox":  [
+                 119.15,
+                 -10.45,
+                 120.55,
+                 -9.05
+             ],
+    "duration_h":  24,
+    "start_utc":  "2026-10-06T00:00:00Z",
+    "coordinates":  {
+                        "longitude":  119.85,
+                        "center_lon":  119.85,
+                        "center_lat":  -9.75,
+                        "latitude":  -9.75
+                    },
+    "risk_level":  "Sangat Rawan",
+    "name":  "Savana TN Manupeu Tanah Daru (Sumba Timur, NTT)",
+    "province":  "Nusa Tenggara Timur",
+    "forest_type":  "Padang Savana Tropis Luas",
+    "region":  "Bali \u0026 Nusa Tenggara",
+    "hazard":  "fire",
+    "event_id":  "hutan_manupeu_sumba",
+    "description":  "Lanskap sabana terluas di NTT dengan frekuensi kebakaran padang rumput tahunan yang sangat tinggi.",
+    "source":  "NASA FIRMS NRT (Satelit VIIRS SNPP \u0026 NOAA-20)"
+}

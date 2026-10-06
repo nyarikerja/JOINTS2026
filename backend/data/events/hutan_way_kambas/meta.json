@@ -1,0 +1,26 @@
+﻿{
+    "area_ha":  125621,
+    "bbox":  [
+                 105.05,
+                 -5.65,
+                 106.45,
+                 -4.25
+             ],
+    "duration_h":  24,
+    "start_utc":  "2026-10-06T00:00:00Z",
+    "coordinates":  {
+                        "longitude":  105.75,
+                        "center_lon":  105.75,
+                        "center_lat":  -4.95,
+                        "latitude":  -4.95
+                    },
+    "risk_level":  "Rawan",
+    "name":  "TN Way Kambas (Lampung Timur, Lampung)",
+    "province":  "Lampung",
+    "forest_type":  "Hutan Dataran Rendah \u0026 Rawa",
+    "region":  "Sumatera",
+    "hazard":  "fire",
+    "event_id":  "hutan_way_kambas",
+    "description":  "Kawasan suaka gajah dan badak dengan padang alang-alang yang sangat mudah terbakar di musim panas.",
+    "source":  "NASA FIRMS NRT (Satelit VIIRS SNPP \u0026 NOAA-20)"
+}

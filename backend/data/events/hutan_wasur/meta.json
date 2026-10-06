@@ -1,0 +1,26 @@
+﻿{
+    "area_ha":  413810,
+    "bbox":  [
+                 139.95,
+                 -9.25,
+                 141.35,
+                 -7.85
+             ],
+    "duration_h":  24,
+    "start_utc":  "2026-10-06T00:00:00Z",
+    "coordinates":  {
+                        "longitude":  140.65,
+                        "center_lon":  140.65,
+                        "center_lat":  -8.55,
+                        "latitude":  -8.55
+                    },
+    "risk_level":  "Sangat Rawan",
+    "name":  "Sabana Merauke - TN Wasur (Papua Selatan)",
+    "province":  "Papua Selatan",
+    "forest_type":  "Sabana Tropis \u0026 Lahan Basah Melaleuca",
+    "region":  "Maluku \u0026 Papua",
+    "hazard":  "fire",
+    "event_id":  "hutan_wasur",
+    "description":  "\u0027Serengeti Papua\u0027, hamparan sabana kayu putih (Melaleuca) dengan kebakaran rutin musiman saat kemarau.",
+    "source":  "NASA FIRMS NRT (Satelit VIIRS SNPP \u0026 NOAA-20)"
+}

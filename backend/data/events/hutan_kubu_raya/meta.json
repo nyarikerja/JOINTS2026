@@ -1,0 +1,26 @@
+﻿{
+    "area_ha":  145000,
+    "bbox":  [
+                 108.75,
+                 -1.05,
+                 110.15,
+                 0.35
+             ],
+    "duration_h":  24,
+    "start_utc":  "2026-10-06T00:00:00Z",
+    "coordinates":  {
+                        "longitude":  109.45,
+                        "center_lon":  109.45,
+                        "center_lat":  -0.35,
+                        "latitude":  -0.35
+                    },
+    "risk_level":  "Sangat Rawan",
+    "name":  "Lahan Gambut Rasau Jaya (Kubu Raya, Kalbar)",
+    "province":  "Kalimantan Barat",
+    "forest_type":  "Kawasan Gambut Pesisir",
+    "region":  "Kalimantan",
+    "hazard":  "fire",
+    "event_id":  "hutan_kubu_raya",
+    "description":  "Area gambut penyumbang asap utama ke Kota Pontianak dan Bandara Supadio.",
+    "source":  "NASA FIRMS NRT (Satelit VIIRS SNPP \u0026 NOAA-20)"
+}

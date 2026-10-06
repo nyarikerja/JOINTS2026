@@ -1,0 +1,27 @@
+{
+  "event_id": "karhutla_sumsel",
+  "hazard": "fire",
+  "name": "Karhutla Gambut Sumatera Selatan (OKI)",
+  "province": "Sumatera Selatan",
+  "start_utc": "2026-10-06T00:00:00Z",
+  "duration_h": 24.0,
+  "coordinates": {
+    "latitude": -3.45,
+    "longitude": 105.15,
+    "center_lat": -3.45,
+    "center_lon": 105.15
+  },
+  "bbox": [
+    104.35,
+    -4.25,
+    105.95,
+    -2.65
+  ],
+  "source": "NASA FIRMS NRT (Satelit VIIRS SNPP & NOAA-20)",
+  "members_source": "open_meteo_live_forecast_api",
+  "description": "Kebakaran gambut dalam di Kabupaten Ogan Komering Ilir (OKI) yang mengancam kualitas udara Kota Palembang.",
+  "data_status": {
+    "weather": "open_meteo_live_or_ensemble",
+    "firms": "calibrated_nrt_cluster"
+  }
+}

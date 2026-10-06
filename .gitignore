@@ -23,6 +23,7 @@ data/runs/*.json
 **/data/runs/*.json
 data/raw/
 **/data/raw/
+**/data/events/custom_*/
 important-file/
 
 # OS Specific

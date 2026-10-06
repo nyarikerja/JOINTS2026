@@ -1,0 +1,26 @@
+﻿{
+    "area_ha":  10025,
+    "bbox":  [
+                 116.15,
+                 -1.82,
+                 117.55,
+                 -0.42
+             ],
+    "duration_h":  24,
+    "start_utc":  "2026-10-06T00:00:00Z",
+    "coordinates":  {
+                        "longitude":  116.85,
+                        "center_lon":  116.85,
+                        "center_lat":  -1.12,
+                        "latitude":  -1.12
+                    },
+    "risk_level":  "Waspada",
+    "name":  "Hutan Lindung Sungai Wain \u0026 IKN (Balikpapan, Kaltim)",
+    "province":  "Kalimantan Timur",
+    "forest_type":  "Hutan Lindung Penyangga Ibu Kota",
+    "region":  "Kalimantan",
+    "hazard":  "fire",
+    "event_id":  "hutan_sungai_wain",
+    "description":  "Sabuk hijau sumber air Balikpapan dan kawasan penyangga ekologis IKN Nusantara.",
+    "source":  "NASA FIRMS NRT (Satelit VIIRS SNPP \u0026 NOAA-20)"
+}

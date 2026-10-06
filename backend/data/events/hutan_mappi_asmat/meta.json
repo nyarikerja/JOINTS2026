@@ -1,0 +1,26 @@
+﻿{
+    "area_ha":  650000,
+    "bbox":  [
+                 138.75,
+                 -7.55,
+                 140.15,
+                 -6.15
+             ],
+    "duration_h":  24,
+    "start_utc":  "2026-10-06T00:00:00Z",
+    "coordinates":  {
+                        "longitude":  139.45,
+                        "center_lon":  139.45,
+                        "center_lat":  -6.85,
+                        "latitude":  -6.85
+                    },
+    "risk_level":  "Rawan",
+    "name":  "Lahan Gambut Mappi \u0026 Asmat (Papua Selatan)",
+    "province":  "Papua Selatan",
+    "forest_type":  "Rawa Gambut Pedalaman Papua",
+    "region":  "Maluku \u0026 Papua",
+    "hazard":  "fire",
+    "event_id":  "hutan_mappi_asmat",
+    "description":  "Hamparan rawa gambut pesisir selatan Papua dengan endapan organik tebal dan keterisolasian tinggi.",
+    "source":  "NASA FIRMS NRT (Satelit VIIRS SNPP \u0026 NOAA-20)"
+}

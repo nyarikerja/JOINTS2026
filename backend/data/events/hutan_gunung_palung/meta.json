@@ -1,0 +1,26 @@
+﻿{
+    "area_ha":  90000,
+    "bbox":  [
+                 109.45,
+                 -1.95,
+                 110.85,
+                 -0.55
+             ],
+    "duration_h":  24,
+    "start_utc":  "2026-10-06T00:00:00Z",
+    "coordinates":  {
+                        "longitude":  110.15,
+                        "center_lon":  110.15,
+                        "center_lat":  -1.25,
+                        "latitude":  -1.25
+                    },
+    "risk_level":  "Rawan",
+    "name":  "TN Gunung Palung (Ketapang, Kalbar)",
+    "province":  "Kalimantan Barat",
+    "forest_type":  "Hutan Rawa Gambut \u0026 Perbukitan",
+    "region":  "Kalimantan",
+    "hazard":  "fire",
+    "event_id":  "hutan_gunung_palung",
+    "description":  "Kawasan perbukitan dan rawa gambut di Ketapang yang rentan kebakaran di musim kemarau panjang.",
+    "source":  "NASA FIRMS NRT (Satelit VIIRS SNPP \u0026 NOAA-20)"
+}

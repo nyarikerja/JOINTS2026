@@ -1,0 +1,26 @@
+﻿{
+    "area_ha":  568700,
+    "bbox":  [
+                 113.15,
+                 -3.25,
+                 114.55,
+                 -1.85
+             ],
+    "duration_h":  24,
+    "start_utc":  "2026-10-06T00:00:00Z",
+    "coordinates":  {
+                        "longitude":  113.85,
+                        "center_lon":  113.85,
+                        "center_lat":  -2.55,
+                        "latitude":  -2.55
+                    },
+    "risk_level":  "Sangat Rawan",
+    "name":  "TN Sebangau (Palangka Raya, Kalteng)",
+    "province":  "Kalimantan Tengah",
+    "forest_type":  "Hutan Rawa Gambut Tropis",
+    "region":  "Kalimantan",
+    "hazard":  "fire",
+    "event_id":  "hutan_sebangau",
+    "description":  "Kawasan rawa gambut dalam terluas di Kalteng penyerap karbon global, episentrum kebakaran gambut musiman.",
+    "source":  "NASA FIRMS NRT (Satelit VIIRS SNPP \u0026 NOAA-20)"
+}

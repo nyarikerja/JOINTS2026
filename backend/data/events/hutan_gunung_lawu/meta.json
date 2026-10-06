@@ -1,0 +1,26 @@
+﻿{
+    "area_ha":  15000,
+    "bbox":  [
+                 110.49,
+                 -8.33,
+                 111.89,
+                 -6.93
+             ],
+    "duration_h":  24,
+    "start_utc":  "2026-10-06T00:00:00Z",
+    "coordinates":  {
+                        "longitude":  111.19,
+                        "center_lon":  111.19,
+                        "center_lat":  -7.63,
+                        "latitude":  -7.63
+                    },
+    "risk_level":  "Rawan",
+    "name":  "Hutan Lindung Gunung Lawu (Karanganyar, Jateng)",
+    "province":  "Jawa Tengah",
+    "forest_type":  "Hutan Lereng Kering \u0026 Pinus",
+    "region":  "Jawa",
+    "hazard":  "fire",
+    "event_id":  "hutan_gunung_lawu",
+    "description":  "Lereng curam berbatu dengan serasah daun pinus kering yang mudah memicu kebakaran merambat cepat.",
+    "source":  "NASA FIRMS NRT (Satelit VIIRS SNPP \u0026 NOAA-20)"
+}

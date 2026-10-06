@@ -1,0 +1,27 @@
+{
+  "event_id": "karhutla_kalsel",
+  "hazard": "fire",
+  "name": "Karhutla Gambut Kalimantan Selatan (Banjarbaru)",
+  "province": "Kalimantan Selatan",
+  "start_utc": "2026-10-06T00:00:00Z",
+  "duration_h": 24.0,
+  "coordinates": {
+    "latitude": -3.45,
+    "longitude": 114.85,
+    "center_lat": -3.45,
+    "center_lon": 114.85
+  },
+  "bbox": [
+    114.05,
+    -4.25,
+    115.65,
+    -2.65
+  ],
+  "source": "NASA FIRMS NRT (Satelit VIIRS SNPP & NOAA-20)",
+  "members_source": "open_meteo_live_forecast_api",
+  "description": "Kebakaran semak gambut di sekitar area ring luar Bandara Syamsudin Noor Banjarbaru dan Tanah Laut.",
+  "data_status": {
+    "weather": "open_meteo_live_or_ensemble",
+    "firms": "calibrated_nrt_cluster"
+  }
+}

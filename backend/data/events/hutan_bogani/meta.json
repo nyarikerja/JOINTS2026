@@ -1,0 +1,26 @@
+﻿{
+    "area_ha":  287115,
+    "bbox":  [
+                 122.95,
+                 -0.15,
+                 124.35,
+                 1.25
+             ],
+    "duration_h":  24,
+    "start_utc":  "2026-10-06T00:00:00Z",
+    "coordinates":  {
+                        "longitude":  123.65,
+                        "center_lon":  123.65,
+                        "center_lat":  0.55,
+                        "latitude":  0.55
+                    },
+    "risk_level":  "Waspada",
+    "name":  "TN Bogani Nani Wartabone (Gorontalo \u0026 Sulut)",
+    "province":  "Gorontalo",
+    "forest_type":  "Hutan Hujan Tropis Dataran Rendah",
+    "region":  "Sulawesi",
+    "hazard":  "fire",
+    "event_id":  "hutan_bogani",
+    "description":  "Taman nasional terluas di semenanjung utara Sulawesi penghasil air dan habitat anoa.",
+    "source":  "NASA FIRMS NRT (Satelit VIIRS SNPP \u0026 NOAA-20)"
+}

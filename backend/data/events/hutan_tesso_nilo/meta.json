@@ -1,0 +1,26 @@
+﻿{
+    "area_ha":  81700,
+    "bbox":  [
+                 100.92,
+                 -0.78,
+                 102.32,
+                 0.62
+             ],
+    "duration_h":  24,
+    "start_utc":  "2026-10-06T00:00:00Z",
+    "coordinates":  {
+                        "longitude":  101.62,
+                        "center_lon":  101.62,
+                        "center_lat":  -0.08,
+                        "latitude":  -0.08
+                    },
+    "risk_level":  "Sangat Rawan",
+    "name":  "TN Tesso Nilo (Pelalawan, Riau)",
+    "province":  "Riau",
+    "forest_type":  "Hutan Dataran Rendah \u0026 Gambut",
+    "region":  "Sumatera",
+    "hazard":  "fire",
+    "event_id":  "hutan_tesso_nilo",
+    "description":  "Kawasan konservasi gajah sumatera yang kerap dilanda pembukaan lahan dan kebakaran gambut.",
+    "source":  "NASA FIRMS NRT (Satelit VIIRS SNPP \u0026 NOAA-20)"
+}
