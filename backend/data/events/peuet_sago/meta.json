@@ -1,0 +1,30 @@
+{
+  "event_id": "peuet_sago",
+  "hazard": "volcano",
+  "name": "Erupsi G. Peuet Sago (Pidie, Aceh)",
+  "start_utc": "2026-10-06T03:20:36.117774+00:00",
+  "duration_h": 24.0,
+  "alert_level_at_event": "Level I (Normal)",
+  "restricted_radius_km": 2.0,
+  "column_height_km": 8.0,
+  "plume_top_asl_km": 12.0,
+  "vent_elevation_m": 2801.0,
+  "coordinates": {
+    "latitude": 4.914,
+    "longitude": 96.329
+  },
+  "bbox": [
+    95.62899999999999,
+    4.2139999999999995,
+    97.029,
+    5.614
+  ],
+  "source": "PVMBG Badan Geologi ESDM RI (Katalog 70 Gunung Api Nasional)",
+  "members_source": "open_meteo_live_forecast_api",
+  "n_members": 15,
+  "data_status": {
+    "weather": "open_meteo_live_or_ensemble",
+    "vona": "pvmbg_national_catalog",
+    "column_height": "estimated_standard"
+  }
+}

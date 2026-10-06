@@ -454,5 +454,253 @@
     "latitude": -2.5,
     "longitude": 112.975,
     "district": "Kotawaringin Timur"
+  },
+  {
+    "facility_id": "fac_sch_riau_01",
+    "name": "SMAN 1 Siak",
+    "facility_type": "school",
+    "latitude": 0.795,
+    "longitude": 102.045,
+    "district": "Siak"
+  },
+  {
+    "facility_id": "fac_sch_riau_02",
+    "name": "SMPN 1 Pangkalan Kerinci",
+    "facility_type": "school",
+    "latitude": 0.385,
+    "longitude": 101.865,
+    "district": "Pelalawan"
+  },
+  {
+    "facility_id": "fac_hc_riau_01",
+    "name": "RSUD Tengku Rafi'an Siak",
+    "facility_type": "healthcare",
+    "latitude": 0.812,
+    "longitude": 102.052,
+    "district": "Siak"
+  },
+  {
+    "facility_id": "fac_hc_riau_02",
+    "name": "RSUD Arifin Achmad Pekanbaru",
+    "facility_type": "healthcare",
+    "latitude": 0.528,
+    "longitude": 101.448,
+    "district": "Pekanbaru"
+  },
+  {
+    "facility_id": "fac_air_riau_01",
+    "name": "Bandara Sultan Syarif Kasim II (PKU)",
+    "facility_type": "airport",
+    "latitude": 0.461,
+    "longitude": 101.445,
+    "district": "Pekanbaru"
+  },
+  {
+    "facility_id": "fac_sch_sumsel_01",
+    "name": "SMAN 1 Kayuagung",
+    "facility_type": "school",
+    "latitude": -3.395,
+    "longitude": 104.855,
+    "district": "Ogan Komering Ilir"
+  },
+  {
+    "facility_id": "fac_hc_sumsel_01",
+    "name": "RSUD Kayuagung OKI",
+    "facility_type": "healthcare",
+    "latitude": -3.385,
+    "longitude": 104.862,
+    "district": "Ogan Komering Ilir"
+  },
+  {
+    "facility_id": "fac_hc_sumsel_02",
+    "name": "RSUP Dr. Mohammad Hoesin Palembang",
+    "facility_type": "healthcare",
+    "latitude": -2.968,
+    "longitude": 104.755,
+    "district": "Palembang"
+  },
+  {
+    "facility_id": "fac_air_sumsel_01",
+    "name": "Bandara Sultan Mahmud Badaruddin II (PLM)",
+    "facility_type": "airport",
+    "latitude": -2.898,
+    "longitude": 104.701,
+    "district": "Palembang"
+  },
+  {
+    "facility_id": "fac_sch_jambi_01",
+    "name": "SMAN 1 Muaro Jambi",
+    "facility_type": "school",
+    "latitude": -1.585,
+    "longitude": 103.620,
+    "district": "Muaro Jambi"
+  },
+  {
+    "facility_id": "fac_hc_jambi_01",
+    "name": "RSUD Raden Mattaher Jambi",
+    "facility_type": "healthcare",
+    "latitude": -1.615,
+    "longitude": 103.595,
+    "district": "Kota Jambi"
+  },
+  {
+    "facility_id": "fac_air_jambi_01",
+    "name": "Bandara Sultan Thaha (DJB)",
+    "facility_type": "airport",
+    "latitude": -1.638,
+    "longitude": 103.644,
+    "district": "Kota Jambi"
+  },
+  {
+    "facility_id": "fac_sch_kalbar_01",
+    "name": "SMAN 1 Ketapang",
+    "facility_type": "school",
+    "latitude": -1.835,
+    "longitude": 109.980,
+    "district": "Ketapang"
+  },
+  {
+    "facility_id": "fac_hc_kalbar_01",
+    "name": "RSUD dr. Agoesdjam Ketapang",
+    "facility_type": "healthcare",
+    "latitude": -1.842,
+    "longitude": 109.972,
+    "district": "Ketapang"
+  },
+  {
+    "facility_id": "fac_air_kalbar_01",
+    "name": "Bandara Rahadi Oesman Ketapang (KTG)",
+    "facility_type": "airport",
+    "latitude": -1.816,
+    "longitude": 109.963,
+    "district": "Ketapang"
+  },
+  {
+    "facility_id": "fac_sch_papua_01",
+    "name": "SMAN 1 Merauke",
+    "facility_type": "school",
+    "latitude": -8.495,
+    "longitude": 140.405,
+    "district": "Merauke"
+  },
+  {
+    "facility_id": "fac_hc_papua_01",
+    "name": "RSUD Merauke",
+    "facility_type": "healthcare",
+    "latitude": -8.490,
+    "longitude": 140.398,
+    "district": "Merauke"
+  },
+  {
+    "facility_id": "fac_air_papua_01",
+    "name": "Bandara Mopah Merauke (MKQ)",
+    "facility_type": "airport",
+    "latitude": -8.520,
+    "longitude": 140.418,
+    "district": "Merauke"
+  },
+  {
+    "facility_id": "fac_sch_aceh_01",
+    "name": "SMAN 1 Sukamakmur",
+    "facility_type": "school",
+    "latitude": 5.420,
+    "longitude": 95.410,
+    "district": "Aceh Besar"
+  },
+  {
+    "facility_id": "fac_hc_aceh_01",
+    "name": "RSUD Zainoel Abidin Banda Aceh",
+    "facility_type": "healthcare",
+    "latitude": 5.562,
+    "longitude": 95.338,
+    "district": "Banda Aceh"
+  },
+  {
+    "facility_id": "fac_sch_slamet_01",
+    "name": "SMAN 1 Purwokerto",
+    "facility_type": "school",
+    "latitude": -7.420,
+    "longitude": 109.235,
+    "district": "Banyumas"
+  },
+  {
+    "facility_id": "fac_hc_slamet_01",
+    "name": "RSUD Prof. Dr. Margono Soekarjo Purwokerto",
+    "facility_type": "healthcare",
+    "latitude": -7.435,
+    "longitude": 109.255,
+    "district": "Banyumas"
+  },
+  {
+    "facility_id": "fac_sch_raung_01",
+    "name": "SMAN 1 Glagah Banyuwangi",
+    "facility_type": "school",
+    "latitude": -8.215,
+    "longitude": 114.340,
+    "district": "Banyuwangi"
+  },
+  {
+    "facility_id": "fac_hc_raung_01",
+    "name": "RSUD Blambangan Banyuwangi",
+    "facility_type": "healthcare",
+    "latitude": -8.210,
+    "longitude": 114.368,
+    "district": "Banyuwangi"
+  },
+  {
+    "facility_id": "fac_sch_tambora_01",
+    "name": "SMAN 1 Dompu",
+    "facility_type": "school",
+    "latitude": -8.530,
+    "longitude": 118.460,
+    "district": "Dompu"
+  },
+  {
+    "facility_id": "fac_hc_tambora_01",
+    "name": "RSUD Kabupaten Dompu",
+    "facility_type": "healthcare",
+    "latitude": -8.538,
+    "longitude": 118.455,
+    "district": "Dompu"
+  },
+  {
+    "facility_id": "fac_sch_ternate_01",
+    "name": "SMAN 1 Kota Ternate",
+    "facility_type": "school",
+    "latitude": 0.792,
+    "longitude": 127.380,
+    "district": "Ternate"
+  },
+  {
+    "facility_id": "fac_hc_ternate_01",
+    "name": "RSUD Dr. H. Chasan Boesoirie Ternate",
+    "facility_type": "healthcare",
+    "latitude": 0.785,
+    "longitude": 127.375,
+    "district": "Ternate"
+  },
+  {
+    "facility_id": "fac_air_ternate_01",
+    "name": "Bandara Sultan Babullah (TTE)",
+    "facility_type": "airport",
+    "latitude": 0.831,
+    "longitude": 127.381,
+    "district": "Ternate"
+  },
+  {
+    "facility_id": "fac_sch_tahuna_01",
+    "name": "SMAN 1 Tahuna",
+    "facility_type": "school",
+    "latitude": 3.610,
+    "longitude": 125.485,
+    "district": "Kepulauan Sangihe"
+  },
+  {
+    "facility_id": "fac_hc_tahuna_01",
+    "name": "RSUD Liun Kendage Tahuna",
+    "facility_type": "healthcare",
+    "latitude": 3.605,
+    "longitude": 125.490,
+    "district": "Kepulauan Sangihe"
   }
 ]
