@@ -13,8 +13,8 @@
 
 ## Panduan Menjalankan Cepat (Quickstart Guide)
 
-### 1. Menjalankan Server & Antarmuka Aplikasi
-Aplikasi dirancang ringan tanpa dependensi build kompleks (*zero build step*):
+### 1. Menjalankan Backend (FastAPI)
+Pastikan Python 3.10+ telah terpasang:
 
 ```bash
 # 1. Masuk ke direktori backend
@@ -23,15 +23,36 @@ cd backend
 # 2. Pasang dependensi Python (FastAPI, NumPy, SciPy, Shapely, Rasterio)
 pip install -r requirements.txt
 
-# 3. Jalankan server aplikasi
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+# 3. Jalankan server backend
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-- **Akses Dashboard Web Taktis**: [http://127.0.0.1:8000/dummy/](http://127.0.0.1:8000/dummy/)
-- **Dokumentasi REST API Interaktif (Swagger UI)**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+- **REST API & Dokumentasi Interaktif (Swagger UI)**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 - **Endpoint Status Sistem & Telemetri**: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
+- **Dashboard Web Dummy (Fallback)**: [http://127.0.0.1:8000/dummy/](http://127.0.0.1:8000/dummy/)
 
-### 2. Menjalankan Pengujian Otomatis (Test Suite)
+### 2. Menjalankan Frontend Utama (React + TypeScript + Vite)
+Buka terminal baru untuk menjalankan antarmuka web modern React:
+
+```bash
+# 1. Masuk ke direktori frontend
+cd frontend
+
+# 2. Pasang dependensi Node.js
+npm install
+
+# 3. Jalankan development server Vite
+npm run dev
+```
+
+- **Akses Dashboard Web Taktis Utama**: [http://localhost:5173](http://localhost:5173)
+
+Untuk memeriksa kelengkapan tipe (*type-checking*) dan membuat *production build*:
+```bash
+npm run build
+```
+
+### 3. Menjalankan Pengujian Otomatis (Test Suite)
 ```bash
 # Eksekusi seluruh 29 pengujian unit, fisika, lapis 2, dan lapis 3
 pytest tests/
