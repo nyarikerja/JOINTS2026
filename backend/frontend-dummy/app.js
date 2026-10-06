@@ -15,6 +15,7 @@ let currentKrbCircle = null;
 let facilitiesLayer = null;
 let hotspotsLayer = null;
 let volcanoesLayer = null;
+let forestsLayer = null;
 let currentHourlyTiersCache = {};
 let timePlayInterval = null;
 let allVolcanoesData = [];
@@ -52,7 +53,8 @@ function initMap() {
 
   // Muat Lapisan-lapisan Nasional
   loadNationalVolcanoes();
-  loadHotspots("live_kalimantan");
+  loadNationalForests();
+  loadHotspots("national");
   loadFacilities();
   loadSummaryKpi();
   startClocks();
@@ -142,20 +144,65 @@ function loadNationalVolcanoes() {
 }
 
 const NATIONAL_KARHUTLA_EVENTS = [
-  { id: "live_kalimantan", name: "Karhutla Gambut Kalteng (Palangka Raya / Pulang Pisau)", region: "Kalimantan", lat: -2.5, lon: 113.5 },
-  { id: "karhutla_kalbar", name: "Karhutla Gambut Kalbar (Ketapang / Kubu Raya)", region: "Kalimantan", lat: -1.85, lon: 109.85 },
-  { id: "karhutla_kalsel", name: "Karhutla Gambut Kalsel (Banjarbaru / Tanah Laut)", region: "Kalimantan", lat: -3.45, lon: 114.85 },
-  { id: "karhutla_riau", name: "Karhutla Gambut Riau (Siak & Pelalawan)", region: "Sumatera", lat: 0.75, lon: 101.85 },
-  { id: "karhutla_sumsel", name: "Karhutla Gambut Sumsel (Ogan Komering Ilir / OKI)", region: "Sumatera", lat: -3.45, lon: 105.15 },
-  { id: "karhutla_jambi", name: "Karhutla Gambut Jambi (Muaro Jambi / Tanjabtim)", region: "Sumatera", lat: -1.45, lon: 103.80 },
-  { id: "karhutla_papua", name: "Karhutla Savana Papua Selatan (Merauke)", region: "Papua", lat: -8.45, lon: 140.40 }
+  // Sumatera (8 Kawasan Hutan & Gambut)
+  { id: "hutan_tesso_nilo", name: "TN Tesso Nilo (Pelalawan, Riau)", forest_type: "Gambut & Hutan Hujan", province: "Riau", region: "Sumatera", lat: -0.08, lon: 101.62, area_ha: 81700, risk: "Sangat Rawan", n_hotspots: 30 },
+  { id: "hutan_giam_siak", name: "SM Giam Siak Kecil (Bengkalis & Siak, Riau)", forest_type: "Cagar Biosfer Gambut", province: "Riau", region: "Sumatera", lat: 1.18, lon: 101.88, area_ha: 178722, risk: "Sangat Rawan", n_hotspots: 28 },
+  { id: "hutan_berbak", name: "TN Berbak (Tanjung Jabung Timur, Jambi)", forest_type: "Rawa Gambut Terbesar", province: "Jambi", region: "Sumatera", lat: -1.42, lon: 104.28, area_ha: 142750, risk: "Sangat Rawan", n_hotspots: 24 },
+  { id: "hutan_padang_sugihan", name: "SM Padang Sugihan (OKI, Sumsel)", forest_type: "Suaka Gambut Dalam", province: "Sumatera Selatan", region: "Sumatera", lat: -3.22, lon: 105.12, area_ha: 88000, risk: "Sangat Rawan", n_hotspots: 32 },
+  { id: "hutan_meranti_pesisir", name: "KHG Tebing Tinggi (Kep. Meranti, Riau)", forest_type: "Gambut Pesisir", province: "Riau", region: "Sumatera", lat: 0.95, lon: 102.72, area_ha: 110000, risk: "Rawan", n_hotspots: 20 },
+  { id: "hutan_bukit_tigapuluh", name: "TN Bukit Tiga Puluh (Inhu, Riau/Jambi)", forest_type: "Hutan Bukit Tropis", province: "Riau", region: "Sumatera", lat: -0.85, lon: 102.45, area_ha: 144223, risk: "Waspada", n_hotspots: 16 },
+  { id: "hutan_kerinci_seblat", name: "TN Kerinci Seblat (Jambi & Sumbar)", forest_type: "Hutan Pegunungan", province: "Jambi", region: "Sumatera", lat: -2.15, lon: 101.45, area_ha: 1375350, risk: "Waspada", n_hotspots: 14 },
+  { id: "hutan_way_kambas", name: "TN Way Kambas (Lampung Timur)", forest_type: "Hutan Dataran Rendah", province: "Lampung", region: "Sumatera", lat: -4.95, lon: 105.75, area_ha: 125621, risk: "Rawan", n_hotspots: 18 },
+
+  // Kalimantan (10 Kawasan Hutan & Gambut)
+  { id: "hutan_sebangau", name: "TN Sebangau (Palangka Raya, Kalteng)", forest_type: "Rawa Gambut Tropis", province: "Kalimantan Tengah", region: "Kalimantan", lat: -2.55, lon: 113.85, area_ha: 568700, risk: "Sangat Rawan", n_hotspots: 36 },
+  { id: "hutan_eks_plg", name: "KHG Eks-PLG Sejuta Ha (Pulang Pisau, Kalteng)", forest_type: "Gambut Kritis", province: "Kalimantan Tengah", region: "Kalimantan", lat: -2.85, lon: 114.25, area_ha: 1000000, risk: "Sangat Rawan", n_hotspots: 34 },
+  { id: "hutan_tanjung_puting", name: "TN Tanjung Puting (Kobar, Kalteng)", forest_type: "Rawa Gambut & Hutan Tropis", province: "Kalimantan Tengah", region: "Kalimantan", lat: -3.05, lon: 111.95, area_ha: 415040, risk: "Rawan", n_hotspots: 22 },
+  { id: "hutan_gunung_palung", name: "TN Gunung Palung (Ketapang, Kalbar)", forest_type: "Rawa Gambut & Bukit", province: "Kalimantan Barat", region: "Kalimantan", lat: -1.25, lon: 110.15, area_ha: 90000, risk: "Rawan", n_hotspots: 24 },
+  { id: "hutan_kubu_raya", name: "Lahan Gambut Rasau Jaya (Kubu Raya, Kalbar)", forest_type: "Gambut Pesisir Asap", province: "Kalimantan Barat", region: "Kalimantan", lat: -0.35, lon: 109.45, area_ha: 145000, risk: "Sangat Rawan", n_hotspots: 26 },
+  { id: "hutan_danau_sentarum", name: "TN Danau Sentarum (Kapuas Hulu, Kalbar)", forest_type: "Lahan Basah Ramsar", province: "Kalimantan Barat", region: "Kalimantan", lat: 0.85, lon: 112.15, area_ha: 132000, risk: "Waspada", n_hotspots: 16 },
+  { id: "hutan_meratus", name: "Hutan Lindung Peg. Meratus (Hulu Sungai, Kalsel)", forest_type: "Hutan Pegunungan", province: "Kalimantan Selatan", region: "Kalimantan", lat: -2.75, lon: 115.55, area_ha: 180000, risk: "Waspada", n_hotspots: 18 },
+  { id: "hutan_banjarbaru", name: "Lahan Gambut Landasan Ulin (Banjarbaru, Kalsel)", forest_type: "Gambut Kering Ring Bandara", province: "Kalimantan Selatan", region: "Kalimantan", lat: -3.48, lon: 114.78, area_ha: 45000, risk: "Sangat Rawan", n_hotspots: 25 },
+  { id: "hutan_kutai", name: "TN Kutai (Kutai Timur & Bontang, Kaltim)", forest_type: "Hutan Ulin Tropis", province: "Kalimantan Timur", region: "Kalimantan", lat: 0.25, lon: 117.25, area_ha: 198629, risk: "Waspada", n_hotspots: 15 },
+  { id: "hutan_sungai_wain", name: "Hutan Lindung S. Wain & IKN (Balikpapan, Kaltim)", forest_type: "Penyangga IKN Nusantara", province: "Kalimantan Timur", region: "Kalimantan", lat: -1.12, lon: 116.85, area_ha: 10025, risk: "Waspada", n_hotspots: 12 },
+
+  // Jawa (6 Kawasan Hutan & Sabana)
+  { id: "hutan_bromo", name: "Sabana Bromo - TN Bromo Tengger Semeru (Jatim)", forest_type: "Sabana Kaldera Alpin", province: "Jawa Timur", region: "Jawa", lat: -7.94, lon: 112.95, area_ha: 50276, risk: "Sangat Rawan", n_hotspots: 20 },
+  { id: "hutan_baluran", name: "Sabana Bekol - TN Baluran (Situbondo, Jatim)", forest_type: "Sabana Tropis Alami", province: "Jawa Timur", region: "Jawa", lat: -7.83, lon: 114.38, area_ha: 25000, risk: "Sangat Rawan", n_hotspots: 22 },
+  { id: "hutan_gunung_lawu", name: "Hutan Lindung Gunung Lawu (Karanganyar, Jateng)", forest_type: "Hutan Lereng Kering", province: "Jawa Tengah", region: "Jawa", lat: -7.63, lon: 111.19, area_ha: 15000, risk: "Rawan", n_hotspots: 16 },
+  { id: "hutan_merbabu", name: "Sabana TN Gunung Merbabu (Boyolali, Jateng)", forest_type: "Sabana Alpin Puncak", province: "Jawa Tengah", region: "Jawa", lat: -7.45, lon: 110.43, area_ha: 5725, risk: "Rawan", n_hotspots: 14 },
+  { id: "hutan_ciremai", name: "TN Gunung Ciremai (Kuningan, Jabar)", forest_type: "Hutan Lereng Kering", province: "Jawa Barat", region: "Jawa", lat: -6.89, lon: 108.40, area_ha: 15500, risk: "Waspada", n_hotspots: 12 },
+  { id: "hutan_alas_purwo", name: "TN Alas Purwo (Banyuwangi, Jatim)", forest_type: "Hutan Musim Blambangan", province: "Jawa Timur", region: "Jawa", lat: -8.65, lon: 114.45, area_ha: 43420, risk: "Waspada", n_hotspots: 15 },
+
+  // Bali & Nusa Tenggara (5 Kawasan Hutan & Sabana)
+  { id: "hutan_komodo", name: "Sabana Padar & Loh Liang - TN Komodo (NTT)", forest_type: "Sabana Tropis Kering", province: "Nusa Tenggara Timur", region: "Bali & Nusa Tenggara", lat: -8.55, lon: 119.55, area_ha: 173300, risk: "Rawan", n_hotspots: 18 },
+  { id: "hutan_manupeu_sumba", name: "Savana TN Manupeu Tanah Daru (Sumba, NTT)", forest_type: "Savana Tropis Luas", province: "Nusa Tenggara Timur", region: "Bali & Nusa Tenggara", lat: -9.75, lon: 119.85, area_ha: 87984, risk: "Sangat Rawan", n_hotspots: 25 },
+  { id: "hutan_tambora", name: "Sabana Doro Ncanga - TN Tambora (Bima, NTB)", forest_type: "Sabana Lereng Kaldera", province: "Nusa Tenggara Barat", region: "Bali & Nusa Tenggara", lat: -8.25, lon: 118.00, area_ha: 71645, risk: "Rawan", n_hotspots: 16 },
+  { id: "hutan_rinjani", name: "Hutan Sembalun - TN Gunung Rinjani (NTB)", forest_type: "Savana Lembah Sembalun", province: "Nusa Tenggara Barat", region: "Bali & Nusa Tenggara", lat: -8.42, lon: 116.45, area_ha: 41330, risk: "Rawan", n_hotspots: 14 },
+  { id: "hutan_bali_barat", name: "TN Bali Barat & Prapat Agung (Buleleng, Bali)", forest_type: "Hutan Musim Monsoonal", province: "Bali", region: "Bali & Nusa Tenggara", lat: -8.15, lon: 114.48, area_ha: 19002, risk: "Waspada", n_hotspots: 10 },
+
+  // Sulawesi (4 Kawasan Hutan & Sabana)
+  { id: "hutan_rawa_aopa", name: "Sabana Rawa TN Rawa Aopa Watumohai (Sultra)", forest_type: "Sabana Lahan Basah", province: "Sulawesi Tenggara", region: "Sulawesi", lat: -4.45, lon: 121.95, area_ha: 105000, risk: "Rawan", n_hotspots: 20 },
+  { id: "hutan_lore_lindu", name: "TN Lore Lindu (Poso & Sigi, Sulteng)", forest_type: "Hutan Pegunungan", province: "Sulawesi Tengah", region: "Sulawesi", lat: -1.35, lon: 120.15, area_ha: 217991, risk: "Waspada", n_hotspots: 14 },
+  { id: "hutan_bogani", name: "TN Bogani Nani Wartabone (Gorontalo/Sulut)", forest_type: "Hutan Tropis Konservasi", province: "Gorontalo", region: "Sulawesi", lat: 0.55, lon: 123.65, area_ha: 287115, risk: "Waspada", n_hotspots: 12 },
+  { id: "hutan_maros", name: "Hutan Karst Bantimurung (Maros, Sulsel)", forest_type: "Hutan Karst Perbukitan", province: "Sulawesi Selatan", region: "Sulawesi", lat: -4.95, lon: 119.75, area_ha: 43750, risk: "Waspada", n_hotspots: 11 },
+
+  // Maluku & Papua (3 Kawasan Hutan & Sabana)
+  { id: "hutan_wasur", name: "Sabana Merauke - TN Wasur (Papua Selatan)", forest_type: "Sabana Kayu Putih Tropis", province: "Papua Selatan", region: "Maluku & Papua", lat: -8.55, lon: 140.65, area_ha: 413810, risk: "Sangat Rawan", n_hotspots: 28 },
+  { id: "hutan_mappi_asmat", name: "Lahan Gambut Mappi & Asmat (Papua Selatan)", forest_type: "Rawa Gambut Papua", province: "Papua Selatan", region: "Maluku & Papua", lat: -6.85, lon: 139.45, area_ha: 650000, risk: "Rawan", n_hotspots: 22 },
+  { id: "hutan_bintuni", name: "Hutan Pesisir Teluk Bintuni (Papua Barat)", forest_type: "Hutan Rawa Dataran Rendah", province: "Papua Barat", region: "Maluku & Papua", lat: -2.15, lon: 133.55, area_ha: 260000, risk: "Waspada", n_hotspots: 12 }
 ];
+
+// State filter & selection combobox
+let currentComboboxFilter = "all";
 
 function populateVolcanoDropdown(features) {
   const sel = document.getElementById("eventSelect");
+  const comboList = document.getElementById("eventComboboxList");
   if (!sel) return;
 
   sel.innerHTML = "";
+  if (comboList) comboList.innerHTML = "";
   const hazard = currentHazard || "volcano";
 
   if (hazard === "volcano") {
@@ -177,45 +224,294 @@ function populateVolcanoDropdown(features) {
 
     for (const [regName, vList] of Object.entries(regionGroups)) {
       if (vList.length === 0) continue;
+
+      // Native select optgroup (untuk fallback backward compatibility)
       const optGroup = document.createElement("optgroup");
       optGroup.label = `Gunung Api ${regName} (${vList.length})`;
+
+      // Header grup di combobox list
+      if (comboList) {
+        const groupHdr = document.createElement("div");
+        groupHdr.className = "combobox-group-header";
+        groupHdr.dataset.region = regName;
+        groupHdr.textContent = `Gunung Api ${regName} (${vList.length})`;
+        comboList.appendChild(groupHdr);
+      }
+
       vList.forEach(f => {
         const p = f.properties;
+        const eventId = p.event_id || p.id;
+        const lvlNum = p.level || 1;
+        const lvlName = p.level_name ? p.level_name.split(' ')[0] + ' ' + (p.level_name.split(' ')[1] || '') : `Level ${lvlNum}`;
+
+        // Fallback option
         const opt = document.createElement("option");
-        opt.value = p.event_id || p.id;
-        opt.textContent = `[${p.level_name ? p.level_name.split(' ')[0] + ' ' + (p.level_name.split(' ')[1] || '') : 'Level I'}] ${p.name} (${p.province}) - ${p.elevation_m}m`;
+        opt.value = eventId;
+        opt.textContent = `[${lvlName}] ${p.name} (${p.province}) - ${p.elevation_m}m`;
         optGroup.appendChild(opt);
+
+        // Custom combobox item card
+        if (comboList) {
+          const item = document.createElement("div");
+          item.className = "combobox-item";
+          item.dataset.id = eventId;
+          item.dataset.region = regName;
+          item.dataset.level = lvlNum;
+          item.dataset.name = p.name.toLowerCase();
+          item.dataset.province = (p.province || "").toLowerCase();
+
+          const badgeClass = `item-badge-lvl${lvlNum}`;
+          item.innerHTML = `
+            <div class="combobox-item-top">
+              <span class="combobox-item-name">${p.name}</span>
+              <span class="item-lvl-badge ${badgeClass}">${lvlName}</span>
+            </div>
+            <div class="combobox-item-sub">${p.province} &bull; ${p.elevation_m} mdpl &bull; KRB ${p.radius_bahaya_km} km</div>
+          `;
+
+          item.addEventListener("click", () => {
+            selectComboboxItem(eventId);
+          });
+          comboList.appendChild(item);
+        }
       });
       sel.appendChild(optGroup);
     }
 
     if (!sel.value) sel.value = "anak_krakatau_2026_09";
   } else {
-    // Kelompokkan Karhutla berdasarkan pulau
+    // Kelompokkan 36 Kawasan Hutan & Konservasi berdasarkan 6 Pulau Besar
     const fireGroups = {
-      "Kalimantan": [],
       "Sumatera": [],
-      "Papua": []
+      "Kalimantan": [],
+      "Jawa": [],
+      "Bali & Nusa Tenggara": [],
+      "Sulawesi": [],
+      "Maluku & Papua": []
     };
 
     NATIONAL_KARHUTLA_EVENTS.forEach(k => {
-      if (fireGroups[k.region]) fireGroups[k.region].push(k);
+      const reg = k.region || "Lainnya";
+      if (!fireGroups[reg]) fireGroups[reg] = [];
+      fireGroups[reg].push(k);
     });
 
     for (const [regName, kList] of Object.entries(fireGroups)) {
       if (kList.length === 0) continue;
+
       const optGroup = document.createElement("optgroup");
-      optGroup.label = `Karhutla ${regName} (${kList.length})`;
+      optGroup.label = `Kawasan Hutan ${regName} (${kList.length})`;
+
+      if (comboList) {
+        const groupHdr = document.createElement("div");
+        groupHdr.className = "combobox-group-header";
+        groupHdr.dataset.region = regName;
+        groupHdr.textContent = `🌲 Kawasan Hutan & Konservasi ${regName} (${kList.length})`;
+        comboList.appendChild(groupHdr);
+      }
+
       kList.forEach(k => {
         const opt = document.createElement("option");
         opt.value = k.id;
-        opt.textContent = `${k.name}`;
+        opt.textContent = `[${k.forest_type}] ${k.name}`;
         optGroup.appendChild(opt);
+
+        if (comboList) {
+          const item = document.createElement("div");
+          item.className = "combobox-item";
+          item.dataset.id = k.id;
+          item.dataset.region = regName;
+          item.dataset.level = k.risk === "Sangat Rawan" ? 4 : (k.risk === "Rawan" ? 3 : 2);
+          item.dataset.name = k.name.toLowerCase();
+          item.dataset.province = (k.province || "").toLowerCase();
+
+          const riskBadgeClass = k.risk === "Sangat Rawan" ? "item-badge-lvl4" : (k.risk === "Rawan" ? "item-badge-lvl3" : "item-badge-fire");
+
+          item.innerHTML = `
+            <div class="combobox-item-top">
+              <span class="combobox-item-name">${k.name}</span>
+              <span class="item-lvl-badge ${riskBadgeClass}">${k.risk || 'Rawan'}</span>
+            </div>
+            <div class="combobox-item-sub">${k.province} &bull; ${k.forest_type} &bull; ${k.n_hotspots} Titik Api</div>
+          `;
+
+          item.addEventListener("click", () => {
+            selectComboboxItem(k.id);
+          });
+          comboList.appendChild(item);
+        }
       });
       sel.appendChild(optGroup);
     }
 
-    if (!sel.value) sel.value = "live_kalimantan";
+    if (!sel.value) sel.value = "hutan_sebangau";
+  }
+
+  // Sinkronisasi teks trigger & tombol switcher
+  syncComboboxTriggerUI(sel.value);
+  syncHazardSwitcherUI();
+  filterComboboxItems();
+}
+
+function selectComboboxItem(eventId) {
+  const sel = document.getElementById("eventSelect");
+  if (sel) {
+    sel.value = eventId;
+    sel.dispatchEvent(new Event("change"));
+  }
+  syncComboboxTriggerUI(eventId);
+  closeCombobox();
+}
+
+function syncHazardSwitcherUI() {
+  const hazard = currentHazard || (document.getElementById("hazardSelect") ? document.getElementById("hazardSelect").value : "volcano");
+  const btnVolcano = document.getElementById("btnHazardVolcano");
+  const btnFire = document.getElementById("btnHazardFire");
+  if (btnVolcano && btnFire) {
+    btnVolcano.classList.toggle("active", hazard === "volcano");
+    btnFire.classList.toggle("active", hazard === "fire");
+  }
+
+  // Sinkronkan tab mode di dalam popover combobox
+  const tabVolc = document.getElementById("comboTabVolcano");
+  const tabFire = document.getElementById("comboTabFire");
+  if (tabVolc && tabFire) {
+    tabVolc.classList.toggle("active", hazard === "volcano");
+    tabFire.classList.toggle("active", hazard === "fire");
+  }
+
+  const iconEl = document.getElementById("comboboxHazardIcon");
+  if (iconEl) {
+    iconEl.textContent = hazard === "volcano" ? "🌋" : "🌲";
+  }
+
+  const chipAlert = document.getElementById("chipAlert");
+  if (chipAlert) {
+    chipAlert.textContent = hazard === "volcano" ? "Siaga/Awas" : "Sangat Rawan";
+  }
+}
+
+function syncComboboxTriggerUI(selectedId) {
+  const titleEl = document.getElementById("comboboxSelectedTitle");
+  const iconEl = document.getElementById("comboboxHazardIcon");
+  const hazard = currentHazard || "volcano";
+
+  if (iconEl) iconEl.textContent = hazard === "volcano" ? "🌋" : "🌲";
+
+  if (!selectedId) {
+    const sel = document.getElementById("eventSelect");
+    selectedId = sel ? sel.value : null;
+  }
+
+  if (hazard === "volcano") {
+    const feat = (allVolcanoesData || []).find(f => (f.properties.event_id === selectedId || f.properties.id === selectedId));
+    if (feat && titleEl) {
+      const p = feat.properties;
+      const lvl = p.level_name ? p.level_name.split(' ')[0] + ' ' + (p.level_name.split(' ')[1] || '') : `Level ${p.level}`;
+      titleEl.textContent = `[${lvl}] ${p.name} (${p.province})`;
+    } else if (titleEl) {
+      titleEl.textContent = "Pilih Gunung Api...";
+    }
+  } else {
+    const fire = NATIONAL_KARHUTLA_EVENTS.find(k => k.id === selectedId);
+    if (fire && titleEl) {
+      titleEl.textContent = `🌲 ${fire.name}`;
+    } else if (titleEl) {
+      titleEl.textContent = "Pilih Kawasan Hutan...";
+    }
+  }
+
+  // Tandai item terpilih di list
+  document.querySelectorAll("#eventComboboxList .combobox-item").forEach(el => {
+    el.classList.toggle("selected", el.dataset.id === selectedId);
+  });
+}
+
+function closeCombobox() {
+  const popover = document.getElementById("eventComboboxPopover");
+  const trigger = document.getElementById("eventComboboxTrigger");
+  if (popover) popover.classList.remove("open");
+  if (trigger) trigger.classList.remove("open");
+}
+
+function openCombobox() {
+  const popover = document.getElementById("eventComboboxPopover");
+  const trigger = document.getElementById("eventComboboxTrigger");
+  if (popover) popover.classList.add("open");
+  if (trigger) trigger.classList.add("open");
+  const searchInput = document.getElementById("eventSearchInput");
+  if (searchInput) {
+    setTimeout(() => searchInput.focus(), 50);
+  }
+}
+
+function toggleCombobox() {
+  const popover = document.getElementById("eventComboboxPopover");
+  if (popover && popover.classList.contains("open")) {
+    closeCombobox();
+  } else {
+    openCombobox();
+  }
+}
+
+function filterComboboxItems() {
+  const searchInput = document.getElementById("eventSearchInput");
+  const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
+  const clearBtn = document.getElementById("btnClearSearch");
+  if (clearBtn) clearBtn.style.display = query ? "block" : "none";
+
+  const items = document.querySelectorAll("#eventComboboxList .combobox-item");
+  const headers = document.querySelectorAll("#eventComboboxList .combobox-group-header");
+  let visibleCount = 0;
+
+  items.forEach(item => {
+    const name = item.dataset.name || "";
+    const prov = item.dataset.province || "";
+    const reg = item.dataset.region || "";
+    const lvl = parseInt(item.dataset.level || "1");
+
+    let matchesSearch = true;
+    if (query) {
+      matchesSearch = name.includes(query) || prov.includes(query) || reg.toLowerCase().includes(query);
+    }
+
+    let matchesFilter = true;
+    if (currentComboboxFilter === "alert") {
+      matchesFilter = lvl >= 3;
+    } else if (currentComboboxFilter !== "all") {
+      matchesFilter = (reg === currentComboboxFilter);
+    }
+
+    const isVisible = matchesSearch && matchesFilter;
+    item.style.display = isVisible ? "flex" : "none";
+    if (isVisible) visibleCount++;
+  });
+
+  // Tampilkan/sembunyikan header grup jika tidak ada item yang cocok
+  headers.forEach(hdr => {
+    const reg = hdr.dataset.region;
+    const hasVisibleChild = Array.from(items).some(it => it.dataset.region === reg && it.style.display !== "none");
+    hdr.style.display = hasVisibleChild ? "block" : "none";
+  });
+
+  // Tampilkan pesan jika tidak ada hasil yang cocok
+  const comboList = document.getElementById("eventComboboxList");
+  let emptyMsg = document.getElementById("comboboxEmptyMsg");
+  if (visibleCount === 0) {
+    if (!emptyMsg && comboList) {
+      emptyMsg = document.createElement("div");
+      emptyMsg.id = "comboboxEmptyMsg";
+      emptyMsg.style.cssText = "padding: 16px 12px; text-align: center; color: #94a3b8; font-size: 11.5px; font-style: italic;";
+      comboList.appendChild(emptyMsg);
+    }
+    if (emptyMsg) {
+      emptyMsg.textContent = query 
+        ? `Tidak ditemukan lokasi yang cocok dengan "${query}".` 
+        : "Tidak ada lokasi untuk filter pulau/status ini.";
+      emptyMsg.style.display = "block";
+    }
+  } else if (emptyMsg) {
+    emptyMsg.style.display = "none";
   }
 }
 
@@ -317,12 +613,114 @@ window.selectAndSimulateVolcano = function(eventId, lat, lng, radiusKm) {
   runSimulation();
 };
 
+// =============================================================================
+// 3b. Lapisan Kawasan Hutan & Konservasi Karhutla Nasional (36 Lokasi Hutan)
+// =============================================================================
+function createForestSvgIcon(risk) {
+  const isHigh = risk === "Sangat Rawan";
+  const borderCol = isHigh ? "#ef4444" : "#10b981";
+  const bgCol = isHigh ? "#2a1515" : "#112217";
+
+  return L.divIcon({
+    className: "forest-div-icon",
+    html: `
+      <div class="volcano-marker-pin">
+        ${isHigh ? '<span class="volcano-pulse-ring" style="border-color:#10b981;"></span>' : ''}
+        <div style="background:${bgCol};border:2px solid ${borderCol};border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(16,185,129,0.5);">
+          <span style="font-size:13px;line-height:1;">🌲</span>
+        </div>
+      </div>
+    `,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+    popupAnchor: [0, -14]
+  });
+}
+
+function loadNationalForests() {
+  renderForestMarkers(NATIONAL_KARHUTLA_EVENTS);
+}
+
+function renderForestMarkers(forests) {
+  if (forestsLayer) {
+    map.removeLayer(forestsLayer);
+  }
+
+  const markers = [];
+  forests.forEach(f => {
+    const marker = L.marker([f.lat, f.lon], {
+      icon: createForestSvgIcon(f.risk),
+      title: `${f.name} - ${f.forest_type}`
+    });
+
+    marker.bindTooltip(`<strong>🌲 ${f.name}</strong><br><span style="color:#34d399">${f.forest_type} &bull; ${f.risk}</span>`, {
+      direction: "top",
+      offset: [0, -10],
+      className: "volcano-tooltip"
+    });
+
+    const popupHtml = `
+      <div class="popup-box">
+        <div class="popup-volcano-title">
+          <span>🌲 ${f.name}</span>
+          <span class="badge-level lvl-${f.risk === 'Sangat Rawan' ? 4 : 3}">${f.risk}</span>
+        </div>
+        <div style="color:#9db0a4;font-size:11px;margin-bottom:6px;">
+          Provinsi: <strong>${f.province}</strong> &bull; Ekosistem: <strong>${f.forest_type}</strong>
+        </div>
+        <div style="background:#131815;border:1px solid #2e3b33;border-radius:4px;padding:6px;font-size:11px;margin-bottom:8px;">
+          <div>[FIRMS] <strong>Titik Api Satelit:</strong> ~<strong>${f.n_hotspots} titik aktif</strong></div>
+          <div style="margin-top:3px;color:#cbd5e1;"><small>Estimasi Luas Kawasan: ${Number(f.area_ha).toLocaleString()} ha</small></div>
+        </div>
+        <button class="popup-action-btn" onclick="selectAndSimulateForest('${f.id}', ${f.lat}, ${f.lon})">
+          Simulasikan Sebaran Asap PM2.5
+        </button>
+      </div>
+    `;
+
+    marker.bindPopup(popupHtml, { maxWidth: 280 });
+    markers.push(marker);
+  });
+
+  forestsLayer = L.layerGroup(markers);
+
+  const toggle = document.getElementById("layerToggleForests");
+  if (!toggle || toggle.checked) {
+    forestsLayer.addTo(map);
+  }
+}
+
+// Tombol dari Popup Hutan Langsung
+window.selectAndSimulateForest = function(forestId, lat, lon) {
+  // 1. Pilih jenis bahaya karhutla
+  const hazardSel = document.getElementById("hazardSelect");
+  hazardSel.value = "fire";
+  currentHazard = "fire";
+  onHazardChanged();
+
+  // 2. Pilih event pada dropdown
+  const eventSel = document.getElementById("eventSelect");
+  eventSel.value = forestId;
+  onEventSelectChanged({ target: { value: forestId } });
+
+  // 3. Zoom ke kawasan hutan
+  if (lat && lon) {
+    map.flyTo([lat, lon], 9, { duration: 1.0 });
+  }
+
+  // 4. Buka drawer dan jalankan simulasi
+  openDrawer();
+  runSimulation();
+};
+
 function onHazardChanged() {
   const hazard = document.getElementById("hazardSelect").value;
   currentHazard = hazard;
   const eventSel = document.getElementById("eventSelect");
   const volcControls = document.getElementById("volcanoExpControls");
   const fireControls = document.getElementById("fireExpControls");
+  const labelEl = document.getElementById("eventSelectLabel");
+  const searchInput = document.getElementById("eventSearchInput");
 
   // Perbarui dropdown sesuai bahaya yang aktif
   populateVolcanoDropdown(allVolcanoesData);
@@ -333,26 +731,36 @@ function onHazardChanged() {
   }
 
   if (hazard === "fire") {
+    if (labelEl) labelEl.textContent = "Pilih Kawasan Hutan & Konservasi (36 Hutan):";
+    if (searchInput) searchInput.placeholder = "Cari taman nasional / hutan (misal: Sebangau, Tesso Nilo, Bromo)...";
     if (volcControls) volcControls.classList.add("hidden");
     if (fireControls) fireControls.classList.remove("hidden");
-    const currentFireId = eventSel ? eventSel.value : "live_kalimantan";
+    if (currentKrbCircle) {
+      map.removeLayer(currentKrbCircle);
+      currentKrbCircle = null;
+    }
+    const currentFireId = (eventSel && eventSel.value && (eventSel.value.startsWith("hutan_") || eventSel.value.startsWith("karhutla_") || eventSel.value === "live_kalimantan")) ? eventSel.value : "hutan_sebangau";
     loadHotspots(currentFireId);
     const fireObj = NATIONAL_KARHUTLA_EVENTS.find(k => k.id === currentFireId);
     if (fireObj) {
-      map.flyTo([fireObj.lat, fireObj.lon], 8, { duration: 1.2 });
+      map.flyTo([fireObj.lat, fireObj.lon], 9, { duration: 1.2 });
     } else {
-      map.flyTo([-2.5, 113.5], 8, { duration: 1.2 });
+      map.flyTo([-2.5, 118.0], 5, { duration: 1.2 });
     }
   } else {
+    if (labelEl) labelEl.textContent = "Pilih Gunung Api Aktif (70 Lokasi PVMBG):";
+    if (searchInput) searchInput.placeholder = "Cari gunung api (misal: Merapi, Lewotobi, Sinabung)...";
     if (volcControls) volcControls.classList.remove("hidden");
     if (fireControls) fireControls.classList.add("hidden");
     zoomToCurrentEvent(eventSel ? eventSel.value : "anak_krakatau_2026_09", "volcano");
   }
+  syncHazardSwitcherUI();
+  syncComboboxTriggerUI(eventSel ? eventSel.value : null);
 }
 
 function onEventSelectChanged(e) {
   const val = e.target.value;
-  const isFire = val === "live_kalimantan" || val.startsWith("karhutla_");
+  const isFire = val === "live_kalimantan" || val.startsWith("karhutla_") || val.startsWith("hutan_");
   const hazardSel = document.getElementById("hazardSelect");
 
   if (isFire) {
@@ -363,7 +771,7 @@ function onEventSelectChanged(e) {
     }
     const fireObj = NATIONAL_KARHUTLA_EVENTS.find(k => k.id === val);
     if (fireObj) {
-      map.flyTo([fireObj.lat, fireObj.lon], 8, { duration: 1.0 });
+      map.flyTo([fireObj.lat, fireObj.lon], 9, { duration: 1.0 });
       loadHotspots(val);
     }
   } else {
@@ -381,23 +789,26 @@ function onEventSelectChanged(e) {
       zoomToCurrentEvent(val, "volcano");
     }
   }
+  syncHazardSwitcherUI();
+  syncComboboxTriggerUI(val);
 }
 
 // =============================================================================
-// 4. Lapisan Titik Api Kebakaran (NASA FIRMS Hotspots)
+// 4. Lapisan Titik Api Kebakaran (NASA FIRMS Hotspots Nasional)
 // =============================================================================
 function loadHotspots(eventId) {
   if (hotspotsLayer) {
     map.removeLayer(hotspotsLayer);
   }
 
-  fetch(`${API_BASE}/layers/hotspots?event_id=${eventId || 'live_kalimantan'}`)
+  const targetEvent = eventId || "national";
+  fetch(`${API_BASE}/layers/hotspots?event_id=${targetEvent}`)
     .then(r => r.json())
     .then(geo => {
       hotspotsLayer = L.geoJSON(geo, {
         pointToLayer: (feature, latlng) => {
           const frp = feature.properties.frp || 10;
-          const radius = Math.min(Math.max(frp / 20, 3.5), 9);
+          const radius = Math.min(Math.max(frp / 25, 3.5), 9);
 
           return L.circleMarker(latlng, {
             radius: radius,
@@ -410,9 +821,23 @@ function loadHotspots(eventId) {
         },
         onEachFeature: (feature, layer) => {
           const p = feature.properties;
-          layer.bindTooltip(`Titik Api Aktif: ${p.frp} MW<br><small>Keyakinan Satelit: ${p.confidence}%</small>`, {
-            direction: "top"
-          });
+          let confLabel = "Nominal (50-84%)";
+          const rawConf = String(p.confidence || "").toLowerCase();
+          if (rawConf === "h" || rawConf === "high" || Number(rawConf) >= 80) {
+            confLabel = "Tinggi (85-100%)";
+          } else if (rawConf === "l" || rawConf === "low" || (Number(rawConf) > 0 && Number(rawConf) < 50)) {
+            confLabel = "Rendah (<50%)";
+          } else if (Number(rawConf) >= 50) {
+            confLabel = `${rawConf}% (Nominal)`;
+          }
+
+          layer.bindTooltip(`
+            <div style="font-family:sans-serif;font-size:11px;line-height:1.4;">
+              <strong style="color:#f87171;">Titik Api Aktif: ${p.frp} MW</strong><br>
+              <span style="color:#fbbf24;">Keyakinan Satelit: ${confLabel}</span><br>
+              <small style="color:#94a3b8;">Satelit VIIRS NRT &bull; ${p.acq_date || 'Terkini'}</small>
+            </div>
+          `, { direction: "top", className: "volcano-tooltip" });
         }
       });
 
@@ -680,7 +1105,17 @@ function renderTiersGeoJSON(geo) {
 function runSimulation() {
   const hazard = document.getElementById("hazardSelect").value;
   currentHazard = hazard;
-  const eventId = document.getElementById("eventSelect").value;
+  let eventId = document.getElementById("eventSelect") ? document.getElementById("eventSelect").value : "";
+  if (!eventId) {
+    const selectedItem = document.querySelector("#eventComboboxList .combobox-item.selected");
+    if (selectedItem && selectedItem.dataset.id) {
+      eventId = selectedItem.dataset.id;
+    } else {
+      eventId = hazard === "fire" ? "hutan_sebangau" : "anak_krakatau_2026_09";
+    }
+    const sel = document.getElementById("eventSelect");
+    if (sel) sel.value = eventId;
+  }
   const mode = document.querySelector('input[name="simMode"]:checked').value;
   const btn = document.getElementById("btnRunSim");
   const progText = document.getElementById("runProgressText");
@@ -763,7 +1198,12 @@ function runSimulation() {
 
 function zoomToCurrentEvent(eventId, hazard) {
   if (hazard === "fire") {
-    map.flyTo([-2.5, 113.5], 8, { duration: 1.0 });
+    const fireObj = NATIONAL_KARHUTLA_EVENTS.find(k => k.id === eventId);
+    if (fireObj) {
+      map.flyTo([fireObj.lat, fireObj.lon], 9, { duration: 1.0 });
+      return;
+    }
+    map.flyTo([-2.5, 118.0], 5, { duration: 1.0 });
     return;
   }
 
@@ -1121,31 +1561,6 @@ function closeLegendModal() {
 // =============================================================================
 // 11. Event Listeners & Bootstrapping
 // =============================================================================
-function onHazardChanged() {
-  const hazardSel = document.getElementById("hazardSelect");
-  const eventSel = document.getElementById("eventSelect");
-  const volcanoControls = document.getElementById("volcanoExpControls");
-  const fireControls = document.getElementById("fireExpControls");
-
-  currentHazard = hazardSel.value;
-  if (currentHazard === "fire") {
-    eventSel.value = "live_kalimantan";
-    volcanoControls.classList.add("hidden");
-    fireControls.classList.remove("hidden");
-    map.setView([-2.5, 113.5], 8);
-    loadHotspots("live_kalimantan");
-    if (currentKrbCircle) map.removeLayer(currentKrbCircle);
-  } else {
-    // Cari gunung pertama yang ada
-    if (eventSel.value === "live_kalimantan") {
-      eventSel.value = "anak_krakatau_2026_09";
-    }
-    volcanoControls.classList.remove("hidden");
-    fireControls.classList.add("hidden");
-    zoomToCurrentEvent(eventSel.value, "volcano");
-    if (hotspotsLayer) map.removeLayer(hotspotsLayer);
-  }
-}
 
 document.addEventListener("DOMContentLoaded", () => {
   initMap();
@@ -1201,6 +1616,16 @@ document.addEventListener("DOMContentLoaded", () => {
       else map.removeLayer(volcanoesLayer);
     }
   });
+
+  const toggleForests = document.getElementById("layerToggleForests");
+  if (toggleForests) {
+    toggleForests.addEventListener("change", e => {
+      if (forestsLayer) {
+        if (e.target.checked) forestsLayer.addTo(map);
+        else map.removeLayer(forestsLayer);
+      }
+    });
+  }
 
   document.getElementById("layerToggleHotspots").addEventListener("change", e => {
     if (hotspotsLayer) {
@@ -1464,6 +1889,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initDrawerTabs();
   initDockToggle();
   setupCustomPointMode();
+  initCustomControls();
 });
 
 function initDrawerTabs() {
@@ -1572,4 +1998,93 @@ function cancelCustomPoint() {
   }
   const mapElem = document.getElementById("map");
   if (mapElem) mapElem.style.cursor = "";
+}
+
+// =============================================================================
+// Inisialisasi Kontrol Interaktif Taktis (Switcher Bahaya & Combobox Pencarian)
+// =============================================================================
+function initCustomControls() {
+  // 1. Tombol Switcher Bahaya (Gunung Api vs Karhutla)
+  const btnVolc = document.getElementById("btnHazardVolcano");
+  const btnFire = document.getElementById("btnHazardFire");
+  const tabVolc = document.getElementById("comboTabVolcano");
+  const tabFire = document.getElementById("comboTabFire");
+  const hazardSel = document.getElementById("hazardSelect");
+
+  function switchToHazard(mode) {
+    if (hazardSel) {
+      const changed = hazardSel.value !== mode;
+      hazardSel.value = mode;
+      currentHazard = mode;
+      if (changed) {
+        hazardSel.dispatchEvent(new Event("change"));
+      } else {
+        onHazardChanged();
+      }
+    }
+  }
+
+  if (btnVolc) btnVolc.addEventListener("click", () => switchToHazard("volcano"));
+  if (btnFire) btnFire.addEventListener("click", () => switchToHazard("fire"));
+  if (tabVolc) tabVolc.addEventListener("click", (e) => { e.stopPropagation(); switchToHazard("volcano"); });
+  if (tabFire) tabFire.addEventListener("click", (e) => { e.stopPropagation(); switchToHazard("fire"); });
+
+  // 2. Trigger Dropdown Combobox Lokasi
+  const trigger = document.getElementById("eventComboboxTrigger");
+  if (trigger) {
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleCombobox();
+    });
+  }
+
+  // 3. Kolom Pencarian Cepat
+  const searchInput = document.getElementById("eventSearchInput");
+  if (searchInput) {
+    searchInput.addEventListener("input", filterComboboxItems);
+    searchInput.addEventListener("click", (e) => e.stopPropagation());
+  }
+
+  // 4. Tombol Bersihkan Pencarian (✕)
+  const clearBtn = document.getElementById("btnClearSearch");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (searchInput) {
+        searchInput.value = "";
+        filterComboboxItems();
+        searchInput.focus();
+      }
+    });
+  }
+
+  // 5. Filter Cepat Berdasarkan Pulau / Status Siaga
+  document.querySelectorAll(".chip-filter-btn").forEach(chip => {
+    chip.addEventListener("click", (e) => {
+      e.stopPropagation();
+      document.querySelectorAll(".chip-filter-btn").forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      currentComboboxFilter = chip.getAttribute("data-filter") || "all";
+      filterComboboxItems();
+    });
+  });
+
+  // 6. Tutup popover jika mengklik di luar wrapper combobox
+  document.addEventListener("click", (e) => {
+    const wrapper = document.getElementById("eventComboboxWrapper");
+    if (wrapper && !wrapper.contains(e.target)) {
+      closeCombobox();
+    }
+  });
+
+  // 7. Tombol ESC untuk menutup combobox
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      closeCombobox();
+    }
+  });
+
+  // Sinkronkan status awal
+  syncHazardSwitcherUI();
+  syncComboboxTriggerUI(document.getElementById("eventSelect") ? document.getElementById("eventSelect").value : null);
 }

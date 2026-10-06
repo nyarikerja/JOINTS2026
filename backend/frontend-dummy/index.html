@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>UdaraSiaga Indonesia | Pusat Pemodelan &amp; Dispersi Bahaya Atmosfer Nasional</title>
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
-  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/svg+xml" href="/favicon.ico">
+  <link rel="stylesheet" href="style.css?v=20261006_09">
 </head>
 <body class="enterprise-magma">
   <!-- Bilah Navigasi & Telemetri Darurat Atas (MAGMA Tactical Header) -->
@@ -118,24 +119,100 @@
         </div>
 
         <div class="control-dock-body" id="controlDockBody">
-          <!-- Pilihan Bahaya -->
+          <!-- Pilihan Bahaya (Segmented Control Taktis Berwarna) -->
           <div class="dock-field">
-            <label for="hazardSelect">Jenis Bahaya Atmosfer:</label>
-            <select id="hazardSelect" class="select-box">
+            <label>Jenis Bahaya Atmosfer:</label>
+            <div class="hazard-switcher-group" id="hazardSwitcherGroup">
+              <button type="button" class="hazard-tab-btn active" data-hazard="volcano" id="btnHazardVolcano">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="12,2 2,21 22,21" fill="#ef4444" stroke="#ffffff" stroke-width="1.5"></polygon>
+                </svg>
+                <span>70 Gunung Api <small>(PVMBG)</small></span>
+              </button>
+              <button type="button" class="hazard-tab-btn" data-hazard="fire" id="btnHazardFire">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="#10b981">
+                  <path d="M12 2c.5 2.5 2 4.5 3 6 1.5 2.2 2 4 2 6a7 7 0 1 1-14 0c0-3.5 2.5-6.5 5-8.5 0 2 1.5 3.5 3 3.5.5-2.5 1-5 1-7z"/>
+                </svg>
+                <span>36 Kawasan Hutan <small>(Konservasi)</small></span>
+              </button>
+            </div>
+            <!-- Hidden native select for 100% JS compatibility -->
+            <select id="hazardSelect" class="select-box" style="display: none;">
               <option value="volcano">Erupsi Gunung Api (Abu Vulkanik)</option>
               <option value="fire">Kebakaran Hutan &amp; Lahan (Asap PM2.5)</option>
             </select>
           </div>
 
-          <!-- Pilihan Kejadian Nasional -->
-          <div class="dock-field">
+          <!-- Pilihan Kejadian Nasional (Searchable Custom Combobox) -->
+          <div class="dock-field event-combobox-wrapper" id="eventComboboxWrapper">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <label for="eventSelect" style="margin-bottom: 0;">Lokasi Kejadian (Nasional):</label>
+              <label for="eventComboboxTrigger" id="eventSelectLabel" style="margin-bottom: 0;">Pilih Gunung Api Aktif (70 Lokasi PVMBG):</label>
               <button type="button" id="btnToggleCustomPoint" style="background: none; border: none; color: #38bdf8; font-size: 11px; font-weight: 600; cursor: pointer; padding: 0;" title="Klik lokasi mana saja di peta Indonesia untuk simulasi on-the-fly">Klik Peta Bebas</button>
             </div>
-            <select id="eventSelect" class="select-box">
-              <!-- Diisi otomatis dari katalog 70 Gunung Api PVMBG & Karhutla Nasional -->
+
+            <!-- Trigger Button -->
+            <button type="button" class="custom-combobox-trigger" id="eventComboboxTrigger" aria-expanded="false" aria-haspopup="listbox">
+              <span class="combobox-selected-info" id="comboboxSelectedText">
+                <span class="combobox-icon" id="comboboxHazardIcon">🌋</span>
+                <span class="combobox-title" id="comboboxSelectedTitle">Pilih Gunung / Kejadian...</span>
+              </span>
+              <svg class="combobox-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+
+            <!-- Hidden native select for backward-compatibility with backend scripts/tests -->
+            <select id="eventSelect" class="select-box" style="display: none;">
+              <option value="anak_krakatau_2026_09" selected>[Level III] G. Anak Krakatau (Lampung)</option>
             </select>
+
+            <!-- Dropdown Popover Menu -->
+            <div class="custom-combobox-popover" id="eventComboboxPopover">
+              <!-- Mode Tabs Langsung di Dalam Dropdown -->
+              <div class="combobox-mode-tabs" id="comboboxModeTabs">
+                <button type="button" class="combo-mode-tab active" data-hazard="volcano" id="comboTabVolcano">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="12,2 2,21 22,21" fill="#ef4444" stroke="#ffffff" stroke-width="1.5"></polygon>
+                  </svg>
+                  <span>70 Gunung Api (PVMBG)</span>
+                </button>
+                <button type="button" class="combo-mode-tab" data-hazard="fire" id="comboTabFire">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="#10b981">
+                    <path d="M12 2c.5 2.5 2 4.5 3 6 1.5 2.2 2 4 2 6a7 7 0 1 1-14 0c0-3.5 2.5-6.5 5-8.5 0 2 1.5 3.5 3 3.5.5-2.5 1-5 1-7z"/>
+                  </svg>
+                  <span>36 Kawasan Hutan (Konservasi)</span>
+                </button>
+              </div>
+
+              <!-- Search Bar -->
+              <div class="combobox-search-box">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="eventSearchInput" class="combobox-search-input" placeholder="Cari nama gunung, pulau, provinsi..." autocomplete="off">
+                <button type="button" id="btnClearSearch" class="combobox-clear-btn" style="display: none;">&times;</button>
+              </div>
+
+              <!-- Quick Filter Chips -->
+              <div class="combobox-chips-scroll" id="comboboxChipsContainer">
+                <button type="button" class="chip-filter-btn active" data-filter="all">Semua</button>
+                <button type="button" class="chip-filter-btn chip-highlight" data-filter="alert" id="chipAlert">Siaga/Awas</button>
+                <button type="button" class="chip-filter-btn" data-filter="Jawa">Jawa</button>
+                <button type="button" class="chip-filter-btn" data-filter="Sumatera">Sumatera</button>
+                <button type="button" class="chip-filter-btn" data-filter="Bali & Nusa Tenggara">Bali-NTT</button>
+                <button type="button" class="chip-filter-btn" data-filter="Sulawesi">Sulawesi</button>
+                <button type="button" class="chip-filter-btn" data-filter="Maluku & Papua">Maluku-Papua</button>
+                <button type="button" class="chip-filter-btn" data-filter="Kalimantan">Kalimantan</button>
+              </div>
+
+              <!-- Item List with smooth slim scroll -->
+              <div class="combobox-list" id="eventComboboxList" role="listbox">
+                <!-- Diisi via app.js -->
+              </div>
+            </div>
+
+            <!-- Custom Point Badge -->
             <div id="customPointBadge" class="custom-point-indicator hidden" style="margin-top: 6px; padding: 6px 9px; border-radius: 6px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.4); font-size: 11px; display: none; align-items: center; justify-content: space-between;">
               <span style="color: #7dd3fc; display: flex; align-items: center; gap: 5px;">
                 <span style="width: 7px; height: 7px; border-radius: 50%; background: #38bdf8; display: inline-block;"></span>
@@ -229,6 +306,11 @@
             <input type="checkbox" id="layerToggleVolcanoes" checked>
             <span class="toggle-dot dot-volcano"></span>
             <span>Gunungapi PVMBG (Nasional)</span>
+          </label>
+          <label class="toggle-row">
+            <input type="checkbox" id="layerToggleForests" checked>
+            <span class="toggle-dot dot-forest" style="background:#10b981;"></span>
+            <span>Kawasan Hutan (36 Nasional)</span>
           </label>
           <label class="toggle-row">
             <input type="checkbox" id="layerToggleHotspots" checked>
@@ -629,6 +711,6 @@
   </div>
 
   <script src="vendor/leaflet/leaflet.js"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=20261006_09"></script>
 </body>
 </html>

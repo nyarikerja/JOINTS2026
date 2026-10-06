@@ -923,6 +923,404 @@ body.enterprise-magma {
   font-weight: 600;
 }
 
+/* ==========================================================================
+   2b. Tactical Hazard Switcher & Searchable Combobox Controls
+   ========================================================================== */
+.hazard-switcher-group {
+  display: flex;
+  background: #111613;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 3px;
+  gap: 4px;
+}
+
+.hazard-tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  padding: 6px 8px;
+  color: var(--ink-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  user-select: none;
+}
+
+.hazard-tab-btn * {
+  pointer-events: none;
+}
+
+.hazard-tab-btn:active {
+  transform: scale(0.96);
+}
+
+.hazard-tab-btn small {
+  opacity: 0.75;
+  font-weight: 400;
+}
+
+.hazard-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink-primary);
+}
+
+.hazard-tab-btn[data-hazard="volcano"].active {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.22), rgba(185, 28, 28, 0.12));
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #fca5a5;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);
+}
+
+.hazard-tab-btn[data-hazard="fire"].active {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.22), rgba(194, 65, 12, 0.12));
+  border-color: rgba(249, 115, 22, 0.6);
+  color: #fdba74;
+  box-shadow: 0 0 10px rgba(249, 115, 22, 0.25);
+}
+
+/* Event Combobox Wrapper & Trigger */
+.event-combobox-wrapper {
+  position: relative;
+}
+
+.custom-combobox-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #111613;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 10px;
+  color: var(--ink-primary);
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.custom-combobox-trigger:hover {
+  border-color: var(--border-focus);
+  background: #161e19;
+}
+
+.custom-combobox-trigger.open {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+.combobox-selected-info {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.combobox-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.combobox-title {
+  font-weight: 600;
+  color: #f1f5f9;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.combobox-chevron {
+  color: var(--ink-muted);
+  flex-shrink: 0;
+  margin-left: 6px;
+  transition: transform 0.2s ease;
+}
+
+.custom-combobox-trigger.open .combobox-chevron {
+  transform: rotate(180deg);
+}
+
+/* Combobox Popover Dropdown */
+.custom-combobox-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #121815;
+  border: 1px solid #2e3e34;
+  border-radius: 8px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(56, 189, 248, 0.15);
+  backdrop-filter: blur(16px);
+  z-index: 2200;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: 420px;
+  animation: dropdownAnim 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.custom-combobox-popover.open {
+  display: flex;
+}
+
+@keyframes dropdownAnim {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mode Switcher Tabs di dalam Dropdown Popover */
+.combobox-mode-tabs {
+  display: flex;
+  background: #090e0b;
+  border-bottom: 1px solid #1f2a23;
+  padding: 4px;
+  gap: 4px;
+}
+
+.combo-mode-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.combo-mode-tab:hover {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.combo-mode-tab[data-hazard="volcano"].active {
+  background: rgba(239, 68, 68, 0.16);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+}
+
+.combo-mode-tab[data-hazard="fire"].active {
+  background: rgba(16, 185, 129, 0.16);
+  border-color: rgba(16, 185, 129, 0.45);
+  color: #6ee7b7;
+}
+
+.combobox-search-box {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  background: #0d120f;
+  border-bottom: 1px solid #222e26;
+}
+
+.combobox-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 11px;
+  outline: none;
+}
+
+.combobox-search-input::placeholder {
+  color: #64748b;
+}
+
+.combobox-clear-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 15px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.combobox-clear-btn:hover {
+  color: #f1f5f9;
+}
+
+.combobox-chips-scroll {
+  display: flex;
+  gap: 4px;
+  padding: 6px 8px;
+  overflow-x: auto;
+  background: #101613;
+  border-bottom: 1px solid #1f2b23;
+  scrollbar-width: none;
+}
+
+.combobox-chips-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.chip-filter-btn {
+  background: #18221c;
+  border: 1px solid #28372d;
+  color: var(--ink-secondary);
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chip-filter-btn:hover {
+  border-color: #38bdf8;
+  color: #fff;
+}
+
+.chip-filter-btn.active {
+  background: #0284c7;
+  border-color: #38bdf8;
+  color: #fff;
+}
+
+.chip-filter-btn.chip-highlight {
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+}
+
+.chip-filter-btn.chip-highlight.active {
+  background: #d97706;
+  border-color: #fbbf24;
+  color: #fff;
+}
+
+/* Combobox List Items */
+.combobox-list {
+  overflow-y: auto;
+  max-height: 290px;
+  padding: 4px 0;
+  scrollbar-width: thin;
+  scrollbar-color: #2b3930 #121815;
+}
+
+.combobox-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.combobox-list::-webkit-scrollbar-thumb {
+  background: #2b3930;
+  border-radius: 3px;
+}
+
+.combobox-group-header {
+  padding: 7px 10px 3px 10px;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: rgba(18, 24, 21, 0.95);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid #1c2620;
+}
+
+.combobox-item {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+  border-left: 3px solid transparent;
+}
+
+.combobox-item:hover {
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.combobox-item.selected {
+  background: rgba(2, 132, 199, 0.18);
+  border-left-color: #38bdf8;
+}
+
+.combobox-item-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.combobox-item-name {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.combobox-item-sub {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 1px;
+}
+
+.item-lvl-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  letter-spacing: 0.3px;
+}
+
+.item-badge-lvl4 {
+  background: rgba(239, 68, 68, 0.25);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+.item-badge-lvl3 {
+  background: rgba(249, 115, 22, 0.25);
+  color: #fb923c;
+  border: 1px solid rgba(249, 115, 22, 0.5);
+}
+
+.item-badge-lvl2 {
+  background: rgba(234, 179, 8, 0.2);
+  color: #fde047;
+  border: 1px solid rgba(234, 179, 8, 0.4);
+}
+
+.item-badge-lvl1 {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.item-badge-fire {
+  background: rgba(249, 115, 22, 0.2);
+  color: #fdba74;
+  border: 1px solid rgba(249, 115, 22, 0.4);
+}
+
+.combobox-empty-msg {
+  padding: 16px;
+  text-align: center;
+  color: #64748b;
+  font-size: 11px;
+}
+
 /* Experiment Drawer */
 .experiment-drawer {
   background: #181f1b;
