@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #080c0e;
+    color: #f1f5f9;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* Filter Dark Mode untuk OpenStreetMap Tile */
+.dark-tiles {
+  filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+}
+
+/* Animasi Pulse Cincin Bahaya Gunung */
+.volcano-pulse-ring {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  animation: pulse-ring 1.8s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+  pointer-events: none;
+}
+
+.ring-red {
+  border: 2px solid #ef4444;
+}
+
+.ring-orange {
+  border: 2px solid #f97316;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+/* Media Print Optimization */
+@media print {
+  header, aside, .absolute {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    overflow: visible !important;
+  }
+}
