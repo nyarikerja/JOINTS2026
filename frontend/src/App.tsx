@@ -27,8 +27,9 @@ export const App: React.FC = () => {
     rain_scavenging_mm_h: 0
   });
 
+  const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [currentHour, setCurrentHour] = useState<number>(0);
-  const [hourlyTiersCache, setHourlyTiersCache] = useState<Record<string, any> | null>(null);
+  const [hourlyTiersCache, setHourlyTiersCache] = useState<Record<string | number, any> | null>(null);
 
   const [impactData, setImpactData] = useState<ImpactResponse | null>(null);
   const [facilitiesData, setFacilitiesData] = useState<FacilitiesImpactResponse | null>(null);
@@ -46,14 +47,46 @@ export const App: React.FC = () => {
 
   const [resetViewTrigger, setResetViewTrigger] = useState<number>(0);
 
-  const handleRunSimulation = async () => {
+  // Ambil poligon sebaran jam tertentu saat activeRunId aktif atau currentHour berubah
+  React.useEffect(() => {
+    if (!activeRunId) return;
+    if (hourlyTiersCache && hourlyTiersCache[currentHour]) return;
+
+    api.getTiersAtHour(activeRunId, currentHour)
+      .then((geo) => {
+        setHourlyTiersCache((prev) => ({
+          ...(prev || {}),
+          [currentHour]: geo
+        }));
+      })
+      .catch((err) => console.error("Gagal memuat poligon jam", currentHour, err));
+  }, [activeRunId, currentHour]);
+
+  const handleHazardChange = (newHazard: HazardType) => {
+    setHazard(newHazard);
+    if (newHazard === "fire" && eventId !== "live_kalimantan") {
+      setEventId("live_kalimantan");
+    } else if (newHazard === "volcano" && eventId === "live_kalimantan") {
+      setEventId("anak_krakatau_2026_09");
+    }
+  };
+
+  const [simulatedEventName, setSimulatedEventName] = useState<string>("G. Anak Krakatau");
+
+  const handleRunSimulation = async (targetHazard?: HazardType, targetEventId?: string) => {
+    const activeHazard = targetHazard || hazard;
+    const activeEventId = targetEventId || eventId;
+
+    if (targetHazard) setHazard(targetHazard);
+    if (targetEventId) setEventId(targetEventId);
+
     setIsRunning(true);
     setProgressText("Mengunduh vektor angin adveksi...");
 
     const payload = {
-      hazard,
+      hazard: activeHazard,
       mode,
-      source: { event_id: eventId },
+      source: { event_id: activeEventId },
       horizon_hours: 48,
       n_members: 15,
       seed: 42,
@@ -65,16 +98,28 @@ export const App: React.FC = () => {
       setProgressText("Menghitung dispersi partikel Lagrangian RK2 (15 ansambel)...");
       const simRes = await api.runSimulation(payload);
       const runId = simRes.run_id;
+      setActiveRunId(runId);
+
+      const nameMap: Record<string, string> = {
+        anak_krakatau_2026_09: "G. Anak Krakatau (Selat Sunda)",
+        merapi_yogyakarta: "G. Merapi (Jawa Tengah / DIY)",
+        lewotobi_laki_laki: "G. Lewotobi Laki-laki (NTT)",
+        marapi_sumatera: "G. Marapi (Sumatera Barat)",
+        semeru: "G. Semeru (Jawa Timur)",
+        live_kalimantan: "Karhutla Gambut Kalimantan"
+      };
+      setSimulatedEventName(nameMap[activeEventId] || activeEventId);
 
       setProgressText("Mengekstrak kontur poligon & dampak populasi...");
-      const [impact, facilities, validation] = await Promise.all([
+      const [impact, facilities, validation, tierZero] = await Promise.all([
         api.getImpact(runId).catch(() => null),
         api.getFacilitiesImpacted(runId).catch(() => null),
-        api.getValidation(runId).catch(() => null)
+        api.getValidation(activeEventId).catch(() => null),
+        api.getTiersAtHour(runId, 0).catch(() => null)
       ]);
 
-      if (simRes.hourly_tiers) {
-        setHourlyTiersCache(simRes.hourly_tiers);
+      if (tierZero) {
+        setHourlyTiersCache({ 0: tierZero });
       }
 
       setImpactData(impact);
@@ -95,16 +140,20 @@ export const App: React.FC = () => {
     setHazard("volcano");
     setEventId("anak_krakatau_2026_09");
     setMode("auto");
-    await handleRunSimulation();
+    await handleRunSimulation("volcano", "anak_krakatau_2026_09");
   };
 
   const handleDrawRoute = (s: SchoolItem) => {
-    const hospital = s.nearest_hospital;
-    const destLat = hospital?.lat ?? s.lat + 0.035;
-    const destLng = hospital?.lng ?? s.lng + 0.035;
+    const sLat = s.lat ?? s.latitude;
+    const sLng = s.lng ?? s.longitude;
+    if (sLat === undefined || sLng === undefined) return;
+
+    const hospital = s.nearest_safe_hospital || s.nearest_hospital;
+    const destLat = hospital?.lat ?? hospital?.latitude ?? sLat + 0.035;
+    const destLng = hospital?.lng ?? hospital?.longitude ?? sLng + 0.035;
 
     setEvacuationRoute({
-      origin: [s.lat, s.lng],
+      origin: [sLat, sLng],
       dest: [destLat, destLng],
       label: `Evakuasi Siswa: ${s.name} → ${hospital?.name || "RSUD Terdekat"}`
     });
@@ -127,6 +176,7 @@ export const App: React.FC = () => {
         {/* Zona C: Peta Leaflet Full Canvas */}
         <MapWorkspace
           hazard={hazard}
+          eventId={eventId}
           currentHour={currentHour}
           hourlyTiersCache={hourlyTiersCache}
           evacuationRoute={evacuationRoute}
@@ -136,10 +186,20 @@ export const App: React.FC = () => {
           resetViewTrigger={resetViewTrigger}
         />
 
+        {/* Floating Active Simulation Pill */}
+        {activeRunId && (
+          <div className="absolute top-3.5 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md border border-slate-700/80 rounded-full px-3.5 py-1 z-[1000] text-xs flex items-center gap-2 shadow-xl pointer-events-none">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-slate-300">Simulasi Aktif:</span>
+            <strong className="text-white font-semibold">{simulatedEventName}</strong>
+            <span className="text-sky-400 font-mono text-[11px]">(H+{currentHour}:00)</span>
+          </div>
+        )}
+
         {/* Zona B: Floating Controller Melayang di Kiri Atas Peta */}
         <ControllerDock
           hazard={hazard}
-          onHazardChange={setHazard}
+          onHazardChange={handleHazardChange}
           eventId={eventId}
           onEventChange={setEventId}
           mode={mode}

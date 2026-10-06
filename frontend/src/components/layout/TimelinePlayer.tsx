@@ -28,7 +28,7 @@ export const TimelinePlayer: React.FC<TimelinePlayerProps> = ({
   const quickSteps = [0, 6, 12, 24, 36, 48];
 
   return (
-    <div className="absolute bottom-3.5 left-1/2 -translate-x-1/2 w-[min(720px,calc(100%-28px))] bg-slate-900/90 backdrop-blur-xl border border-slate-700/80 rounded-xl px-4 py-2.5 z-30 shadow-2xl text-slate-100">
+    <div className="absolute bottom-3.5 left-1/2 -translate-x-1/2 w-[min(720px,calc(100%-28px))] bg-slate-900/90 backdrop-blur-xl border border-slate-700/80 rounded-xl px-4 py-2.5 z-[1000] shadow-2xl text-slate-100">
       <div className="flex items-center justify-between mb-1.5">
         <div className="flex items-center gap-2">
           <button

@@ -31,7 +31,7 @@ export const TabSchools: React.FC<TabSchoolsProps> = ({
       ) : (
         <div className="space-y-2.5">
           {schools.map((s) => {
-            const prob = s.exposure_prob_pct || 0;
+            const prob = s.exposure_pct ?? s.exposure_prob_pct ?? (s.exposure_probability ? Math.round(s.exposure_probability * 100) : 0);
             const isAwas = prob >= 40;
             const isWaspada = prob >= 15 && prob < 40;
 
@@ -41,7 +41,7 @@ export const TabSchools: React.FC<TabSchoolsProps> = ({
               ? "border-amber-600/60 bg-amber-950/20"
               : "border-emerald-600/40 bg-emerald-950/20";
 
-            const badgeText = isAwas
+            const badgeText = s.action_code === "PJJ_DARING" || isAwas
               ? "AWAS • ALIHKAN KE PJJ DARING"
               : isWaspada
               ? "WASPADA • HENTIKAN OUTDOOR"
@@ -53,13 +53,17 @@ export const TabSchools: React.FC<TabSchoolsProps> = ({
               ? "bg-amber-800 text-amber-200"
               : "bg-emerald-800 text-emerald-200";
 
-            const hospital = s.nearest_hospital || {
+            const hospital = s.nearest_safe_hospital || s.nearest_hospital || {
               name: "RSUD Rujukan Terdekat",
               distance_km: 4.5
             };
 
+            const sLat = s.lat ?? s.latitude ?? 0;
+            const sLng = s.lng ?? s.longitude ?? 0;
+            const eta = s.eta_hours ?? s.arrival_time_earliest_h ?? 4;
+
             return (
-              <div key={s.id || s.name} className={`border rounded-lg p-3 text-slate-200 ${borderClass}`}>
+              <div key={s.facility_id || s.id || s.name} className={`border rounded-lg p-3 text-slate-200 ${borderClass}`}>
                 <div className="flex items-start justify-between gap-2 mb-1.5">
                   <div>
                     <h4 className="font-bold text-white text-xs">🏫 {s.name}</h4>
@@ -77,9 +81,15 @@ export const TabSchools: React.FC<TabSchoolsProps> = ({
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[10px]">Estimasi Tiba (ETA):</span>
-                    <strong className="text-amber-300 text-xs font-mono">T + {s.eta_hours || 4}:00 Jam</strong>
+                    <strong className="text-amber-300 text-xs font-mono">T + {eta}:00 Jam</strong>
                   </div>
                 </div>
+
+                {s.action_detail && (
+                  <p className="text-[10px] text-slate-300 mb-2 bg-slate-900/60 p-1.5 rounded">
+                    {s.action_detail}
+                  </p>
+                )}
 
                 <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-[11px]">
                   <span className="text-slate-400 truncate max-w-[170px] text-[10px]">
@@ -87,7 +97,7 @@ export const TabSchools: React.FC<TabSchoolsProps> = ({
                   </span>
                   <div className="flex gap-1.5">
                     <button
-                      onClick={() => onFlyTo(s.lat, s.lng)}
+                      onClick={() => onFlyTo(sLat, sLng)}
                       className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-[10px] transition cursor-pointer"
                     >
                       Pusatkan

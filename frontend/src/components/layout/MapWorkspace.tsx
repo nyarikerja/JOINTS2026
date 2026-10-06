@@ -8,8 +8,9 @@ import type { HazardType } from "../../types/api";
 
 interface MapWorkspaceProps {
   hazard: HazardType;
+  eventId: string;
   currentHour: number;
-  hourlyTiersCache: Record<string, any> | null;
+  hourlyTiersCache: Record<string | number, any> | null;
   evacuationRoute: { origin: [number, number]; dest: [number, number]; label: string } | null;
   onSelectEvent: (eventId: string, lat: number, lng: number, radiusKm: number) => void;
   resetViewTrigger: number;
@@ -17,6 +18,7 @@ interface MapWorkspaceProps {
 
 export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
   hazard,
+  eventId,
   currentHour,
   hourlyTiersCache,
   evacuationRoute,
@@ -87,6 +89,28 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
       );
     }
   }, [resetViewTrigger]);
+
+  // Otomatis arahkan kamera peta ke lokasi kejadian terpilih
+  const EVENT_COORDS: Record<string, [number, number, number]> = {
+    anak_krakatau_2026_09: [-6.102, 105.423, 9],
+    merapi_yogyakarta: [-7.540, 110.446, 10],
+    lewotobi_laki_laki: [-8.538, 122.768, 10],
+    marapi_sumatera: [-0.381, 100.473, 10],
+    semeru: [-8.108, 112.922, 10],
+    agung: [-8.343, 115.508, 10],
+    rinjani: [-8.420, 116.470, 10],
+    sinabung: [3.170, 98.392, 10],
+    live_kalimantan: [-2.200, 113.900, 8]
+  };
+
+  useEffect(() => {
+    if (!mapRef.current || !eventId) return;
+    const target = EVENT_COORDS[eventId];
+    if (target) {
+      mapRef.current.flyTo([target[0], target[1]], target[2], { duration: 1.2 });
+      highlightKrb(mapRef.current, target[0], target[1], 5.0);
+    }
+  }, [eventId]);
 
   const loadVolcanoes = async (map: L.Map) => {
     try {
@@ -251,7 +275,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
 
     plumeLayerRef.current = L.geoJSON(geoData, {
       style: (feature: any) => {
-        const tier = feature.properties.tier || "p50";
+        const tier = feature.properties.tier || "mid";
         if (tier === "p90" || tier === "min") {
           return { color: colors.p90, fillColor: colors.p90, fillOpacity: 0.65, weight: 1.5 };
         }
@@ -262,7 +286,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
       },
       onEachFeature: (feature: any, layer) => {
         const p = feature.properties;
-        const tierName = p.tier === "p90" ? "Konsentrasi Tinggi (P90)" : (p.tier === "p50" ? "Konsentrasi Sedang (P50)" : "Jangkauan Maksimum (P05)");
+        const tierName = p.tier_label || (p.tier === "p90" || p.tier === "min" ? "Konsentrasi Tinggi (P90)" : (p.tier === "p50" || p.tier === "mid" ? "Konsentrasi Sedang (P50)" : "Jangkauan Maksimum (P05)"));
         layer.bindTooltip(`<strong>${colors.label}</strong><br>Tingkat: ${tierName}<br>Waktu: ${formatHour(currentHour)}`, {
           sticky: true
         });
@@ -293,7 +317,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
   const colors = CONFIG.COLORS[hazard] || CONFIG.COLORS.volcano;
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full isolate z-0">
       <div ref={mapContainerRef} className="w-full h-full bg-[#0b0f14]" />
 
       {/* Mini Legenda di Kiri Bawah Peta */}

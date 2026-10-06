@@ -85,43 +85,108 @@ export interface ImpactResponse {
 }
 
 export interface SchoolItem {
-  id: string;
+  id?: string;
+  facility_id?: string;
   name: string;
   district?: string;
   province?: string;
-  lat: number;
-  lng: number;
-  exposure_prob_pct: number;
-  eta_hours: number;
+  lat?: number;
+  latitude?: number;
+  lng?: number;
+  longitude?: number;
+  exposure_prob_pct?: number;
+  exposure_pct?: number;
+  exposure_probability?: number;
+  eta_hours?: number;
+  arrival_time_earliest_h?: number | null;
+  arrival_time_most_likely_h?: number | null;
+  action_code?: string;
+  recommendation?: string;
+  action_detail?: string;
   nearest_hospital?: {
     name: string;
     distance_km: number;
     lat?: number;
+    latitude?: number;
     lng?: number;
+    longitude?: number;
+  };
+  nearest_safe_hospital?: {
+    name: string;
+    distance_km: number;
+    lat?: number;
+    latitude?: number;
+    lng?: number;
+    longitude?: number;
+    district?: string;
   };
 }
 
 export interface HospitalItem {
-  id: string;
+  id?: string;
+  facility_id?: string;
   name: string;
   district?: string;
   province?: string;
-  lat: number;
-  lng: number;
-  exposure_prob_pct: number;
+  lat?: number;
+  latitude?: number;
+  lng?: number;
+  longitude?: number;
+  exposure_prob_pct?: number;
+  exposure_pct?: number;
+  exposure_probability?: number;
   distance_from_source_km?: number;
+  distance_from_epicenter_km?: number;
+  is_safe?: boolean;
+  evacuation_status?: string;
+  status_badge?: string;
+  badge_color?: string;
+  evac_recommendation?: string;
+  emergency_hotline?: string;
+  capabilities?: string[];
+  arrival_time_earliest_h?: number | null;
 }
 
 export interface FacilitiesImpactResponse {
-  total_schools_at_risk: number;
-  total_healthcare_at_risk: number;
+  summary?: any;
+  total_schools_at_risk?: number;
+  total_healthcare_at_risk?: number;
   schools: SchoolItem[];
-  healthcare: HospitalItem[];
+  hospitals?: HospitalItem[];
+  healthcare?: HospitalItem[];
+  evacuation_referral_hospitals?: HospitalItem[];
+  airports?: any[];
 }
 
 export interface ValidationResponse {
-  fss_score: number;
-  hit_rate_pct: number;
-  reference_observation: string;
-  timestamp: string;
+  event_id?: string;
+  hazard?: string;
+  resolution?: string;
+  validation_note?: string;
+  status?: string;
+  not_testable_reason?: string;
+  members_source?: string;
+  reported_districts_evaluated?: string[];
+  district_hit_rate?: number;
+  hit_rate_pct?: number;
+  fractions_skill_score?: number;
+  fss_score?: number;
+  aviation_impact?: {
+    airport_name?: string;
+    label?: string;
+    reported_event?: string;
+    airspace_exposure_probability?: number;
+    dispersion_altitude_fl?: string;
+    consistency?: string;
+    caveat?: string;
+  };
+  confidence_caveat?: string;
+  grid_search_spread_inflation?: Array<{
+    inflation_factor: number;
+    fss: number;
+    district_overlap_pct: number;
+  }>;
+  reference_observation?: string;
+  timestamp?: string;
 }
+

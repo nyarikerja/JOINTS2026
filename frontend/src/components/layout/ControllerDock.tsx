@@ -34,7 +34,7 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
-    <div className="absolute top-3.5 left-3.5 w-80 max-h-[calc(100%-80px)] bg-slate-900/90 backdrop-blur-xl border border-slate-700/80 rounded-xl shadow-2xl z-30 flex flex-col overflow-hidden text-slate-100">
+    <div className="absolute top-3.5 left-3.5 w-80 max-h-[calc(100%-80px)] bg-slate-900/90 backdrop-blur-xl border border-slate-700/80 rounded-xl shadow-2xl z-[1000] flex flex-col overflow-hidden text-slate-100">
       {/* Header Dock */}
       <div className="px-3.5 py-2.5 border-b border-slate-800 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
@@ -81,15 +81,22 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
               onChange={(e) => onEventChange(e.target.value)}
               className="w-full bg-slate-950 border border-slate-700 rounded-md px-2.5 py-1.5 text-xs text-white outline-none focus:border-sky-500 transition"
             >
-              <optgroup label="Gunungapi Aktif PVMBG">
-                <option value="anak_krakatau_2026_09">[Level III] G. Anak Krakatau (Selat Sunda)</option>
-                <option value="merapi_yogyakarta">[Level III] G. Merapi (Jawa Tengah / DIY)</option>
-                <option value="lewotobi_laki_laki">[Level IV] G. Lewotobi Laki-laki (NTT)</option>
-                <option value="marapi_sumatera">[Level III] G. Marapi (Sumatera Barat)</option>
-              </optgroup>
-              <optgroup label="Kebakaran Hutan &amp; Lahan">
-                <option value="live_kalimantan">Karhutla Gambut Kalimantan (NASA FIRMS)</option>
-              </optgroup>
+              {hazard === "volcano" ? (
+                <optgroup label="Gunungapi Aktif PVMBG">
+                  <option value="anak_krakatau_2026_09">[Level III] G. Anak Krakatau (Selat Sunda)</option>
+                  <option value="merapi_yogyakarta">[Level III] G. Merapi (Jawa Tengah / DIY)</option>
+                  <option value="lewotobi_laki_laki">[Level IV] G. Lewotobi Laki-laki (NTT)</option>
+                  <option value="marapi_sumatera">[Level III] G. Marapi (Sumatera Barat)</option>
+                  <option value="semeru">[Level III] G. Semeru (Jawa Timur)</option>
+                  <option value="agung">[Level II] G. Agung (Bali)</option>
+                  <option value="rinjani">[Level II] G. Rinjani (Lombok, NTB)</option>
+                  <option value="sinabung">[Level II] G. Sinabung (Sumatera Utara)</option>
+                </optgroup>
+              ) : (
+                <optgroup label="Kebakaran Hutan &amp; Lahan Gambut">
+                  <option value="live_kalimantan">Karhutla Gambut Kalimantan (NASA FIRMS Live)</option>
+                </optgroup>
+              )}
             </select>
           </div>
 

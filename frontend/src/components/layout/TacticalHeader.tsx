@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { RefreshCw, MapPin, PanelRight } from "lucide-react";
 import { api } from "../../services/api";
-import { formatNumber } from "../../utils/formatters";
 import type { SummaryKpiResponse } from "../../types/api";
 
 interface TacticalHeaderProps {
@@ -17,7 +16,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
 }) => {
   const [clockWib, setClockWib] = useState("--:--:-- WIB");
   const [clockUtc, setClockUtc] = useState("--:--:-- UTC");
-  const [kpi, setKpi] = useState<SummaryKpiResponse | null>(null);
+  const [, setKpi] = useState<SummaryKpiResponse | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
 
@@ -71,11 +70,8 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
     }
   };
 
-  const highAlertCount = (kpi?.volcanoes?.level_4_awas || 0) + (kpi?.volcanoes?.level_3_siaga || 0) || 7;
-  const activeFires = kpi?.wildfire_hotspots?.active_24h_firms || 1680;
-
   return (
-    <header className="h-[52px] bg-slate-950/95 backdrop-blur-md border-b border-slate-800 px-4 flex items-center justify-between z-50 shrink-0">
+    <header className="h-[52px] bg-slate-950/95 backdrop-blur-md border-b border-slate-800 px-4 flex items-center justify-between z-[1100] shrink-0">
       <div className="flex items-center gap-2.5">
         <div>
           <div className="flex items-center gap-1.5">
@@ -90,24 +86,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
         </div>
       </div>
 
-      {/* KPI Ticker Nasional */}
-      <div className="hidden md:flex items-center gap-3">
-        <div className="flex items-center gap-1.5 bg-slate-900/80 border border-slate-800 px-2.5 py-1 rounded-full text-xs">
-          <span>🌋</span>
-          <span className="text-slate-400 text-[11px]">Siaga / Awas:</span>
-          <strong className="text-white font-mono text-[11px]">{highAlertCount}</strong>
-        </div>
-        <div className="flex items-center gap-1.5 bg-slate-900/80 border border-slate-800 px-2.5 py-1 rounded-full text-xs">
-          <span>🔥</span>
-          <span className="text-slate-400 text-[11px]">Titik Api (24h):</span>
-          <strong className="text-white font-mono text-[11px]">{formatNumber(activeFires)}</strong>
-        </div>
-        <div className="flex items-center gap-1.5 bg-slate-900/80 border border-slate-800 px-2.5 py-1 rounded-full text-xs">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" />
-          <span className="text-slate-400 text-[11px]">Status Telemetri:</span>
-          <strong className="text-emerald-400 font-medium text-[11px]">SIAGA 24/7</strong>
-        </div>
-      </div>
+
 
       {/* Jam Digital Ganda & Tombol Aksi */}
       <div className="flex items-center gap-2.5">

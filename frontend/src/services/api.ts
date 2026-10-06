@@ -55,6 +55,8 @@ export const api = {
 
   getImpact: (runId: string) => request<ImpactResponse>(`/runs/${runId}/impact`),
   getFacilitiesImpacted: (runId: string) => request<FacilitiesImpactResponse>(`/runs/${runId}/facilities-impacted`),
-  getValidation: (runId: string) => request<ValidationResponse>(`/runs/${runId}/validation`),
-  getHourlyTiers: (runId: string) => request<any>(`/runs/${runId}/hourly-tiers`)
+  getValidation: (eventId: string) => request<ValidationResponse>(`/validation/${eventId}`),
+  getTiersAtHour: (runId: string, hour: number) => request<any>(`/runs/${runId}/tiers?t=${hour}`),
+  getHealthGuidance: (runId: string) => request<any>(`/runs/${runId}/health-guidance`),
+  getEvents: () => request<any>("/events")
 };

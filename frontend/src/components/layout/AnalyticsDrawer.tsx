@@ -50,7 +50,7 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
 
   return (
     <aside
-      className={`absolute top-0 right-0 w-[440px] max-w-full h-full bg-slate-950/95 backdrop-blur-2xl border-l border-slate-800 z-40 flex flex-col shadow-2xl transition-transform duration-300 ease-out text-slate-100 ${
+      className={`absolute top-0 right-0 w-[440px] max-w-full h-full bg-slate-950/95 backdrop-blur-2xl border-l border-slate-800 z-[1050] flex flex-col shadow-2xl transition-transform duration-300 ease-out text-slate-100 ${
         isOpen ? "translate-x-0" : "translate-x-full"
       }`}
     >
@@ -105,12 +105,12 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
         )}
         {activeTab === "evac" && (
           <TabEvac
-            healthcare={facilities?.healthcare || []}
+            healthcare={facilities?.evacuation_referral_hospitals || facilities?.hospitals || facilities?.healthcare || []}
             onFlyTo={onFlyTo}
           />
         )}
-        {activeTab === "health" && <TabHealth />}
-        {activeTab === "science" && <TabScience validation={validation} />}
+        {activeTab === "health" && <TabHealth hazard={hazard} />}
+        {activeTab === "science" && <TabScience validation={validation} hazard={hazard} />}
       </div>
     </aside>
   );
