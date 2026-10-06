@@ -50,19 +50,38 @@ def start_simulation(req: SimulationRequest):
 
     # 1. Muat metadata kejadian (Otomatis bangun metadata jika event berasal dari katalog nasional atau titik kustom)
     if meta_file.exists():
-        event_meta = json.loads(meta_file.read_text(encoding="utf-8"))
+        event_meta = json.loads(meta_file.read_text(encoding="utf-8-sig"))
     else:
+        # Cek apakah ada direktori di data/events yang cocok (toleran terhadap perbedaan underscore)
+        clean_eid = event_id.replace("_", "").lower()
+        if EVENTS_DIR.exists():
+            for d in EVENTS_DIR.iterdir():
+                if d.is_dir() and d.name.replace("_", "").lower() == clean_eid:
+                    mf = d / "meta.json"
+                    if mf.exists():
+                        try:
+                            event_meta = json.loads(mf.read_text(encoding="utf-8-sig"))
+                            meta_file = mf
+                            event_dir = d
+                            event_id = d.name
+                            break
+                        except Exception:
+                            pass
+
+    if not event_meta:
         # Cek apakah event_id ada di katalog 70 gunung api nasional
-        from app.core.config import BACKEND_DIR
         volc_path = BACKEND_DIR / "data" / "layers" / "volcanoes_indonesia.geojson"
         volc_feature = None
         if volc_path.exists():
             try:
-                geo = json.loads(volc_path.read_text(encoding="utf-8"))
+                geo = json.loads(volc_path.read_text(encoding="utf-8-sig"))
+                clean_e = event_id.replace("_", "").lower()
                 for feat in geo.get("features", []):
-                    f_id = feat.get("properties", {}).get("id")
-                    f_ev = feat.get("properties", {}).get("event_id")
-                    if f_id == event_id or f_ev == event_id:
+                    f_id = (feat.get("properties", {}).get("id") or "").lower()
+                    f_ev = (feat.get("properties", {}).get("event_id") or "").lower()
+                    clean_fid = f_id.replace("_", "")
+                    clean_fev = f_ev.replace("_", "")
+                    if clean_fid == clean_e or clean_fev == clean_e or clean_fid.startswith(clean_e) or clean_e in clean_fid:
                         volc_feature = feat
                         break
             except Exception:
@@ -149,10 +168,13 @@ def start_simulation(req: SimulationRequest):
             forest_obj = None
             if forest_path.exists():
                 try:
-                    f_data = json.loads(forest_path.read_text(encoding="utf-8"))
+                    f_data = json.loads(forest_path.read_text(encoding="utf-8-sig"))
                     f_list = f_data if isinstance(f_data, list) else f_data.get("forests", [])
+                    clean_e = event_id.lower().replace("_", "")
                     for f_item in f_list:
-                        if f_item.get("id") == event_id:
+                        fid = (f_item.get("id") or "").lower()
+                        clean_fid = fid.replace("_", "")
+                        if clean_fid == clean_e or clean_fid.startswith(clean_e) or clean_e in clean_fid:
                             forest_obj = f_item
                             break
                 except Exception:
@@ -250,7 +272,7 @@ def _get_run_data(run_id: str) -> Dict[str, Any]:
         raise HTTPException(status_code=404, detail=f"Run '{run_id}' tidak ditemukan.")
 
     import json
-    return json.loads(save_file.read_text(encoding="utf-8"))
+    return json.loads(save_file.read_text(encoding="utf-8-sig"))
 
 
 @router.get("/runs/{run_id}")

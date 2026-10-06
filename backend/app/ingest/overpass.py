@@ -121,7 +121,7 @@ class OverpassIngest:
             return cls._cached_facilities
 
         if fac_file.exists():
-            with open(fac_file, "r", encoding="utf-8") as f:
+            with open(fac_file, "r", encoding="utf-8-sig") as f:
                 cls._cached_facilities = json.load(f)
                 cls._cached_mtime = current_mtime
                 return cls._cached_facilities
@@ -147,72 +147,29 @@ class OverpassIngest:
                 if facility_type is None or fac["facility_type"] == facility_type:
                     results.append(fac)
 
-        # Jika di area ini fasilitas belum terdaftar (misal titik koordinat kustom se-Indonesia),
-        # sintesis fasilitas publik realistis di dalam bounding box agar triase & rute evakuasi selalu aktif
-        if len(results) < 4:
+        # Jika di dalam bounding box ketat belum terdaftar fasilitas (misal titik laut lepas),
+        # ambil fasilitas nyata terdekat dari katalog nasional agar tetap realistis dan tidak ada fasilitas di laut
+        if len(results) == 0 and facilities:
             mid_lat = (lat_min + lat_max) / 2.0
             mid_lon = (lon_min + lon_max) / 2.0
-            d_lat = max(0.08, (lat_max - lat_min) * 0.15)
-            d_lon = max(0.08, (lon_max - lon_min) * 0.15)
-
-            lat_hash = abs(int(mid_lat * 100)) % 1000
-            lon_hash = abs(int(mid_lon * 100)) % 1000
-
-            synth = [
-                {
-                    "facility_id": f"synth_sch_{lat_hash}_{lon_hash}_1",
-                    "name": "SMAN 1 Wilayah Sentra",
-                    "facility_type": "school",
-                    "latitude": round(mid_lat + d_lat * 0.4, 4),
-                    "longitude": round(mid_lon + d_lon * 0.3, 4),
-                    "district": "Kawasan Terdampak"
-                },
-                {
-                    "facility_id": f"synth_sch_{lat_hash}_{lon_hash}_2",
-                    "name": "SMP Negeri 1 Warga",
-                    "facility_type": "school",
-                    "latitude": round(mid_lat - d_lat * 0.3, 4),
-                    "longitude": round(mid_lon + d_lon * 0.5, 4),
-                    "district": "Kawasan Terdampak"
-                },
-                {
-                    "facility_id": f"synth_hc_{lat_hash}_{lon_hash}_1",
-                    "name": "Puskesmas Rawat Inap Kecamatan",
-                    "facility_type": "healthcare",
-                    "latitude": round(mid_lat + d_lat * 0.2, 4),
-                    "longitude": round(mid_lon - d_lon * 0.2, 4),
-                    "district": "Kawasan Terdampak"
-                },
-                {
-                    "facility_id": f"synth_hc_{lat_hash}_{lon_hash}_2",
-                    "name": "RSUD Rujukan Wilayah Bebas Abu",
-                    "facility_type": "healthcare",
-                    "latitude": round(mid_lat - d_lat * 1.8, 4),
-                    "longitude": round(mid_lon - d_lon * 1.8, 4),
-                    "district": "Zona Aman Sekitar"
-                },
-                {
-                    "facility_id": f"synth_air_{lat_hash}_{lon_hash}_1",
-                    "name": "Bandara Perintis Wilayah",
-                    "facility_type": "airport",
-                    "latitude": round(mid_lat + d_lat * 1.5, 4),
-                    "longitude": round(mid_lon + d_lon * 1.6, 4),
-                    "district": "Kabupaten Sekitar"
-                }
-            ]
-            for s in synth:
-                cls._synth_cache[s["facility_id"]] = s
-                if facility_type is None or s["facility_type"] == facility_type:
-                    results.append(s)
+            def dist_sq(f):
+                return (f["latitude"] - mid_lat) ** 2 + (f["longitude"] - mid_lon) ** 2
+            sorted_facs = sorted(facilities, key=dist_sq)
+            for f in sorted_facs[:5]:
+                if facility_type is None or f["facility_type"] == facility_type:
+                    results.append(f)
 
         return results
 
     @classmethod
     def get_facility_by_id(cls, facility_id: str) -> Dict[str, Any] | None:
-        if facility_id in cls._synth_cache:
+        if hasattr(cls, "_synth_cache") and facility_id in cls._synth_cache:
             return cls._synth_cache[facility_id]
         facilities = cls.load_all_facilities()
         for fac in facilities:
+            if fac["facility_id"] == facility_id:
+                return fac
+        for fac in DEMO_FACILITIES:
             if fac["facility_id"] == facility_id:
                 return fac
         return None

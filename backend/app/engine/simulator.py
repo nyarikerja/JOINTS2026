@@ -252,6 +252,12 @@ class SimulationRunner:
         )
         members_source = weather_data.get("members_source", "open_meteo_ensemble")
 
+        def _clean_arrival_matrix(matrix: np.ndarray) -> list:
+            clean = []
+            for row in matrix:
+                clean.append([None if np.isnan(val) else round(float(val), 2) for val in row])
+            return clean
+
         run_output = {
             "run_id": self.run_id,
             "hazard": hazard,
@@ -278,8 +284,8 @@ class SimulationRunner:
             "member_max_severity": member_max_severity,
             "hourly_exposure_masks": hourly_exposure_masks,
             "arrival_time": {
-                "earliest": earliest_arr.tolist(),
-                "most_likely": likely_arr.tolist(),
+                "earliest": _clean_arrival_matrix(earliest_arr),
+                "most_likely": _clean_arrival_matrix(likely_arr),
             }
         }
 

@@ -79,7 +79,34 @@ NATIONAL_FACILITIES = [
     {"facility_id": "fac_hc_kalteng_01", "name": "RSUD Doris Sylvanus", "facility_type": "healthcare", "latitude": -2.210, "longitude": 113.922, "district": "Palangka Raya"},
     {"facility_id": "fac_hc_kalteng_02", "name": "RSUD dr. Murjani Sampit", "facility_type": "healthcare", "latitude": -2.530, "longitude": 112.960, "district": "Kotawaringin Timur"},
     {"facility_id": "fac_air_kalteng_01", "name": "Bandara Tjilik Riwut (PKY)", "facility_type": "airport", "latitude": -2.225, "longitude": 113.945, "district": "Palangka Raya"},
-    {"facility_id": "fac_air_kalteng_02", "name": "Bandara H. Asan Sampit (SMQ)", "facility_type": "airport", "latitude": -2.500, "longitude": 112.975, "district": "Kotawaringin Timur"}
+    {"facility_id": "fac_air_kalteng_02", "name": "Bandara H. Asan Sampit (SMQ)", "facility_type": "airport", "latitude": -2.500, "longitude": 112.975, "district": "Kotawaringin Timur"},
+
+    # 11. Bandara Komersial & Internasional Utama Seluruh Indonesia
+    {"facility_id": "fac_air_btj", "name": "Bandara Sultan Iskandar Muda (BTJ)", "facility_type": "airport", "latitude": 5.523, "longitude": 95.420, "district": "Aceh Besar"},
+    {"facility_id": "fac_air_kno", "name": "Bandara Kualanamu (KNO)", "facility_type": "airport", "latitude": 3.642, "longitude": 98.885, "district": "Deli Serdang / Medan"},
+    {"facility_id": "fac_air_pdg", "name": "Bandara Minangkabau (PDG)", "facility_type": "airport", "latitude": -0.787, "longitude": 100.281, "district": "Padang Pariaman"},
+    {"facility_id": "fac_air_plm", "name": "Bandara Sultan Mahmud Badaruddin II (PLM)", "facility_type": "airport", "latitude": -2.898, "longitude": 104.701, "district": "Palembang"},
+    {"facility_id": "fac_air_cgk", "name": "Bandara Soekarno-Hatta (CGK)", "facility_type": "airport", "latitude": -6.125, "longitude": 106.655, "district": "Tangerang / Jakarta"},
+    {"facility_id": "fac_air_bdo", "name": "Bandara Husein Sastranegara (BDO)", "facility_type": "airport", "latitude": -6.900, "longitude": 107.576, "district": "Bandung"},
+    {"facility_id": "fac_air_srg", "name": "Bandara Ahmad Yani (SRG)", "facility_type": "airport", "latitude": -6.974, "longitude": 110.374, "district": "Semarang"},
+    {"facility_id": "fac_air_yia", "name": "Bandara Yogyakarta International (YIA)", "facility_type": "airport", "latitude": -7.904, "longitude": 110.057, "district": "Kulon Progo"},
+    {"facility_id": "fac_air_sub", "name": "Bandara Juanda (SUB)", "facility_type": "airport", "latitude": -7.379, "longitude": 112.787, "district": "Sidoarjo / Surabaya"},
+    {"facility_id": "fac_air_mlg", "name": "Bandara Abdulrachman Saleh (MLG)", "facility_type": "airport", "latitude": -7.926, "longitude": 112.714, "district": "Malang"},
+    {"facility_id": "fac_air_bwx", "name": "Bandara Banyuwangi (BWX)", "facility_type": "airport", "latitude": -8.309, "longitude": 114.339, "district": "Banyuwangi"},
+    {"facility_id": "fac_air_dps", "name": "Bandara I Gusti Ngurah Rai (DPS)", "facility_type": "airport", "latitude": -8.748, "longitude": 115.167, "district": "Badung / Bali"},
+    {"facility_id": "fac_air_lop", "name": "Bandara Zainuddin Abdul Madjid (LOP)", "facility_type": "airport", "latitude": -8.761, "longitude": 116.275, "district": "Lombok Tengah"},
+    {"facility_id": "fac_air_bmu", "name": "Bandara Sultan Muhammad Salahuddin (BMU)", "facility_type": "airport", "latitude": -8.539, "longitude": 118.689, "district": "Bima"},
+    {"facility_id": "fac_air_mof", "name": "Bandara Frans Seda (MOF)", "facility_type": "airport", "latitude": -8.625, "longitude": 122.238, "district": "Maumere / Sikka"},
+    {"facility_id": "fac_air_koe", "name": "Bandara El Tari (KOE)", "facility_type": "airport", "latitude": -10.171, "longitude": 123.670, "district": "Kupang"},
+    {"facility_id": "fac_air_pnk", "name": "Bandara Supadio (PNK)", "facility_type": "airport", "latitude": -0.150, "longitude": 109.403, "district": "Kubu Raya / Pontianak"},
+    {"facility_id": "fac_air_bdj", "name": "Bandara Syamsudin Noor (BDJ)", "facility_type": "airport", "latitude": -3.442, "longitude": 114.757, "district": "Banjarbaru"},
+    {"facility_id": "fac_air_bpn", "name": "Bandara Sultan Aji Muhammad Sulaiman (BPN)", "facility_type": "airport", "latitude": -1.268, "longitude": 116.894, "district": "Balikpapan"},
+    {"facility_id": "fac_air_upg", "name": "Bandara Sultan Hasanuddin (UPG)", "facility_type": "airport", "latitude": -5.061, "longitude": 119.554, "district": "Maros / Makassar"},
+    {"facility_id": "fac_air_mdc", "name": "Bandara Sam Ratulangi (MDC)", "facility_type": "airport", "latitude": 1.549, "longitude": 124.926, "district": "Manado"},
+    {"facility_id": "fac_air_amq", "name": "Bandara Pattimura (AMQ)", "facility_type": "airport", "latitude": -3.708, "longitude": 128.089, "district": "Ambon"},
+    {"facility_id": "fac_air_tte", "name": "Bandara Sultan Babullah (TTE)", "facility_type": "airport", "latitude": 0.831, "longitude": 127.381, "district": "Ternate"},
+    {"facility_id": "fac_air_djj", "name": "Bandara Sentani (DJJ)", "facility_type": "airport", "latitude": -2.576, "longitude": 140.516, "district": "Jayapura"},
+    {"facility_id": "fac_air_mkq", "name": "Bandara Mopah (MKQ)", "facility_type": "airport", "latitude": -8.520, "longitude": 140.418, "district": "Merauke"}
 ]
 
 out_dir = Path(__file__).resolve().parents[2] / "data" / "layers"

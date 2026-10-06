@@ -119,8 +119,10 @@ def get_rain_effect(run_id: str):
 def post_compare_runs(req: CompareRequest):
     run_a = _get_run_data(req.run_id_a)
     run_b = _get_run_data(req.run_id_b)
-    grid = _reconstruct_grid(run_a)
-    return compare_two_runs(run_a, run_b, grid)
+    grid_a = _reconstruct_grid(run_a)
+    grid_b = _reconstruct_grid(run_b)
+    return compare_two_runs(run_a, run_b, grid_a, grid_b)
+
 
 
 @router.post("/runs/sensitivity")
@@ -154,10 +156,24 @@ def get_severity(run_id: str, t: int = Query(12, ge=0, le=48)):
 
 @router.get("/runs/{run_id}/arrival")
 def get_arrival_times(run_id: str):
+    import math
     data = _get_run_data(run_id)
+    raw_arrival = data.get("arrival_time", {})
+    cleaned_arrival = {}
+    for k, v in raw_arrival.items():
+        if isinstance(v, list):
+            cleaned_arrival[k] = [
+                [None if (x is None or (isinstance(x, (float, int)) and (math.isnan(x) or math.isinf(x)))) else round(float(x), 2) for x in row]
+                if isinstance(row, list) else row
+                for row in v
+            ]
+        else:
+            cleaned_arrival[k] = v
+
     return {
         "run_id": run_id,
-        "arrival_time": data.get("arrival_time", {}),
+        "arrival_time": cleaned_arrival,
         "caveat": "Waktu kedatangan dihitung dalam jam sejak pelepasan partikel.",
         "disclaimer": data["disclaimer"]
     }
+

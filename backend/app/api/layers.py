@@ -27,7 +27,7 @@ def get_layer(
         # Cakupan Penuh Wilayah Kedaulatan Republik Indonesia (Sabang s.d. Merauke: 94° - 142° BT)
         w, s, e, n = 94.0, -12.0, 142.0, 7.0
 
-    if name == "facilities":
+    if name in ["facilities", "facilities-national"]:
         # Muat fasilitas di dalam bbox (sekarang mencakup seluruh Indonesia)
         facilities = OverpassIngest.get_facilities_in_bbox(s, n, w, e)
         features = []
@@ -77,7 +77,7 @@ def get_layer(
         coast_path = BACKEND_DIR / "data" / "layers" / "indonesia_coastline.geojson"
         if coast_path.exists():
             try:
-                return json.loads(coast_path.read_text(encoding="utf-8"))
+                return json.loads(coast_path.read_text(encoding="utf-8-sig"))
             except Exception:
                 pass
 
@@ -104,7 +104,7 @@ def get_layer(
         from app.core.config import BACKEND_DIR
         volc_path = BACKEND_DIR / "data" / "layers" / "volcanoes_indonesia.geojson"
         if volc_path.exists():
-            with open(volc_path, "r", encoding="utf-8") as f:
+            with open(volc_path, "r", encoding="utf-8-sig") as f:
                 return json.load(f)
         return {"type": "FeatureCollection", "features": []}
 
@@ -114,7 +114,7 @@ def get_layer(
         from app.core.config import BACKEND_DIR
         forest_path = BACKEND_DIR / "data" / "layers" / "forests_indonesia.json"
         if forest_path.exists():
-            with open(forest_path, "r", encoding="utf-8") as f:
+            with open(forest_path, "r", encoding="utf-8-sig") as f:
                 return json.load(f)
         return {"forests": []}
 
@@ -127,7 +127,7 @@ def get_layer(
         volc_path = BACKEND_DIR / "data" / "layers" / "volcanoes_indonesia.geojson"
         lvl4, lvl3, lvl2, lvl1, total_volc = 0, 0, 0, 0, 0
         if volc_path.exists():
-            with open(volc_path, "r", encoding="utf-8") as f:
+            with open(volc_path, "r", encoding="utf-8-sig") as f:
                 v_geo = json.load(f)
                 features = v_geo.get("features", [])
                 total_volc = len(features)

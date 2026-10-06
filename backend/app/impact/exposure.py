@@ -28,6 +28,18 @@ def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return round(R * c, 2)
 
 
+def _safe_float(val: Any) -> float | None:
+    """Konversi nilai float aman tanpa crash jika input None, NaN, atau string."""
+    if val is None:
+        return None
+    try:
+        fv = float(val)
+        return None if (math.isnan(fv) or math.isinf(fv)) else fv
+    except (ValueError, TypeError):
+        return None
+
+
+
 def calculate_impact_ranges(
     run_output: Dict[str, Any],
     grid: SimulationGrid,
@@ -160,14 +172,8 @@ def evaluate_decision_card(
     earliest_arr = run_output.get("arrival_time", {}).get("earliest", [])
     likely_arr = run_output.get("arrival_time", {}).get("most_likely", [])
 
-    earliest_h = earliest_arr[r][c] if earliest_arr else None
-    likely_h = likely_arr[r][c] if likely_arr else None
-
-    # Ganti NaN dengan None
-    if earliest_h is not None and np.isnan(earliest_h):
-        earliest_h = None
-    if likely_h is not None and np.isnan(likely_h):
-        likely_h = None
+    earliest_h = _safe_float(earliest_arr[r][c]) if earliest_arr else None
+    likely_h = _safe_float(likely_arr[r][c]) if likely_arr else None
 
     return {
         "facility_id": fac["facility_id"],
@@ -223,8 +229,10 @@ def get_exposed_facilities_list(
             r, c = grid.coord_to_index(h_lat, h_lon)
             ever_exp = np.any(hourly_masks[:, :, r, c], axis=0)
             h_prob = float(np.mean(ever_exp))
-            if earliest_arr and not np.isnan(earliest_arr[r][c]):
-                h_earliest = round(float(earliest_arr[r][c]), 1)
+            if earliest_arr:
+                val = _safe_float(earliest_arr[r][c])
+                if val is not None:
+                    h_earliest = round(val, 1)
 
         is_safe = h_prob < 0.10
         if is_safe:
@@ -286,8 +294,8 @@ def get_exposed_facilities_list(
         if prob < min_prob:
             continue
 
-        earliest_h = earliest_arr[r][c] if (earliest_arr and not np.isnan(earliest_arr[r][c])) else None
-        likely_h = likely_arr[r][c] if (likely_arr and not np.isnan(likely_arr[r][c])) else None
+        earliest_h = _safe_float(earliest_arr[r][c]) if earliest_arr else None
+        likely_h = _safe_float(likely_arr[r][c]) if likely_arr else None
 
         ftype = fac.get("facility_type")
         item = {
@@ -386,7 +394,8 @@ def get_exposed_facilities_list(
         "schools": schools,
         "healthcare": healthcare,
         "airports": airports,
-        "evacuation_referral_hospitals": evacuation_referral_hospitals
+        "evacuation_referral_hospitals": evacuation_referral_hospitals,
+        "facilities_impacted": schools + healthcare + airports
     }
 
 
@@ -397,6 +406,7 @@ def get_health_and_mask_guidance(hazard: str = "volcano") -> Dict[str, Any]:
     return {
         "hazard": hazard,
         "title": "Edukasi Perlindungan Saluran Pernapasan & Mata Terverifikasi",
+        "mask_type_recommended": "N95 / KN95 (Partikulat Terstandar)",
         "mask_guidance": {
             "prohibited": [
                 {

@@ -1,166 +1,446 @@
 [
   {
-    "facility_id": "fac_air_001",
-    "name": "Bandara Sultan Iskandar Muda (BTJ)",
-    "facility_type": "airport",
-    "latitude": 5.523,
-    "longitude": 95.42,
-    "district": "Aceh Besar"
-  },
-  {
-    "facility_id": "fac_air_002",
-    "name": "Bandara Kualanamu (KNO)",
-    "facility_type": "airport",
-    "latitude": 3.642,
-    "longitude": 98.885,
-    "district": "Deli Serdang / Medan"
-  },
-  {
-    "facility_id": "fac_air_003",
-    "name": "Bandara Minangkabau (PDG)",
-    "facility_type": "airport",
-    "latitude": -0.787,
-    "longitude": 100.281,
-    "district": "Padang Pariaman"
-  },
-  {
-    "facility_id": "fac_air_004",
-    "name": "Bandara Sultan Mahmud Badaruddin II (PLM)",
-    "facility_type": "airport",
-    "latitude": -2.898,
-    "longitude": 104.701,
-    "district": "Palembang"
-  },
-  {
-    "facility_id": "fac_air_005",
-    "name": "Bandara Radin Inten II (TKG)",
-    "facility_type": "airport",
-    "latitude": -5.242,
-    "longitude": 105.178,
+    "facility_id": "fac_sch_sunda_01",
+    "name": "SDN 1 Kalianda",
+    "facility_type": "school",
+    "latitude": -5.735,
+    "longitude": 105.589,
     "district": "Lampung Selatan"
   },
   {
-    "facility_id": "fac_air_006",
-    "name": "Bandara Soekarno-Hatta (CGK)",
-    "facility_type": "airport",
-    "latitude": -6.125,
-    "longitude": 106.655,
-    "district": "Tangerang"
+    "facility_id": "fac_sch_sunda_02",
+    "name": "SMP Negeri 1 Rajabasa",
+    "facility_type": "school",
+    "latitude": -5.812,
+    "longitude": 105.62,
+    "district": "Lampung Selatan"
   },
   {
-    "facility_id": "fac_air_007",
-    "name": "Bandara Husein Sastranegara (BDO)",
-    "facility_type": "airport",
-    "latitude": -6.9,
-    "longitude": 107.576,
-    "district": "Bandung"
+    "facility_id": "fac_sch_sunda_03",
+    "name": "SMK Negeri 1 Labuan",
+    "facility_type": "school",
+    "latitude": -6.378,
+    "longitude": 105.828,
+    "district": "Pandeglang"
   },
   {
-    "facility_id": "fac_air_008",
-    "name": "Bandara Ahmad Yani (SRG)",
-    "facility_type": "airport",
-    "latitude": -6.974,
-    "longitude": 110.374,
-    "district": "Semarang"
+    "facility_id": "fac_sch_sunda_04",
+    "name": "SDN Sumur 01",
+    "facility_type": "school",
+    "latitude": -6.65,
+    "longitude": 105.58,
+    "district": "Pandeglang"
   },
   {
-    "facility_id": "fac_air_009",
+    "facility_id": "fac_sch_sunda_05",
+    "name": "SMAN 1 Anyer",
+    "facility_type": "school",
+    "latitude": -6.048,
+    "longitude": 105.925,
+    "district": "Serang"
+  },
+  {
+    "facility_id": "fac_hc_sunda_01",
+    "name": "RSUD Bob Bazar Kalianda",
+    "facility_type": "healthcare",
+    "latitude": -5.728,
+    "longitude": 105.592,
+    "district": "Lampung Selatan"
+  },
+  {
+    "facility_id": "fac_hc_sunda_02",
+    "name": "Puskesmas Rawat Inap Rajabasa",
+    "facility_type": "healthcare",
+    "latitude": -5.815,
+    "longitude": 105.622,
+    "district": "Lampung Selatan"
+  },
+  {
+    "facility_id": "fac_hc_sunda_03",
+    "name": "Puskesmas Labuan",
+    "facility_type": "healthcare",
+    "latitude": -6.381,
+    "longitude": 105.83,
+    "district": "Pandeglang"
+  },
+  {
+    "facility_id": "fac_air_sunda_01",
+    "name": "Bandara Radin Inten II (TKG)",
+    "facility_type": "airport",
+    "latitude": -5.242,
+    "longitude": 105.179,
+    "district": "Lampung Selatan"
+  },
+  {
+    "facility_id": "fac_sch_merapi_01",
+    "name": "SMAN 1 Pakem",
+    "facility_type": "school",
+    "latitude": -7.665,
+    "longitude": 110.42,
+    "district": "Sleman"
+  },
+  {
+    "facility_id": "fac_sch_merapi_02",
+    "name": "SMPN 1 Cangkringan",
+    "facility_type": "school",
+    "latitude": -7.64,
+    "longitude": 110.46,
+    "district": "Sleman"
+  },
+  {
+    "facility_id": "fac_sch_merapi_03",
+    "name": "SDN Glagaharjo",
+    "facility_type": "school",
+    "latitude": -7.61,
+    "longitude": 110.47,
+    "district": "Sleman"
+  },
+  {
+    "facility_id": "fac_sch_merapi_04",
+    "name": "SMPN 1 Selo",
+    "facility_type": "school",
+    "latitude": -7.502,
+    "longitude": 110.465,
+    "district": "Boyolali"
+  },
+  {
+    "facility_id": "fac_hc_merapi_01",
+    "name": "RS Panti Nugroho Pakem",
+    "facility_type": "healthcare",
+    "latitude": -7.668,
+    "longitude": 110.418,
+    "district": "Sleman"
+  },
+  {
+    "facility_id": "fac_hc_merapi_02",
+    "name": "Puskesmas Cangkringan",
+    "facility_type": "healthcare",
+    "latitude": -7.648,
+    "longitude": 110.458,
+    "district": "Sleman"
+  },
+  {
+    "facility_id": "fac_hc_merapi_03",
+    "name": "Puskesmas Selo",
+    "facility_type": "healthcare",
+    "latitude": -7.505,
+    "longitude": 110.468,
+    "district": "Boyolali"
+  },
+  {
+    "facility_id": "fac_air_merapi_01",
     "name": "Bandara Adisutjipto (JOG)",
     "facility_type": "airport",
     "latitude": -7.788,
     "longitude": 110.432,
-    "district": "Sleman / Yogyakarta"
+    "district": "Sleman"
   },
   {
-    "facility_id": "fac_air_010",
-    "name": "Bandara Yogyakarta International (YIA)",
-    "facility_type": "airport",
-    "latitude": -7.904,
-    "longitude": 110.057,
-    "district": "Kulon Progo"
+    "facility_id": "fac_sch_lewo_01",
+    "name": "SMP Negeri 1 Wulanggitang",
+    "facility_type": "school",
+    "latitude": -8.545,
+    "longitude": 122.78,
+    "district": "Flores Timur"
   },
   {
-    "facility_id": "fac_air_011",
-    "name": "Bandara Juanda (SUB)",
-    "facility_type": "airport",
-    "latitude": -7.379,
-    "longitude": 112.787,
-    "district": "Sidoarjo / Surabaya"
+    "facility_id": "fac_sch_lewo_02",
+    "name": "SMAN 1 Ilebura",
+    "facility_type": "school",
+    "latitude": -8.56,
+    "longitude": 122.81,
+    "district": "Flores Timur"
   },
   {
-    "facility_id": "fac_air_012",
-    "name": "Bandara Abdulrachman Saleh (MLG)",
-    "facility_type": "airport",
-    "latitude": -7.926,
-    "longitude": 112.714,
-    "district": "Malang"
+    "facility_id": "fac_sch_lewo_03",
+    "name": "SDK Hokeng",
+    "facility_type": "school",
+    "latitude": -8.535,
+    "longitude": 122.755,
+    "district": "Flores Timur"
   },
   {
-    "facility_id": "fac_air_013",
-    "name": "Bandara Banyuwangi (BWX)",
-    "facility_type": "airport",
-    "latitude": -8.309,
-    "longitude": 114.339,
-    "district": "Banyuwangi"
+    "facility_id": "fac_hc_lewo_01",
+    "name": "Puskesmas Boru Wulanggitang",
+    "facility_type": "healthcare",
+    "latitude": -8.542,
+    "longitude": 122.775,
+    "district": "Flores Timur"
   },
   {
-    "facility_id": "fac_air_014",
-    "name": "Bandara I Gusti Ngurah Rai (DPS)",
-    "facility_type": "airport",
-    "latitude": -8.748,
-    "longitude": 115.167,
-    "district": "Badung / Bali"
+    "facility_id": "fac_hc_lewo_02",
+    "name": "RSUD dr. Hendrikus Fernandez Larantuka",
+    "facility_type": "healthcare",
+    "latitude": -8.34,
+    "longitude": 122.98,
+    "district": "Flores Timur"
   },
   {
-    "facility_id": "fac_air_015",
-    "name": "Bandara Zainuddin Abdul Madjid (LOP)",
-    "facility_type": "airport",
-    "latitude": -8.761,
-    "longitude": 116.275,
-    "district": "Lombok Tengah"
-  },
-  {
-    "facility_id": "fac_air_016",
-    "name": "Bandara Sultan Muhammad Salahuddin (BMU)",
-    "facility_type": "airport",
-    "latitude": -8.539,
-    "longitude": 118.689,
-    "district": "Bima"
-  },
-  {
-    "facility_id": "fac_air_017",
-    "name": "Bandara Frans Seda (MOF)",
-    "facility_type": "airport",
-    "latitude": -8.625,
-    "longitude": 122.238,
-    "district": "Maumere / Sikka"
-  },
-  {
-    "facility_id": "fac_air_018",
+    "facility_id": "fac_air_lewo_01",
     "name": "Bandara Gewayantana (LKA)",
     "facility_type": "airport",
-    "latitude": -8.277,
-    "longitude": 122.977,
-    "district": "Larantuka / Flores Timur"
+    "latitude": -8.275,
+    "longitude": 123.01,
+    "district": "Flores Timur"
   },
   {
-    "facility_id": "fac_air_019",
-    "name": "Bandara El Tari (KOE)",
+    "facility_id": "fac_sch_ibu_01",
+    "name": "SMAN 1 Ibu",
+    "facility_type": "school",
+    "latitude": 1.455,
+    "longitude": 127.58,
+    "district": "Halmahera Barat"
+  },
+  {
+    "facility_id": "fac_sch_ibu_02",
+    "name": "SMPN 2 Ibu Utara",
+    "facility_type": "school",
+    "latitude": 1.51,
+    "longitude": 127.605,
+    "district": "Halmahera Barat"
+  },
+  {
+    "facility_id": "fac_sch_dukono_01",
+    "name": "SMP Negeri 1 Tobelo",
+    "facility_type": "school",
+    "latitude": 1.725,
+    "longitude": 127.995,
+    "district": "Halmahera Utara"
+  },
+  {
+    "facility_id": "fac_sch_dukono_02",
+    "name": "SMAN 1 Tobelo",
+    "facility_type": "school",
+    "latitude": 1.73,
+    "longitude": 128.005,
+    "district": "Halmahera Utara"
+  },
+  {
+    "facility_id": "fac_hc_ibu_01",
+    "name": "Puskesmas Gamkonora",
+    "facility_type": "healthcare",
+    "latitude": 1.46,
+    "longitude": 127.575,
+    "district": "Halmahera Barat"
+  },
+  {
+    "facility_id": "fac_hc_dukono_01",
+    "name": "RSUD Tobelo",
+    "facility_type": "healthcare",
+    "latitude": 1.728,
+    "longitude": 128.002,
+    "district": "Halmahera Utara"
+  },
+  {
+    "facility_id": "fac_air_dukono_01",
+    "name": "Bandara Kuabang Kao (KAZ)",
     "facility_type": "airport",
-    "latitude": -10.171,
-    "longitude": 123.67,
-    "district": "Kupang"
+    "latitude": 1.19,
+    "longitude": 127.905,
+    "district": "Halmahera Utara"
   },
   {
-    "facility_id": "fac_air_020",
-    "name": "Bandara Supadio (PNK)",
-    "facility_type": "airport",
-    "latitude": -0.15,
-    "longitude": 109.403,
-    "district": "Kubu Raya / Pontianak"
+    "facility_id": "fac_sch_marapi_01",
+    "name": "SMAN 1 Padang Panjang",
+    "facility_type": "school",
+    "latitude": -0.465,
+    "longitude": 100.405,
+    "district": "Padang Panjang"
   },
   {
-    "facility_id": "fac_air_021",
+    "facility_id": "fac_sch_marapi_02",
+    "name": "SMPN 1 Canduang",
+    "facility_type": "school",
+    "latitude": -0.32,
+    "longitude": 100.45,
+    "district": "Agam"
+  },
+  {
+    "facility_id": "fac_hc_marapi_01",
+    "name": "RSUD Achmad Mochtar Bukittinggi",
+    "facility_type": "healthcare",
+    "latitude": -0.305,
+    "longitude": 100.37,
+    "district": "Bukittinggi"
+  },
+  {
+    "facility_id": "fac_hc_marapi_02",
+    "name": "Puskesmas Sungai Pua",
+    "facility_type": "healthcare",
+    "latitude": -0.36,
+    "longitude": 100.42,
+    "district": "Agam"
+  },
+  {
+    "facility_id": "fac_sch_semeru_01",
+    "name": "SMAN 1 Candipuro",
+    "facility_type": "school",
+    "latitude": -8.19,
+    "longitude": 113.04,
+    "district": "Lumajang"
+  },
+  {
+    "facility_id": "fac_sch_semeru_02",
+    "name": "SMPN 1 Pronojiwo",
+    "facility_type": "school",
+    "latitude": -8.21,
+    "longitude": 112.91,
+    "district": "Lumajang"
+  },
+  {
+    "facility_id": "fac_hc_semeru_01",
+    "name": "Puskesmas Pronojiwo",
+    "facility_type": "healthcare",
+    "latitude": -8.212,
+    "longitude": 112.915,
+    "district": "Lumajang"
+  },
+  {
+    "facility_id": "fac_hc_semeru_02",
+    "name": "RSUD Pasirian",
+    "facility_type": "healthcare",
+    "latitude": -8.215,
+    "longitude": 113.11,
+    "district": "Lumajang"
+  },
+  {
+    "facility_id": "fac_sch_ruang_01",
+    "name": "SMAN 1 Tagulandang",
+    "facility_type": "school",
+    "latitude": 2.29,
+    "longitude": 125.41,
+    "district": "Kep. Sitaro"
+  },
+  {
+    "facility_id": "fac_hc_ruang_01",
+    "name": "RSUD Tagulandang",
+    "facility_type": "healthcare",
+    "latitude": 2.285,
+    "longitude": 125.42,
+    "district": "Kep. Sitaro"
+  },
+  {
+    "facility_id": "fac_sch_lokon_01",
+    "name": "SMAN 1 Tomohon",
+    "facility_type": "school",
+    "latitude": 1.325,
+    "longitude": 124.84,
+    "district": "Tomohon"
+  },
+  {
+    "facility_id": "fac_hc_lokon_01",
+    "name": "RSUD Anugerah Tomohon",
+    "facility_type": "healthcare",
+    "latitude": 1.33,
+    "longitude": 124.845,
+    "district": "Tomohon"
+  },
+  {
+    "facility_id": "fac_sch_agung_01",
+    "name": "SMAN 1 Selat",
+    "facility_type": "school",
+    "latitude": -8.44,
+    "longitude": 115.48,
+    "district": "Karangasem"
+  },
+  {
+    "facility_id": "fac_hc_agung_01",
+    "name": "Puskesmas Rendang",
+    "facility_type": "healthcare",
+    "latitude": -8.45,
+    "longitude": 115.43,
+    "district": "Karangasem"
+  },
+  {
+    "facility_id": "fac_sch_rinjani_01",
+    "name": "SMAN 1 Sembalun",
+    "facility_type": "school",
+    "latitude": -8.36,
+    "longitude": 116.53,
+    "district": "Lombok Timur"
+  },
+  {
+    "facility_id": "fac_hc_rinjani_01",
+    "name": "Puskesmas Sembalun",
+    "facility_type": "healthcare",
+    "latitude": -8.365,
+    "longitude": 116.535,
+    "district": "Lombok Timur"
+  },
+  {
+    "facility_id": "fac_sch_tparahu_01",
+    "name": "SMAN 1 Lembang",
+    "facility_type": "school",
+    "latitude": -6.815,
+    "longitude": 107.615,
+    "district": "Bandung Barat"
+  },
+  {
+    "facility_id": "fac_hc_tparahu_01",
+    "name": "RSUD Lembang",
+    "facility_type": "healthcare",
+    "latitude": -6.82,
+    "longitude": 107.62,
+    "district": "Bandung Barat"
+  },
+  {
+    "facility_id": "fac_sch_gede_01",
+    "name": "SMAN 1 Cipanas",
+    "facility_type": "school",
+    "latitude": -6.74,
+    "longitude": 107.03,
+    "district": "Cianjur"
+  },
+  {
+    "facility_id": "fac_hc_gede_01",
+    "name": "RSUD Cimacan",
+    "facility_type": "healthcare",
+    "latitude": -6.745,
+    "longitude": 107.025,
+    "district": "Cianjur"
+  },
+  {
+    "facility_id": "fac_sch_kalteng_01",
+    "name": "SMAN 1 Palangka Raya",
+    "facility_type": "school",
+    "latitude": -2.215,
+    "longitude": 113.918,
+    "district": "Palangka Raya"
+  },
+  {
+    "facility_id": "fac_sch_kalteng_02",
+    "name": "SMPN 2 Palangka Raya",
+    "facility_type": "school",
+    "latitude": -2.205,
+    "longitude": 113.925,
+    "district": "Palangka Raya"
+  },
+  {
+    "facility_id": "fac_sch_kalteng_03",
+    "name": "SMAN 1 Sampit",
+    "facility_type": "school",
+    "latitude": -2.535,
+    "longitude": 112.955,
+    "district": "Kotawaringin Timur"
+  },
+  {
+    "facility_id": "fac_hc_kalteng_01",
+    "name": "RSUD Doris Sylvanus",
+    "facility_type": "healthcare",
+    "latitude": -2.21,
+    "longitude": 113.922,
+    "district": "Palangka Raya"
+  },
+  {
+    "facility_id": "fac_hc_kalteng_02",
+    "name": "RSUD dr. Murjani Sampit",
+    "facility_type": "healthcare",
+    "latitude": -2.53,
+    "longitude": 112.96,
+    "district": "Kotawaringin Timur"
+  },
+  {
+    "facility_id": "fac_air_kalteng_01",
     "name": "Bandara Tjilik Riwut (PKY)",
     "facility_type": "airport",
     "latitude": -2.225,
@@ -168,7 +448,151 @@
     "district": "Palangka Raya"
   },
   {
-    "facility_id": "fac_air_022",
+    "facility_id": "fac_air_kalteng_02",
+    "name": "Bandara H. Asan Sampit (SMQ)",
+    "facility_type": "airport",
+    "latitude": -2.5,
+    "longitude": 112.975,
+    "district": "Kotawaringin Timur"
+  },
+  {
+    "facility_id": "fac_air_btj",
+    "name": "Bandara Sultan Iskandar Muda (BTJ)",
+    "facility_type": "airport",
+    "latitude": 5.523,
+    "longitude": 95.42,
+    "district": "Aceh Besar"
+  },
+  {
+    "facility_id": "fac_air_kno",
+    "name": "Bandara Kualanamu (KNO)",
+    "facility_type": "airport",
+    "latitude": 3.642,
+    "longitude": 98.885,
+    "district": "Deli Serdang / Medan"
+  },
+  {
+    "facility_id": "fac_air_pdg",
+    "name": "Bandara Minangkabau (PDG)",
+    "facility_type": "airport",
+    "latitude": -0.787,
+    "longitude": 100.281,
+    "district": "Padang Pariaman"
+  },
+  {
+    "facility_id": "fac_air_plm",
+    "name": "Bandara Sultan Mahmud Badaruddin II (PLM)",
+    "facility_type": "airport",
+    "latitude": -2.898,
+    "longitude": 104.701,
+    "district": "Palembang"
+  },
+  {
+    "facility_id": "fac_air_cgk",
+    "name": "Bandara Soekarno-Hatta (CGK)",
+    "facility_type": "airport",
+    "latitude": -6.125,
+    "longitude": 106.655,
+    "district": "Tangerang / Jakarta"
+  },
+  {
+    "facility_id": "fac_air_bdo",
+    "name": "Bandara Husein Sastranegara (BDO)",
+    "facility_type": "airport",
+    "latitude": -6.9,
+    "longitude": 107.576,
+    "district": "Bandung"
+  },
+  {
+    "facility_id": "fac_air_srg",
+    "name": "Bandara Ahmad Yani (SRG)",
+    "facility_type": "airport",
+    "latitude": -6.974,
+    "longitude": 110.374,
+    "district": "Semarang"
+  },
+  {
+    "facility_id": "fac_air_yia",
+    "name": "Bandara Yogyakarta International (YIA)",
+    "facility_type": "airport",
+    "latitude": -7.904,
+    "longitude": 110.057,
+    "district": "Kulon Progo"
+  },
+  {
+    "facility_id": "fac_air_sub",
+    "name": "Bandara Juanda (SUB)",
+    "facility_type": "airport",
+    "latitude": -7.379,
+    "longitude": 112.787,
+    "district": "Sidoarjo / Surabaya"
+  },
+  {
+    "facility_id": "fac_air_mlg",
+    "name": "Bandara Abdulrachman Saleh (MLG)",
+    "facility_type": "airport",
+    "latitude": -7.926,
+    "longitude": 112.714,
+    "district": "Malang"
+  },
+  {
+    "facility_id": "fac_air_bwx",
+    "name": "Bandara Banyuwangi (BWX)",
+    "facility_type": "airport",
+    "latitude": -8.309,
+    "longitude": 114.339,
+    "district": "Banyuwangi"
+  },
+  {
+    "facility_id": "fac_air_dps",
+    "name": "Bandara I Gusti Ngurah Rai (DPS)",
+    "facility_type": "airport",
+    "latitude": -8.748,
+    "longitude": 115.167,
+    "district": "Badung / Bali"
+  },
+  {
+    "facility_id": "fac_air_lop",
+    "name": "Bandara Zainuddin Abdul Madjid (LOP)",
+    "facility_type": "airport",
+    "latitude": -8.761,
+    "longitude": 116.275,
+    "district": "Lombok Tengah"
+  },
+  {
+    "facility_id": "fac_air_bmu",
+    "name": "Bandara Sultan Muhammad Salahuddin (BMU)",
+    "facility_type": "airport",
+    "latitude": -8.539,
+    "longitude": 118.689,
+    "district": "Bima"
+  },
+  {
+    "facility_id": "fac_air_mof",
+    "name": "Bandara Frans Seda (MOF)",
+    "facility_type": "airport",
+    "latitude": -8.625,
+    "longitude": 122.238,
+    "district": "Maumere / Sikka"
+  },
+  {
+    "facility_id": "fac_air_koe",
+    "name": "Bandara El Tari (KOE)",
+    "facility_type": "airport",
+    "latitude": -10.171,
+    "longitude": 123.67,
+    "district": "Kupang"
+  },
+  {
+    "facility_id": "fac_air_pnk",
+    "name": "Bandara Supadio (PNK)",
+    "facility_type": "airport",
+    "latitude": -0.15,
+    "longitude": 109.403,
+    "district": "Kubu Raya / Pontianak"
+  },
+  {
+    "facility_id": "fac_air_bdj",
     "name": "Bandara Syamsudin Noor (BDJ)",
     "facility_type": "airport",
     "latitude": -3.442,
@@ -176,7 +600,7 @@
     "district": "Banjarbaru"
   },
   {
-    "facility_id": "fac_air_023",
+    "facility_id": "fac_air_bpn",
     "name": "Bandara Sultan Aji Muhammad Sulaiman (BPN)",
     "facility_type": "airport",
     "latitude": -1.268,
@@ -184,7 +608,7 @@
     "district": "Balikpapan"
   },
   {
-    "facility_id": "fac_air_024",
+    "facility_id": "fac_air_upg",
     "name": "Bandara Sultan Hasanuddin (UPG)",
     "facility_type": "airport",
     "latitude": -5.061,
@@ -192,7 +616,7 @@
     "district": "Maros / Makassar"
   },
   {
-    "facility_id": "fac_air_025",
+    "facility_id": "fac_air_mdc",
     "name": "Bandara Sam Ratulangi (MDC)",
     "facility_type": "airport",
     "latitude": 1.549,
@@ -200,7 +624,7 @@
     "district": "Manado"
   },
   {
-    "facility_id": "fac_air_026",
+    "facility_id": "fac_air_amq",
     "name": "Bandara Pattimura (AMQ)",
     "facility_type": "airport",
     "latitude": -3.708,
@@ -208,7 +632,7 @@
     "district": "Ambon"
   },
   {
-    "facility_id": "fac_air_027",
+    "facility_id": "fac_air_tte",
     "name": "Bandara Sultan Babullah (TTE)",
     "facility_type": "airport",
     "latitude": 0.831,
@@ -216,7 +640,7 @@
     "district": "Ternate"
   },
   {
-    "facility_id": "fac_air_028",
+    "facility_id": "fac_air_djj",
     "name": "Bandara Sentani (DJJ)",
     "facility_type": "airport",
     "latitude": -2.576,
@@ -224,3035 +648,11 @@
     "district": "Jayapura"
   },
   {
-    "facility_id": "fac_air_029",
+    "facility_id": "fac_air_mkq",
     "name": "Bandara Mopah (MKQ)",
     "facility_type": "airport",
     "latitude": -8.52,
     "longitude": 140.418,
     "district": "Merauke"
-  },
-  {
-    "facility_id": "fac_sch_0030",
-    "name": "SMAN 1 Lereng G. Lewotobi Laki-laki",
-    "facility_type": "school",
-    "latitude": -8.5762,
-    "longitude": 122.7221,
-    "district": "Flores Timur"
-  },
-  {
-    "facility_id": "fac_sch_0031",
-    "name": "SDN 2 Lereng G. Lewotobi Laki-laki",
-    "facility_type": "school",
-    "latitude": -8.5356,
-    "longitude": 122.8414,
-    "district": "Flores Timur"
-  },
-  {
-    "facility_id": "fac_sch_0032",
-    "name": "SDN 3 Lereng G. Lewotobi Laki-laki",
-    "facility_type": "school",
-    "latitude": -8.6107,
-    "longitude": 122.6215,
-    "district": "Flores Timur"
-  },
-  {
-    "facility_id": "fac_hc_0033",
-    "name": "Puskesmas Siaga Bencana G. Lewotobi Laki-laki",
-    "facility_type": "healthcare",
-    "latitude": -8.6047,
-    "longitude": 122.7254,
-    "district": "Flores Timur"
-  },
-  {
-    "facility_id": "fac_hc_0034",
-    "name": "RSUD Rujukan Wilayah G. Lewotobi Laki-laki (Flores Timur)",
-    "facility_type": "healthcare",
-    "latitude": -8.3157,
-    "longitude": 122.6778,
-    "district": "Flores Timur"
-  },
-  {
-    "facility_id": "fac_sch_0035",
-    "name": "SMK Negeri 1 Lereng G. Anak Krakatau",
-    "facility_type": "school",
-    "latitude": -6.1729,
-    "longitude": 105.3701,
-    "district": "Selat Sunda / Lampung"
-  },
-  {
-    "facility_id": "fac_sch_0036",
-    "name": "SDN 2 Lereng G. Anak Krakatau",
-    "facility_type": "school",
-    "latitude": -6.0852,
-    "longitude": 105.5123,
-    "district": "Selat Sunda / Lampung"
-  },
-  {
-    "facility_id": "fac_sch_0037",
-    "name": "SMK Negeri 3 Lereng G. Anak Krakatau",
-    "facility_type": "school",
-    "latitude": -6.099,
-    "longitude": 105.3689,
-    "district": "Selat Sunda / Lampung"
-  },
-  {
-    "facility_id": "fac_hc_0038",
-    "name": "Puskesmas Siaga Bencana G. Anak Krakatau",
-    "facility_type": "healthcare",
-    "latitude": -6.1378,
-    "longitude": 105.4792,
-    "district": "Selat Sunda / Lampung"
-  },
-  {
-    "facility_id": "fac_hc_0039",
-    "name": "RSUD Rujukan Wilayah G. Anak Krakatau (Selat Sunda / Lampung)",
-    "facility_type": "healthcare",
-    "latitude": -5.8503,
-    "longitude": 105.3638,
-    "district": "Selat Sunda / Lampung"
-  },
-  {
-    "facility_id": "fac_sch_0040",
-    "name": "SMAN 1 Lereng G. Merapi",
-    "facility_type": "school",
-    "latitude": -7.483,
-    "longitude": 110.4836,
-    "district": "Sleman / Klaten / Boyolali / Magelang"
-  },
-  {
-    "facility_id": "fac_sch_0041",
-    "name": "SMK Negeri 2 Lereng G. Merapi",
-    "facility_type": "school",
-    "latitude": -7.6619,
-    "longitude": 110.353,
-    "district": "Sleman / Klaten / Boyolali / Magelang"
-  },
-  {
-    "facility_id": "fac_sch_0042",
-    "name": "SMK Negeri 3 Lereng G. Merapi",
-    "facility_type": "school",
-    "latitude": -7.7087,
-    "longitude": 110.4069,
-    "district": "Sleman / Klaten / Boyolali / Magelang"
-  },
-  {
-    "facility_id": "fac_hc_0043",
-    "name": "Puskesmas Siaga Bencana G. Merapi",
-    "facility_type": "healthcare",
-    "latitude": -7.4442,
-    "longitude": 110.4977,
-    "district": "Sleman / Klaten / Boyolali / Magelang"
-  },
-  {
-    "facility_id": "fac_hc_0044",
-    "name": "RSUD Rujukan Wilayah G. Merapi (Sleman / Klaten / Boyolali / Magelang)",
-    "facility_type": "healthcare",
-    "latitude": -7.8328,
-    "longitude": 110.241,
-    "district": "Sleman / Klaten / Boyolali / Magelang"
-  },
-  {
-    "facility_id": "fac_sch_0045",
-    "name": "SDN 1 Lereng G. Marapi",
-    "facility_type": "school",
-    "latitude": -0.4141,
-    "longitude": 100.5121,
-    "district": "Sumatera Barat"
-  },
-  {
-    "facility_id": "fac_sch_0046",
-    "name": "SMAN 2 Lereng G. Marapi",
-    "facility_type": "school",
-    "latitude": -0.3292,
-    "longitude": 100.4883,
-    "district": "Sumatera Barat"
-  },
-  {
-    "facility_id": "fac_sch_0047",
-    "name": "SDN 3 Lereng G. Marapi",
-    "facility_type": "school",
-    "latitude": -0.2792,
-    "longitude": 100.4635,
-    "district": "Sumatera Barat"
-  },
-  {
-    "facility_id": "fac_hc_0048",
-    "name": "Puskesmas Siaga Bencana G. Marapi",
-    "facility_type": "healthcare",
-    "latitude": -0.4406,
-    "longitude": 100.5288,
-    "district": "Sumatera Barat"
-  },
-  {
-    "facility_id": "fac_hc_0049",
-    "name": "RSUD Rujukan Wilayah G. Marapi (Sumatera Barat)",
-    "facility_type": "healthcare",
-    "latitude": -0.1595,
-    "longitude": 100.4219,
-    "district": "Sumatera Barat"
-  },
-  {
-    "facility_id": "fac_sch_0050",
-    "name": "SDN 1 Lereng G. Semeru",
-    "facility_type": "school",
-    "latitude": -8.1681,
-    "longitude": 112.9992,
-    "district": "Lumajang / Malang"
-  },
-  {
-    "facility_id": "fac_sch_0051",
-    "name": "SMP Negeri 2 Lereng G. Semeru",
-    "facility_type": "school",
-    "latitude": -8.1507,
-    "longitude": 112.8871,
-    "district": "Lumajang / Malang"
-  },
-  {
-    "facility_id": "fac_sch_0052",
-    "name": "SMP Negeri 3 Lereng G. Semeru",
-    "facility_type": "school",
-    "latitude": -8.0702,
-    "longitude": 112.9844,
-    "district": "Lumajang / Malang"
-  },
-  {
-    "facility_id": "fac_hc_0053",
-    "name": "Puskesmas Siaga Bencana G. Semeru",
-    "facility_type": "healthcare",
-    "latitude": -8.1568,
-    "longitude": 112.8099,
-    "district": "Lumajang / Malang"
-  },
-  {
-    "facility_id": "fac_hc_0054",
-    "name": "RSUD Rujukan Wilayah G. Semeru (Lumajang / Malang)",
-    "facility_type": "healthcare",
-    "latitude": -8.1079,
-    "longitude": 113.1612,
-    "district": "Lumajang / Malang"
-  },
-  {
-    "facility_id": "fac_sch_0055",
-    "name": "SMAN 1 Lereng G. Ibu",
-    "facility_type": "school",
-    "latitude": 1.5541,
-    "longitude": 127.6435,
-    "district": "Halmahera Barat"
-  },
-  {
-    "facility_id": "fac_sch_0056",
-    "name": "SMAN 2 Lereng G. Ibu",
-    "facility_type": "school",
-    "latitude": 1.5965,
-    "longitude": 127.6779,
-    "district": "Halmahera Barat"
-  },
-  {
-    "facility_id": "fac_sch_0057",
-    "name": "SMK Negeri 3 Lereng G. Ibu",
-    "facility_type": "school",
-    "latitude": 1.5074,
-    "longitude": 127.7109,
-    "district": "Halmahera Barat"
-  },
-  {
-    "facility_id": "fac_hc_0058",
-    "name": "Puskesmas Siaga Bencana G. Ibu",
-    "facility_type": "healthcare",
-    "latitude": 1.5287,
-    "longitude": 127.6811,
-    "district": "Halmahera Barat"
-  },
-  {
-    "facility_id": "fac_hc_0059",
-    "name": "RSUD Rujukan Wilayah G. Ibu (Halmahera Barat)",
-    "facility_type": "healthcare",
-    "latitude": 1.3939,
-    "longitude": 127.3504,
-    "district": "Halmahera Barat"
-  },
-  {
-    "facility_id": "fac_sch_0060",
-    "name": "SMK Negeri 1 Lereng G. Ruang",
-    "facility_type": "school",
-    "latitude": 2.3018,
-    "longitude": 125.3083,
-    "district": "Kep. Sitaro"
-  },
-  {
-    "facility_id": "fac_sch_0061",
-    "name": "SMP Negeri 2 Lereng G. Ruang",
-    "facility_type": "school",
-    "latitude": 2.2379,
-    "longitude": 125.4467,
-    "district": "Kep. Sitaro"
-  },
-  {
-    "facility_id": "fac_sch_0062",
-    "name": "SDN 3 Lereng G. Ruang",
-    "facility_type": "school",
-    "latitude": 2.2645,
-    "longitude": 125.3677,
-    "district": "Kep. Sitaro"
-  },
-  {
-    "facility_id": "fac_hc_0063",
-    "name": "Puskesmas Siaga Bencana G. Ruang",
-    "facility_type": "healthcare",
-    "latitude": 2.3371,
-    "longitude": 125.3293,
-    "district": "Kep. Sitaro"
-  },
-  {
-    "facility_id": "fac_hc_0064",
-    "name": "RSUD Rujukan Wilayah G. Ruang (Kep. Sitaro)",
-    "facility_type": "healthcare",
-    "latitude": 2.3425,
-    "longitude": 125.688,
-    "district": "Kep. Sitaro"
-  },
-  {
-    "facility_id": "fac_sch_0065",
-    "name": "SMK Negeri 1 Lereng G. Karangetang",
-    "facility_type": "school",
-    "latitude": 2.7388,
-    "longitude": 125.3757,
-    "district": "Kep. Sitaro"
-  },
-  {
-    "facility_id": "fac_sch_0066",
-    "name": "SDN 2 Lereng G. Karangetang",
-    "facility_type": "school",
-    "latitude": 2.696,
-    "longitude": 125.3893,
-    "district": "Kep. Sitaro"
-  },
-  {
-    "facility_id": "fac_sch_0067",
-    "name": "SMAN 3 Lereng G. Karangetang",
-    "facility_type": "school",
-    "latitude": 2.7661,
-    "longitude": 125.3731,
-    "district": "Kep. Sitaro"
-  },
-  {
-    "facility_id": "fac_hc_0068",
-    "name": "Puskesmas Siaga Bencana G. Karangetang",
-    "facility_type": "healthcare",
-    "latitude": 2.7877,
-    "longitude": 125.3483,
-    "district": "Kep. Sitaro"
-  },
-  {
-    "facility_id": "fac_hc_0069",
-    "name": "RSUD Rujukan Wilayah G. Karangetang (Kep. Sitaro)",
-    "facility_type": "healthcare",
-    "latitude": 2.877,
-    "longitude": 125.6101,
-    "district": "Kep. Sitaro"
-  },
-  {
-    "facility_id": "fac_sch_0070",
-    "name": "SMAN 1 Lereng G. Awu",
-    "facility_type": "school",
-    "latitude": 3.7722,
-    "longitude": 125.4521,
-    "district": "Kep. Sangihe"
-  },
-  {
-    "facility_id": "fac_sch_0071",
-    "name": "SDN 2 Lereng G. Awu",
-    "facility_type": "school",
-    "latitude": 3.774,
-    "longitude": 125.4314,
-    "district": "Kep. Sangihe"
-  },
-  {
-    "facility_id": "fac_sch_0072",
-    "name": "SMP Negeri 3 Lereng G. Awu",
-    "facility_type": "school",
-    "latitude": 3.7153,
-    "longitude": 125.402,
-    "district": "Kep. Sangihe"
-  },
-  {
-    "facility_id": "fac_hc_0073",
-    "name": "Puskesmas Siaga Bencana G. Awu",
-    "facility_type": "healthcare",
-    "latitude": 3.7364,
-    "longitude": 125.5449,
-    "district": "Kep. Sangihe"
-  },
-  {
-    "facility_id": "fac_hc_0074",
-    "name": "RSUD Rujukan Wilayah G. Awu (Kep. Sangihe)",
-    "facility_type": "healthcare",
-    "latitude": 3.4591,
-    "longitude": 125.1856,
-    "district": "Kep. Sangihe"
-  },
-  {
-    "facility_id": "fac_sch_0075",
-    "name": "SMAN 1 Lereng G. Iya",
-    "facility_type": "school",
-    "latitude": -8.9209,
-    "longitude": 121.6404,
-    "district": "Ende"
-  },
-  {
-    "facility_id": "fac_sch_0076",
-    "name": "SMAN 2 Lereng G. Iya",
-    "facility_type": "school",
-    "latitude": -8.927,
-    "longitude": 121.6471,
-    "district": "Ende"
-  },
-  {
-    "facility_id": "fac_sch_0077",
-    "name": "SMAN 3 Lereng G. Iya",
-    "facility_type": "school",
-    "latitude": -8.8486,
-    "longitude": 121.5988,
-    "district": "Ende"
-  },
-  {
-    "facility_id": "fac_hc_0078",
-    "name": "Puskesmas Siaga Bencana G. Iya",
-    "facility_type": "healthcare",
-    "latitude": -8.8941,
-    "longitude": 121.689,
-    "district": "Ende"
-  },
-  {
-    "facility_id": "fac_hc_0079",
-    "name": "RSUD Rujukan Wilayah G. Iya (Ende)",
-    "facility_type": "healthcare",
-    "latitude": -8.9125,
-    "longitude": 121.4334,
-    "district": "Ende"
-  },
-  {
-    "facility_id": "fac_sch_0080",
-    "name": "SMP Negeri 1 Lereng G. Lewotolo",
-    "facility_type": "school",
-    "latitude": -8.2795,
-    "longitude": 123.4393,
-    "district": "Lembata"
-  },
-  {
-    "facility_id": "fac_sch_0081",
-    "name": "SMP Negeri 2 Lereng G. Lewotolo",
-    "facility_type": "school",
-    "latitude": -8.2383,
-    "longitude": 123.5401,
-    "district": "Lembata"
-  },
-  {
-    "facility_id": "fac_sch_0082",
-    "name": "SMK Negeri 3 Lereng G. Lewotolo",
-    "facility_type": "school",
-    "latitude": -8.2785,
-    "longitude": 123.5737,
-    "district": "Lembata"
-  },
-  {
-    "facility_id": "fac_hc_0083",
-    "name": "Puskesmas Siaga Bencana G. Lewotolo",
-    "facility_type": "healthcare",
-    "latitude": -8.1964,
-    "longitude": 123.4878,
-    "district": "Lembata"
-  },
-  {
-    "facility_id": "fac_hc_0084",
-    "name": "RSUD Rujukan Wilayah G. Lewotolo (Lembata)",
-    "facility_type": "healthcare",
-    "latitude": -8.5908,
-    "longitude": 123.4584,
-    "district": "Lembata"
-  },
-  {
-    "facility_id": "fac_sch_0085",
-    "name": "SMAN 1 Lereng G. Sinabung",
-    "facility_type": "school",
-    "latitude": 3.1597,
-    "longitude": 98.3484,
-    "district": "Karo"
-  },
-  {
-    "facility_id": "fac_sch_0086",
-    "name": "SDN 2 Lereng G. Sinabung",
-    "facility_type": "school",
-    "latitude": 3.1229,
-    "longitude": 98.4113,
-    "district": "Karo"
-  },
-  {
-    "facility_id": "fac_sch_0087",
-    "name": "SDN 3 Lereng G. Sinabung",
-    "facility_type": "school",
-    "latitude": 3.1704,
-    "longitude": 98.4196,
-    "district": "Karo"
-  },
-  {
-    "facility_id": "fac_hc_0088",
-    "name": "Puskesmas Siaga Bencana G. Sinabung",
-    "facility_type": "healthcare",
-    "latitude": 3.133,
-    "longitude": 98.369,
-    "district": "Karo"
-  },
-  {
-    "facility_id": "fac_hc_0089",
-    "name": "RSUD Rujukan Wilayah G. Sinabung (Karo)",
-    "facility_type": "healthcare",
-    "latitude": 3.3785,
-    "longitude": 98.3613,
-    "district": "Karo"
-  },
-  {
-    "facility_id": "fac_sch_0090",
-    "name": "SDN 1 Lereng G. Kerinci",
-    "facility_type": "school",
-    "latitude": -1.7215,
-    "longitude": 101.2376,
-    "district": "Jambi / Sumatera Barat"
-  },
-  {
-    "facility_id": "fac_sch_0091",
-    "name": "SMP Negeri 2 Lereng G. Kerinci",
-    "facility_type": "school",
-    "latitude": -1.6792,
-    "longitude": 101.2424,
-    "district": "Jambi / Sumatera Barat"
-  },
-  {
-    "facility_id": "fac_sch_0092",
-    "name": "SMP Negeri 3 Lereng G. Kerinci",
-    "facility_type": "school",
-    "latitude": -1.7058,
-    "longitude": 101.3124,
-    "district": "Jambi / Sumatera Barat"
-  },
-  {
-    "facility_id": "fac_hc_0093",
-    "name": "Puskesmas Siaga Bencana G. Kerinci",
-    "facility_type": "healthcare",
-    "latitude": -1.7095,
-    "longitude": 101.1898,
-    "district": "Jambi / Sumatera Barat"
-  },
-  {
-    "facility_id": "fac_hc_0094",
-    "name": "RSUD Rujukan Wilayah G. Kerinci (Jambi / Sumatera Barat)",
-    "facility_type": "healthcare",
-    "latitude": -1.6593,
-    "longitude": 101.5028,
-    "district": "Jambi / Sumatera Barat"
-  },
-  {
-    "facility_id": "fac_sch_0095",
-    "name": "SDN 1 Lereng G. Dempo",
-    "facility_type": "school",
-    "latitude": -4.0671,
-    "longitude": 103.1364,
-    "district": "Pagar Alam"
-  },
-  {
-    "facility_id": "fac_sch_0096",
-    "name": "SMK Negeri 2 Lereng G. Dempo",
-    "facility_type": "school",
-    "latitude": -3.9983,
-    "longitude": 103.1521,
-    "district": "Pagar Alam"
-  },
-  {
-    "facility_id": "fac_sch_0097",
-    "name": "SDN 3 Lereng G. Dempo",
-    "facility_type": "school",
-    "latitude": -4.0785,
-    "longitude": 103.1603,
-    "district": "Pagar Alam"
-  },
-  {
-    "facility_id": "fac_hc_0098",
-    "name": "Puskesmas Siaga Bencana G. Dempo",
-    "facility_type": "healthcare",
-    "latitude": -4.061,
-    "longitude": 103.0707,
-    "district": "Pagar Alam"
-  },
-  {
-    "facility_id": "fac_hc_0099",
-    "name": "RSUD Rujukan Wilayah G. Dempo (Pagar Alam)",
-    "facility_type": "healthcare",
-    "latitude": -3.7623,
-    "longitude": 103.169,
-    "district": "Pagar Alam"
-  },
-  {
-    "facility_id": "fac_sch_0100",
-    "name": "SMP Negeri 1 Lereng G. Slamet",
-    "facility_type": "school",
-    "latitude": -7.2663,
-    "longitude": 109.2467,
-    "district": "Banyumas / Brebes"
-  },
-  {
-    "facility_id": "fac_sch_0101",
-    "name": "SMP Negeri 2 Lereng G. Slamet",
-    "facility_type": "school",
-    "latitude": -7.2296,
-    "longitude": 109.2402,
-    "district": "Banyumas / Brebes"
-  },
-  {
-    "facility_id": "fac_sch_0102",
-    "name": "SMP Negeri 3 Lereng G. Slamet",
-    "facility_type": "school",
-    "latitude": -7.2647,
-    "longitude": 109.2201,
-    "district": "Banyumas / Brebes"
-  },
-  {
-    "facility_id": "fac_hc_0103",
-    "name": "Puskesmas Siaga Bencana G. Slamet",
-    "facility_type": "healthcare",
-    "latitude": -7.2251,
-    "longitude": 109.1909,
-    "district": "Banyumas / Brebes"
-  },
-  {
-    "facility_id": "fac_hc_0104",
-    "name": "RSUD Rujukan Wilayah G. Slamet (Banyumas / Brebes)",
-    "facility_type": "healthcare",
-    "latitude": -7.5768,
-    "longitude": 109.3168,
-    "district": "Banyumas / Brebes"
-  },
-  {
-    "facility_id": "fac_sch_0105",
-    "name": "SDN 1 Lereng G. Dieng",
-    "facility_type": "school",
-    "latitude": -7.1843,
-    "longitude": 109.9111,
-    "district": "Banjarnegara / Wonosobo"
-  },
-  {
-    "facility_id": "fac_sch_0106",
-    "name": "SMP Negeri 2 Lereng G. Dieng",
-    "facility_type": "school",
-    "latitude": -7.1765,
-    "longitude": 109.8954,
-    "district": "Banjarnegara / Wonosobo"
-  },
-  {
-    "facility_id": "fac_sch_0107",
-    "name": "SMP Negeri 3 Lereng G. Dieng",
-    "facility_type": "school",
-    "latitude": -7.1918,
-    "longitude": 109.9142,
-    "district": "Banjarnegara / Wonosobo"
-  },
-  {
-    "facility_id": "fac_hc_0108",
-    "name": "Puskesmas Siaga Bencana G. Dieng",
-    "facility_type": "healthcare",
-    "latitude": -7.1832,
-    "longitude": 109.8809,
-    "district": "Banjarnegara / Wonosobo"
-  },
-  {
-    "facility_id": "fac_hc_0109",
-    "name": "RSUD Rujukan Wilayah G. Dieng (Banjarnegara / Wonosobo)",
-    "facility_type": "healthcare",
-    "latitude": -7.1818,
-    "longitude": 110.0975,
-    "district": "Banjarnegara / Wonosobo"
-  },
-  {
-    "facility_id": "fac_sch_0110",
-    "name": "SMK Negeri 1 Lereng G. Bromo",
-    "facility_type": "school",
-    "latitude": -7.9605,
-    "longitude": 112.9652,
-    "district": "Probolinggo / Pasuruan"
-  },
-  {
-    "facility_id": "fac_sch_0111",
-    "name": "SMK Negeri 2 Lereng G. Bromo",
-    "facility_type": "school",
-    "latitude": -7.9464,
-    "longitude": 112.9695,
-    "district": "Probolinggo / Pasuruan"
-  },
-  {
-    "facility_id": "fac_sch_0112",
-    "name": "SDN 3 Lereng G. Bromo",
-    "facility_type": "school",
-    "latitude": -7.9346,
-    "longitude": 112.9609,
-    "district": "Probolinggo / Pasuruan"
-  },
-  {
-    "facility_id": "fac_hc_0113",
-    "name": "Puskesmas Siaga Bencana G. Bromo",
-    "facility_type": "healthcare",
-    "latitude": -7.9592,
-    "longitude": 112.9407,
-    "district": "Probolinggo / Pasuruan"
-  },
-  {
-    "facility_id": "fac_hc_0114",
-    "name": "RSUD Rujukan Wilayah G. Bromo (Probolinggo / Pasuruan)",
-    "facility_type": "healthcare",
-    "latitude": -7.8048,
-    "longitude": 113.1067,
-    "district": "Probolinggo / Pasuruan"
-  },
-  {
-    "facility_id": "fac_sch_0115",
-    "name": "SMP Negeri 1 Lereng G. Raung",
-    "facility_type": "school",
-    "latitude": -8.1683,
-    "longitude": 114.0167,
-    "district": "Banyuwangi / Bondowoso"
-  },
-  {
-    "facility_id": "fac_sch_0116",
-    "name": "SMP Negeri 2 Lereng G. Raung",
-    "facility_type": "school",
-    "latitude": -8.0778,
-    "longitude": 114.0596,
-    "district": "Banyuwangi / Bondowoso"
-  },
-  {
-    "facility_id": "fac_sch_0117",
-    "name": "SMP Negeri 3 Lereng G. Raung",
-    "facility_type": "school",
-    "latitude": -8.0997,
-    "longitude": 114.0536,
-    "district": "Banyuwangi / Bondowoso"
-  },
-  {
-    "facility_id": "fac_hc_0118",
-    "name": "Puskesmas Siaga Bencana G. Raung",
-    "facility_type": "healthcare",
-    "latitude": -8.1893,
-    "longitude": 114.0864,
-    "district": "Banyuwangi / Bondowoso"
-  },
-  {
-    "facility_id": "fac_hc_0119",
-    "name": "RSUD Rujukan Wilayah G. Raung (Banyuwangi / Bondowoso)",
-    "facility_type": "healthcare",
-    "latitude": -7.8768,
-    "longitude": 113.8697,
-    "district": "Banyuwangi / Bondowoso"
-  },
-  {
-    "facility_id": "fac_sch_0120",
-    "name": "SMAN 1 Lereng G. Sangeang Api",
-    "facility_type": "school",
-    "latitude": -8.1862,
-    "longitude": 119.0735,
-    "district": "Bima"
-  },
-  {
-    "facility_id": "fac_sch_0121",
-    "name": "SMAN 2 Lereng G. Sangeang Api",
-    "facility_type": "school",
-    "latitude": -8.1841,
-    "longitude": 119.0631,
-    "district": "Bima"
-  },
-  {
-    "facility_id": "fac_sch_0122",
-    "name": "SMAN 3 Lereng G. Sangeang Api",
-    "facility_type": "school",
-    "latitude": -8.1984,
-    "longitude": 119.0922,
-    "district": "Bima"
-  },
-  {
-    "facility_id": "fac_hc_0123",
-    "name": "Puskesmas Siaga Bencana G. Sangeang Api",
-    "facility_type": "healthcare",
-    "latitude": -8.2374,
-    "longitude": 119.0803,
-    "district": "Bima"
-  },
-  {
-    "facility_id": "fac_hc_0124",
-    "name": "RSUD Rujukan Wilayah G. Sangeang Api (Bima)",
-    "facility_type": "healthcare",
-    "latitude": -8.0212,
-    "longitude": 119.1588,
-    "district": "Bima"
-  },
-  {
-    "facility_id": "fac_sch_0125",
-    "name": "SDN 1 Lereng G. Kelimutu",
-    "facility_type": "school",
-    "latitude": -8.7893,
-    "longitude": 121.8017,
-    "district": "Ende"
-  },
-  {
-    "facility_id": "fac_sch_0126",
-    "name": "SMAN 2 Lereng G. Kelimutu",
-    "facility_type": "school",
-    "latitude": -8.7542,
-    "longitude": 121.8278,
-    "district": "Ende"
-  },
-  {
-    "facility_id": "fac_sch_0127",
-    "name": "SDN 3 Lereng G. Kelimutu",
-    "facility_type": "school",
-    "latitude": -8.7558,
-    "longitude": 121.8356,
-    "district": "Ende"
-  },
-  {
-    "facility_id": "fac_hc_0128",
-    "name": "Puskesmas Siaga Bencana G. Kelimutu",
-    "facility_type": "healthcare",
-    "latitude": -8.7517,
-    "longitude": 121.8027,
-    "district": "Ende"
-  },
-  {
-    "facility_id": "fac_hc_0129",
-    "name": "RSUD Rujukan Wilayah G. Kelimutu (Ende)",
-    "facility_type": "healthcare",
-    "latitude": -8.7652,
-    "longitude": 122.168,
-    "district": "Ende"
-  },
-  {
-    "facility_id": "fac_sch_0130",
-    "name": "SDN 1 Lereng G. Lewotobi Perempuan",
-    "facility_type": "school",
-    "latitude": -8.5637,
-    "longitude": 122.7515,
-    "district": "Flores Timur"
-  },
-  {
-    "facility_id": "fac_sch_0131",
-    "name": "SDN 2 Lereng G. Lewotobi Perempuan",
-    "facility_type": "school",
-    "latitude": -8.5704,
-    "longitude": 122.7564,
-    "district": "Flores Timur"
-  },
-  {
-    "facility_id": "fac_sch_0132",
-    "name": "SDN 3 Lereng G. Lewotobi Perempuan",
-    "facility_type": "school",
-    "latitude": -8.5337,
-    "longitude": 122.7792,
-    "district": "Flores Timur"
-  },
-  {
-    "facility_id": "fac_hc_0133",
-    "name": "Puskesmas Siaga Bencana G. Lewotobi Perempuan",
-    "facility_type": "healthcare",
-    "latitude": -8.5179,
-    "longitude": 122.7578,
-    "district": "Flores Timur"
-  },
-  {
-    "facility_id": "fac_hc_0134",
-    "name": "RSUD Rujukan Wilayah G. Lewotobi Perempuan (Flores Timur)",
-    "facility_type": "healthcare",
-    "latitude": -8.5647,
-    "longitude": 123.0354,
-    "district": "Flores Timur"
-  },
-  {
-    "facility_id": "fac_sch_0135",
-    "name": "SMAN 1 Lereng G. Soputan",
-    "facility_type": "school",
-    "latitude": 1.1188,
-    "longitude": 124.7641,
-    "district": "Minahasa Tenggara"
-  },
-  {
-    "facility_id": "fac_sch_0136",
-    "name": "SDN 2 Lereng G. Soputan",
-    "facility_type": "school",
-    "latitude": 1.0872,
-    "longitude": 124.7362,
-    "district": "Minahasa Tenggara"
-  },
-  {
-    "facility_id": "fac_sch_0137",
-    "name": "SMAN 3 Lereng G. Soputan",
-    "facility_type": "school",
-    "latitude": 1.1377,
-    "longitude": 124.7538,
-    "district": "Minahasa Tenggara"
-  },
-  {
-    "facility_id": "fac_hc_0138",
-    "name": "Puskesmas Siaga Bencana G. Soputan",
-    "facility_type": "healthcare",
-    "latitude": 1.1432,
-    "longitude": 124.7459,
-    "district": "Minahasa Tenggara"
-  },
-  {
-    "facility_id": "fac_hc_0139",
-    "name": "RSUD Rujukan Wilayah G. Soputan (Minahasa Tenggara)",
-    "facility_type": "healthcare",
-    "latitude": 0.8036,
-    "longitude": 124.9493,
-    "district": "Minahasa Tenggara"
-  },
-  {
-    "facility_id": "fac_sch_0140",
-    "name": "SMK Negeri 1 Lereng G. Lokon",
-    "facility_type": "school",
-    "latitude": 1.3704,
-    "longitude": 124.813,
-    "district": "Tomohon"
-  },
-  {
-    "facility_id": "fac_sch_0141",
-    "name": "SMP Negeri 2 Lereng G. Lokon",
-    "facility_type": "school",
-    "latitude": 1.3441,
-    "longitude": 124.7874,
-    "district": "Tomohon"
-  },
-  {
-    "facility_id": "fac_sch_0142",
-    "name": "SMP Negeri 3 Lereng G. Lokon",
-    "facility_type": "school",
-    "latitude": 1.3258,
-    "longitude": 124.7835,
-    "district": "Tomohon"
-  },
-  {
-    "facility_id": "fac_hc_0143",
-    "name": "Puskesmas Siaga Bencana G. Lokon",
-    "facility_type": "healthcare",
-    "latitude": 1.3424,
-    "longitude": 124.8004,
-    "district": "Tomohon"
-  },
-  {
-    "facility_id": "fac_hc_0144",
-    "name": "RSUD Rujukan Wilayah G. Lokon (Tomohon)",
-    "facility_type": "healthcare",
-    "latitude": 1.5986,
-    "longitude": 124.5172,
-    "district": "Tomohon"
-  },
-  {
-    "facility_id": "fac_sch_0145",
-    "name": "SMAN 1 Lereng G. Gamalama",
-    "facility_type": "school",
-    "latitude": 0.813,
-    "longitude": 127.3277,
-    "district": "Ternate"
-  },
-  {
-    "facility_id": "fac_sch_0146",
-    "name": "SDN 2 Lereng G. Gamalama",
-    "facility_type": "school",
-    "latitude": 0.8046,
-    "longitude": 127.348,
-    "district": "Ternate"
-  },
-  {
-    "facility_id": "fac_sch_0147",
-    "name": "SMK Negeri 3 Lereng G. Gamalama",
-    "facility_type": "school",
-    "latitude": 0.7839,
-    "longitude": 127.3511,
-    "district": "Ternate"
-  },
-  {
-    "facility_id": "fac_hc_0148",
-    "name": "Puskesmas Siaga Bencana G. Gamalama",
-    "facility_type": "healthcare",
-    "latitude": 0.8339,
-    "longitude": 127.3244,
-    "district": "Ternate"
-  },
-  {
-    "facility_id": "fac_hc_0149",
-    "name": "RSUD Rujukan Wilayah G. Gamalama (Ternate)",
-    "facility_type": "healthcare",
-    "latitude": 0.5943,
-    "longitude": 127.2051,
-    "district": "Ternate"
-  },
-  {
-    "facility_id": "fac_sch_0150",
-    "name": "SMP Negeri 1 Lereng G. Dukono",
-    "facility_type": "school",
-    "latitude": 1.7271,
-    "longitude": 127.9497,
-    "district": "Halmahera Utara"
-  },
-  {
-    "facility_id": "fac_sch_0151",
-    "name": "SMAN 2 Lereng G. Dukono",
-    "facility_type": "school",
-    "latitude": 1.7118,
-    "longitude": 127.8767,
-    "district": "Halmahera Utara"
-  },
-  {
-    "facility_id": "fac_sch_0152",
-    "name": "SMP Negeri 3 Lereng G. Dukono",
-    "facility_type": "school",
-    "latitude": 1.7022,
-    "longitude": 127.8495,
-    "district": "Halmahera Utara"
-  },
-  {
-    "facility_id": "fac_hc_0153",
-    "name": "Puskesmas Siaga Bencana G. Dukono",
-    "facility_type": "healthcare",
-    "latitude": 1.6856,
-    "longitude": 127.9643,
-    "district": "Halmahera Utara"
-  },
-  {
-    "facility_id": "fac_hc_0154",
-    "name": "RSUD Rujukan Wilayah G. Dukono (Halmahera Utara)",
-    "facility_type": "healthcare",
-    "latitude": 1.4335,
-    "longitude": 127.6518,
-    "district": "Halmahera Utara"
-  },
-  {
-    "facility_id": "fac_sch_0155",
-    "name": "SMK Negeri 1 Lereng G. Seulawah Agam",
-    "facility_type": "school",
-    "latitude": 5.4593,
-    "longitude": 95.6441,
-    "district": "Aceh"
-  },
-  {
-    "facility_id": "fac_sch_0156",
-    "name": "SMP Negeri 2 Lereng G. Seulawah Agam",
-    "facility_type": "school",
-    "latitude": 5.4285,
-    "longitude": 95.6849,
-    "district": "Aceh"
-  },
-  {
-    "facility_id": "fac_sch_0157",
-    "name": "SMK Negeri 3 Lereng G. Seulawah Agam",
-    "facility_type": "school",
-    "latitude": 5.4529,
-    "longitude": 95.6867,
-    "district": "Aceh"
-  },
-  {
-    "facility_id": "fac_hc_0158",
-    "name": "Puskesmas Siaga Bencana G. Seulawah Agam",
-    "facility_type": "healthcare",
-    "latitude": 5.4304,
-    "longitude": 95.6908,
-    "district": "Aceh"
-  },
-  {
-    "facility_id": "fac_hc_0159",
-    "name": "RSUD Rujukan Wilayah G. Seulawah Agam (Aceh)",
-    "facility_type": "healthcare",
-    "latitude": 5.6861,
-    "longitude": 95.5878,
-    "district": "Aceh"
-  },
-  {
-    "facility_id": "fac_sch_0160",
-    "name": "SMAN 1 Lereng G. Peuet Sago",
-    "facility_type": "school",
-    "latitude": 4.8952,
-    "longitude": 96.3058,
-    "district": "Pidie"
-  },
-  {
-    "facility_id": "fac_sch_0161",
-    "name": "SMAN 2 Lereng G. Peuet Sago",
-    "facility_type": "school",
-    "latitude": 4.9327,
-    "longitude": 96.3215,
-    "district": "Pidie"
-  },
-  {
-    "facility_id": "fac_sch_0162",
-    "name": "SMAN 3 Lereng G. Peuet Sago",
-    "facility_type": "school",
-    "latitude": 4.9353,
-    "longitude": 96.3733,
-    "district": "Pidie"
-  },
-  {
-    "facility_id": "fac_hc_0163",
-    "name": "Puskesmas Siaga Bencana G. Peuet Sago",
-    "facility_type": "healthcare",
-    "latitude": 4.9538,
-    "longitude": 96.3387,
-    "district": "Pidie"
-  },
-  {
-    "facility_id": "fac_hc_0164",
-    "name": "RSUD Rujukan Wilayah G. Peuet Sago (Pidie)",
-    "facility_type": "healthcare",
-    "latitude": 4.5819,
-    "longitude": 96.3997,
-    "district": "Pidie"
-  },
-  {
-    "facility_id": "fac_sch_0165",
-    "name": "SDN 1 Lereng G. Burni Telong",
-    "facility_type": "school",
-    "latitude": 4.7386,
-    "longitude": 96.8356,
-    "district": "Bener Meriah"
-  },
-  {
-    "facility_id": "fac_sch_0166",
-    "name": "SMAN 2 Lereng G. Burni Telong",
-    "facility_type": "school",
-    "latitude": 4.7528,
-    "longitude": 96.8388,
-    "district": "Bener Meriah"
-  },
-  {
-    "facility_id": "fac_sch_0167",
-    "name": "SMP Negeri 3 Lereng G. Burni Telong",
-    "facility_type": "school",
-    "latitude": 4.7954,
-    "longitude": 96.8274,
-    "district": "Bener Meriah"
-  },
-  {
-    "facility_id": "fac_hc_0168",
-    "name": "Puskesmas Siaga Bencana G. Burni Telong",
-    "facility_type": "healthcare",
-    "latitude": 4.7612,
-    "longitude": 96.8345,
-    "district": "Bener Meriah"
-  },
-  {
-    "facility_id": "fac_hc_0169",
-    "name": "RSUD Rujukan Wilayah G. Burni Telong (Bener Meriah)",
-    "facility_type": "healthcare",
-    "latitude": 4.9754,
-    "longitude": 96.6619,
-    "district": "Bener Meriah"
-  },
-  {
-    "facility_id": "fac_sch_0170",
-    "name": "SMAN 1 Lereng G. Sibayak",
-    "facility_type": "school",
-    "latitude": 3.2212,
-    "longitude": 98.5408,
-    "district": "Karo"
-  },
-  {
-    "facility_id": "fac_sch_0171",
-    "name": "SMAN 2 Lereng G. Sibayak",
-    "facility_type": "school",
-    "latitude": 3.2105,
-    "longitude": 98.5191,
-    "district": "Karo"
-  },
-  {
-    "facility_id": "fac_sch_0172",
-    "name": "SMP Negeri 3 Lereng G. Sibayak",
-    "facility_type": "school",
-    "latitude": 3.2192,
-    "longitude": 98.5276,
-    "district": "Karo"
-  },
-  {
-    "facility_id": "fac_hc_0173",
-    "name": "Puskesmas Siaga Bencana G. Sibayak",
-    "facility_type": "healthcare",
-    "latitude": 3.2377,
-    "longitude": 98.5401,
-    "district": "Karo"
-  },
-  {
-    "facility_id": "fac_hc_0174",
-    "name": "RSUD Rujukan Wilayah G. Sibayak (Karo)",
-    "facility_type": "healthcare",
-    "latitude": 3.0036,
-    "longitude": 98.2763,
-    "district": "Karo"
-  },
-  {
-    "facility_id": "fac_sch_0175",
-    "name": "SMK Negeri 1 Lereng G. Sorikmarapi",
-    "facility_type": "school",
-    "latitude": 0.6983,
-    "longitude": 99.6458,
-    "district": "Mandailing Natal"
-  },
-  {
-    "facility_id": "fac_sch_0176",
-    "name": "SMAN 2 Lereng G. Sorikmarapi",
-    "facility_type": "school",
-    "latitude": 0.6744,
-    "longitude": 99.6184,
-    "district": "Mandailing Natal"
-  },
-  {
-    "facility_id": "fac_sch_0177",
-    "name": "SMAN 3 Lereng G. Sorikmarapi",
-    "facility_type": "school",
-    "latitude": 0.694,
-    "longitude": 99.6533,
-    "district": "Mandailing Natal"
-  },
-  {
-    "facility_id": "fac_hc_0178",
-    "name": "Puskesmas Siaga Bencana G. Sorikmarapi",
-    "facility_type": "healthcare",
-    "latitude": 0.6597,
-    "longitude": 99.6279,
-    "district": "Mandailing Natal"
-  },
-  {
-    "facility_id": "fac_hc_0179",
-    "name": "RSUD Rujukan Wilayah G. Sorikmarapi (Mandailing Natal)",
-    "facility_type": "healthcare",
-    "latitude": 0.8543,
-    "longitude": 99.3943,
-    "district": "Mandailing Natal"
-  },
-  {
-    "facility_id": "fac_sch_0180",
-    "name": "SMP Negeri 1 Lereng G. Tandikat",
-    "facility_type": "school",
-    "latitude": -0.4065,
-    "longitude": 100.2981,
-    "district": "Padang Pariaman"
-  },
-  {
-    "facility_id": "fac_sch_0181",
-    "name": "SMAN 2 Lereng G. Tandikat",
-    "facility_type": "school",
-    "latitude": -0.4435,
-    "longitude": 100.3007,
-    "district": "Padang Pariaman"
-  },
-  {
-    "facility_id": "fac_sch_0182",
-    "name": "SMP Negeri 3 Lereng G. Tandikat",
-    "facility_type": "school",
-    "latitude": -0.4025,
-    "longitude": 100.3372,
-    "district": "Padang Pariaman"
-  },
-  {
-    "facility_id": "fac_hc_0183",
-    "name": "Puskesmas Siaga Bencana G. Tandikat",
-    "facility_type": "healthcare",
-    "latitude": -0.4431,
-    "longitude": 100.2978,
-    "district": "Padang Pariaman"
-  },
-  {
-    "facility_id": "fac_hc_0184",
-    "name": "RSUD Rujukan Wilayah G. Tandikat (Padang Pariaman)",
-    "facility_type": "healthcare",
-    "latitude": -0.2424,
-    "longitude": 100.3849,
-    "district": "Padang Pariaman"
-  },
-  {
-    "facility_id": "fac_sch_0185",
-    "name": "SDN 1 Lereng G. Talang",
-    "facility_type": "school",
-    "latitude": -0.9772,
-    "longitude": 100.7033,
-    "district": "Solok"
-  },
-  {
-    "facility_id": "fac_sch_0186",
-    "name": "SMP Negeri 2 Lereng G. Talang",
-    "facility_type": "school",
-    "latitude": -1.0115,
-    "longitude": 100.6886,
-    "district": "Solok"
-  },
-  {
-    "facility_id": "fac_sch_0187",
-    "name": "SMK Negeri 3 Lereng G. Talang",
-    "facility_type": "school",
-    "latitude": -0.9823,
-    "longitude": 100.6574,
-    "district": "Solok"
-  },
-  {
-    "facility_id": "fac_hc_0188",
-    "name": "Puskesmas Siaga Bencana G. Talang",
-    "facility_type": "healthcare",
-    "latitude": -0.9768,
-    "longitude": 100.7111,
-    "district": "Solok"
-  },
-  {
-    "facility_id": "fac_hc_0189",
-    "name": "RSUD Rujukan Wilayah G. Talang (Solok)",
-    "facility_type": "healthcare",
-    "latitude": -1.2845,
-    "longitude": 100.5485,
-    "district": "Solok"
-  },
-  {
-    "facility_id": "fac_sch_0190",
-    "name": "SMK Negeri 1 Lereng G. Kaba",
-    "facility_type": "school",
-    "latitude": -3.5181,
-    "longitude": 102.6052,
-    "district": "Rejang Lebong"
-  },
-  {
-    "facility_id": "fac_sch_0191",
-    "name": "SMK Negeri 2 Lereng G. Kaba",
-    "facility_type": "school",
-    "latitude": -3.5136,
-    "longitude": 102.6521,
-    "district": "Rejang Lebong"
-  },
-  {
-    "facility_id": "fac_sch_0192",
-    "name": "SDN 3 Lereng G. Kaba",
-    "facility_type": "school",
-    "latitude": -3.5024,
-    "longitude": 102.6258,
-    "district": "Rejang Lebong"
-  },
-  {
-    "facility_id": "fac_hc_0193",
-    "name": "Puskesmas Siaga Bencana G. Kaba",
-    "facility_type": "healthcare",
-    "latitude": -3.5543,
-    "longitude": 102.6296,
-    "district": "Rejang Lebong"
-  },
-  {
-    "facility_id": "fac_hc_0194",
-    "name": "RSUD Rujukan Wilayah G. Kaba (Rejang Lebong)",
-    "facility_type": "healthcare",
-    "latitude": -3.1454,
-    "longitude": 102.59,
-    "district": "Rejang Lebong"
-  },
-  {
-    "facility_id": "fac_sch_0195",
-    "name": "SMK Negeri 1 Lereng G. Salak",
-    "facility_type": "school",
-    "latitude": -6.7371,
-    "longitude": 106.7193,
-    "district": "Sukabumi / Bogor"
-  },
-  {
-    "facility_id": "fac_sch_0196",
-    "name": "SMK Negeri 2 Lereng G. Salak",
-    "facility_type": "school",
-    "latitude": -6.7325,
-    "longitude": 106.7197,
-    "district": "Sukabumi / Bogor"
-  },
-  {
-    "facility_id": "fac_sch_0197",
-    "name": "SMP Negeri 3 Lereng G. Salak",
-    "facility_type": "school",
-    "latitude": -6.7085,
-    "longitude": 106.7177,
-    "district": "Sukabumi / Bogor"
-  },
-  {
-    "facility_id": "fac_hc_0198",
-    "name": "Puskesmas Siaga Bencana G. Salak",
-    "facility_type": "healthcare",
-    "latitude": -6.7177,
-    "longitude": 106.7145,
-    "district": "Sukabumi / Bogor"
-  },
-  {
-    "facility_id": "fac_hc_0199",
-    "name": "RSUD Rujukan Wilayah G. Salak (Sukabumi / Bogor)",
-    "facility_type": "healthcare",
-    "latitude": -6.5677,
-    "longitude": 106.9241,
-    "district": "Sukabumi / Bogor"
-  },
-  {
-    "facility_id": "fac_sch_0200",
-    "name": "SMK Negeri 1 Lereng G. Gede",
-    "facility_type": "school",
-    "latitude": -6.7967,
-    "longitude": 106.9669,
-    "district": "Cianjur / Bogor"
-  },
-  {
-    "facility_id": "fac_sch_0201",
-    "name": "SDN 2 Lereng G. Gede",
-    "facility_type": "school",
-    "latitude": -6.7919,
-    "longitude": 106.9739,
-    "district": "Cianjur / Bogor"
-  },
-  {
-    "facility_id": "fac_sch_0202",
-    "name": "SMAN 3 Lereng G. Gede",
-    "facility_type": "school",
-    "latitude": -6.7857,
-    "longitude": 106.9712,
-    "district": "Cianjur / Bogor"
-  },
-  {
-    "facility_id": "fac_hc_0203",
-    "name": "Puskesmas Siaga Bencana G. Gede",
-    "facility_type": "healthcare",
-    "latitude": -6.7913,
-    "longitude": 107.0007,
-    "district": "Cianjur / Bogor"
-  },
-  {
-    "facility_id": "fac_hc_0204",
-    "name": "RSUD Rujukan Wilayah G. Gede (Cianjur / Bogor)",
-    "facility_type": "healthcare",
-    "latitude": -6.8822,
-    "longitude": 106.7649,
-    "district": "Cianjur / Bogor"
-  },
-  {
-    "facility_id": "fac_sch_0205",
-    "name": "SDN 1 Lereng G. Tangkuban Parahu",
-    "facility_type": "school",
-    "latitude": -6.7804,
-    "longitude": 107.5716,
-    "district": "Bandung Barat"
-  },
-  {
-    "facility_id": "fac_sch_0206",
-    "name": "SMK Negeri 2 Lereng G. Tangkuban Parahu",
-    "facility_type": "school",
-    "latitude": -6.7878,
-    "longitude": 107.6105,
-    "district": "Bandung Barat"
-  },
-  {
-    "facility_id": "fac_sch_0207",
-    "name": "SMK Negeri 3 Lereng G. Tangkuban Parahu",
-    "facility_type": "school",
-    "latitude": -6.7851,
-    "longitude": 107.6088,
-    "district": "Bandung Barat"
-  },
-  {
-    "facility_id": "fac_hc_0208",
-    "name": "Puskesmas Siaga Bencana G. Tangkuban Parahu",
-    "facility_type": "healthcare",
-    "latitude": -6.7968,
-    "longitude": 107.6223,
-    "district": "Bandung Barat"
-  },
-  {
-    "facility_id": "fac_hc_0209",
-    "name": "RSUD Rujukan Wilayah G. Tangkuban Parahu (Bandung Barat)",
-    "facility_type": "healthcare",
-    "latitude": -6.5688,
-    "longitude": 107.6113,
-    "district": "Bandung Barat"
-  },
-  {
-    "facility_id": "fac_sch_0210",
-    "name": "SMK Negeri 1 Lereng G. Guntur",
-    "facility_type": "school",
-    "latitude": -7.1233,
-    "longitude": 107.8217,
-    "district": "Garut"
-  },
-  {
-    "facility_id": "fac_sch_0211",
-    "name": "SMK Negeri 2 Lereng G. Guntur",
-    "facility_type": "school",
-    "latitude": -7.1218,
-    "longitude": 107.8408,
-    "district": "Garut"
-  },
-  {
-    "facility_id": "fac_sch_0212",
-    "name": "SMK Negeri 3 Lereng G. Guntur",
-    "facility_type": "school",
-    "latitude": -7.1208,
-    "longitude": 107.8109,
-    "district": "Garut"
-  },
-  {
-    "facility_id": "fac_hc_0213",
-    "name": "Puskesmas Siaga Bencana G. Guntur",
-    "facility_type": "healthcare",
-    "latitude": -7.1761,
-    "longitude": 107.8319,
-    "district": "Garut"
-  },
-  {
-    "facility_id": "fac_hc_0214",
-    "name": "RSUD Rujukan Wilayah G. Guntur (Garut)",
-    "facility_type": "healthcare",
-    "latitude": -6.8676,
-    "longitude": 108.0712,
-    "district": "Garut"
-  },
-  {
-    "facility_id": "fac_sch_0215",
-    "name": "SMK Negeri 1 Lereng G. Papandayan",
-    "facility_type": "school",
-    "latitude": -7.3391,
-    "longitude": 107.7314,
-    "district": "Garut"
-  },
-  {
-    "facility_id": "fac_sch_0216",
-    "name": "SMK Negeri 2 Lereng G. Papandayan",
-    "facility_type": "school",
-    "latitude": -7.2996,
-    "longitude": 107.7338,
-    "district": "Garut"
-  },
-  {
-    "facility_id": "fac_sch_0217",
-    "name": "SMP Negeri 3 Lereng G. Papandayan",
-    "facility_type": "school",
-    "latitude": -7.3254,
-    "longitude": 107.6967,
-    "district": "Garut"
-  },
-  {
-    "facility_id": "fac_hc_0218",
-    "name": "Puskesmas Siaga Bencana G. Papandayan",
-    "facility_type": "healthcare",
-    "latitude": -7.291,
-    "longitude": 107.7265,
-    "district": "Garut"
-  },
-  {
-    "facility_id": "fac_hc_0219",
-    "name": "RSUD Rujukan Wilayah G. Papandayan (Garut)",
-    "facility_type": "healthcare",
-    "latitude": -7.5794,
-    "longitude": 107.5705,
-    "district": "Garut"
-  },
-  {
-    "facility_id": "fac_sch_0220",
-    "name": "SMK Negeri 1 Lereng G. Galunggung",
-    "facility_type": "school",
-    "latitude": -7.255,
-    "longitude": 108.0499,
-    "district": "Tasikmalaya"
-  },
-  {
-    "facility_id": "fac_sch_0221",
-    "name": "SDN 2 Lereng G. Galunggung",
-    "facility_type": "school",
-    "latitude": -7.2395,
-    "longitude": 108.07,
-    "district": "Tasikmalaya"
-  },
-  {
-    "facility_id": "fac_sch_0222",
-    "name": "SMK Negeri 3 Lereng G. Galunggung",
-    "facility_type": "school",
-    "latitude": -7.2509,
-    "longitude": 108.0717,
-    "district": "Tasikmalaya"
-  },
-  {
-    "facility_id": "fac_hc_0223",
-    "name": "Puskesmas Siaga Bencana G. Galunggung",
-    "facility_type": "healthcare",
-    "latitude": -7.2607,
-    "longitude": 108.0785,
-    "district": "Tasikmalaya"
-  },
-  {
-    "facility_id": "fac_hc_0224",
-    "name": "RSUD Rujukan Wilayah G. Galunggung (Tasikmalaya)",
-    "facility_type": "healthcare",
-    "latitude": -7.2169,
-    "longitude": 107.7263,
-    "district": "Tasikmalaya"
-  },
-  {
-    "facility_id": "fac_sch_0225",
-    "name": "SDN 1 Lereng G. Ciremai",
-    "facility_type": "school",
-    "latitude": -6.8828,
-    "longitude": 108.3838,
-    "district": "Kuningan / Majalengka"
-  },
-  {
-    "facility_id": "fac_sch_0226",
-    "name": "SDN 2 Lereng G. Ciremai",
-    "facility_type": "school",
-    "latitude": -6.9228,
-    "longitude": 108.4058,
-    "district": "Kuningan / Majalengka"
-  },
-  {
-    "facility_id": "fac_sch_0227",
-    "name": "SDN 3 Lereng G. Ciremai",
-    "facility_type": "school",
-    "latitude": -6.8709,
-    "longitude": 108.4,
-    "district": "Kuningan / Majalengka"
-  },
-  {
-    "facility_id": "fac_hc_0228",
-    "name": "Puskesmas Siaga Bencana G. Ciremai",
-    "facility_type": "healthcare",
-    "latitude": -6.8858,
-    "longitude": 108.3686,
-    "district": "Kuningan / Majalengka"
-  },
-  {
-    "facility_id": "fac_hc_0229",
-    "name": "RSUD Rujukan Wilayah G. Ciremai (Kuningan / Majalengka)",
-    "facility_type": "healthcare",
-    "latitude": -7.0889,
-    "longitude": 108.712,
-    "district": "Kuningan / Majalengka"
-  },
-  {
-    "facility_id": "fac_sch_0230",
-    "name": "SMP Negeri 1 Lereng G. Sindoro",
-    "facility_type": "school",
-    "latitude": -7.2974,
-    "longitude": 110.0,
-    "district": "Temanggung / Wonosobo"
-  },
-  {
-    "facility_id": "fac_sch_0231",
-    "name": "SDN 2 Lereng G. Sindoro",
-    "facility_type": "school",
-    "latitude": -7.2988,
-    "longitude": 110.0082,
-    "district": "Temanggung / Wonosobo"
-  },
-  {
-    "facility_id": "fac_sch_0232",
-    "name": "SMAN 3 Lereng G. Sindoro",
-    "facility_type": "school",
-    "latitude": -7.3109,
-    "longitude": 109.9874,
-    "district": "Temanggung / Wonosobo"
-  },
-  {
-    "facility_id": "fac_hc_0233",
-    "name": "Puskesmas Siaga Bencana G. Sindoro",
-    "facility_type": "healthcare",
-    "latitude": -7.2986,
-    "longitude": 109.9786,
-    "district": "Temanggung / Wonosobo"
-  },
-  {
-    "facility_id": "fac_hc_0234",
-    "name": "RSUD Rujukan Wilayah G. Sindoro (Temanggung / Wonosobo)",
-    "facility_type": "healthcare",
-    "latitude": -7.3592,
-    "longitude": 110.3193,
-    "district": "Temanggung / Wonosobo"
-  },
-  {
-    "facility_id": "fac_sch_0235",
-    "name": "SMAN 1 Lereng G. Sumbing",
-    "facility_type": "school",
-    "latitude": -7.3674,
-    "longitude": 110.0846,
-    "district": "Magelang / Temanggung"
-  },
-  {
-    "facility_id": "fac_sch_0236",
-    "name": "SMAN 2 Lereng G. Sumbing",
-    "facility_type": "school",
-    "latitude": -7.3774,
-    "longitude": 110.0754,
-    "district": "Magelang / Temanggung"
-  },
-  {
-    "facility_id": "fac_sch_0237",
-    "name": "SMK Negeri 3 Lereng G. Sumbing",
-    "facility_type": "school",
-    "latitude": -7.405,
-    "longitude": 110.0592,
-    "district": "Magelang / Temanggung"
-  },
-  {
-    "facility_id": "fac_hc_0238",
-    "name": "Puskesmas Siaga Bencana G. Sumbing",
-    "facility_type": "healthcare",
-    "latitude": -7.4018,
-    "longitude": 110.0835,
-    "district": "Magelang / Temanggung"
-  },
-  {
-    "facility_id": "fac_hc_0239",
-    "name": "RSUD Rujukan Wilayah G. Sumbing (Magelang / Temanggung)",
-    "facility_type": "healthcare",
-    "latitude": -7.4059,
-    "longitude": 109.7484,
-    "district": "Magelang / Temanggung"
-  },
-  {
-    "facility_id": "fac_sch_0240",
-    "name": "SMAN 1 Lereng G. Kelud",
-    "facility_type": "school",
-    "latitude": -7.9403,
-    "longitude": 112.2974,
-    "district": "Kediri / Blitar"
-  },
-  {
-    "facility_id": "fac_sch_0241",
-    "name": "SDN 2 Lereng G. Kelud",
-    "facility_type": "school",
-    "latitude": -7.9138,
-    "longitude": 112.2857,
-    "district": "Kediri / Blitar"
-  },
-  {
-    "facility_id": "fac_sch_0242",
-    "name": "SDN 3 Lereng G. Kelud",
-    "facility_type": "school",
-    "latitude": -7.9224,
-    "longitude": 112.2825,
-    "district": "Kediri / Blitar"
-  },
-  {
-    "facility_id": "fac_hc_0243",
-    "name": "Puskesmas Siaga Bencana G. Kelud",
-    "facility_type": "healthcare",
-    "latitude": -7.9453,
-    "longitude": 112.3298,
-    "district": "Kediri / Blitar"
-  },
-  {
-    "facility_id": "fac_hc_0244",
-    "name": "RSUD Rujukan Wilayah G. Kelud (Kediri / Blitar)",
-    "facility_type": "healthcare",
-    "latitude": -7.8697,
-    "longitude": 112.0253,
-    "district": "Kediri / Blitar"
-  },
-  {
-    "facility_id": "fac_sch_0245",
-    "name": "SMK Negeri 1 Lereng G. Arjuno-Welirang",
-    "facility_type": "school",
-    "latitude": -7.7434,
-    "longitude": 112.6085,
-    "district": "Malang / Pasuruan"
-  },
-  {
-    "facility_id": "fac_sch_0246",
-    "name": "SMK Negeri 2 Lereng G. Arjuno-Welirang",
-    "facility_type": "school",
-    "latitude": -7.696,
-    "longitude": 112.6026,
-    "district": "Malang / Pasuruan"
-  },
-  {
-    "facility_id": "fac_sch_0247",
-    "name": "SMAN 3 Lereng G. Arjuno-Welirang",
-    "facility_type": "school",
-    "latitude": -7.7312,
-    "longitude": 112.5575,
-    "district": "Malang / Pasuruan"
-  },
-  {
-    "facility_id": "fac_hc_0248",
-    "name": "Puskesmas Siaga Bencana G. Arjuno-Welirang",
-    "facility_type": "healthcare",
-    "latitude": -7.7538,
-    "longitude": 112.5543,
-    "district": "Malang / Pasuruan"
-  },
-  {
-    "facility_id": "fac_hc_0249",
-    "name": "RSUD Rujukan Wilayah G. Arjuno-Welirang (Malang / Pasuruan)",
-    "facility_type": "healthcare",
-    "latitude": -7.6063,
-    "longitude": 112.8355,
-    "district": "Malang / Pasuruan"
-  },
-  {
-    "facility_id": "fac_sch_0250",
-    "name": "SMAN 1 Lereng G. Lamongan",
-    "facility_type": "school",
-    "latitude": -7.9706,
-    "longitude": 113.3258,
-    "district": "Lumajang"
-  },
-  {
-    "facility_id": "fac_sch_0251",
-    "name": "SDN 2 Lereng G. Lamongan",
-    "facility_type": "school",
-    "latitude": -7.9657,
-    "longitude": 113.3241,
-    "district": "Lumajang"
-  },
-  {
-    "facility_id": "fac_sch_0252",
-    "name": "SMK Negeri 3 Lereng G. Lamongan",
-    "facility_type": "school",
-    "latitude": -7.9819,
-    "longitude": 113.3575,
-    "district": "Lumajang"
-  },
-  {
-    "facility_id": "fac_hc_0253",
-    "name": "Puskesmas Siaga Bencana G. Lamongan",
-    "facility_type": "healthcare",
-    "latitude": -7.9986,
-    "longitude": 113.3328,
-    "district": "Lumajang"
-  },
-  {
-    "facility_id": "fac_hc_0254",
-    "name": "RSUD Rujukan Wilayah G. Lamongan (Lumajang)",
-    "facility_type": "healthcare",
-    "latitude": -7.6922,
-    "longitude": 113.3334,
-    "district": "Lumajang"
-  },
-  {
-    "facility_id": "fac_sch_0255",
-    "name": "SMAN 1 Lereng G. Ijen",
-    "facility_type": "school",
-    "latitude": -8.0692,
-    "longitude": 114.264,
-    "district": "Banyuwangi / Bondowoso"
-  },
-  {
-    "facility_id": "fac_sch_0256",
-    "name": "SMAN 2 Lereng G. Ijen",
-    "facility_type": "school",
-    "latitude": -8.0518,
-    "longitude": 114.2221,
-    "district": "Banyuwangi / Bondowoso"
-  },
-  {
-    "facility_id": "fac_sch_0257",
-    "name": "SMP Negeri 3 Lereng G. Ijen",
-    "facility_type": "school",
-    "latitude": -8.0819,
-    "longitude": 114.2333,
-    "district": "Banyuwangi / Bondowoso"
-  },
-  {
-    "facility_id": "fac_hc_0258",
-    "name": "Puskesmas Siaga Bencana G. Ijen",
-    "facility_type": "healthcare",
-    "latitude": -8.0291,
-    "longitude": 114.2593,
-    "district": "Banyuwangi / Bondowoso"
-  },
-  {
-    "facility_id": "fac_hc_0259",
-    "name": "RSUD Rujukan Wilayah G. Ijen (Banyuwangi / Bondowoso)",
-    "facility_type": "healthcare",
-    "latitude": -8.3694,
-    "longitude": 114.12,
-    "district": "Banyuwangi / Bondowoso"
-  },
-  {
-    "facility_id": "fac_sch_0260",
-    "name": "SMK Negeri 1 Lereng G. Batur",
-    "facility_type": "school",
-    "latitude": -8.249,
-    "longitude": 115.3572,
-    "district": "Bangli"
-  },
-  {
-    "facility_id": "fac_sch_0261",
-    "name": "SMAN 2 Lereng G. Batur",
-    "facility_type": "school",
-    "latitude": -8.25,
-    "longitude": 115.3777,
-    "district": "Bangli"
-  },
-  {
-    "facility_id": "fac_sch_0262",
-    "name": "SMAN 3 Lereng G. Batur",
-    "facility_type": "school",
-    "latitude": -8.2385,
-    "longitude": 115.3946,
-    "district": "Bangli"
-  },
-  {
-    "facility_id": "fac_hc_0263",
-    "name": "Puskesmas Siaga Bencana G. Batur",
-    "facility_type": "healthcare",
-    "latitude": -8.2506,
-    "longitude": 115.3606,
-    "district": "Bangli"
-  },
-  {
-    "facility_id": "fac_hc_0264",
-    "name": "RSUD Rujukan Wilayah G. Batur (Bangli)",
-    "facility_type": "healthcare",
-    "latitude": -8.1006,
-    "longitude": 115.5931,
-    "district": "Bangli"
-  },
-  {
-    "facility_id": "fac_sch_0265",
-    "name": "SMAN 1 Lereng G. Agung",
-    "facility_type": "school",
-    "latitude": -8.308,
-    "longitude": 115.5073,
-    "district": "Karangasem"
-  },
-  {
-    "facility_id": "fac_sch_0266",
-    "name": "SMAN 2 Lereng G. Agung",
-    "facility_type": "school",
-    "latitude": -8.3504,
-    "longitude": 115.4836,
-    "district": "Karangasem"
-  },
-  {
-    "facility_id": "fac_sch_0267",
-    "name": "SMAN 3 Lereng G. Agung",
-    "facility_type": "school",
-    "latitude": -8.338,
-    "longitude": 115.5486,
-    "district": "Karangasem"
-  },
-  {
-    "facility_id": "fac_hc_0268",
-    "name": "Puskesmas Siaga Bencana G. Agung",
-    "facility_type": "healthcare",
-    "latitude": -8.3145,
-    "longitude": 115.5346,
-    "district": "Karangasem"
-  },
-  {
-    "facility_id": "fac_hc_0269",
-    "name": "RSUD Rujukan Wilayah G. Agung (Karangasem)",
-    "facility_type": "healthcare",
-    "latitude": -8.4409,
-    "longitude": 115.2984,
-    "district": "Karangasem"
-  },
-  {
-    "facility_id": "fac_sch_0270",
-    "name": "SMAN 1 Lereng G. Rinjani",
-    "facility_type": "school",
-    "latitude": -8.4148,
-    "longitude": 116.482,
-    "district": "Lombok Timur"
-  },
-  {
-    "facility_id": "fac_sch_0271",
-    "name": "SMAN 2 Lereng G. Rinjani",
-    "facility_type": "school",
-    "latitude": -8.3867,
-    "longitude": 116.4539,
-    "district": "Lombok Timur"
-  },
-  {
-    "facility_id": "fac_sch_0272",
-    "name": "SDN 3 Lereng G. Rinjani",
-    "facility_type": "school",
-    "latitude": -8.4176,
-    "longitude": 116.4746,
-    "district": "Lombok Timur"
-  },
-  {
-    "facility_id": "fac_hc_0273",
-    "name": "Puskesmas Siaga Bencana G. Rinjani",
-    "facility_type": "healthcare",
-    "latitude": -8.425,
-    "longitude": 116.4394,
-    "district": "Lombok Timur"
-  },
-  {
-    "facility_id": "fac_hc_0274",
-    "name": "RSUD Rujukan Wilayah G. Rinjani (Lombok Timur)",
-    "facility_type": "healthcare",
-    "latitude": -8.219,
-    "longitude": 116.5107,
-    "district": "Lombok Timur"
-  },
-  {
-    "facility_id": "fac_sch_0275",
-    "name": "SMK Negeri 1 Lereng G. Tambora",
-    "facility_type": "school",
-    "latitude": -8.2627,
-    "longitude": 118.0468,
-    "district": "Dompu / Bima"
-  },
-  {
-    "facility_id": "fac_sch_0276",
-    "name": "SMAN 2 Lereng G. Tambora",
-    "facility_type": "school",
-    "latitude": -8.2367,
-    "longitude": 118.01,
-    "district": "Dompu / Bima"
-  },
-  {
-    "facility_id": "fac_sch_0277",
-    "name": "SMP Negeri 3 Lereng G. Tambora",
-    "facility_type": "school",
-    "latitude": -8.2807,
-    "longitude": 118.006,
-    "district": "Dompu / Bima"
-  },
-  {
-    "facility_id": "fac_hc_0278",
-    "name": "Puskesmas Siaga Bencana G. Tambora",
-    "facility_type": "healthcare",
-    "latitude": -8.2209,
-    "longitude": 117.9936,
-    "district": "Dompu / Bima"
-  },
-  {
-    "facility_id": "fac_hc_0279",
-    "name": "RSUD Rujukan Wilayah G. Tambora (Dompu / Bima)",
-    "facility_type": "healthcare",
-    "latitude": -8.4541,
-    "longitude": 117.922,
-    "district": "Dompu / Bima"
-  },
-  {
-    "facility_id": "fac_sch_0280",
-    "name": "SDN 1 Lereng G. Rokatenda (Paluweh)",
-    "facility_type": "school",
-    "latitude": -8.2973,
-    "longitude": 121.7179,
-    "district": "Sikka"
-  },
-  {
-    "facility_id": "fac_sch_0281",
-    "name": "SMAN 2 Lereng G. Rokatenda (Paluweh)",
-    "facility_type": "school",
-    "latitude": -8.3009,
-    "longitude": 121.7349,
-    "district": "Sikka"
-  },
-  {
-    "facility_id": "fac_sch_0282",
-    "name": "SMK Negeri 3 Lereng G. Rokatenda (Paluweh)",
-    "facility_type": "school",
-    "latitude": -8.3041,
-    "longitude": 121.7174,
-    "district": "Sikka"
-  },
-  {
-    "facility_id": "fac_hc_0283",
-    "name": "Puskesmas Siaga Bencana G. Rokatenda (Paluweh)",
-    "facility_type": "healthcare",
-    "latitude": -8.3478,
-    "longitude": 121.6861,
-    "district": "Sikka"
-  },
-  {
-    "facility_id": "fac_hc_0284",
-    "name": "RSUD Rujukan Wilayah G. Rokatenda (Paluweh) (Sikka)",
-    "facility_type": "healthcare",
-    "latitude": -8.028,
-    "longitude": 121.7015,
-    "district": "Sikka"
-  },
-  {
-    "facility_id": "fac_sch_0285",
-    "name": "SMK Negeri 1 Lereng G. Ebulobo",
-    "facility_type": "school",
-    "latitude": -8.8454,
-    "longitude": 121.2072,
-    "district": "Nagekeo"
-  },
-  {
-    "facility_id": "fac_sch_0286",
-    "name": "SDN 2 Lereng G. Ebulobo",
-    "facility_type": "school",
-    "latitude": -8.8326,
-    "longitude": 121.2264,
-    "district": "Nagekeo"
-  },
-  {
-    "facility_id": "fac_sch_0287",
-    "name": "SMP Negeri 3 Lereng G. Ebulobo",
-    "facility_type": "school",
-    "latitude": -8.8065,
-    "longitude": 121.1943,
-    "district": "Nagekeo"
-  },
-  {
-    "facility_id": "fac_hc_0288",
-    "name": "Puskesmas Siaga Bencana G. Ebulobo",
-    "facility_type": "healthcare",
-    "latitude": -8.8247,
-    "longitude": 121.2181,
-    "district": "Nagekeo"
-  },
-  {
-    "facility_id": "fac_hc_0289",
-    "name": "RSUD Rujukan Wilayah G. Ebulobo (Nagekeo)",
-    "facility_type": "healthcare",
-    "latitude": -8.9834,
-    "longitude": 120.9496,
-    "district": "Nagekeo"
-  },
-  {
-    "facility_id": "fac_sch_0290",
-    "name": "SMK Negeri 1 Lereng G. Inielika",
-    "facility_type": "school",
-    "latitude": -8.7216,
-    "longitude": 120.9926,
-    "district": "Ngada"
-  },
-  {
-    "facility_id": "fac_sch_0291",
-    "name": "SMAN 2 Lereng G. Inielika",
-    "facility_type": "school",
-    "latitude": -8.7331,
-    "longitude": 120.9917,
-    "district": "Ngada"
-  },
-  {
-    "facility_id": "fac_sch_0292",
-    "name": "SMP Negeri 3 Lereng G. Inielika",
-    "facility_type": "school",
-    "latitude": -8.7346,
-    "longitude": 120.9648,
-    "district": "Ngada"
-  },
-  {
-    "facility_id": "fac_hc_0293",
-    "name": "Puskesmas Siaga Bencana G. Inielika",
-    "facility_type": "healthcare",
-    "latitude": -8.7091,
-    "longitude": 120.9692,
-    "district": "Ngada"
-  },
-  {
-    "facility_id": "fac_hc_0294",
-    "name": "RSUD Rujukan Wilayah G. Inielika (Ngada)",
-    "facility_type": "healthcare",
-    "latitude": -9.0256,
-    "longitude": 121.0945,
-    "district": "Ngada"
-  },
-  {
-    "facility_id": "fac_sch_0295",
-    "name": "SMP Negeri 1 Lereng G. Egon",
-    "facility_type": "school",
-    "latitude": -8.6489,
-    "longitude": 122.4407,
-    "district": "Sikka"
-  },
-  {
-    "facility_id": "fac_sch_0296",
-    "name": "SMP Negeri 2 Lereng G. Egon",
-    "facility_type": "school",
-    "latitude": -8.6913,
-    "longitude": 122.4216,
-    "district": "Sikka"
-  },
-  {
-    "facility_id": "fac_sch_0297",
-    "name": "SMAN 3 Lereng G. Egon",
-    "facility_type": "school",
-    "latitude": -8.6552,
-    "longitude": 122.4571,
-    "district": "Sikka"
-  },
-  {
-    "facility_id": "fac_hc_0298",
-    "name": "Puskesmas Siaga Bencana G. Egon",
-    "facility_type": "healthcare",
-    "latitude": -8.7,
-    "longitude": 122.4296,
-    "district": "Sikka"
-  },
-  {
-    "facility_id": "fac_hc_0299",
-    "name": "RSUD Rujukan Wilayah G. Egon (Sikka)",
-    "facility_type": "healthcare",
-    "latitude": -8.5953,
-    "longitude": 122.7168,
-    "district": "Sikka"
-  },
-  {
-    "facility_id": "fac_sch_0300",
-    "name": "SMK Negeri 1 Lereng G. Iliboleng",
-    "facility_type": "school",
-    "latitude": -8.355,
-    "longitude": 123.2596,
-    "district": "Adonara"
-  },
-  {
-    "facility_id": "fac_sch_0301",
-    "name": "SMK Negeri 2 Lereng G. Iliboleng",
-    "facility_type": "school",
-    "latitude": -8.3264,
-    "longitude": 123.2511,
-    "district": "Adonara"
-  },
-  {
-    "facility_id": "fac_sch_0302",
-    "name": "SMK Negeri 3 Lereng G. Iliboleng",
-    "facility_type": "school",
-    "latitude": -8.3589,
-    "longitude": 123.264,
-    "district": "Adonara"
-  },
-  {
-    "facility_id": "fac_hc_0303",
-    "name": "Puskesmas Siaga Bencana G. Iliboleng",
-    "facility_type": "healthcare",
-    "latitude": -8.344,
-    "longitude": 123.2365,
-    "district": "Adonara"
-  },
-  {
-    "facility_id": "fac_hc_0304",
-    "name": "RSUD Rujukan Wilayah G. Iliboleng (Adonara)",
-    "facility_type": "healthcare",
-    "latitude": -8.1202,
-    "longitude": 123.3466,
-    "district": "Adonara"
-  },
-  {
-    "facility_id": "fac_sch_0305",
-    "name": "SDN 1 Lereng G. Ile Werung",
-    "facility_type": "school",
-    "latitude": -8.5404,
-    "longitude": 123.5497,
-    "district": "Lembata"
-  },
-  {
-    "facility_id": "fac_sch_0306",
-    "name": "SMAN 2 Lereng G. Ile Werung",
-    "facility_type": "school",
-    "latitude": -8.5104,
-    "longitude": 123.5699,
-    "district": "Lembata"
-  },
-  {
-    "facility_id": "fac_sch_0307",
-    "name": "SMP Negeri 3 Lereng G. Ile Werung",
-    "facility_type": "school",
-    "latitude": -8.5488,
-    "longitude": 123.5603,
-    "district": "Lembata"
-  },
-  {
-    "facility_id": "fac_hc_0308",
-    "name": "Puskesmas Siaga Bencana G. Ile Werung",
-    "facility_type": "healthcare",
-    "latitude": -8.551,
-    "longitude": 123.5739,
-    "district": "Lembata"
-  },
-  {
-    "facility_id": "fac_hc_0309",
-    "name": "RSUD Rujukan Wilayah G. Ile Werung (Lembata)",
-    "facility_type": "healthcare",
-    "latitude": -8.3281,
-    "longitude": 123.6816,
-    "district": "Lembata"
-  },
-  {
-    "facility_id": "fac_sch_0310",
-    "name": "SMK Negeri 1 Lereng G. Batu Tara",
-    "facility_type": "school",
-    "latitude": -7.8164,
-    "longitude": 123.5645,
-    "district": "P. Komba"
-  },
-  {
-    "facility_id": "fac_sch_0311",
-    "name": "SMK Negeri 2 Lereng G. Batu Tara",
-    "facility_type": "school",
-    "latitude": -7.7683,
-    "longitude": 123.5743,
-    "district": "P. Komba"
-  },
-  {
-    "facility_id": "fac_sch_0312",
-    "name": "SMP Negeri 3 Lereng G. Batu Tara",
-    "facility_type": "school",
-    "latitude": -7.8067,
-    "longitude": 123.6044,
-    "district": "P. Komba"
-  },
-  {
-    "facility_id": "fac_hc_0313",
-    "name": "Puskesmas Siaga Bencana G. Batu Tara",
-    "facility_type": "healthcare",
-    "latitude": -7.8079,
-    "longitude": 123.608,
-    "district": "P. Komba"
-  },
-  {
-    "facility_id": "fac_hc_0314",
-    "name": "RSUD Rujukan Wilayah G. Batu Tara (P. Komba)",
-    "facility_type": "healthcare",
-    "latitude": -7.8154,
-    "longitude": 123.2116,
-    "district": "P. Komba"
-  },
-  {
-    "facility_id": "fac_sch_0315",
-    "name": "SMK Negeri 1 Lereng G. Sirung",
-    "facility_type": "school",
-    "latitude": -8.4978,
-    "longitude": 124.1058,
-    "district": "P. Pantar"
-  },
-  {
-    "facility_id": "fac_sch_0316",
-    "name": "SDN 2 Lereng G. Sirung",
-    "facility_type": "school",
-    "latitude": -8.4922,
-    "longitude": 124.1398,
-    "district": "P. Pantar"
-  },
-  {
-    "facility_id": "fac_sch_0317",
-    "name": "SDN 3 Lereng G. Sirung",
-    "facility_type": "school",
-    "latitude": -8.4859,
-    "longitude": 124.1258,
-    "district": "P. Pantar"
-  },
-  {
-    "facility_id": "fac_hc_0318",
-    "name": "Puskesmas Siaga Bencana G. Sirung",
-    "facility_type": "healthcare",
-    "latitude": -8.5241,
-    "longitude": 124.1054,
-    "district": "P. Pantar"
-  },
-  {
-    "facility_id": "fac_hc_0319",
-    "name": "RSUD Rujukan Wilayah G. Sirung (P. Pantar)",
-    "facility_type": "healthcare",
-    "latitude": -8.3271,
-    "longitude": 124.2749,
-    "district": "P. Pantar"
-  },
-  {
-    "facility_id": "fac_sch_0320",
-    "name": "SMK Negeri 1 Lereng G. Colo (Una-una)",
-    "facility_type": "school",
-    "latitude": -0.1904,
-    "longitude": 121.6341,
-    "district": "Teluk Tomini"
-  },
-  {
-    "facility_id": "fac_sch_0321",
-    "name": "SMP Negeri 2 Lereng G. Colo (Una-una)",
-    "facility_type": "school",
-    "latitude": -0.1689,
-    "longitude": 121.5927,
-    "district": "Teluk Tomini"
-  },
-  {
-    "facility_id": "fac_sch_0322",
-    "name": "SMK Negeri 3 Lereng G. Colo (Una-una)",
-    "facility_type": "school",
-    "latitude": -0.149,
-    "longitude": 121.5997,
-    "district": "Teluk Tomini"
-  },
-  {
-    "facility_id": "fac_hc_0323",
-    "name": "Puskesmas Siaga Bencana G. Colo (Una-una)",
-    "facility_type": "healthcare",
-    "latitude": -0.1412,
-    "longitude": 121.6375,
-    "district": "Teluk Tomini"
-  },
-  {
-    "facility_id": "fac_hc_0324",
-    "name": "RSUD Rujukan Wilayah G. Colo (Una-una) (Teluk Tomini)",
-    "facility_type": "healthcare",
-    "latitude": -0.3311,
-    "longitude": 121.4306,
-    "district": "Teluk Tomini"
-  },
-  {
-    "facility_id": "fac_sch_0325",
-    "name": "SMK Negeri 1 Lereng G. Ambang",
-    "facility_type": "school",
-    "latitude": 0.7643,
-    "longitude": 124.442,
-    "district": "Bolaang Mongondow Timur"
-  },
-  {
-    "facility_id": "fac_sch_0326",
-    "name": "SDN 2 Lereng G. Ambang",
-    "facility_type": "school",
-    "latitude": 0.7813,
-    "longitude": 124.4408,
-    "district": "Bolaang Mongondow Timur"
-  },
-  {
-    "facility_id": "fac_sch_0327",
-    "name": "SMP Negeri 3 Lereng G. Ambang",
-    "facility_type": "school",
-    "latitude": 0.7353,
-    "longitude": 124.4236,
-    "district": "Bolaang Mongondow Timur"
-  },
-  {
-    "facility_id": "fac_hc_0328",
-    "name": "Puskesmas Siaga Bencana G. Ambang",
-    "facility_type": "healthcare",
-    "latitude": 0.7164,
-    "longitude": 124.4203,
-    "district": "Bolaang Mongondow Timur"
-  },
-  {
-    "facility_id": "fac_hc_0329",
-    "name": "RSUD Rujukan Wilayah G. Ambang (Bolaang Mongondow Timur)",
-    "facility_type": "healthcare",
-    "latitude": 0.995,
-    "longitude": 124.387,
-    "district": "Bolaang Mongondow Timur"
-  },
-  {
-    "facility_id": "fac_sch_0330",
-    "name": "SMP Negeri 1 Lereng G. Mahawu",
-    "facility_type": "school",
-    "latitude": 1.3706,
-    "longitude": 124.8386,
-    "district": "Tomohon"
-  },
-  {
-    "facility_id": "fac_sch_0331",
-    "name": "SMP Negeri 2 Lereng G. Mahawu",
-    "facility_type": "school",
-    "latitude": 1.3478,
-    "longitude": 124.8628,
-    "district": "Tomohon"
-  },
-  {
-    "facility_id": "fac_sch_0332",
-    "name": "SMP Negeri 3 Lereng G. Mahawu",
-    "facility_type": "school",
-    "latitude": 1.3728,
-    "longitude": 124.8521,
-    "district": "Tomohon"
-  },
-  {
-    "facility_id": "fac_hc_0333",
-    "name": "Puskesmas Siaga Bencana G. Mahawu",
-    "facility_type": "healthcare",
-    "latitude": 1.368,
-    "longitude": 124.8485,
-    "district": "Tomohon"
-  },
-  {
-    "facility_id": "fac_hc_0334",
-    "name": "RSUD Rujukan Wilayah G. Mahawu (Tomohon)",
-    "facility_type": "healthcare",
-    "latitude": 1.1086,
-    "longitude": 124.9702,
-    "district": "Tomohon"
-  },
-  {
-    "facility_id": "fac_sch_0335",
-    "name": "SDN 1 Lereng G. Klabat",
-    "facility_type": "school",
-    "latitude": 1.4854,
-    "longitude": 125.0233,
-    "district": "Minahasa Utara"
-  },
-  {
-    "facility_id": "fac_sch_0336",
-    "name": "SMK Negeri 2 Lereng G. Klabat",
-    "facility_type": "school",
-    "latitude": 1.4673,
-    "longitude": 125.0429,
-    "district": "Minahasa Utara"
-  },
-  {
-    "facility_id": "fac_sch_0337",
-    "name": "SMK Negeri 3 Lereng G. Klabat",
-    "facility_type": "school",
-    "latitude": 1.4804,
-    "longitude": 125.0182,
-    "district": "Minahasa Utara"
-  },
-  {
-    "facility_id": "fac_hc_0338",
-    "name": "Puskesmas Siaga Bencana G. Klabat",
-    "facility_type": "healthcare",
-    "latitude": 1.4589,
-    "longitude": 125.0463,
-    "district": "Minahasa Utara"
-  },
-  {
-    "facility_id": "fac_hc_0339",
-    "name": "RSUD Rujukan Wilayah G. Klabat (Minahasa Utara)",
-    "facility_type": "healthcare",
-    "latitude": 1.6146,
-    "longitude": 124.7903,
-    "district": "Minahasa Utara"
-  },
-  {
-    "facility_id": "fac_sch_0340",
-    "name": "SMP Negeri 1 Lereng G. Tangkoko",
-    "facility_type": "school",
-    "latitude": 1.5151,
-    "longitude": 125.2102,
-    "district": "Bitung"
-  },
-  {
-    "facility_id": "fac_sch_0341",
-    "name": "SMK Negeri 2 Lereng G. Tangkoko",
-    "facility_type": "school",
-    "latitude": 1.5091,
-    "longitude": 125.1947,
-    "district": "Bitung"
-  },
-  {
-    "facility_id": "fac_sch_0342",
-    "name": "SMK Negeri 3 Lereng G. Tangkoko",
-    "facility_type": "school",
-    "latitude": 1.5401,
-    "longitude": 125.2056,
-    "district": "Bitung"
-  },
-  {
-    "facility_id": "fac_hc_0343",
-    "name": "Puskesmas Siaga Bencana G. Tangkoko",
-    "facility_type": "healthcare",
-    "latitude": 1.5037,
-    "longitude": 125.2141,
-    "district": "Bitung"
-  },
-  {
-    "facility_id": "fac_hc_0344",
-    "name": "RSUD Rujukan Wilayah G. Tangkoko (Bitung)",
-    "facility_type": "healthcare",
-    "latitude": 1.8859,
-    "longitude": 125.1198,
-    "district": "Bitung"
-  },
-  {
-    "facility_id": "fac_sch_0345",
-    "name": "SMAN 1 Lereng G. Tidore (Kie Matubu)",
-    "facility_type": "school",
-    "latitude": 0.6513,
-    "longitude": 127.4003,
-    "district": "Tidore"
-  },
-  {
-    "facility_id": "fac_sch_0346",
-    "name": "SMK Negeri 2 Lereng G. Tidore (Kie Matubu)",
-    "facility_type": "school",
-    "latitude": 0.6757,
-    "longitude": 127.3832,
-    "district": "Tidore"
-  },
-  {
-    "facility_id": "fac_sch_0347",
-    "name": "SDN 3 Lereng G. Tidore (Kie Matubu)",
-    "facility_type": "school",
-    "latitude": 0.6792,
-    "longitude": 127.4139,
-    "district": "Tidore"
-  },
-  {
-    "facility_id": "fac_hc_0348",
-    "name": "Puskesmas Siaga Bencana G. Tidore (Kie Matubu)",
-    "facility_type": "healthcare",
-    "latitude": 0.657,
-    "longitude": 127.3828,
-    "district": "Tidore"
-  },
-  {
-    "facility_id": "fac_hc_0349",
-    "name": "RSUD Rujukan Wilayah G. Tidore (Kie Matubu) (Tidore)",
-    "facility_type": "healthcare",
-    "latitude": 0.6612,
-    "longitude": 127.6258,
-    "district": "Tidore"
-  },
-  {
-    "facility_id": "fac_sch_0350",
-    "name": "SMAN 1 Lereng G. Gamkonora",
-    "facility_type": "school",
-    "latitude": 1.3437,
-    "longitude": 127.5371,
-    "district": "Halmahera Barat"
-  },
-  {
-    "facility_id": "fac_sch_0351",
-    "name": "SDN 2 Lereng G. Gamkonora",
-    "facility_type": "school",
-    "latitude": 1.364,
-    "longitude": 127.5144,
-    "district": "Halmahera Barat"
-  },
-  {
-    "facility_id": "fac_sch_0352",
-    "name": "SMK Negeri 3 Lereng G. Gamkonora",
-    "facility_type": "school",
-    "latitude": 1.4003,
-    "longitude": 127.5027,
-    "district": "Halmahera Barat"
-  },
-  {
-    "facility_id": "fac_hc_0353",
-    "name": "Puskesmas Siaga Bencana G. Gamkonora",
-    "facility_type": "healthcare",
-    "latitude": 1.4101,
-    "longitude": 127.5211,
-    "district": "Halmahera Barat"
-  },
-  {
-    "facility_id": "fac_hc_0354",
-    "name": "RSUD Rujukan Wilayah G. Gamkonora (Halmahera Barat)",
-    "facility_type": "healthcare",
-    "latitude": 1.111,
-    "longitude": 127.4333,
-    "district": "Halmahera Barat"
-  },
-  {
-    "facility_id": "fac_sch_0355",
-    "name": "SMP Negeri 1 Lereng G. Kie Besi (Makian)",
-    "facility_type": "school",
-    "latitude": 0.2929,
-    "longitude": 127.3929,
-    "district": "Halmahera Selatan"
-  },
-  {
-    "facility_id": "fac_sch_0356",
-    "name": "SMP Negeri 2 Lereng G. Kie Besi (Makian)",
-    "facility_type": "school",
-    "latitude": 0.2957,
-    "longitude": 127.3737,
-    "district": "Halmahera Selatan"
-  },
-  {
-    "facility_id": "fac_sch_0357",
-    "name": "SDN 3 Lereng G. Kie Besi (Makian)",
-    "facility_type": "school",
-    "latitude": 0.3195,
-    "longitude": 127.3767,
-    "district": "Halmahera Selatan"
-  },
-  {
-    "facility_id": "fac_hc_0358",
-    "name": "Puskesmas Siaga Bencana G. Kie Besi (Makian)",
-    "facility_type": "healthcare",
-    "latitude": 0.3222,
-    "longitude": 127.3668,
-    "district": "Halmahera Selatan"
-  },
-  {
-    "facility_id": "fac_hc_0359",
-    "name": "RSUD Rujukan Wilayah G. Kie Besi (Makian) (Halmahera Selatan)",
-    "facility_type": "healthcare",
-    "latitude": 0.495,
-    "longitude": 127.546,
-    "district": "Halmahera Selatan"
-  },
-  {
-    "facility_id": "fac_sch_0360",
-    "name": "SMAN 1 Lereng G. Banda Api",
-    "facility_type": "school",
-    "latitude": -4.5276,
-    "longitude": 129.8792,
-    "district": "Kep. Banda"
-  },
-  {
-    "facility_id": "fac_sch_0361",
-    "name": "SMAN 2 Lereng G. Banda Api",
-    "facility_type": "school",
-    "latitude": -4.5213,
-    "longitude": 129.8584,
-    "district": "Kep. Banda"
-  },
-  {
-    "facility_id": "fac_sch_0362",
-    "name": "SMK Negeri 3 Lereng G. Banda Api",
-    "facility_type": "school",
-    "latitude": -4.5361,
-    "longitude": 129.8762,
-    "district": "Kep. Banda"
-  },
-  {
-    "facility_id": "fac_hc_0363",
-    "name": "Puskesmas Siaga Bencana G. Banda Api",
-    "facility_type": "healthcare",
-    "latitude": -4.5466,
-    "longitude": 129.8615,
-    "district": "Kep. Banda"
-  },
-  {
-    "facility_id": "fac_hc_0364",
-    "name": "RSUD Rujukan Wilayah G. Banda Api (Kep. Banda)",
-    "facility_type": "healthcare",
-    "latitude": -4.3285,
-    "longitude": 129.7908,
-    "district": "Kep. Banda"
-  },
-  {
-    "facility_id": "fac_sch_0365",
-    "name": "SMP Negeri 1 Lereng G. Nila",
-    "facility_type": "school",
-    "latitude": -6.7107,
-    "longitude": 129.4797,
-    "district": "Maluku Barat Daya"
-  },
-  {
-    "facility_id": "fac_sch_0366",
-    "name": "SMP Negeri 2 Lereng G. Nila",
-    "facility_type": "school",
-    "latitude": -6.7571,
-    "longitude": 129.5004,
-    "district": "Maluku Barat Daya"
-  },
-  {
-    "facility_id": "fac_sch_0367",
-    "name": "SMAN 3 Lereng G. Nila",
-    "facility_type": "school",
-    "latitude": -6.7481,
-    "longitude": 129.5045,
-    "district": "Maluku Barat Daya"
-  },
-  {
-    "facility_id": "fac_hc_0368",
-    "name": "Puskesmas Siaga Bencana G. Nila",
-    "facility_type": "healthcare",
-    "latitude": -6.749,
-    "longitude": 129.467,
-    "district": "Maluku Barat Daya"
-  },
-  {
-    "facility_id": "fac_hc_0369",
-    "name": "RSUD Rujukan Wilayah G. Nila (Maluku Barat Daya)",
-    "facility_type": "healthcare",
-    "latitude": -6.5628,
-    "longitude": 129.6855,
-    "district": "Maluku Barat Daya"
-  },
-  {
-    "facility_id": "fac_sch_0370",
-    "name": "SMAN 1 Lereng G. Serua",
-    "facility_type": "school",
-    "latitude": -6.3134,
-    "longitude": 129.9959,
-    "district": "Maluku Tengah"
-  },
-  {
-    "facility_id": "fac_sch_0371",
-    "name": "SMK Negeri 2 Lereng G. Serua",
-    "facility_type": "school",
-    "latitude": -6.2802,
-    "longitude": 129.9985,
-    "district": "Maluku Tengah"
-  },
-  {
-    "facility_id": "fac_sch_0372",
-    "name": "SMAN 3 Lereng G. Serua",
-    "facility_type": "school",
-    "latitude": -6.3087,
-    "longitude": 129.9778,
-    "district": "Maluku Tengah"
-  },
-  {
-    "facility_id": "fac_hc_0373",
-    "name": "Puskesmas Siaga Bencana G. Serua",
-    "facility_type": "healthcare",
-    "latitude": -6.292,
-    "longitude": 130.0243,
-    "district": "Maluku Tengah"
-  },
-  {
-    "facility_id": "fac_hc_0374",
-    "name": "RSUD Rujukan Wilayah G. Serua (Maluku Tengah)",
-    "facility_type": "healthcare",
-    "latitude": -6.4142,
-    "longitude": 129.7881,
-    "district": "Maluku Tengah"
-  },
-  {
-    "facility_id": "fac_sch_0375",
-    "name": "SMAN 1 Lereng G. Teon",
-    "facility_type": "school",
-    "latitude": -6.9442,
-    "longitude": 129.1083,
-    "district": "Maluku Barat Daya"
-  },
-  {
-    "facility_id": "fac_sch_0376",
-    "name": "SMK Negeri 2 Lereng G. Teon",
-    "facility_type": "school",
-    "latitude": -6.8869,
-    "longitude": 129.1246,
-    "district": "Maluku Barat Daya"
-  },
-  {
-    "facility_id": "fac_sch_0377",
-    "name": "SDN 3 Lereng G. Teon",
-    "facility_type": "school",
-    "latitude": -6.9241,
-    "longitude": 129.1464,
-    "district": "Maluku Barat Daya"
-  },
-  {
-    "facility_id": "fac_hc_0378",
-    "name": "Puskesmas Siaga Bencana G. Teon",
-    "facility_type": "healthcare",
-    "latitude": -6.891,
-    "longitude": 129.1017,
-    "district": "Maluku Barat Daya"
-  },
-  {
-    "facility_id": "fac_hc_0379",
-    "name": "RSUD Rujukan Wilayah G. Teon (Maluku Barat Daya)",
-    "facility_type": "healthcare",
-    "latitude": -7.2803,
-    "longitude": 129.1335,
-    "district": "Maluku Barat Daya"
-  },
-  {
-    "facility_id": "fac_sch_0380",
-    "name": "SMAN 1 Gambut Palangka Raya",
-    "facility_type": "school",
-    "latitude": -2.4173,
-    "longitude": 113.419,
-    "district": "Kalimantan Tengah"
-  },
-  {
-    "facility_id": "fac_sch_0381",
-    "name": "SMAN 2 Gambut Palangka Raya",
-    "facility_type": "school",
-    "latitude": -2.4094,
-    "longitude": 113.4157,
-    "district": "Kalimantan Tengah"
-  },
-  {
-    "facility_id": "fac_sch_0382",
-    "name": "SMAN 3 Gambut Palangka Raya",
-    "facility_type": "school",
-    "latitude": -2.593,
-    "longitude": 113.4252,
-    "district": "Kalimantan Tengah"
-  },
-  {
-    "facility_id": "fac_hc_0383",
-    "name": "RSUD Rujukan ISPA Palangka Raya",
-    "facility_type": "healthcare",
-    "latitude": -2.3722,
-    "longitude": 113.6337,
-    "district": "Kalimantan Tengah"
-  },
-  {
-    "facility_id": "fac_sch_0384",
-    "name": "SMAN 1 Gambut Ketapang",
-    "facility_type": "school",
-    "latitude": -1.7957,
-    "longitude": 109.741,
-    "district": "Kalimantan Barat"
-  },
-  {
-    "facility_id": "fac_sch_0385",
-    "name": "SMAN 2 Gambut Ketapang",
-    "facility_type": "school",
-    "latitude": -1.9709,
-    "longitude": 109.8882,
-    "district": "Kalimantan Barat"
-  },
-  {
-    "facility_id": "fac_sch_0386",
-    "name": "SMAN 3 Gambut Ketapang",
-    "facility_type": "school",
-    "latitude": -1.9882,
-    "longitude": 109.9366,
-    "district": "Kalimantan Barat"
-  },
-  {
-    "facility_id": "fac_hc_0387",
-    "name": "RSUD Rujukan ISPA Ketapang",
-    "facility_type": "healthcare",
-    "latitude": -2.0833,
-    "longitude": 109.7824,
-    "district": "Kalimantan Barat"
-  },
-  {
-    "facility_id": "fac_sch_0388",
-    "name": "SMAN 1 Gambut Banjarbaru",
-    "facility_type": "school",
-    "latitude": -3.5606,
-    "longitude": 114.9729,
-    "district": "Kalimantan Selatan"
-  },
-  {
-    "facility_id": "fac_sch_0389",
-    "name": "SMAN 2 Gambut Banjarbaru",
-    "facility_type": "school",
-    "latitude": -3.502,
-    "longitude": 114.8247,
-    "district": "Kalimantan Selatan"
-  },
-  {
-    "facility_id": "fac_sch_0390",
-    "name": "SMAN 3 Gambut Banjarbaru",
-    "facility_type": "school",
-    "latitude": -3.5398,
-    "longitude": 114.936,
-    "district": "Kalimantan Selatan"
-  },
-  {
-    "facility_id": "fac_hc_0391",
-    "name": "RSUD Rujukan ISPA Banjarbaru",
-    "facility_type": "healthcare",
-    "latitude": -3.2618,
-    "longitude": 114.7829,
-    "district": "Kalimantan Selatan"
-  },
-  {
-    "facility_id": "fac_sch_0392",
-    "name": "SMAN 1 Gambut Siak",
-    "facility_type": "school",
-    "latitude": 0.7505,
-    "longitude": 101.7818,
-    "district": "Riau"
-  },
-  {
-    "facility_id": "fac_sch_0393",
-    "name": "SMAN 2 Gambut Siak",
-    "facility_type": "school",
-    "latitude": 0.6494,
-    "longitude": 101.9742,
-    "district": "Riau"
-  },
-  {
-    "facility_id": "fac_sch_0394",
-    "name": "SMAN 3 Gambut Siak",
-    "facility_type": "school",
-    "latitude": 0.8833,
-    "longitude": 101.9902,
-    "district": "Riau"
-  },
-  {
-    "facility_id": "fac_hc_0395",
-    "name": "RSUD Rujukan ISPA Siak",
-    "facility_type": "healthcare",
-    "latitude": 0.6476,
-    "longitude": 102.0352,
-    "district": "Riau"
-  },
-  {
-    "facility_id": "fac_sch_0396",
-    "name": "SMAN 1 Gambut Ogan Komering Ilir (OKI)",
-    "facility_type": "school",
-    "latitude": -3.3587,
-    "longitude": 105.1405,
-    "district": "Sumatera Selatan"
-  },
-  {
-    "facility_id": "fac_sch_0397",
-    "name": "SMAN 2 Gambut Ogan Komering Ilir (OKI)",
-    "facility_type": "school",
-    "latitude": -3.5774,
-    "longitude": 105.2262,
-    "district": "Sumatera Selatan"
-  },
-  {
-    "facility_id": "fac_sch_0398",
-    "name": "SMAN 3 Gambut Ogan Komering Ilir (OKI)",
-    "facility_type": "school",
-    "latitude": -3.5323,
-    "longitude": 105.2029,
-    "district": "Sumatera Selatan"
-  },
-  {
-    "facility_id": "fac_hc_0399",
-    "name": "RSUD Rujukan ISPA Ogan Komering Ilir (OKI)",
-    "facility_type": "healthcare",
-    "latitude": -3.3628,
-    "longitude": 105.0987,
-    "district": "Sumatera Selatan"
-  },
-  {
-    "facility_id": "fac_sch_0400",
-    "name": "SMAN 1 Gambut Muaro Jambi",
-    "facility_type": "school",
-    "latitude": -1.3463,
-    "longitude": 103.8172,
-    "district": "Jambi"
-  },
-  {
-    "facility_id": "fac_sch_0401",
-    "name": "SMAN 2 Gambut Muaro Jambi",
-    "facility_type": "school",
-    "latitude": -1.5729,
-    "longitude": 103.7684,
-    "district": "Jambi"
-  },
-  {
-    "facility_id": "fac_sch_0402",
-    "name": "SMAN 3 Gambut Muaro Jambi",
-    "facility_type": "school",
-    "latitude": -1.5207,
-    "longitude": 103.6871,
-    "district": "Jambi"
-  },
-  {
-    "facility_id": "fac_hc_0403",
-    "name": "RSUD Rujukan ISPA Muaro Jambi",
-    "facility_type": "healthcare",
-    "latitude": -1.5157,
-    "longitude": 103.9245,
-    "district": "Jambi"
-  },
-  {
-    "facility_id": "fac_sch_0404",
-    "name": "SMAN 1 Gambut Merauke",
-    "facility_type": "school",
-    "latitude": -8.5214,
-    "longitude": 140.3643,
-    "district": "Papua Selatan"
-  },
-  {
-    "facility_id": "fac_sch_0405",
-    "name": "SMAN 2 Gambut Merauke",
-    "facility_type": "school",
-    "latitude": -8.4084,
-    "longitude": 140.3614,
-    "district": "Papua Selatan"
-  },
-  {
-    "facility_id": "fac_sch_0406",
-    "name": "SMAN 3 Gambut Merauke",
-    "facility_type": "school",
-    "latitude": -8.3975,
-    "longitude": 140.3914,
-    "district": "Papua Selatan"
-  },
-  {
-    "facility_id": "fac_hc_0407",
-    "name": "RSUD Rujukan ISPA Merauke",
-    "facility_type": "healthcare",
-    "latitude": -8.3902,
-    "longitude": 140.6216,
-    "district": "Papua Selatan"
   }
 ]

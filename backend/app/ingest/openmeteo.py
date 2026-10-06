@@ -26,7 +26,7 @@ class OpenMeteoIngest:
                     from app.core.offline import assert_online_allowed
                     assert_online_allowed("Open-Meteo Live API")
                     import urllib.request
-                    meta = json.loads(meta_file.read_text(encoding="utf-8"))
+                    meta = json.loads(meta_file.read_text(encoding="utf-8-sig"))
                     coords = meta.get("coordinates", {})
                     lat = coords.get("latitude")
                     lon = coords.get("longitude")
@@ -43,11 +43,11 @@ class OpenMeteoIngest:
 
             fallback_file = EVENTS_DIR / "anak_krakatau_2026_09" / "weather_ensemble.json"
             if fallback_file.exists():
-                data = json.loads(fallback_file.read_text(encoding="utf-8"))
+                data = json.loads(fallback_file.read_text(encoding="utf-8-sig"))
                 data["members_source"] = "regional_open_meteo_ensemble_cache"
                 return data
             raise FileNotFoundError(f"Snapshot cuaca untuk event '{event_id}' tidak ditemukan di {event_file}")
-        return json.loads(event_file.read_text(encoding="utf-8"))
+        return json.loads(event_file.read_text(encoding="utf-8-sig"))
 
     @staticmethod
     def get_weather_for_simulation(

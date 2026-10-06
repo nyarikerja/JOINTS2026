@@ -6,7 +6,7 @@ Menyediakan endpoint REST API, dokumentasi OpenAPI (/docs), dan frontend dummy (
 """
 
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -45,7 +45,6 @@ if frontend_dummy_dir.exists():
     app.mount("/dummy", StaticFiles(directory=str(frontend_dummy_dir), html=True), name="dummy")
 
 
-from fastapi.responses import Response
 
 FAVICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <rect width="32" height="32" rx="6" fill="#0f172a"/>

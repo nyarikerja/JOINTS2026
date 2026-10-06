@@ -37,7 +37,7 @@ def evaluate_event_validation(event_id: str, run_output: Dict[str, Any] | None =
     cached_val = {}
     if val_file.exists():
         try:
-            with open(val_file, "r", encoding="utf-8") as f:
+            with open(val_file, "r", encoding="utf-8-sig") as f:
                 cached_val = json.load(f)
         except Exception:
             cached_val = {}
@@ -66,7 +66,7 @@ def evaluate_event_validation(event_id: str, run_output: Dict[str, Any] | None =
     if not reported_file.exists():
         return cached_val or {"event_id": event_id, "status": "no_reported_impact_data"}
 
-    with open(reported_file, "r", encoding="utf-8") as f:
+    with open(reported_file, "r", encoding="utf-8-sig") as f:
         reported_geo = json.load(f)
 
     # Identifikasi kabupaten dan bandara yang dilaporkan

@@ -61,13 +61,25 @@ def calculate_rain_effect(
 def compare_two_runs(
     run1: Dict[str, Any],
     run2: Dict[str, Any],
-    grid: SimulationGrid
+    grid: SimulationGrid = None,
+    grid2: SimulationGrid = None
 ) -> Dict[str, Any]:
     """
     Membandingkan dua simulasi secara berdampingan (side-by-side comparison).
+    Masing-masing run dievaluasi dengan geometrinya sendiri agar terbebas dari dimension mismatch.
     """
+    if grid is None and "grid" in run1:
+        g1 = run1["grid"]
+        grid = SimulationGrid(g1["lat_min"], g1["lat_max"], g1["lon_min"], g1["lon_max"], g1["resolution_deg"])
+    if grid2 is None:
+        if "grid" in run2:
+            g2 = run2["grid"]
+            grid2 = SimulationGrid(g2["lat_min"], g2["lat_max"], g2["lon_min"], g2["lon_max"], g2["resolution_deg"])
+        else:
+            grid2 = grid
+
     imp1 = calculate_impact_ranges(run1, grid)
-    imp2 = calculate_impact_ranges(run2, grid)
+    imp2 = calculate_impact_ranges(run2, grid2)
 
     def diff_metric(m1: Dict[str, float], m2: Dict[str, float]) -> Dict[str, float]:
         return {
@@ -141,6 +153,7 @@ def run_parameter_sensitivity(
         "run_id": base_run_output["run_id"],
         "parameter_swept": param_name,
         "sensitivity_curve": sweep_curve,
+        "sweep_results": sweep_curve,
         "caveat": "Kurva sensitivitas menunjukkan elastisitas dampak terhadap perubahan satu parameter.",
         "disclaimer": base_run_output["disclaimer"]
     }

@@ -83,7 +83,7 @@ def get_sources_catalog() -> Dict[str, Any]:
     sources_md_path = BACKEND_DIR / "docs" / "SOURCES.md"
     raw_markdown = ""
     if sources_md_path.exists():
-        with open(sources_md_path, "r", encoding="utf-8") as f:
+        with open(sources_md_path, "r", encoding="utf-8-sig") as f:
             raw_markdown = f.read()
 
     verified_sources = [
@@ -155,6 +155,7 @@ def get_sources_catalog() -> Dict[str, Any]:
     return {
         "title": "Katalog Sumber Data UdaraSiaga",
         "verified_sources": verified_sources,
+        "sources": verified_sources,
         "markdown_documentation": raw_markdown,
     }
 

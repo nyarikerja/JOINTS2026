@@ -68,7 +68,7 @@ NATIONAL_KARHUTLA = {
 _forests_path = BACKEND_DIR / "data" / "layers" / "forests_indonesia.json"
 if _forests_path.exists():
     try:
-        _f_data = json.loads(_forests_path.read_text(encoding="utf-8"))
+        _f_data = json.loads(_forests_path.read_text(encoding="utf-8-sig"))
         _f_list = _f_data if isinstance(_f_data, list) else _f_data.get("forests", [])
         for _f in _f_list:
             NATIONAL_KARHUTLA[_f["id"]] = {
@@ -95,7 +95,7 @@ def list_events():
                 meta_file = d / "meta.json"
                 if meta_file.exists():
                     try:
-                        meta = json.loads(meta_file.read_text(encoding="utf-8"))
+                        meta = json.loads(meta_file.read_text(encoding="utf-8-sig"))
                         eid = meta.get("event_id", d.name)
                         events_list.append({
                             "event_id": eid,
@@ -115,7 +115,7 @@ def list_events():
     volc_path = BACKEND_DIR / "data" / "layers" / "volcanoes_indonesia.geojson"
     if volc_path.exists():
         try:
-            geo = json.loads(volc_path.read_text(encoding="utf-8"))
+            geo = json.loads(volc_path.read_text(encoding="utf-8-sig"))
             for f in geo.get("features", []):
                 p = f.get("properties", {})
                 eid = p.get("id") or p.get("event_id")
@@ -159,19 +159,36 @@ def get_event_detail(event_id: str):
     event_id = clean_id
     meta_file = EVENTS_DIR / event_id / "meta.json"
     if meta_file.exists():
-        return json.loads(meta_file.read_text(encoding="utf-8"))
+        return json.loads(meta_file.read_text(encoding="utf-8-sig"))
+
+    # Cek direktori di data/events yang cocok (toleran terhadap perbedaan underscore)
+    clean_eid = event_id.replace("_", "").lower()
+    if EVENTS_DIR.exists():
+        for d in EVENTS_DIR.iterdir():
+            if d.is_dir() and d.name.replace("_", "").lower() == clean_eid:
+                mf = d / "meta.json"
+                if mf.exists():
+                    try:
+                        return json.loads(mf.read_text(encoding="utf-8-sig"))
+                    except Exception:
+                        pass
 
     # Cari di katalog gunung api nasional
     volc_path = BACKEND_DIR / "data" / "layers" / "volcanoes_indonesia.geojson"
     if volc_path.exists():
         try:
-            geo = json.loads(volc_path.read_text(encoding="utf-8"))
+            geo = json.loads(volc_path.read_text(encoding="utf-8-sig"))
+            clean_e = event_id.replace("_", "").lower()
             for f in geo.get("features", []):
                 p = f.get("properties", {})
-                if p.get("id") == event_id or p.get("event_id") == event_id:
+                f_id = (p.get("id") or "").lower()
+                f_ev = (p.get("event_id") or "").lower()
+                clean_fid = f_id.replace("_", "")
+                clean_fev = f_ev.replace("_", "")
+                if clean_fid == clean_e or clean_fev == clean_e or clean_fid.startswith(clean_e) or clean_e in clean_fid:
                     c = f["geometry"]["coordinates"]
                     return {
-                        "event_id": event_id,
+                        "event_id": p.get("id"),
                         "hazard": "volcano",
                         "name": f"Erupsi {p.get('name')} ({p.get('province')})",
                         "elevation_m": p.get("elevation_m"),
@@ -199,12 +216,15 @@ def get_event_detail(event_id: str):
     forest_path = BACKEND_DIR / "data" / "layers" / "forests_indonesia.json"
     if forest_path.exists():
         try:
-            f_data = json.loads(forest_path.read_text(encoding="utf-8"))
+            f_data = json.loads(forest_path.read_text(encoding="utf-8-sig"))
             f_list = f_data if isinstance(f_data, list) else f_data.get("forests", [])
+            clean_e = event_id.replace("_", "").lower()
             for f_item in f_list:
-                if f_item.get("id") == event_id:
+                f_id = (f_item.get("id") or "").lower()
+                clean_fid = f_id.replace("_", "")
+                if clean_fid == clean_e or clean_fid.startswith(clean_e) or clean_e in clean_fid:
                     return {
-                        "event_id": event_id,
+                        "event_id": f_item.get("id"),
                         "hazard": "fire",
                         "name": f_item.get("name"),
                         "forest_type": f_item.get("forest_type"),
