@@ -61,6 +61,7 @@ NATIONAL_KARHUTLA = {
         "name": "Karhutla Savana Papua Selatan (Merauke)",
         "province": "Papua Selatan",
         "coordinates": {"latitude": -8.45, "longitude": 140.40}
+    }
 }
 
 # Muat 36 Kawasan Hutan & Konservasi Nasional dari forests_indonesia.json jika tersedia
@@ -188,5 +189,27 @@ def get_event_detail(event_id: str):
             "coordinates": k["coordinates"],
             "source": "NASA FIRMS NRT (Zona Karhutla Nasional)"
         }
+
+    # Cari di katalog 36 kawasan hutan & konservasi nasional
+    forest_path = BACKEND_DIR / "data" / "layers" / "forests_indonesia.json"
+    if forest_path.exists():
+        try:
+            f_data = json.loads(forest_path.read_text(encoding="utf-8"))
+            for f_item in f_data:
+                if f_item.get("id") == event_id:
+                    return {
+                        "event_id": event_id,
+                        "hazard": "fire",
+                        "name": f_item.get("name"),
+                        "forest_type": f_item.get("forest_type"),
+                        "province": f_item.get("province"),
+                        "region": f_item.get("region"),
+                        "risk_level": f_item.get("risk_level"),
+                        "area_ha": f_item.get("area_ha"),
+                        "coordinates": {"latitude": f_item.get("lat"), "longitude": f_item.get("lon")},
+                        "source": "Katalog 36 Kawasan Hutan & Konservasi Nasional"
+                    }
+        except Exception:
+            pass
 
     raise HTTPException(status_code=404, detail=f"Event '{event_id}' tidak ditemukan di katalog nasional.")
