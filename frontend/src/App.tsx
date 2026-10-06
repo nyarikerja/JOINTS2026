@@ -1,15 +1,16 @@
 import React, { useState } from "react";
 import { TacticalHeader } from "./components/layout/TacticalHeader";
-import { ActionStrip } from "./components/layout/ActionStrip";
 import { ControllerDock } from "./components/layout/ControllerDock";
 import { MapWorkspace } from "./components/layout/MapWorkspace";
 import { TimelinePlayer } from "./components/layout/TimelinePlayer";
 import { AnalyticsDrawer } from "./components/layout/AnalyticsDrawer";
+import { LegendModal } from "./components/layout/LegendModal";
 import { api } from "./services/api";
 import type {
   HazardType,
   ModelingMode,
   SimulationOverrides,
+  SimulationPayload,
   ImpactResponse,
   FacilitiesImpactResponse,
   ValidationResponse,
@@ -36,6 +37,7 @@ export const App: React.FC = () => {
   const [validationData, setValidationData] = useState<ValidationResponse | null>(null);
 
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+  const [isLegendOpen, setIsLegendOpen] = useState<boolean>(false);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [progressText, setProgressText] = useState<string>("");
 
@@ -64,14 +66,15 @@ export const App: React.FC = () => {
 
   const handleHazardChange = (newHazard: HazardType) => {
     setHazard(newHazard);
-    if (newHazard === "fire" && eventId !== "live_kalimantan") {
-      setEventId("live_kalimantan");
-    } else if (newHazard === "volcano" && eventId === "live_kalimantan") {
+    if (newHazard === "fire" && !eventId.startsWith("hutan_")) {
+      setEventId("hutan_sebangau");
+    } else if (newHazard === "volcano" && (eventId.startsWith("hutan_") || eventId === "live_kalimantan")) {
       setEventId("anak_krakatau_2026_09");
     }
   };
 
   const [simulatedEventName, setSimulatedEventName] = useState<string>("G. Anak Krakatau");
+  const demoIntervalRef = React.useRef<any>(null);
 
   const handleRunSimulation = async (targetHazard?: HazardType, targetEventId?: string) => {
     const activeHazard = targetHazard || hazard;
@@ -81,9 +84,28 @@ export const App: React.FC = () => {
     if (targetEventId) setEventId(targetEventId);
 
     setIsRunning(true);
-    setProgressText("Mengunduh vektor angin adveksi...");
+    setProgressText("Menghitung adveksi atmosferik 15 anggota ensemble (RK2)...");
 
-    const payload = {
+    // Samakan konstruksi overrides dengan standar backend (hanya mode experiment)
+    let backendOverrides: Record<string, any> | null = null;
+    if (mode === "experiment") {
+      backendOverrides = {};
+      if (activeHazard === "volcano" && overrides.column_height_km) {
+        backendOverrides.column_height_km = overrides.column_height_km;
+      }
+      if (overrides.wind_reverse_troposphere) {
+        backendOverrides.wind = { reverse: true };
+      }
+      const rainMm = overrides.rain_scavenging_mm_h ?? 0;
+      if (rainMm > 0) {
+        backendOverrides.rain = { intensity_mm_h: rainMm, duration_h: 6, start_h: 4 };
+      }
+      if (activeHazard === "fire" && overrides.frp_scale !== undefined) {
+        backendOverrides.hotspots = { frp_scale: overrides.frp_scale };
+      }
+    }
+
+    const payload: SimulationPayload = {
       hazard: activeHazard,
       mode,
       source: { event_id: activeEventId },
@@ -91,56 +113,78 @@ export const App: React.FC = () => {
       n_members: 15,
       seed: 42,
       thresholds: { min: 0.9, mid: 0.5, max: 0.05 },
-      overrides: mode === "experiment" ? overrides : null
+      overrides: backendOverrides
     };
 
     try {
-      setProgressText("Menghitung dispersi partikel Lagrangian RK2 (15 ansambel)...");
       const simRes = await api.runSimulation(payload);
       const runId = simRes.run_id;
       setActiveRunId(runId);
-
-      const nameMap: Record<string, string> = {
-        anak_krakatau_2026_09: "G. Anak Krakatau (Selat Sunda)",
-        merapi_yogyakarta: "G. Merapi (Jawa Tengah / DIY)",
-        lewotobi_laki_laki: "G. Lewotobi Laki-laki (NTT)",
-        marapi_sumatera: "G. Marapi (Sumatera Barat)",
-        semeru: "G. Semeru (Jawa Timur)",
-        live_kalimantan: "Karhutla Gambut Kalimantan"
-      };
-      setSimulatedEventName(nameMap[activeEventId] || activeEventId);
+      setSimulatedEventName(simRes.scenario_label || activeEventId);
 
       setProgressText("Mengekstrak kontur poligon & dampak populasi...");
-      const [impact, facilities, validation, tierZero] = await Promise.all([
+
+      // Set pratinjau jam ke 12 agar poligon sebaran langsung terlihat di peta (sesuai fe-dummy)
+      setCurrentHour(12);
+
+      const [impact, facilities, validation, tier12] = await Promise.all([
         api.getImpact(runId).catch(() => null),
         api.getFacilitiesImpacted(runId).catch(() => null),
         api.getValidation(activeEventId).catch(() => null),
-        api.getTiersAtHour(runId, 0).catch(() => null)
+        api.getTiersAtHour(runId, 12).catch(() => null)
       ]);
 
-      if (tierZero) {
-        setHourlyTiersCache({ 0: tierZero });
+      if (tier12) {
+        setHourlyTiersCache({ 12: tier12 });
       }
 
       setImpactData(impact);
       setFacilitiesData(facilities);
       setValidationData(validation);
-      setCurrentHour(0);
       setIsDrawerOpen(true);
-      setProgressText("Selesai!");
+      setProgressText(`Selesai: ${simRes.scenario_label || "15 anggota ensemble"}`);
     } catch (err: any) {
       setProgressText(`Gagal: ${err.message || "Server offline"}`);
     } finally {
       setIsRunning(false);
-      setTimeout(() => setProgressText(""), 3000);
+      setTimeout(() => setProgressText(""), 4000);
     }
   };
 
   const handleRunDemo = async () => {
-    setHazard("volcano");
-    setEventId("anak_krakatau_2026_09");
-    setMode("auto");
-    await handleRunSimulation("volcano", "anak_krakatau_2026_09");
+    setIsRunning(true);
+    setProgressText("Memulai putar demo otomatis...");
+
+    try {
+      const demo = await api.playDemo(eventId).catch(() => null);
+      if (demo && demo.steps && demo.steps.length > 0) {
+        if (!activeRunId) {
+          await handleRunSimulation(hazard, eventId);
+        }
+
+        let stepIdx = 0;
+        if (demoIntervalRef.current) clearInterval(demoIntervalRef.current);
+
+        demoIntervalRef.current = setInterval(() => {
+          if (stepIdx >= demo.steps.length) {
+            clearInterval(demoIntervalRef.current);
+            demoIntervalRef.current = null;
+            setProgressText("Selesai memutar demo skenario.");
+            setTimeout(() => setProgressText(""), 3000);
+            return;
+          }
+
+          const step = demo.steps[stepIdx];
+          setCurrentHour(step.hour);
+          setProgressText(step.commentary || step.time_label);
+          stepIdx++;
+        }, 1200);
+      } else {
+        await handleRunSimulation(hazard, eventId);
+      }
+    } catch {
+      await handleRunSimulation(hazard, eventId);
+    }
   };
 
   const handleDrawRoute = (s: SchoolItem) => {
@@ -166,10 +210,9 @@ export const App: React.FC = () => {
         onResetView={() => setResetViewTrigger((t) => t + 1)}
         onToggleDrawer={() => setIsDrawerOpen(!isDrawerOpen)}
         isDrawerOpen={isDrawerOpen}
+        onToggleLegend={() => setIsLegendOpen((prev) => !prev)}
+        isLegendOpen={isLegendOpen}
       />
-
-      {/* Action Strip */}
-      <ActionStrip />
 
       {/* Main Workspace (Zona B, C, dan D) */}
       <div className="relative flex-1 w-full h-full overflow-hidden">
@@ -184,6 +227,7 @@ export const App: React.FC = () => {
             setEventId(newId);
           }}
           resetViewTrigger={resetViewTrigger}
+          onToggleLegend={() => setIsLegendOpen((prev) => !prev)}
         />
 
         {/* Floating Active Simulation Pill */}
@@ -210,6 +254,7 @@ export const App: React.FC = () => {
           onRunDemo={handleRunDemo}
           isRunning={isRunning}
           progressText={progressText}
+          activeRunId={activeRunId}
         />
 
         {/* Zona C: Timeline Player Melayang di Bawah Peta */}
@@ -232,6 +277,12 @@ export const App: React.FC = () => {
             console.log("Fly to:", lat, lng);
           }}
           onDrawRoute={handleDrawRoute}
+        />
+
+        {/* Modal Legenda Otoritatif PVMBG & Dispersi */}
+        <LegendModal
+          isOpen={isLegendOpen}
+          onClose={() => setIsLegendOpen(false)}
         />
       </div>
     </div>

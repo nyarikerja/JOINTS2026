@@ -1,19 +1,207 @@
 @import "tailwindcss";
 
+/* ============================================================
+   UDARA SIAGA — DESIGN SYSTEM TOKEN
+   Palette 1 (Teal/Ocean): #8AD6D1 #359FA0 #FFF0C5 #FF8C52
+   Palette 2 (Volcanic/Earth): #A14646 #DA6556 #EB895B #FDB773
+   Theme: Opsi 1 - Warm Espresso / Earthy Dark
+   ============================================================ */
+
+@theme {
+  /* Brand Teal / Akuamarin (Aksen Sekunder / Laut) */
+  --color-teal-300: #8AD6D1;
+  --color-teal-500: #359FA0;
+  --color-teal-600: #2a8485;
+  --color-teal-700: #1f6667;
+
+  /* Warm Cream / Pasir (Teks Terang) */
+  --color-cream-50:  #fffef9;
+  --color-cream-100: #FFF0C5;
+  --color-cream-200: #ffe8a3;
+
+  /* Oranye Hangat / Terracotta (Aksen Utama / CTA #EB895B) */
+  --color-ember-400: #FDB773;
+  --color-ember-500: #EB895B;
+  --color-ember-600: #FF8C52;
+  --color-ember-700: #e07440;
+
+  /* Merah Vulkanik / Bahaya */
+  --color-lava-500: #DA6556;
+  --color-lava-600: #A14646;
+  --color-lava-700: #7d3535;
+
+  /* Surface / Background: Warm Espresso / Charcoal Cokelat Hangat */
+  --color-surface-950: #140f0e;
+  --color-surface-900: #1c1513;
+  --color-surface-800: #261e1b;
+  --color-surface-700: #332724;
+  --color-surface-600: #443430;
+
+  /* Border bernuansa Terracotta Hangat */
+  --color-border-subtle: rgba(235, 137, 91, 0.2);
+  --color-border-default: rgba(235, 137, 91, 0.35);
+  --color-border-strong: rgba(235, 137, 91, 0.6);
+}
+
+/* ============================================================
+   BASE RESET
+   ============================================================ */
 @layer base {
-  body {
-    background-color: #080c0e;
-    color: #f1f5f9;
+  *, ::before, ::after {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  body {
+    background-color: #140f0e;
+    color: #FFF0C5;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  .font-mono, [class*="font-mono"] {
+    font-family: 'JetBrains Mono', monospace !important;
+  }
+
+  /* Scrollbar taktis hangat */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #1c1513;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #EB895B;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #FDB773;
+  }
+
+  /* Leaflet popup dark override */
+  .leaflet-popup-content-wrapper {
+    background: #1c1513 !important;
+    color: #FFF0C5 !important;
+    border: 1px solid rgba(235, 137, 91, 0.35) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+  }
+  .leaflet-popup-tip {
+    background: #1c1513 !important;
+  }
+  .leaflet-tooltip {
+    background: #1c1513 !important;
+    color: #FFF0C5 !important;
+    border: 1px solid rgba(235, 137, 91, 0.4) !important;
+    border-radius: 6px !important;
+    font-size: 11px !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important;
+  }
+  .leaflet-tooltip::before {
+    border-top-color: rgba(235, 137, 91, 0.4) !important;
   }
 }
 
-/* Filter Dark Mode untuk OpenStreetMap Tile */
-.dark-tiles {
-  filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+/* ============================================================
+   GLOBAL COMPONENT OVERRIDES
+   ============================================================ */
+
+/* === NAVBAR / HEADER === */
+header {
+  background-color: #EB895B !important;
+  border-bottom-color: rgba(161, 70, 70, 0.35) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 
-/* Animasi Pulse Cincin Bahaya Gunung */
+/* === PANEL KONTROL FLOATING (ControllerDock) === */
+.controller-dock,
+[class*="bg-slate-900"],
+[class*="bg-slate-950"] {
+  --tw-bg-opacity: 1;
+}
+
+/* === TAILWIND COLOR REMAPPING via @layer === */
+@layer utilities {
+  /* Background remapping */
+  .bg-slate-950 { background-color: #140f0e !important; }
+  .bg-slate-900 { background-color: #1c1513 !important; }
+  .bg-slate-800 { background-color: #261e1b !important; }
+  .bg-slate-700 { background-color: #332724 !important; }
+  .bg-slate-900\/90 { background-color: rgba(28, 21, 19, 0.9) !important; }
+  .bg-slate-900\/95 { background-color: rgba(28, 21, 19, 0.95) !important; }
+  .bg-slate-950\/95 { background-color: rgba(20, 15, 14, 0.95) !important; }
+  .bg-slate-950\/80 { background-color: rgba(20, 15, 14, 0.8) !important; }
+  .bg-slate-800\/60 { background-color: rgba(38, 30, 27, 0.6) !important; }
+
+  /* Hover background */
+  .hover\:bg-slate-800:hover { background-color: #261e1b !important; }
+  .hover\:bg-slate-700:hover { background-color: #332724 !important; }
+
+  /* Border remapping */
+  .border-slate-800 { border-color: rgba(235, 137, 91, 0.2) !important; }
+  .border-slate-700 { border-color: rgba(235, 137, 91, 0.3) !important; }
+  .border-slate-700\/80 { border-color: rgba(235, 137, 91, 0.28) !important; }
+
+  /* Text remapping */
+  .text-slate-100 { color: #FFF0C5 !important; }
+  .text-slate-200 { color: #f5e9b5 !important; }
+  .text-slate-300 { color: #e8d7a7 !important; }
+  .text-slate-400 { color: rgba(253, 183, 115, 0.75) !important; }
+  .text-slate-500 { color: rgba(253, 183, 115, 0.5) !important; }
+
+  /* Sky / Primary accent remapping -> Terracotta/Ember #EB895B */
+  .text-sky-400 { color: #FDB773 !important; }
+  .text-sky-500 { color: #EB895B !important; }
+  .bg-sky-600 { background-color: #EB895B !important; }
+  .bg-sky-700 { background-color: #FF8C52 !important; }
+  .hover\:bg-sky-500:hover { background-color: #FDB773 !important; }
+  .hover\:bg-sky-600:hover { background-color: #EB895B !important; }
+  .border-sky-500 { border-color: #EB895B !important; }
+  .border-sky-400 { border-color: #FDB773 !important; }
+  .border-sky-500\/80 { border-color: rgba(235, 137, 91, 0.8) !important; }
+  .focus\:border-sky-500:focus { border-color: #EB895B !important; }
+  .shadow-\[0_0_12px_rgba\(2\,132\,199\,0\.5\)\] {
+    box-shadow: 0 0 12px rgba(235, 137, 91, 0.45) !important;
+  }
+  .shadow-\[0_0_16px_rgba\(2\,132\,199\,0\.4\)\] {
+    box-shadow: 0 0 16px rgba(235, 137, 91, 0.4) !important;
+  }
+  .bg-sky-950\/20 { background-color: rgba(235, 137, 91, 0.15) !important; }
+
+  /* Gradient CTA button -> EB895B / DA6556 */
+  .from-sky-600 { --tw-gradient-from: #EB895B !important; }
+  .to-sky-700 { --tw-gradient-to: #DA6556 !important; }
+  .hover\:from-sky-500:hover { --tw-gradient-from: #FDB773 !important; }
+  .hover\:to-sky-600:hover { --tw-gradient-to: #EB895B !important; }
+
+  /* Amber warning */
+  .text-amber-400 { color: #FDB773 !important; }
+  .text-amber-500 { color: #EB895B !important; }
+  .bg-amber-400 { background-color: #FDB773 !important; }
+  .accent-amber-500 { accent-color: #EB895B !important; }
+
+  /* Red -> Lava */
+  .text-red-400 { color: #DA6556 !important; }
+  .text-red-500 { color: #A14646 !important; }
+  .bg-red-600 { background-color: #A14646 !important; }
+  .ring-red { border-color: #DA6556 !important; }
+
+  /* Orange -> Ember */
+  .ring-orange { border-color: #EB895B !important; }
+
+  /* Emerald pulse */
+  .bg-emerald-400 { background-color: #8AD6D1 !important; }
+
+  /* Accent inputs */
+  .accent-sky-500 { accent-color: #EB895B !important; }
+
+  /* Body background */
+  .bg-\[\#080c0e\] { background-color: #140f0e !important; }
+  .bg-\[\#0b0f14\] { background-color: #140f0e !important; }
+}
+
+/* ============================================================
+   ANIMASI PULSE CINCIN BAHAYA GUNUNG
+   ============================================================ */
 .volcano-pulse-ring {
   position: absolute;
   width: 32px;
@@ -24,11 +212,11 @@
 }
 
 .ring-red {
-  border: 2px solid #ef4444;
+  border: 2px solid #DA6556;
 }
 
 .ring-orange {
-  border: 2px solid #f97316;
+  border: 2px solid #EB895B;
 }
 
 @keyframes pulse-ring {
@@ -42,7 +230,16 @@
   }
 }
 
-/* Media Print Optimization */
+/* ============================================================
+   DARK TILES FILTER (Mode Gelap Peta)
+   ============================================================ */
+.dark-tiles {
+  filter: brightness(0.4) invert(1) contrast(3) hue-rotate(155deg) saturate(0.2) brightness(0.65);
+}
+
+/* ============================================================
+   MEDIA PRINT
+   ============================================================ */
 @media print {
   header, aside, .absolute {
     display: none !important;

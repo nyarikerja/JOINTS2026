@@ -50,19 +50,31 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
 
   return (
     <aside
-      className={`absolute top-0 right-0 w-[440px] max-w-full h-full bg-slate-950/95 backdrop-blur-2xl border-l border-slate-800 z-[1050] flex flex-col shadow-2xl transition-transform duration-300 ease-out text-slate-100 ${
+      className={`absolute top-0 right-0 w-[440px] max-w-full h-full backdrop-blur-2xl z-[1050] flex flex-col shadow-2xl transition-transform duration-300 ease-out ${
         isOpen ? "translate-x-0" : "translate-x-full"
       }`}
+      style={{
+        background: "rgba(245, 239, 227, 0.96)",
+        borderLeft: "1px solid rgba(0, 0, 0, 0.1)",
+        color: "#140f0e"
+      }}
     >
       {/* Header Drawer */}
-      <div className="h-12 px-4 border-b border-slate-800 flex items-center justify-between shrink-0">
+      <div
+        className="h-12 px-4 flex items-center justify-between shrink-0"
+        style={{
+          borderBottom: "1px solid rgba(0, 0, 0, 0.08)",
+          background: "#F5EFE3"
+        }}
+      >
         <div>
-          <span className="font-bold text-xs text-white block">Laci Analitik &amp; Aksi Dini</span>
-          <span className="text-[10px] text-slate-400">Hasil Ansambel Multi-Bahaya 48 Jam</span>
+          <span className="font-bold text-xs block" style={{ color: "#140f0e" }}>Proyeksi Dampak &amp; Aksi Dini</span>
+          <span className="text-[10px]" style={{ color: "rgba(20, 15, 14, 0.6)" }}>Hasil Ansambel Multi-Bahaya 48 Jam</span>
         </div>
         <button
           onClick={onClose}
-          className="text-slate-400 hover:text-white p-1 rounded transition cursor-pointer"
+          className="p-1.5 rounded-lg transition cursor-pointer hover:bg-black/5"
+          style={{ color: "#140f0e" }}
           title="Tutup Panel"
         >
           <X className="w-4 h-4" />
@@ -70,7 +82,13 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
       </div>
 
       {/* 5 Tab Navigation */}
-      <nav className="grid grid-cols-5 bg-slate-900 border-b border-slate-800 shrink-0">
+      <nav
+        className="grid grid-cols-5 shrink-0"
+        style={{
+          background: "rgba(238, 230, 215, 0.8)",
+          borderBottom: "1px solid rgba(0, 0, 0, 0.08)"
+        }}
+      >
         {tabs.map((t) => {
           const Icon = t.icon;
           const isActive = activeTab === t.id;
@@ -78,11 +96,16 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id)}
-              className={`py-2 px-1 text-[10px] font-medium flex flex-col items-center gap-1 border-b-2 transition cursor-pointer ${
-                isActive
-                  ? "border-sky-400 text-sky-400 bg-sky-950/20"
-                  : "border-transparent text-slate-400 hover:text-slate-200"
-              }`}
+              className="py-2.5 px-1 text-[10px] font-medium flex flex-col items-center gap-1 border-b-2 transition cursor-pointer hover:bg-black/5"
+              style={isActive ? {
+                borderColor: "#EB895B",
+                color: "#EB895B",
+                background: "rgba(235, 137, 91, 0.12)",
+                fontWeight: 700
+              } : {
+                borderColor: "transparent",
+                color: "rgba(20, 15, 14, 0.6)"
+              }}
             >
               <Icon className="w-3.5 h-3.5" />
               <span>{t.label}</span>
