@@ -129,14 +129,20 @@
 
           <!-- Pilihan Kejadian Nasional -->
           <div class="dock-field">
-            <label for="eventSelect">Lokasi Kejadian (Nasional):</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label for="eventSelect" style="margin-bottom: 0;">Lokasi Kejadian (Nasional):</label>
+              <button type="button" id="btnToggleCustomPoint" style="background: none; border: none; color: #38bdf8; font-size: 11px; font-weight: 600; cursor: pointer; padding: 0;" title="Klik lokasi mana saja di peta Indonesia untuk simulasi on-the-fly">Klik Peta Bebas</button>
+            </div>
             <select id="eventSelect" class="select-box">
-              <option value="anak_krakatau_2026_09">[Level III] G. Anak Krakatau (Selat Sunda)</option>
-              <option value="merapi_yogyakarta">[Level III] G. Merapi (Jawa Tengah / DIY)</option>
-              <option value="marapi_sumatera">[Level III] G. Marapi (Sumatera Barat)</option>
-              <option value="lewotobi_laki_laki">[Level IV] G. Lewotobi Laki-laki (Flores Timur, NTT)</option>
-              <option value="live_kalimantan">Karhutla Kalimantan (NASA FIRMS Live / NRT)</option>
+              <!-- Diisi otomatis dari katalog 70 Gunung Api PVMBG & Karhutla Nasional -->
             </select>
+            <div id="customPointBadge" class="custom-point-indicator hidden" style="margin-top: 6px; padding: 6px 9px; border-radius: 6px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.4); font-size: 11px; display: none; align-items: center; justify-content: space-between;">
+              <span style="color: #7dd3fc; display: flex; align-items: center; gap: 5px;">
+                <span style="width: 7px; height: 7px; border-radius: 50%; background: #38bdf8; display: inline-block;"></span>
+                <span id="customPointCoordText">Klik lokasi di peta...</span>
+              </span>
+              <button type="button" id="btnCancelCustomPoint" style="background: none; border: none; color: #f87171; cursor: pointer; font-size: 11px; font-weight: 600;">Reset</button>
+            </div>
           </div>
 
           <!-- Mode Pemodelan -->

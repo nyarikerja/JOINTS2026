@@ -96,8 +96,10 @@ Pengguna mengakses antarmuka dan mengatur parameter skenario melalui **Panel Kon
 1. **Pilihan Jenis Bahaya Atmosfer**:
    - **Erupsi Gunung Api (Abu Vulkanik)**: Menargetkan partikulat silika tajam dan gas vulkanik.
    - **Kebakaran Hutan & Lahan (Asap Karhutla)**: Menargetkan kabut asap organik dan partikel $PM_{2.5}$.
-2. **Pilihan Lokasi Kejadian (Nasional)**:
-   - Menjangkau 20 gunung api aktif nasional berstatus Level I s.d. Level IV (Anak Krakatau, Merapi, Lewotobi Laki-Laki, Marapi Sumatera, Semeru, Ibu, Ruang, Lokon, Sinabung, dll.) atau Karhutla Gambut Kalimantan.
+2. **Pilihan Lokasi Kejadian (Cakupan Penuh 1 Indonesia)**:
+   - **Katalog 70 Gunung Api Aktif Tipe A PVMBG**: Menjangkau seluruh gunung api aktif di Sumatera (13 gunung), Jawa (19 gunung), Bali & Nusa Tenggara (18 gunung), Sulawesi & Sangihe (10 gunung), serta Maluku & Papua (10 gunung) berstatus Level I s.d. Level IV.
+   - **Katalog 7 Zona Karhutla Strategis Nasional**: Meliputi Kalimantan (Kalteng, Kalbar, Kalsel), Sumatera (Riau, Sumsel-OKI, Jambi), dan Papua Selatan (Merauke).
+   - **Mode Simulasi Titik Bebas (Klik Peta Indonesia)**: Pengguna dapat mengklik sembarang titik koordinat di atas kepulauan Nusantara untuk menjalankan simulasi dispersi dinamis secara *on-the-fly* via API live Open-Meteo dan deteksi otomatis faskes serta sekolah sekitar.
 3. **Pilihan Mode Operasional**:
    - **Mode Otomatis (Data Nyata Otoritatif)**: Mengunci input sesuai laporan observasi riil PVMBG/FIRMS dan cuaca aktual.
    - **Mode Coba-coba (Eksperimen PVMBG)**: Membuka kontrol eksperimen untuk skenario perencanaan:
@@ -221,7 +223,7 @@ Antarmuka web UdaraSiaga mengadopsi tata letak kanvas komando terpadu untuk menc
 | ZONE B:           | ZONE C: INTERACTIVE GIS WORKSPACE         | ZONE D:           |
 | FLOATING CONTROL  |                                           | TABBED INSPECTION |
 | (Panel Bencana,   | - Peta Taktis Gelap (Full Bleed Leaflet)  | DOCK (Laci Kanan) |
-|  20 Gunung PVMBG, | - Poligon Dispersi Berwarna Hazard-Aware  |                   |
+|  70 Gunung PVMBG, | - Poligon Dispersi Berwarna Hazard-Aware  |                   |
 |  Mode Eksperimen, | - Hotspot NASA & Titik Fasilitas Publik   | [Tab 1: Dampak]   |
 |  Jalankan Sim)    | - Legenda Dinamis Kiri Bawah              | [Tab 2: Sekolah]  |
 |                   | +---------------------------------------+ | [Tab 3: Evakuasi] |

@@ -106,7 +106,7 @@ function loadSummaryKpi() {
 }
 
 // =============================================================================
-// 3. Lapisan Gunungapi Nasional PVMBG (20 Gunung Aktif Se-Indonesia)
+// 3. Lapisan Gunungapi Nasional PVMBG (70 Gunung Aktif Se-Indonesia)
 // =============================================================================
 function createVolcanoSvgIcon(color, level) {
   const isPulsing = level >= 3;
@@ -141,36 +141,82 @@ function loadNationalVolcanoes() {
     .catch(err => console.error("Gagal memuat gunungapi nasional:", err));
 }
 
+const NATIONAL_KARHUTLA_EVENTS = [
+  { id: "live_kalimantan", name: "Karhutla Gambut Kalteng (Palangka Raya / Pulang Pisau)", region: "Kalimantan", lat: -2.5, lon: 113.5 },
+  { id: "karhutla_kalbar", name: "Karhutla Gambut Kalbar (Ketapang / Kubu Raya)", region: "Kalimantan", lat: -1.85, lon: 109.85 },
+  { id: "karhutla_kalsel", name: "Karhutla Gambut Kalsel (Banjarbaru / Tanah Laut)", region: "Kalimantan", lat: -3.45, lon: 114.85 },
+  { id: "karhutla_riau", name: "Karhutla Gambut Riau (Siak & Pelalawan)", region: "Sumatera", lat: 0.75, lon: 101.85 },
+  { id: "karhutla_sumsel", name: "Karhutla Gambut Sumsel (Ogan Komering Ilir / OKI)", region: "Sumatera", lat: -3.45, lon: 105.15 },
+  { id: "karhutla_jambi", name: "Karhutla Gambut Jambi (Muaro Jambi / Tanjabtim)", region: "Sumatera", lat: -1.45, lon: 103.80 },
+  { id: "karhutla_papua", name: "Karhutla Savana Papua Selatan (Merauke)", region: "Papua", lat: -8.45, lon: 140.40 }
+];
+
 function populateVolcanoDropdown(features) {
   const sel = document.getElementById("eventSelect");
   if (!sel) return;
 
   sel.innerHTML = "";
-  
-  // Pisahkan Gunung dan Karhutla
-  const optGroupVolcano = document.createElement("optgroup");
-  optGroupVolcano.label = "Gunungapi Aktif PVMBG (Nasional)";
+  const hazard = currentHazard || "volcano";
 
-  features.forEach(f => {
-    const p = f.properties;
-    const opt = document.createElement("option");
-    opt.value = p.event_id || p.id;
-    opt.textContent = `[${p.level_name.split(' ')[0]} ${p.level_name.split(' ')[1] || ''}] ${p.name} (${p.province}) - ${p.elevation_m}m`;
-    optGroupVolcano.appendChild(opt);
-  });
+  if (hazard === "volcano") {
+    // Kelompokkan 70 gunung api berdasarkan pulau/kawasan besar
+    const regionGroups = {
+      "Sumatera": [],
+      "Jawa": [],
+      "Bali & Nusa Tenggara": [],
+      "Sulawesi": [],
+      "Maluku & Papua": []
+    };
 
-  const optGroupFire = document.createElement("optgroup");
-  optGroupFire.label = "Kebakaran Hutan & Lahan (NASA FIRMS)";
-  const optFire = document.createElement("option");
-  optFire.value = "live_kalimantan";
-  optFire.textContent = "Karhutla Gambut Kalimantan (NASA FIRMS NRT)";
-  optGroupFire.appendChild(optFire);
+    (features || allVolcanoesData || []).forEach(f => {
+      const p = f.properties;
+      const reg = p.region || "Lainnya";
+      if (!regionGroups[reg]) regionGroups[reg] = [];
+      regionGroups[reg].push(f);
+    });
 
-  sel.appendChild(optGroupVolcano);
-  sel.appendChild(optGroupFire);
+    for (const [regName, vList] of Object.entries(regionGroups)) {
+      if (vList.length === 0) continue;
+      const optGroup = document.createElement("optgroup");
+      optGroup.label = `Gunung Api ${regName} (${vList.length})`;
+      vList.forEach(f => {
+        const p = f.properties;
+        const opt = document.createElement("option");
+        opt.value = p.event_id || p.id;
+        opt.textContent = `[${p.level_name ? p.level_name.split(' ')[0] + ' ' + (p.level_name.split(' ')[1] || '') : 'Level I'}] ${p.name} (${p.province}) - ${p.elevation_m}m`;
+        optGroup.appendChild(opt);
+      });
+      sel.appendChild(optGroup);
+    }
 
-  // Set default ke Anak Krakatau
-  sel.value = "anak_krakatau_2026_09";
+    if (!sel.value) sel.value = "anak_krakatau_2026_09";
+  } else {
+    // Kelompokkan Karhutla berdasarkan pulau
+    const fireGroups = {
+      "Kalimantan": [],
+      "Sumatera": [],
+      "Papua": []
+    };
+
+    NATIONAL_KARHUTLA_EVENTS.forEach(k => {
+      if (fireGroups[k.region]) fireGroups[k.region].push(k);
+    });
+
+    for (const [regName, kList] of Object.entries(fireGroups)) {
+      if (kList.length === 0) continue;
+      const optGroup = document.createElement("optgroup");
+      optGroup.label = `Karhutla ${regName} (${kList.length})`;
+      kList.forEach(k => {
+        const opt = document.createElement("option");
+        opt.value = k.id;
+        opt.textContent = `${k.name}`;
+        optGroup.appendChild(opt);
+      });
+      sel.appendChild(optGroup);
+    }
+
+    if (!sel.value) sel.value = "live_kalimantan";
+  }
 }
 
 function renderVolcanoMarkers(features) {
@@ -278,24 +324,62 @@ function onHazardChanged() {
   const volcControls = document.getElementById("volcanoExpControls");
   const fireControls = document.getElementById("fireExpControls");
 
+  // Perbarui dropdown sesuai bahaya yang aktif
+  populateVolcanoDropdown(allVolcanoesData);
+
   // Perbarui palet warna & label legenda sebaran langsung
   if (typeof updatePlumeLegend === "function") {
     updatePlumeLegend(hazard);
   }
 
   if (hazard === "fire") {
-    if (eventSel) eventSel.value = "live_kalimantan";
     if (volcControls) volcControls.classList.add("hidden");
     if (fireControls) fireControls.classList.remove("hidden");
-    loadHotspots("live_kalimantan");
-    map.flyTo([-2.5, 113.5], 8, { duration: 1.2 });
-  } else {
-    if (eventSel && eventSel.value === "live_kalimantan") {
-      eventSel.value = "anak_krakatau_2026_09";
+    const currentFireId = eventSel ? eventSel.value : "live_kalimantan";
+    loadHotspots(currentFireId);
+    const fireObj = NATIONAL_KARHUTLA_EVENTS.find(k => k.id === currentFireId);
+    if (fireObj) {
+      map.flyTo([fireObj.lat, fireObj.lon], 8, { duration: 1.2 });
+    } else {
+      map.flyTo([-2.5, 113.5], 8, { duration: 1.2 });
     }
+  } else {
     if (volcControls) volcControls.classList.remove("hidden");
     if (fireControls) fireControls.classList.add("hidden");
     zoomToCurrentEvent(eventSel ? eventSel.value : "anak_krakatau_2026_09", "volcano");
+  }
+}
+
+function onEventSelectChanged(e) {
+  const val = e.target.value;
+  const isFire = val === "live_kalimantan" || val.startsWith("karhutla_");
+  const hazardSel = document.getElementById("hazardSelect");
+
+  if (isFire) {
+    if (hazardSel.value !== "fire") {
+      hazardSel.value = "fire";
+      currentHazard = "fire";
+      if (typeof updatePlumeLegend === "function") updatePlumeLegend("fire");
+    }
+    const fireObj = NATIONAL_KARHUTLA_EVENTS.find(k => k.id === val);
+    if (fireObj) {
+      map.flyTo([fireObj.lat, fireObj.lon], 8, { duration: 1.0 });
+      loadHotspots(val);
+    }
+  } else {
+    if (hazardSel.value !== "volcano") {
+      hazardSel.value = "volcano";
+      currentHazard = "volcano";
+      if (typeof updatePlumeLegend === "function") updatePlumeLegend("volcano");
+    }
+    const f = (allVolcanoesData || []).find(feat => (feat.properties.event_id === val || feat.properties.id === val));
+    if (f && f.geometry && f.geometry.coordinates) {
+      const c = f.geometry.coordinates;
+      map.flyTo([c[1], c[0]], 9, { duration: 1.0 });
+      highlightVolcanoOnMap(c[1], c[0], f.properties.radius_bahaya_km || 5.0);
+    } else {
+      zoomToCurrentEvent(val, "volcano");
+    }
   }
 }
 
@@ -622,10 +706,16 @@ function runSimulation() {
   }
 
   // 15 anggota ensemble untuk respons instan ~1.5 - 2 detik dengan akurasi P5/P50/P95 penuh
+  const isCustom = isCustomPointMode && customPointCoords;
   const payload = {
     hazard: hazard,
     mode: mode,
-    source: { event_id: eventId },
+    source: isCustom ? {
+      event_id: `custom_${Math.abs(customPointCoords.lat).toFixed(2)}_${Math.abs(customPointCoords.lng).toFixed(2)}`,
+      latitude: customPointCoords.lat,
+      longitude: customPointCoords.lng,
+      name: `Titik Kustom (${customPointCoords.lat.toFixed(3)}, ${customPointCoords.lng.toFixed(3)})`
+    } : { event_id: eventId },
     horizon_hours: 48,
     n_members: 15,
     seed: 42,
@@ -1138,19 +1228,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const eventSel = document.getElementById("eventSelect");
 
   hazardSel.addEventListener("change", onHazardChanged);
-
-  eventSel.addEventListener("change", e => {
-    const val = e.target.value;
-    if (val === "live_kalimantan") {
-      hazardSel.value = "fire";
-      onHazardChanged();
-    } else {
-      hazardSel.value = "volcano";
-      currentHazard = "volcano";
-      onHazardChanged();
-      zoomToCurrentEvent(val, "volcano");
-    }
-  });
+  eventSel.addEventListener("change", onEventSelectChanged);
 
   // Mode Simulasi (Auto vs Experiment)
   const modeRadios = document.querySelectorAll('input[name="simMode"]');
@@ -1385,6 +1463,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Inisialisasi Tab Navigasi Laci Kanan (5 Tab) & Dock Melayang Kiri
   initDrawerTabs();
   initDockToggle();
+  setupCustomPointMode();
 });
 
 function initDrawerTabs() {
@@ -1414,4 +1493,83 @@ function initDockToggle() {
       dockBtn.innerHTML = dock.classList.contains("minimized") ? "+" : "&minus;";
     });
   }
+}
+
+let isCustomPointMode = false;
+let customPointCoords = null;
+let customPointMarker = null;
+
+function setupCustomPointMode() {
+  const btnToggle = document.getElementById("btnToggleCustomPoint");
+  const badge = document.getElementById("customPointBadge");
+  const coordText = document.getElementById("customPointCoordText");
+  const btnCancel = document.getElementById("btnCancelCustomPoint");
+
+  if (!btnToggle) return;
+
+  btnToggle.addEventListener("click", () => {
+    isCustomPointMode = !isCustomPointMode;
+    if (isCustomPointMode) {
+      btnToggle.textContent = "Batal Mode Titik";
+      btnToggle.style.color = "#f87171";
+      if (badge) {
+        badge.classList.remove("hidden");
+        badge.style.display = "flex";
+      }
+      if (coordText) coordText.textContent = "Klik di mana saja pada peta...";
+      const mapElem = document.getElementById("map");
+      if (mapElem) mapElem.style.cursor = "crosshair";
+    } else {
+      cancelCustomPoint();
+    }
+  });
+
+  if (btnCancel) {
+    btnCancel.addEventListener("click", cancelCustomPoint);
+  }
+
+  map.on("click", (e) => {
+    if (!isCustomPointMode) return;
+    customPointCoords = { lat: e.latlng.lat, lng: e.latlng.lng };
+    if (customPointMarker) {
+      map.removeLayer(customPointMarker);
+    }
+    const hazard = document.getElementById("hazardSelect").value;
+    const pinColor = hazard === "volcano" ? "#ef4444" : "#f59e0b";
+    const customIcon = L.divIcon({
+      className: "custom-point-pin",
+      html: `
+        <div style="position:relative;display:flex;align-items:center;justify-content:center;">
+          <div style="position:absolute;width:34px;height:34px;border-radius:50%;background:${pinColor};opacity:0.35;animation:radar-pulse 1.4s infinite;"></div>
+          <div style="width:14px;height:14px;border-radius:50%;background:${pinColor};border:2px solid #fff;box-shadow:0 0 12px ${pinColor};"></div>
+        </div>
+      `,
+      iconSize: [22, 22],
+      iconAnchor: [11, 11]
+    });
+    customPointMarker = L.marker([e.latlng.lat, e.latlng.lng], { icon: customIcon }).addTo(map);
+    customPointMarker.bindPopup(`<b>Titik Kustom Peta Indonesia</b><br>Lintang: ${e.latlng.lat.toFixed(4)}<br>Bujur: ${e.latlng.lng.toFixed(4)}<br><small style="color:#38bdf8">Siap disimulasikan (${hazard === 'volcano' ? 'Abu Vulkanik' : 'Asap Karhutla'})</small>`).openPopup();
+    if (coordText) coordText.textContent = `${e.latlng.lat.toFixed(3)}, ${e.latlng.lng.toFixed(3)}`;
+  });
+}
+
+function cancelCustomPoint() {
+  isCustomPointMode = false;
+  customPointCoords = null;
+  if (customPointMarker) {
+    map.removeLayer(customPointMarker);
+    customPointMarker = null;
+  }
+  const btnToggle = document.getElementById("btnToggleCustomPoint");
+  const badge = document.getElementById("customPointBadge");
+  if (btnToggle) {
+    btnToggle.textContent = "Klik Peta Bebas";
+    btnToggle.style.color = "#38bdf8";
+  }
+  if (badge) {
+    badge.classList.add("hidden");
+    badge.style.display = "none";
+  }
+  const mapElem = document.getElementById("map");
+  if (mapElem) mapElem.style.cursor = "";
 }
