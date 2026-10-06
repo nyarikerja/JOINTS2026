@@ -51,12 +51,13 @@ class SimulationRunner:
             coords = event_meta.get("coordinates", {"latitude": -6.102, "longitude": 105.423})
             center_lat = float(coords.get("latitude", -6.102))
             center_lon = float(coords.get("longitude", 105.423))
-            grid = SimulationGrid.create_for_volcano(center_lat, center_lon, domain_km=600.0, res_deg=0.025)
+            # Domain 900 km (radius 450 km) agar partikel beradveksi bebas tanpa terpotong batas grid sebelum konsentrasi meluruh
+            grid = SimulationGrid.create_for_volcano(center_lat, center_lon, domain_km=900.0, res_deg=0.03)
         else:
             bbox = event_meta.get("bbox", [110.0, -4.0, 116.0, 1.0])
             center_lat = (float(bbox[1]) + float(bbox[3])) / 2.0
             center_lon = (float(bbox[0]) + float(bbox[2])) / 2.0
-            grid = SimulationGrid.create_for_fire(bbox, buffer_km=250.0, res_deg=0.025)
+            grid = SimulationGrid.create_for_fire(bbox, buffer_km=350.0, res_deg=0.03)
 
         wind_u_arr = weather_data.get("wind_u")  # shape (n_members, n_weather_steps)
         wind_v_arr = weather_data.get("wind_v")

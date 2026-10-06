@@ -85,7 +85,11 @@ class OpenMeteoIngest:
         rng = np.random.default_rng(seed)
 
         # Baseline wind & rain
-        base_speed = np.array(hourly.get("wind_speed_10m", [5.0] * n_steps), dtype=float)
+        units = cached.get("hourly_units", {})
+        speed_unit = str(units.get("wind_speed_10m", "km/h")).lower()
+        speed_to_ms = (1.0 / 3.6) if ("km/h" in speed_unit or "kmh" in speed_unit) else 1.0
+
+        base_speed = np.array(hourly.get("wind_speed_10m", [14.0] * n_steps), dtype=float) * speed_to_ms
         base_dir = np.array(hourly.get("wind_direction_10m", [90.0] * n_steps), dtype=float)
         base_precip = np.array(hourly.get("precipitation", [0.0] * n_steps), dtype=float)
 
@@ -120,7 +124,8 @@ class OpenMeteoIngest:
                 dir_k = f"wind_direction_10m_{m_str}"
                 pr_k = f"precipitation_{m_str}"
 
-                sp = np.array(hourly.get(sp_k, base_speed), dtype=float)
+                sp_raw = np.array(hourly.get(sp_k, hourly.get("wind_speed_10m", [14.0] * n_steps)), dtype=float)
+                sp = sp_raw * speed_to_ms
                 dr = np.array(hourly.get(dir_k, base_dir), dtype=float)
                 pr = np.array(hourly.get(pr_k, base_precip), dtype=float)
 

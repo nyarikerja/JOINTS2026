@@ -105,20 +105,24 @@ DEMO_FACILITIES = [
 
 class OverpassIngest:
     _cached_facilities: List[Dict[str, Any]] | None = None
+    _cached_mtime: float = 0.0
 
     @classmethod
     def load_all_facilities(cls, force_reload: bool = False) -> List[Dict[str, Any]]:
-        if not force_reload and cls._cached_facilities is not None:
-            return cls._cached_facilities
-
         import json
 
         from app.core.config import BACKEND_DIR
 
         fac_file = BACKEND_DIR / "data" / "layers" / "facilities_indonesia.json"
+        current_mtime = fac_file.stat().st_mtime if fac_file.exists() else 0.0
+
+        if not force_reload and cls._cached_facilities is not None and cls._cached_mtime == current_mtime:
+            return cls._cached_facilities
+
         if fac_file.exists():
             with open(fac_file, "r", encoding="utf-8") as f:
                 cls._cached_facilities = json.load(f)
+                cls._cached_mtime = current_mtime
                 return cls._cached_facilities
 
         cls._cached_facilities = DEMO_FACILITIES

@@ -112,10 +112,16 @@ def aggregate_tiers_for_hour(
     """
     prob_grid = compute_ensemble_probabilities(hourly_member_masks)
 
-    # 1. Penghalusan difusi kontinu Gauss (model difusi turbulen antar-lintasan ensemble)
-    # Menghilangkan efek kotak-kotak piksel diskret dan lubang artefak 1-sel
+    # 1. Penghalusan difusi kontinu Gauss & Boundary Tapering
+    # Mengeliminasi artefak kotak kaku pada tepi domain komputasi dan menjamin ujung plume menutup aerodinamis alami
     if np.any(prob_grid > 0):
-        smoothed_prob = scipy.ndimage.gaussian_filter(prob_grid, sigma=1.2, mode="constant", cval=0.0)
+        edge_mask = np.ones_like(prob_grid)
+        edge_mask[0:3, :] = 0.0
+        edge_mask[-3:, :] = 0.0
+        edge_mask[:, 0:3] = 0.0
+        edge_mask[:, -3:] = 0.0
+        edge_weight = scipy.ndimage.gaussian_filter(edge_mask, sigma=1.8, mode="constant", cval=0.0)
+        smoothed_prob = scipy.ndimage.gaussian_filter(prob_grid * edge_weight, sigma=1.2, mode="constant", cval=0.0)
     else:
         smoothed_prob = prob_grid
 

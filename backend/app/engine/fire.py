@@ -56,9 +56,19 @@ def generate_fire_particles_per_step(
 
     lats = np.fromiter((float(h["latitude"]) for h in chosen), dtype=float, count=actual_insert)
     lons = np.fromiter((float(h["longitude"]) for h in chosen), dtype=float, count=actual_insert)
-    frps = np.fromiter((float(h.get("frp", 25.0)) for h in chosen), dtype=float, count=actual_insert)
+    frps = np.fromiter((float(h.get("frp", 15.0)) for h in chosen), dtype=float, count=actual_insert)
+    def _safe_cluster_id(raw_id, fallback_idx):
+        try:
+            parts = str(raw_id).split("_")
+            for p in reversed(parts):
+                if p.isdigit():
+                    return int(p)
+            return int(raw_id)
+        except Exception:
+            return fallback_idx
+
     ids = np.fromiter(
-        (int(str(h.get("id", i)).split("_")[-1]) if "_" in str(h.get("id", "")) else i for i, h in enumerate(chosen)),
+        (_safe_cluster_id(h.get("id"), i) for i, h in enumerate(chosen)),
         dtype=int,
         count=actual_insert
     )

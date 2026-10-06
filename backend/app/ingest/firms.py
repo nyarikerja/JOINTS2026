@@ -14,7 +14,37 @@ from app.core.config import EVENTS_DIR
 
 class FirmsIngest:
     @staticmethod
-    def load_event_hotspots(event_id: str, overrides: Dict[str, Any] | None = None) -> List[Dict[str, Any]]:
+    def load_event_hotspots(event_id: str | None = None, overrides: Dict[str, Any] | None = None) -> List[Dict[str, Any]]:
+        # Mode Nasional: Kumpulkan titik api dari seluruh kawasan karhutla se-Indonesia
+        if not event_id or event_id in ["national", "all", "indonesia"]:
+            records = []
+            for d in sorted(EVENTS_DIR.iterdir()):
+                if d.is_dir() and (d.name.startswith("karhutla_") or d.name.startswith("hutan_") or d.name == "live_kalimantan"):
+                    csv_path = d / "hotspots.csv"
+                    if csv_path.exists() and csv_path.stat().st_size > 0:
+                        try:
+                            df = pd.read_csv(csv_path)
+                            for idx, row in df.iterrows():
+                                lat = row.get("latitude")
+                                lon = row.get("longitude")
+                                if pd.isna(lat) or pd.isna(lon):
+                                    continue
+                                frp_val = row.get("frp", 25.0)
+                                frp_float = float(frp_val) if not pd.isna(frp_val) else 25.0
+                                records.append({
+                                    "id": f"{d.name}_{idx}",
+                                    "latitude": float(lat),
+                                    "longitude": float(lon),
+                                    "frp": frp_float,
+                                    "confidence": str(row.get("confidence", "nominal")),
+                                    "acq_date": str(row.get("acq_date", "")),
+                                    "acq_time": str(row.get("acq_time", "")),
+                                    "is_active": True,
+                                })
+                        except Exception:
+                            continue
+            return records
+
         csv_path = EVENTS_DIR / event_id / "hotspots.csv"
         if not csv_path.exists() or csv_path.stat().st_size == 0:
             return []
@@ -23,11 +53,17 @@ class FirmsIngest:
         # Standarisasi kolom
         records = []
         for idx, row in df.iterrows():
+            lat = row.get("latitude")
+            lon = row.get("longitude")
+            if pd.isna(lat) or pd.isna(lon):
+                continue
+            frp_val = row.get("frp", 25.0)
+            frp_float = float(frp_val) if not pd.isna(frp_val) else 25.0
             rec = {
                 "id": f"hotspot_{idx}",
-                "latitude": float(row["latitude"]),
-                "longitude": float(row["longitude"]),
-                "frp": float(row.get("frp", 25.0)),
+                "latitude": float(lat),
+                "longitude": float(lon),
+                "frp": frp_float,
                 "confidence": str(row.get("confidence", "nominal")),
                 "acq_date": str(row.get("acq_date", "")),
                 "acq_time": str(row.get("acq_time", "")),

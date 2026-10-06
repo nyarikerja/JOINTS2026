@@ -66,10 +66,14 @@ def generate_volcano_particles_per_step(
     p.lat[idx_range] = vent_lat + rng.normal(0, 0.002, size=n_insert)
 
     # Distribusi ketinggian pelepasan (antara kawah hingga puncak kolom abu)
-    # Campuran kolom vertikal (70%) dan payung puncak (30%)
-    z_rand = rng.uniform(vent_elev_m, plume_top_m, size=n_insert)
+    # Jamin batas atas lebih tinggi dari dasar ventilasi
+    safe_top_m = max(vent_elev_m + 500.0, plume_top_m)
+    z_rand = rng.uniform(vent_elev_m, safe_top_m, size=n_insert)
     umbrella_mask = rng.uniform(0, 1, size=n_insert) < 0.3
-    z_rand[umbrella_mask] = rng.uniform(0.8 * plume_top_m, plume_top_m, size=np.sum(umbrella_mask))
+    if np.any(umbrella_mask):
+        umb_count = int(np.sum(umbrella_mask))
+        umb_low = max(vent_elev_m + 100.0, 0.8 * safe_top_m)
+        z_rand[umbrella_mask] = rng.uniform(umb_low, safe_top_m, size=umb_count)
     p.z[idx_range] = z_rand
 
     # Distribusi massa partikel merata
