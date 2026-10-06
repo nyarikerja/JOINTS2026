@@ -82,7 +82,7 @@ NATIONAL_FACILITIES = [
     {"facility_id": "fac_air_kalteng_02", "name": "Bandara H. Asan Sampit (SMQ)", "facility_type": "airport", "latitude": -2.500, "longitude": 112.975, "district": "Kotawaringin Timur"}
 ]
 
-out_dir = Path("data/layers")
+out_dir = Path(__file__).resolve().parents[2] / "data" / "layers"
 out_dir.mkdir(parents=True, exist_ok=True)
 out_file = out_dir / "facilities_indonesia.json"
 

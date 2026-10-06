@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-BACKEND_DIR = Path(r"c:\Users\arya4\JOINTS2026\backend")
+BACKEND_DIR = Path(__file__).resolve().parents[2]
 COAST_FILE = BACKEND_DIR / "data" / "layers" / "indonesia_coastline.geojson"
 
 # Garis pantai representatif pulau-pulau utama kepulauan Nusantara

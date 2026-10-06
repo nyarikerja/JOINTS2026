@@ -1,5 +1,11 @@
 import json
 from pathlib import Path
+import sys
+
+BACKEND_DIR = Path(__file__).resolve().parents[2]
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
 from app.engine.simulator import SimulationRunner
 from app.schemas.simulation import SimulationRequest
 from app.ingest.openmeteo import OpenMeteoIngest
@@ -15,7 +21,7 @@ req = SimulationRequest(
     thresholds={"min": 0.9, "mid": 0.5, "max": 0.05}
 )
 
-meta_file = Path("data/events/live_kalimantan/meta.json")
+meta_file = BACKEND_DIR / "data" / "events" / "live_kalimantan" / "meta.json"
 with open(meta_file, encoding="utf-8") as f:
     event_meta = json.load(f)
 

@@ -1,8 +1,9 @@
 import json
 from pathlib import Path
 
-geojson_path = Path("data/layers/volcanoes_indonesia.geojson")
-events_dir = Path("data/events")
+BACKEND_DIR = Path(__file__).resolve().parents[2]
+geojson_path = BACKEND_DIR / "data" / "layers" / "volcanoes_indonesia.geojson"
+events_dir = BACKEND_DIR / "data" / "events"
 
 with open(geojson_path, "r", encoding="utf-8") as f:
     geo = json.load(f)

@@ -18,7 +18,7 @@ from pathlib import Path
 import httpx
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-BACKEND_DIR = SCRIPT_DIR.parent
+BACKEND_DIR = Path(__file__).resolve().parents[2]
 EVENTS_DIR = BACKEND_DIR / "data" / "events"
 USER_AGENT = "UdaraSiaga-FIRMSDownloader/1.0 (JOINTS2026 UGM Hackathon)"
 

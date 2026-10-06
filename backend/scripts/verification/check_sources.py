@@ -15,7 +15,7 @@ import httpx
 
 # Pastikan path dasar
 SCRIPT_DIR = Path(__file__).resolve().parent
-BACKEND_DIR = SCRIPT_DIR.parent
+BACKEND_DIR = Path(__file__).resolve().parents[2]
 DOCS_DIR = BACKEND_DIR / "docs"
 DOCS_DIR.mkdir(parents=True, exist_ok=True)
 SOURCES_MD = DOCS_DIR / "SOURCES.md"

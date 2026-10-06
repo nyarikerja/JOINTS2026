@@ -410,7 +410,7 @@ def build_geojson():
     return geo
 
 if __name__ == "__main__":
-    out_path = Path(__file__).resolve().parent.parent / "data" / "layers" / "volcanoes_indonesia.geojson"
+    out_path = Path(__file__).resolve().parents[2] / "data" / "layers" / "volcanoes_indonesia.geojson"
     geo_data = build_geojson()
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(geo_data, f, indent=2, ensure_ascii=False)

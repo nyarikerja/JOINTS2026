@@ -3,7 +3,7 @@ import math
 import random
 from pathlib import Path
 
-BACKEND_DIR = Path(r"c:\Users\arya4\JOINTS2026\backend")
+BACKEND_DIR = Path(__file__).resolve().parents[2]
 VOLC_FILE = BACKEND_DIR / "data" / "layers" / "volcanoes_indonesia.geojson"
 FAC_FILE = BACKEND_DIR / "data" / "layers" / "facilities_indonesia.json"
 EVENTS_DIR = BACKEND_DIR / "data" / "events"

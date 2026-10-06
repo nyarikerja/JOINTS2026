@@ -7,13 +7,18 @@ dan menyimpannya ke docs/fixtures/*.json untuk API_CONTRACT.md.
 
 import json
 from pathlib import Path
+import sys
+
+BACKEND_DIR = Path(__file__).resolve().parents[2]
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
 
 from fastapi.testclient import TestClient
 
 from app.main import app
 
 client = TestClient(app)
-FIXTURES_DIR = Path(__file__).resolve().parent.parent / "docs" / "fixtures"
+FIXTURES_DIR = BACKEND_DIR / "docs" / "fixtures"
 FIXTURES_DIR.mkdir(parents=True, exist_ok=True)
 
 def save_fixture(name: str, data: dict):

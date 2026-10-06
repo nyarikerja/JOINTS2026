@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>UdaraSiaga Indonesia: Cara Kerja Aplikasi dan Sumber Datanya</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f7f4;--card:#fff;--ink:#1c2321;--mut:#5b645f;--line:#dde1db;--gb:#fdf0ea;--gl:#d9622b;--gf:#7a2e10;--gc:#f8d9cb;--hb:#fbf4ea;--hl:#b45309;--hf:#6b3005;--hc:#fed7aa;--bb:#eef0ee;--bl:#8b948f;--bf:#3a423e;--bc:#dfe3e0;--alert-bg:#fef2f2;--alert-border:#ef4444;--alert-text:#991b1b;--safe-bg:#f0fdf4;--safe-border:#22c55e;--safe-text:#166534}
+:root[data-theme="dark"]{--bg:#141715;--card:#1d221f;--ink:#eef1ee;--mut:#9fa9a4;--line:#2e3632;--gb:#3a1d12;--gl:#d9622b;--gf:#f8d9cb;--gc:#5a2b19;--hb:#331e08;--hl:#d97706;--hf:#fed7aa;--hc:#5e350b;--bb:#242a27;--bl:#8b948f;--bf:#dfe3e0;--bc:#353e39;--alert-bg:#341313;--alert-border:#dc2626;--alert-text:#fecaca;--safe-bg:#102819;--safe-border:#16a34a;--safe-text:#bbf7d0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141715;--card:#1d221f;--ink:#eef1ee;--mut:#9fa9a4;--line:#2e3632;--gb:#3a1d12;--gl:#d9622b;--gf:#f8d9cb;--gc:#5a2b19;--hb:#331e08;--hl:#d97706;--hf:#fed7aa;--hc:#5e350b;--bb:#242a27;--bl:#8b948f;--bf:#dfe3e0;--bc:#353e39;--alert-bg:#341313;--alert-border:#dc2626;--alert-text:#fecaca;--safe-bg:#102819;--safe-border:#16a34a;--safe-text:#bbf7d0}}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Poppins',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:15px;line-height:1.6}
+main{max-width:920px;margin:0 auto;padding:36px 22px 64px}
+.header-badge{display:inline-block;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:3px 10px;background:var(--ink);color:var(--bg);border-radius:6px;margin-bottom:12px}
+h1{font-size:28px;line-height:1.25;font-weight:700;margin:0 0 10px;letter-spacing:-0.5px}
+h2{font-size:19px;font-weight:600;margin:0 0 12px;letter-spacing:-0.2px}
+h3{font-size:15px;font-weight:600;margin:24px 0 10px}
+p{margin:0}
+.lead{color:var(--mut);max-width:70ch;font-size:15.5px}
+.disc{margin-top:14px;font-size:13px;color:var(--mut);max-width:70ch;border-left:3px solid var(--gl);padding-left:12px}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin:24px 0 20px}
+.t{display:inline-block;font-size:12px;font-weight:600;padding:2px 11px;border-radius:999px;letter-spacing:0.2px}
+.t.g{background:var(--gc);color:var(--gf)}
+.t.h{background:var(--hc);color:var(--hf)}
+.t.b{background:var(--bc);color:var(--bf)}
+.s{position:relative;padding-left:52px;padding-bottom:32px}
+.s::before{content:"";position:absolute;left:17px;top:40px;bottom:4px;width:2px;background:var(--line)}
+.s.last::before{display:none}
+.num{position:absolute;left:0;top:0;width:36px;height:36px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-size:15px;font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.n{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--card)}
+.n.g{background:var(--gb);border-color:var(--gl)}
+.n.h{background:var(--hb);border-color:var(--hl)}
+.n.b{background:var(--bb);border-color:var(--bl)}
+.n.alert{background:var(--alert-bg);border-color:var(--alert-border)}
+.n.safe{background:var(--safe-bg);border-color:var(--safe-border)}
+.n b{display:block;font-weight:600;font-size:14.5px;color:var(--ink)}
+.n p{font-size:13px;color:var(--mut);margin-top:4px;line-height:1.55}
+.n .badge-group{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px}
+.n .t{margin-top:0}
+.sub{font-size:13.5px;color:var(--mut);margin:-4px 0 14px}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card);margin-top:8px}
+table{border-collapse:collapse;width:100%;min-width:860px;font-size:13px}
+th,td{text-align:left;vertical-align:top;padding:11px 13px;border-bottom:1px solid var(--line)}
+th{font-weight:600;background:var(--bb);color:var(--ink)}
+tr:last-child td{border-bottom:0}
+a{color:var(--ink);text-decoration-thickness:1px;text-underline-offset:3px;word-break:break-word}
+a:focus-visible{outline:2px solid var(--gl);outline-offset:2px}
+.src{margin-top:44px}
+dl{display:grid;grid-template-columns:minmax(140px,max-content) 1fr;gap:8px 18px;font-size:13.5px;margin:0 0 36px}
+dt{font-weight:600;color:var(--ink)}
+dd{margin:0;color:var(--mut);line-height:1.55}
+.ex{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:20px 0 0;background:var(--card);font-size:13.5px;color:var(--mut)}
+.ex b{display:block;font-size:14.5px;color:var(--ink);margin-bottom:6px}
+.ex.g{border-left:4px solid var(--gl)}
+.ex.h{border-left:4px solid var(--hl)}
+.m{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:999px;border:1px solid var(--ink);letter-spacing:0.2px}
+.m.a{background:var(--ink);color:var(--bg)}
+.m.c{background:transparent;color:var(--ink);border-style:dashed}
+.m.k{background:transparent;color:var(--mut);border-color:var(--line)}
+.n.c{border-style:dashed}
+.legend2{display:grid;gap:8px;margin:0 0 32px;font-size:13px;color:var(--mut)}
+.legend2 div{display:flex;gap:12px;align-items:baseline}
+.legend2 .m{margin:0;flex:none}
+td .m{margin:0}
+.v{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:999px;border:1px solid;color:var(--ink);letter-spacing:0.2px}
+.v.bgd{background:rgba(120,120,120,.14);border-style:dotted;border-color:var(--bl)}
+.v.fg{background:rgba(37,99,235,.14);border-color:rgba(37,99,235,.7);color:#1d4ed8}
+:root[data-theme="dark"] .v.fg{color:#93c5fd}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .v.fg{color:#93c5fd}}
+.legend2 .v{margin:0;flex:none}
+.n .vn{margin-top:8px;font-size:12.5px;border-top:1px dashed var(--line);padding-top:6px}
+td .v{margin:0 4px 4px 0}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:20px 0 28px}
+.kpi{padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card)}
+.kpi-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--mut)}
+.kpi-val{font-size:20px;font-weight:700;color:var(--ink);margin:4px 0 2px}
+.kpi-desc{font-size:12px;color:var(--mut)}
+</style>
+</head>
+<body>
+<main>
+<span class="header-badge">JOINTS UGM 2026 &mdash; Sistem Komando Aksi Dini Multi-Bahaya</span>
+<h1>UdaraSiaga Indonesia, cara kerja aplikasi dan sumber datanya</h1>
+<p class="lead">Platform komando sains dan sistem pendukung keputusan kesiapsiagaan dini terhadap erupsi gunung api (abu silika vulkanik) dan kebakaran hutan/lahan (kabut asap PM2.5) dengan cakupan penuh 1-Indonesia. Mengintegrasikan satu mesin fisika dispersi atmosfer partikel Lagrangian RK2 untuk kedua bahaya, 70 gunung api aktif PVMBG Tipe A se-Indonesia, 7 koridor karhutla satelit nasional, mode simulasi titik bebas di seluruh kepulauan Indonesia, diferensiasi visual hazard-aware, triase aksi dini sekolah, rute evakuasi fasilitas medis bebas abu, dan verifikasi ilmiah tanpa angka tunggal palsu.</p>
+<p class="disc"><b>Pemberitahuan Resmi:</b> Aplikasi ini adalah platform estimasi sains terkomputasi untuk pembelajaran, perencanaan kontinjensi, dan protokol kesiapsiagaan aksi dini (Early Action Protocol). Aplikasi ini <b>bukan peringatan darurat resmi</b>. Untuk penetapan status kedaruratan dan instruksi evakuasi wajib di lapangan, masyarakat dan pemangku kepentingan selalu merujuk pada arahan otoritatif resmi dari PVMBG Badan Geologi, BMKG, dan BNPB/BPBD.</p>
+
+<div class="kpi-row">
+<div class="kpi">
+<div class="kpi-title">Cakupan Gunung Api</div>
+<div class="kpi-val">70 Gunung Api</div>
+<div class="kpi-desc">100% Katalog PVMBG Tipe A se-Indonesia</div>
+</div>
+<div class="kpi">
+<div class="kpi-title">Zona Karhutla Satelit</div>
+<div class="kpi-val">7 Koridor Nasional</div>
+<div class="kpi-desc">Kalimantan, Sumatera, &amp; Papua (VIIRS)</div>
+</div>
+<div class="kpi">
+<div class="kpi-title">Mode Titik Bebas</div>
+<div class="kpi-val">100% Nusantara</div>
+<div class="kpi-desc">Klik sembarang koordinat di Indonesia</div>
+</div>
+<div class="kpi">
+<div class="kpi-title">Mesin Komputasi</div>
+<div class="kpi-val">Lagrangian RK2</div>
+<div class="kpi-desc">Mastin 2009 &amp; Wooster 2005</div>
+</div>
+<div class="kpi">
+<div class="kpi-title">Integritas Data</div>
+<div class="kpi-val">P5 &ndash; P50 &ndash; P95</div>
+<div class="kpi-desc">Rentang kuantifikasi ketidakpastian</div>
+</div>
+</div>
+
+<div class="ex g">
+<b>Contoh Hasil Simulasi Nyata: Erupsi Gunung Api (Gunung Merapi / Lewotobi / Krakatau / Sinabung / Slamet)</b>
+Erupsi kolom abu setinggi 5.000 meter di atas kawah. Berdasarkan formula empiris Mastin et al. (2009), laju erupsi massa abu (Mass Eruption Rate) mencapai 2.450 ton material per detik. Dispersi partikel silika diperkirakan melanda zona inti hampir pasti (P90) seluas 4 kecamatan dan zona maksimum (P05) hingga 12 kecamatan. Rentang populasi terpapar berada di angka 18.500 s.d. 49.000 jiwa (termasuk 3.800 anak-anak dan 1.950 lansia menurut grid WorldPop 100m). Sebanyak 6 sekolah berada pada zona bahaya tinggi (&ge;40%) dan otomatis diterbitkan rekomendasi triase PJJ Daring dengan waktu tiba abu tercepat 3,5 jam. Sistem secara otomatis menetapkan 2 Rumah Sakit Aman Bebas Abu di luar jejak kontur beserta garis rute evakuasi darurat (11,4 km). Diberikan instruksi medis tegas: wajib respirator N95/KN95 dan dilarang keras mengenakan lensa kontak (softlens) guna mencegah abrasi kornea permanen. Jika hujan lebat turun, abu tercuci lebih cepat namun sistem mengaktifkan peringatan sekunder bahaya lahar hujan di lereng.
+</div>
+
+<div class="ex h">
+<b>Contoh Hasil Simulasi Nyata: Kebakaran Hutan &amp; Lahan Gambut (Kalimantan, Riau, Sumsel, Papua)</b>
+Terdeteksi 42 titik api satelit NASA FIRMS dengan total Fire Radiative Power (FRP) sebesar 1.340 Megawatt. Menggunakan model biomassa Wooster et al. (2005) dengan pengali emisi gambut tropis 2,34x lipat, pelepasan partikulat halus PM2.5 mencapai 480 ton per hari dan puluhan ribu ton gas rumah kaca (CO2e). Asap tebal meluas searah vektor angin monsun, mengancam 14.000 s.d. 36.500 jiwa dan 11 sekolah. Melalui fitur intervensi pemadaman klaster titik api teratas, penanganan darurat pada 5 titik api terbesar terbukti langsung memangkas 41% risiko paparan penduduk dan menyelamatkan 6 sekolah seketika.
+</div>
+
+<div class="legend">
+<span class="t g">Erupsi Gunung Api (Abu Silika)</span>
+<span class="t h">Kebakaran Hutan/Lahan (Asap PM2.5)</span>
+<span class="t b">Kedua Bahaya Atmosfer</span>
+</div>
+
+<div class="legend2">
+<div><span class="m a">Otomatis</span><span>Data ditarik otomatis dari sumber otoritatif (PVMBG, NASA FIRMS, Open-Meteo, WorldPop, OSM). Pengguna tidak perlu mengetik.</span></div>
+<div><span class="m c">Coba-coba</span><span>Fitur eksperimen skenario &quot;bagaimana kalau&quot;. Parameter awal dari data asli, lalu pengguna dapat menggeser tinggi abu, membalik angin, atau menambah curah hujan. Hasil diberi label tegas Skenario Hipotetis.</span></div>
+<div><span class="m k">Semua Mode</span><span>Komponen inti yang digunakan di kedua mode (mesin dispersi partikel RK2, peta Leaflet, laci analitik dampak).</span></div>
+<div><span class="v bgd">Background</span><span>Berjalan di latar belakang server (pengambilan API, integrasi fisika partikel, pemotongan poligon spasial, kalkulasi rentang).</span></div>
+<div><span class="v fg">Terlihat Pengguna</span><span>Muncul langsung di antarmuka (kontur sebaran peta Leaflet, scrubber garis waktu, kartu triase sekolah, rute evakuasi, grafik sensitivitas).</span></div>
+</div>
+
+<h2>Istilah Singkat &amp; Landasan Teori</h2>
+<dl>
+<dt>Simulasi Partikel</dt><dd>Metode pemodelan terkomputasi di mana emisi abu atau asap dipecah menjadi ribuan paket partikel imajiner yang dilacak posisinya langkah demi langkah di atmosfer.</dd>
+<dt>Lagrangian RK2</dt><dd>Skema integrasi numerik Runge-Kutta Ordo 2 untuk menghitung perpindahan lintasan partikel secara presisi berdasarkan kecepatan vektor angin dan difusi turbulensi atmosfer.</dd>
+<dt>Prakiraan Berulang (Ensemble)</dt><dd>Simulasi dijalankan puluhan kali (15 hingga 51 kali) dengan variasi perturbasi angin dan meteorologi untuk memetakan seberapa pasti area yang akan terpapar.</dd>
+<dt>Titik Api (Hotspot)</dt><dd>Anomali termal panas permukaan bumi yang tertangkap oleh sensor satelit cuaca polar (sensor VIIRS pada satelit Suomi-NPP dan NOAA-20).</dd>
+<dt>FRP (Fire Radiative Power)</dt><dd>Laju radiasi daya panas api dalam satuan Megawatt (MW). Ini adalah ukuran fisik seberapa kuat intensitas api membakar biomassa (Wooster et al., 2005).</dd>
+<dt>VONA</dt><dd>Volcano Observatory Notice for Aviation, buletin peringatan resmi PVMBG Badan Geologi yang memuat ketinggian kolom abu dan arah pergerakan material untuk keselamatan penerbangan.</dd>
+<dt>MER (Mass Eruption Rate)</dt><dd>Laju semburan massa material erupsi (kg/detik) yang keluar dari kawah. Dihitung secara empiris dari tinggi kolom abu menggunakan hukum Mastin et al. (2009): M = 140.85 &times; H<sup>4.15</sup>.</dd>
+<dt>PM2.5</dt><dd>Partikel aerosol dengan diameter aerodinamis &le; 2,5 mikrometer. Berbahaya karena dapat menembus saluran pernapasan dalam hingga ke alveolus paru-paru dan pembuluh darah.</dd>
+<dt>Rentang P5 &ndash; P50 &ndash; P95</dt><dd>Prinsip integritas sains tanpa angka tunggal palsu. Menampilkan estimasi dampak dalam batas bawah (P5 - optimis), nilai tengah (P50 - median), dan batas atas (P95 - terburuk).</dd>
+<dt>Kontur P90, P50, dan P05</dt><dd>P90 adalah area minimum inti bahaya tinggi (terkena pada &ge;90% ulangan ansambel); P50 adalah area waspada menengah (&ge;50%); P05 adalah area siaga terluar (&ge;5%).</dd>
+<dt>Palet Hazard-Aware</dt><dd>Diferensiasi visual terstandarisasi: abu vulkanik diwarnai spektrum merah silika pekat (#991b1b s.d. #f59e0b) dan asap karhutla diwarnai spektrum cokelat jelaga (#78350f s.d. #a16207). Berpedoman pada prinsip &quot;semakin tebal semakin berbahaya&quot; dengan opasitas 60%, 35%, dan 15%.</dd>
+<dt>Wet Scavenging</dt><dd>Proses pembersihan atmosfer di mana tetesan air hujan menangkap dan membawa jatuh partikel abu atau asap ke tanah (&Lambda; = a &middot; R<sup>b</sup>), memperpendek jarak jelajah sebaran.</dd>
+<dt>Bahaya Lahar Hujan</dt><dd>Aliran lumpur dan material vulkanik berbahaya di lereng gunung. Merupakan bahaya sekunder kritis ketika endapan abu tebal diguyur hujan lebat di kawasan hulu sungai.</dd>
+<dt>Triase Sekolah PJJ</dt><dd>Sistem pendukung keputusan terotomatisasi: jika peluang paparan partikel &ge;40%, sekolah otomatis direkomendasikan dialihkan ke PJJ Daring; jika 15&ndash;39%, dihentikan aktivitas luar ruangan.</dd>
+<dt>RS Aman Bebas Abu</dt><dd>Fasilitas kesehatan rujukan yang diverifikasi berada di luar poligon jejak abu (probabilitas 0%), mencegah evakuasi pasien sesak napas akut ke fasilitas yang justru tercemar.</dd>
+<dt>Abrasi Kornea</dt><dd>Luka gores mikro pada selaput mata akibat pecahan kristal kaca silika abu vulkanik tajam terperangkap di balik lensa kontak (softlens). Menjadi dasar larangan keras pemakaian softlens saat erupsi.</dd>
+<dt>Respirator N95</dt><dd>Masker partikulat standar medis berdaya filtrasi &ge;95% terhadap partikel 0,3 mikron dengan segel rapat. Masker kain dan masker bedah dilarang karena kebocoran samping mencapai 30&ndash;50%.</dd>
+<dt>FSS (Fractions Skill Score)</dt><dd>Metrik evaluasi statistik spasial untuk menguji akurasi model dispersi terhadap data observasi lapangan historis (misal: letusan Anak Krakatau September 2026).</dd>
+</dl>
+
+<section class="s"><span class="num">1</span>
+<h2>Langkah 1: Pengguna Memilih Kejadian &amp; Mode Pemodelan</h2>
+<p class="sub">Secara bawaan, aplikasi bekerja dalam Mode Otomatis yang mengunci input pada data observasi riil otoritatif. Mode Coba-coba disediakan sebagai ruang eksperimen perencanaan kontinjensi (what-if analysis) dan selalu diberi label skenario.</p>
+<div class="grid">
+<div class="n b">
+<b>Pilih Jenis Bahaya Atmosfer</b>
+<p>Erupsi Gunung Api (abu silika tajam) atau Kebakaran Hutan/Lahan (kabut asap aerosol PM2.5).</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n b">
+<b>Katalog Lengkap 70 Gunung Api Aktif PVMBG (1-Indonesia)</b>
+<p>Mencakup 100% gunung api aktif Tipe A PVMBG yang dikelompokkan dalam 5 kawasan pulau: Sumatera (13 gunung), Jawa (19 gunung), Bali &amp; Nusa Tenggara (18 gunung), Sulawesi &amp; Sangihe (10 gunung), serta Maluku &amp; Papua (10 gunung) berstatus Level I s.d. Level IV.</p>
+<div class="badge-group"><span class="t g">Gunung meletus</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n h">
+<b>Katalog 7 Zona Karhutla Strategis Nasional</b>
+<p>Meliputi koridor rawan kebakaran hutan dan lahan gambut nasional: Kalimantan (Kalteng, Kalbar, Kalsel), Sumatera (Riau, Sumsel-OKI, Jambi), dan Papua Selatan (Merauke) dari data satelit VIIRS.</p>
+<div class="badge-group"><span class="t h">Kebakaran hutan</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n b c">
+<b>Mode Interaktif Titik Bebas (Klik Peta Indonesia)</b>
+<p>Pengguna dapat mengklik tombol 'Klik Peta Bebas' dan menjatuhkan pin di sembarang koordinat kepulauan Indonesia (Sabang sampai Merauke). Sistem secara dinamis meregenerasi simulasi dispersi, mengambil angin cuaca live, dan mengevaluasi fasilitas terdekat.</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m c">Coba-coba</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n g">
+<b>Data Letusan Otoritatif (VONA PVMBG)</b>
+<p>Koordinat kawah, elevasi puncak, tinggi kolom abu, dan status level peringatan ditarik langsung dari database VONA. Pengguna tidak perlu mengetik.</p>
+<div class="badge-group"><span class="t g">Gunung meletus</span><span class="m a">Otomatis</span><span class="v bgd">Background</span></div>
+<p class="vn">Diambil dari laporan resmi PVMBG MAGMA Indonesia dan dijadikan nilai awal di kontrol sistem.</p>
+</div>
+<div class="n g c">
+<b>Eksperimen Letusan (Mode Coba-coba)</b>
+<p>Pengguna dapat menggeser tinggi kolom letusan (1 s.d. 25 km di atas kawah) untuk melihat proyeksi lonjakan laju semburan material abu.</p>
+<div class="badge-group"><span class="t g">Gunung meletus</span><span class="m c">Coba-coba</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n h">
+<b>Data Titik Api Otoritatif (NASA FIRMS)</b>
+<p>Koordinat titik api, Fire Radiative Power (MW), dan tingkat kepercayaan satelit ditarik otomatis dari sensor VIIRS SNPP &amp; NOAA-20.</p>
+<div class="badge-group"><span class="t h">Kebakaran hutan</span><span class="m a">Otomatis</span><span class="v bgd">Background</span></div>
+<p class="vn">Diambil melalui API satelit NASA. Seluruh kunci akses terlindungi aman di server perantara.</p>
+</div>
+<div class="n h c">
+<b>Eksperimen Karhutla (Mode Coba-coba)</b>
+<p>Pengguna dapat mengubah jumlah titik api aktif, menggeser kekuatan FRP, atau menguji pemadaman klaster api teratas.</p>
+<div class="badge-group"><span class="t h">Kebakaran hutan</span><span class="m c">Coba-coba</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+</div>
+</section>
+
+<section class="s"><span class="num">2</span>
+<h2>Langkah 2: Aplikasi Mengambil &amp; Mengagregasi Data Otoritatif</h2>
+<p class="sub">Aplikasi menerapkan arsitektur dual-path: koneksi live API terenkripsi untuk data dinamis dan cadangan cache lokal offline (data/events/ dan data/layers/) agar simulasi dan demo tetap dapat berjalan 100% tanpa jaringan internet.</p>
+<div class="grid">
+<div class="n b">
+<b>Vektor Angin Multi-Aras (u, v)</b>
+<p>Arah dan kecepatan angin atmosfer pada berbagai lapisan ketinggian (10m, 850hPa, 700hPa, 500hPa) dari Open-Meteo Ensemble &amp; ECMWF.</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m a">Otomatis</span><span class="v bgd">Background</span><span class="v fg">Terlihat pengguna</span></div>
+<p class="vn">Dikonversi menjadi medan vektor penggerak adveksi partikel dan ditampilkan sebagai lapisan partikel angin di peta.</p>
+</div>
+<div class="n b">
+<b>Presipitasi Curah Hujan</b>
+<p>Prakiraan laju curah hujan per jam (mm/jam) di sekitar pusat bencana dan sepanjang jalur embusan angin.</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m a">Otomatis</span><span class="v bgd">Background</span><span class="v fg">Terlihat pengguna</span></div>
+<p class="vn">Digunakan untuk menghitung pencucian partikel (wet scavenging) serta memicu peringatan sekunder bahaya lahar dingin.</p>
+</div>
+<div class="n b">
+<b>Demografi Kependudukan (WorldPop 100m)</b>
+<p>Distribusi penduduk per grid resolusi tinggi, mencakup agregat total jiwa, anak-anak (&lt;15 tahun), dan kelompok lansia (&ge;65 tahun).</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m a">Otomatis</span><span class="v bgd">Background</span><span class="v fg">Terlihat pengguna</span></div>
+<p class="vn">Dipadukan dengan poligon bahaya untuk menghitung rentang populasi terdampak P5&ndash;P50&ndash;P95.</p>
+</div>
+<div class="n b">
+<b>Fasilitas Publik &amp; Sekolah Nasional (OpenStreetMap &amp; Kemdikbud/Kemenkes)</b>
+<p>Lokasi presisi puluhan ribu gedung sekolah (SD/SMP/SMA), puskesmas, rumah sakit rujukan darurat bebas abu, dan bandara di seluruh kepulauan Indonesia via Overpass API dan basis data nasional.</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m a">Otomatis</span><span class="v bgd">Background</span><span class="v fg">Terlihat pengguna</span></div>
+<p class="vn">Menjadi basis triase kebijakan PJJ Daring dan penentuan rute evakuasi medis darurat di setiap provinsi dan kabupaten terdampak.</p>
+</div>
+<div class="n g">
+<b>Lahan Pertanian &amp; Sumber Air Minum</b>
+<p>Luasan sawah, perkebunan produktif warga, serta tangkapan Daerah Aliran Sungai (DAS) di lereng gunung.</p>
+<div class="badge-group"><span class="t g">Gunung meletus</span><span class="m a">Otomatis</span><span class="v bgd">Background</span><span class="v fg">Terlihat pengguna</span></div>
+<p class="vn">Dihitung otomatis luasan hektare lahan yang berisiko gagal panen akibat tertimbun abu vulkanik.</p>
+</div>
+<div class="n h">
+<b>Peta Sebaran Lahan Gambut Tropis</b>
+<p>Data kawasan kubah gambut (Wetlands International &amp; KLHK) dengan tingkat kedalaman simpanan karbon.</p>
+<div class="badge-group"><span class="t h">Kebakaran hutan</span><span class="m a">Otomatis</span><span class="v bgd">Background</span><span class="v fg">Terlihat pengguna</span></div>
+<p class="vn">Menjadi pengali emisi partikulat PM2.5 (2,34x lipat) dan estimasi pelepasan gas rumah kaca karbon (CO2e).</p>
+</div>
+</div>
+</section>
+
+<section class="s"><span class="num">3</span>
+<h2>Langkah 3: Eksekusi Mesin Fisika Partikel Lagrangian RK2</h2>
+<p class="sub">Inti pemodelan berjalan di backend menggunakan simulator fisika partikel terpadu. Model menerapkan hukum fisika vulkanik Mastin (2009) dan pembakaran biomassa Wooster (2005).</p>
+<div class="grid">
+<div class="n g">
+<b>Laju Massa Erupsi Mastin et al. (2009)</b>
+<p>Tinggi kolom abu (H dalam km) dikonversi menjadi Mass Eruption Rate (MER): M = 140.85 &times; H<sup>4.15</sup> kg/s. Dilengkapi variasi lognormal untuk mengakomodasi dinamika pelepasan magma.</p>
+<div class="badge-group"><span class="t g">Gunung meletus</span><span class="m k">Semua mode</span><span class="v bgd">Background</span></div>
+</div>
+<div class="n h">
+<b>Konversi FRP Biomassa Wooster et al. (2005)</b>
+<p>Energi panas FRP (MW) dikonversi menjadi laju konsumsi biomassa (0,368 kg/s per MW). Pembakaran di lahan gambut tropis dikalikan faktor emisi 2,34x untuk partikel PM2.5 pekat.</p>
+<div class="badge-group"><span class="t h">Kebakaran hutan</span><span class="m k">Semua mode</span><span class="v bgd">Background</span></div>
+</div>
+<div class="n b">
+<b>Integrasi Adveksi-Difusi Runge-Kutta Ordo 2</b>
+<p>Ribuan paket partikel dilacak posisinya setiap langkah waktu (dt). Medan kecepatan angin dihitung dengan skema prediktor-korektor RK2 ditambah difusi turbulensi atmosferik (K = 80 m<sup>2</sup>/s).</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v bgd">Background</span></div>
+</div>
+<div class="n b">
+<b>Pencucian Hujan (Wet Scavenging) &amp; Lahar</b>
+<p>Koefisien pengendapan partikel &Lambda; = a &middot; R<sup>b</sup> menurunkan kepekatan partikel di udara saat diguyur hujan. Pada abu gunung, akumulasi abu basah memicu peringatan otomatis bahaya lahar dingin di lereng.</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v bgd">Background</span></div>
+</div>
+<div class="n b">
+<b>Simulasi Ansambel Paralel (15&ndash;51 Anggota)</b>
+<p>Simulasi dieksekusi puluhan kali secara paralel dengan variasi profil angin dan kondisi cuaca untuk menangkap seluruh spektrum ketidakpastian atmosferik.</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v bgd">Background</span></div>
+</div>
+<div class="n b">
+<b>Filter Penghalusan Gaussian &amp; Poligon Vektor</b>
+<p>Probabilitas sel raster dihaluskan menggunakan filter Gaussian (&sigma; = 1.2) guna meniadakan sudut tajam piksel, lalu dikonversi menjadi poligon vektor MultiPolygon Shapely yang rapi.</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v bgd">Background</span></div>
+</div>
+</div>
+</section>
+
+<section class="s"><span class="num">4</span>
+<h2>Langkah 4: Visualisasi Peta Spasial &amp; Player Waktu 48 Jam</h2>
+<p class="sub">Hasil pemodelan diproyeksikan langsung ke peta Leaflet taktis berlatar gelap, menerapkan prinsip &quot;semakin tebal semakin berbahaya&quot; dengan kontrol garis waktu interaktif.</p>
+<div class="grid">
+<div class="n b">
+<b>Tiga Kontur Probabilitas Spasial</b>
+<p><b>Area Minimum (P90)</b>: Bahaya tinggi, terkena pada &ge;90% ulangan.<br><b>Area Tengah (P50)</b>: Zona waspada, terkena pada &ge;50% ulangan.<br><b>Area Maksimum (P05)</b>: Zona siaga dini, terkena pada &ge;5% ulangan.</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n g">
+<b>Palet Warna Hazard-Aware: Abu Vulkanik</b>
+<p>Spektrum Silika Merah: Merah terakota pekat (#991b1b, opasitas 60%) untuk zona P90 &rarr; merah waspada (#dc2626, opasitas 35%) untuk P50 &rarr; kuning belerang (#f59e0b, 15%) untuk P05.</p>
+<div class="badge-group"><span class="t g">Gunung meletus</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n h">
+<b>Palet Warna Hazard-Aware: Asap Karhutla</b>
+<p>Spektrum Jelaga Cokelat: Cokelat pekat (#78350f, opasitas 60%) untuk zona P90 &rarr; cokelat kabut (#92400e, opasitas 35%) untuk P50 &rarr; amber tipis (#a16207, 15%) untuk P05.</p>
+<div class="badge-group"><span class="t h">Kebakaran hutan</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n b">
+<b>Scrubber Garis Waktu 48 Jam (Timeline Player)</b>
+<p>Slider interaktif melayang dari jam T+0 hingga T+48. Dilengkapi tombol Play/Pause otomatis dan penanda lompatan cepat per 6 jam (T+6h, T+12h, T+24h, T+36h, T+48h).</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n b">
+<b>Estimasi Waktu Tiba Partikel (ETA)</b>
+<p>Menghitung jam tercepat abu atau asap mencapai setiap koordinat target (sekolah, faskes, bandara) untuk memberi jeda waktu aksi sebelum partikel tiba.</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n b">
+<b>Legenda Taktis Dinamis Real-Time</b>
+<p>Kotak legenda di kiri bawah peta otomatis berganti judul, label intensitas, dan swatch warna sesuai bencana yang sedang aktif.</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+</div>
+</section>
+
+<section class="s"><span class="num">5</span>
+<h2>Langkah 5: Estimasi Dampak Multi-Sektor Terpadu</h2>
+<p class="sub">Menyajikan estimasi komprehensif di Laci Analitik Kanan (Tab 1) yang mencakup tiga tema: Lingkungan (Sustainability), Kesehatan (Healthcare), dan Pendidikan (Education).</p>
+<div class="grid">
+<div class="n b">
+<b>Penyajian Rentang P5 &ndash; P50 &ndash; P95</b>
+<p>Menjunjung etika integritas data sains: tidak pernah menyajikan angka tunggal palsu. Seluruh estimasi jiwa dan luasan disajikan dalam rentang ketidakpastian jujur.</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n b">
+<b>Demografi Rentan (Anak &amp; Lansia)</b>
+<p>Menghitung jumlah jiwa terpapar dengan fokus khusus pada kelompok rentan: anak-anak (&lt;15 tahun) yang rentan infeksi saluran napas, dan lansia (&ge;65 tahun).</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n g">
+<b>Sektor Pertanian &amp; Ketahanan Air</b>
+<p>Estimasi luasan sawah dan kebun produktif warga yang terancam gagal panen tertimbun abu, serta titik sumber air bersih yang terancam asam vulkanik.</p>
+<div class="badge-group"><span class="t g">Gunung meletus</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n h">
+<b>Inventarisasi Emisi Karbon Karhutla</b>
+<p>Kuantifikasi tonase gas rumah kaca (CO2e) dari pembakaran biomassa dan kubah gambut, membantu pelaporan dampak iklim dan dekarbonisasi.</p>
+<div class="badge-group"><span class="t h">Kebakaran hutan</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n b">
+<b>Pengaruh Pencucian Hujan pada Dampak</b>
+<p>Memperlihatkan selisih penurunan jumlah penduduk terpapar akibat hujan pencuci, sekaligus menampilkan peringatan bahaya lahar dingin dan bara gambut bawah tanah.</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n b">
+<b>Transparansi Kategori ISPU</b>
+<p>Sesuai etika ilmiah, kategori ISPU dinonaktifkan secara transparan selama faktor emisi PM2.5 gambut masih berstatus placeholder asumsi literatur, mencegah kebingungan publik.</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+</div>
+</section>
+
+<section class="s"><span class="num">6</span>
+<h2>Langkah 6: Protokol Triase Aksi Dini &amp; Rute Evakuasi Medis</h2>
+<p class="sub">Mengubah estimasi sains menjadi panduan operasional taktis di lapangan melalui Tab Sekolah dan Tab Rujukan Medis di Laci Kanan.</p>
+<div class="grid">
+<div class="n b alert">
+<b>Triase Kebijakan Sekolah Terukur</b>
+<p><b>Peluang &ge;40%</b>: Instruksi tegas [AWAS] SEGERA ALIHKAN KE PJJ DARING sebelum abu/asap tiba, wajib masker N95.<br><b>Peluang 15&ndash;39%</b>: [WASPADA] HENTIKAN AKTIVITAS OUTDOOR (olahraga/upacara dibatalkan).<br><b>Peluang &lt;15%</b>: [SIAGA] Pemantauan arah angin.</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n b safe">
+<b>Klasifikasi Fasilitas Kesehatan Bebas Abu</b>
+<p>Sistem membedakan fasilitas kesehatan menjadi: <b>Rumah Sakit Aman Bebas Abu</b> (probabilitas 0%, di luar jejak kontur abu) vs RS Penyangga vs RS Terdampak Abu, mencegah salah rujukan.</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n b safe">
+<b>Visualisasi Rute Evakuasi Interaktif</b>
+<p>Mengklik tombol &quot;Rute Evakuasi&quot; pada kartu sekolah langsung memusatkan (flyTo) peta dan melukiskan garis rute darurat hijau putus-putus ke RS aman terdekat beserta jarak kilometer dan koordinasi SPGDT 119.</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n h">
+<b>Peringkat Klaster Titik Api Karhutla</b>
+<p>Titik api dikelompokkan secara spasial dan diurutkan berdasarkan kontribusi asap terbesar, memberikan panduan prioritas water bombing bagi satgas pemadam.</p>
+<div class="badge-group"><span class="t h">Kebakaran hutan</span><span class="m a">Otomatis</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+</div>
+</section>
+
+<section class="s"><span class="num">7</span>
+<h2>Langkah 7: Edukasi APD Kesehatan Masyarakat Otoritatif</h2>
+<p class="sub">Menyajikan edukasi medis perlindungan diri berbasis standar konsorsium internasional IVHHN, WHO, dan BNPB di Laci Kanan (Tab 4).</p>
+<div class="grid">
+<div class="n b alert">
+<b>Larangan Keras Lensa Kontak (Softlens)</b>
+<p><b>Peringatan Medis Kritis:</b> Pecahan kristal silika abu vulkanik memiliki sudut mikroskopis tajam. Pemakaian lensa kontak menjebak partikel di bawah lensa, menyebabkan luka robek kornea (corneal abrasion) hingga kebutaan. Wajib segera melepas softlens dan beralih ke kacamata pelindung (goggles).</p>
+<div class="badge-group"><span class="t g">Gunung meletus</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n b alert">
+<b>Masker Kain &amp; Bedah: Tidak Memenuhi Standar</b>
+<p>Masker kain dan masker bedah biasa memiliki kebocoran samping sebesar 30% s.d. 50% dan pori-pori terlalu besar (&gt;3 mikron). Partikel silika tajam dan PM2.5 tetap masuk ke paru-paru. Dilarang digunakan sebagai pelindung utama bencana atmosfer.</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n b safe">
+<b>Respirator N95 / KN95 / FFP2: Standar Wajib</b>
+<p>Memiliki efisiensi filtrasi partikulat &ge;95% hingga ukuran 0,3 mikron dengan segel rapat di kontur wajah. Menjadi standar perlindungan wajib bagi warga, anak sekolah, dan relawan di zona terdampak.</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n b">
+<b>Dekontaminasi Fisik &amp; Sanitasi Ruangan</b>
+<p>Panduan membilas mata dengan air mengalir tanpa mengucek, membersihkan abu dari kulit dengan air dingin, menutup rapat ventilasi rumah, dan mematikan AC pendingin udara.</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+</div>
+</section>
+
+<section class="s last"><span class="num">8</span>
+<h2>Langkah 8: Validasi Ilmiah, Uji Sensitivitas, &amp; Transparansi Asumsi</h2>
+<p class="sub">Membuktikan akuntabilitas ilmiah sistem melalui Laci Kanan (Tab 5) dengan audit matematis, evaluasi kejadian historis, dan simulasi intervensi.</p>
+<div class="grid">
+<div class="n g">
+<b>Validasi Spasial FSS (Fractions Skill Score)</b>
+<p>Menguji hasil simulasi terhadap data observasi lapangan letusan historis Anak Krakatau (September 2026) dan Merapi. Menghitung hit rate per kabupaten dan kesesuaian poligon abu.</p>
+<div class="badge-group"><span class="t g">Gunung meletus</span><span class="m a">Otomatis</span><span class="v bgd">Background</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n b">
+<b>Grafik Batang Horisontal Sensitivitas Parameter</b>
+<p>Visualisasi interaktif kurva sensitivitas parameter (variasi tinggi kolom letusan dan curah hujan terhadap lonjakan penduduk terpapar) dalam format diagram batang horizontal bergradien.</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m c">Coba-coba</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n h">
+<b>Simulasi Intervensi Pemadaman Titik Api</b>
+<p>Pengguna dapat menguji pemadaman klaster titik api teratas. Sistem menghitung seketika penurunan FRP (%), jumlah jiwa terlindungi, dan tonase emisi gas rumah kaca yang dicegah.</p>
+<div class="badge-group"><span class="t h">Kebakaran hutan</span><span class="m c">Coba-coba</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n b">
+<b>Katalog Transparansi 24 Asumsi (D01 s.d. D24)</b>
+<p>Menampilkan status setiap parameter pemodelan (sourced, sourced_secondary, assumption_placeholder) secara terbuka beserta tautan referensi jurnal dan batasan modelnya.</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n b">
+<b>Unduh Ringkasan Resmi &amp; Putar Demo Otomatis</b>
+<p>Ekspor laporan satu halaman dalam format siap cetak (lengkap dengan watermark Skenario Hipotetis jika dari mode coba-coba) dan tombol Putar Demo satu-klik untuk presentasi.</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+</div>
+</section>
+
+<section class="src">
+<h2>Tiga Lapis Pengembangan Prototype</h2>
+<p class="sub">Struktur arsitektur fitur yang membedakan UdaraSiaga dari aplikasi visualisasi bencana biasa.</p>
+
+<h3>Lapis 1: Fondasi Fungsional Utama (Wajib Ada)</h3>
+<div class="grid">
+<div class="n b"><b>Simulasi Partikel Lagrangian RK2</b><p>Pelacakan ribuan paket partikel abu dan asap berbasis vektor angin atmosfer multi-aras.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v bgd">Background</span></div></div>
+<div class="n b"><b>Simulasi Ansambel 15&ndash;51 Anggota</b><p>Eksekusi berulang untuk memetakan rentang probabilitas spasial dan mengatasi ketidakpastian cuaca.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v bgd">Background</span></div></div>
+<div class="n b"><b>Peta Tiga Kontur Probabilitas</b><p>Zona Minimum (P90), Zona Menengah (P50), dan Zona Maksimum (P05) dengan poligon vektor rapi.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div></div>
+<div class="n b"><b>Palet Warna Hazard-Aware</b><p>Abu vulkanik merah silika (#991b1b) vs asap karhutla cokelat jelaga (#78350f) dengan opasitas 60%, 35%, 15%.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div></div>
+<div class="n b"><b>Timeline Player 48 Jam</b><p>Scrubber interaktif T+0 s.d. T+48 dengan tombol Play/Pause dan penanda lompatan langkah cepat.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div></div>
+<div class="n b"><b>Katalog 70 Gunung Api, 7 Zona Karhutla, &amp; Titik Bebas</b><p>70 gunung api aktif PVMBG Tipe A se-Indonesia, 7 koridor karhutla satelit nasional, serta mode simulasi interaktif titik koordinat bebas nusantara.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m a">Otomatis</span><span class="v fg">Terlihat pengguna</span></div></div>
+<div class="n b c"><b>Label Tegas Skenario Hipotetis</b><p>Setiap hasil dari mode coba-coba diberi lencana dan watermark skenario agar tidak disalahartikan sebagai bencana riil.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m c">Coba-coba</span><span class="v fg">Terlihat pengguna</span></div></div>
+</div>
+
+<h3>Lapis 2: Fitur Pembeda Aksi Dini &amp; Dampak Terpadu</h3>
+<div class="grid">
+<div class="n b alert"><b>Triase Kebijakan Sekolah Terotomatisasi</b><p>Rekomendasi PJJ Daring total (&ge;40%) atau larangan kegiatan outdoor (15&ndash;39%) berdasar probabilitas dan jam tiba.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div></div>
+<div class="n b safe"><b>Triase RS Bebas Abu &amp; Rute Evakuasi</b><p>Identifikasi rumah sakit rujukan di luar jejak kontur abu beserta garis rute darurat hijau dan jarak km terukur.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div></div>
+<div class="n b alert"><b>Edukasi APD: Wajib N95 &amp; Larang Softlens</b><p>Peringatan bahaya abrasi kornea silika tajam akibat lensa kontak dan komparasi filtrasi respirator N95 vs masker kain.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div></div>
+<div class="n h c"><b>Intervensi Pemadaman Titik Api Terukur</b><p>Simulasi pemadaman klaster api teratas dengan kalkulasi instan delta warga terlindungi dan emisi karbon dicegah.</p><div class="badge-group"><span class="t h">Kebakaran hutan</span><span class="m c">Coba-coba</span><span class="v fg">Terlihat pengguna</span></div></div>
+<div class="n b"><b>Rentang Dampak Multi-Sektor (P5&ndash;P50&ndash;P95)</b><p>Kuantifikasi jujur dampak kependudukan (anak &amp; lansia), kerusakan pertanian (hektare), dan sumber air bersih.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div></div>
+<div class="n b"><b>Wet Scavenging &amp; Peringatan Lahar Lereng</b><p>Perhitungan penurunan partikel akibat hujan, disertai sistem deteksi otomatis bahaya lahar dingin di sungai lereng.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v bgd">Background</span><span class="v fg">Terlihat pengguna</span></div></div>
+</div>
+
+<h3>Lapis 3: Pembuktian Validasi Ilmiah &amp; Akuntabilitas Sains</h3>
+<div class="grid">
+<div class="n g"><b>Validasi Lapangan FSS &amp; Krakatau Historis</b><p>Pengujian akurasi spasial simulasi terhadap rekaman erupsi riil Anak Krakatau 2026 dan stasiun kualitas udara.</p><div class="badge-group"><span class="t g">Gunung meletus</span><span class="m a">Otomatis</span><span class="v bgd">Background</span><span class="v fg">Terlihat pengguna</span></div></div>
+<div class="n b c"><b>Grafik Batang Horisontal Sensitivitas</b><p>Sapuan parameter interaktif untuk menganalisis variabel paling sensitif terhadap lonjakan populasi terpapar.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m c">Coba-coba</span><span class="v fg">Terlihat pengguna</span></div></div>
+<div class="n b"><b>Katalog Transparansi 24 Asumsi (D01&ndash;D24)</b><p>Audit terbuka status parameter model (bersumber otoritatif vs asumsi) beserta batasan komputasi.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div></div>
+<div class="n b"><b>Penonaktifan Etis Kategori ISPU</b><p>Transparansi integritas sains menolak menampilkan kategori ISPU spekulatif selama faktor emisi gambut masih kasar.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div></div>
+<div class="n b"><b>Putar Demo Satu-Klik &amp; Ekspor Laporan</b><p>Fitur otomasi pemutaran skenario komando lengkap dan ekspor ringkasan satu halaman untuk pengambil kebijakan.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m a">Otomatis</span><span class="v fg">Terlihat pengguna</span></div></div>
+</div>
+</section>
+
+<section class="src">
+<h2>Tabel Sumber Data &amp; Status Implementasi Terverifikasi</h2>
+<p class="sub">Seluruh data yang digunakan dalam sistem UdaraSiaga Indonesia telah diverifikasi sumber otoritatifnya, terintegrasi ke dalam pipeline backend, dan dilengkapi cadangan cache offline.</p>
+<div class="tw">
+<table>
+<thead>
+<tr>
+<th>Data / Parameter</th>
+<th>Bahaya</th>
+<th>Mode</th>
+<th>Tampilan</th>
+<th>Sumber Data Otoritatif</th>
+<th>Status Implementasi &amp; Kesiapan Sistem</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Vektor Angin Atmosfer Multi-Aras (u, v)</td>
+<td><span class="t b">Kedua bahaya</span></td>
+<td><span class="m a">Otomatis</span></td>
+<td><span class="v bgd">Background</span><span class="v fg">Terlihat pengguna</span></td>
+<td><a href="https://open-meteo.com/en/docs/ensemble-api" target="_blank" rel="noopener">Open-Meteo Ensemble API</a> (Model ECMWF IFS &amp; GFS)</td>
+<td><b>Aktif &amp; Terverifikasi.</b> Mengambil komponen angin zonal dan meridional pada aras 10m, 850hPa, dan 500hPa. Dilengkapi generator fixture offline lokal untuk seluruh 70 gunung api nasional, 7 koridor karhutla, dan sembarang titik koordinat nusantara.</td>
+</tr>
+<tr>
+<td>Katalog Lengkap 70 Gunung Api &amp; Laporan VONA</td>
+<td><span class="t g">Gunung meletus</span></td>
+<td><span class="m a">Otomatis</span></td>
+<td><span class="v bgd">Background</span><span class="v fg">Terlihat pengguna</span></td>
+<td><a href="https://magma.esdm.go.id" target="_blank" rel="noopener">MAGMA Indonesia &mdash; PVMBG Badan Geologi ESDM</a></td>
+<td><b>Aktif &amp; Terintegrasi 100%.</b> Seluruh 70 gunung api aktif tipe A di Indonesia (Jawa, Sumatera, Bali &amp; Nusa Tenggara, Sulawesi, Maluku &amp; Papua) terdata lengkap di backend (koordinat kawah, elevasi puncak, riwayat letusan, status level peringatan I s.d. IV, dan radius KRB).</td>
+</tr>
+<tr>
+<td>Titik Api Satelit (Hotspot) &amp; FRP Multi-Provinsi</td>
+<td><span class="t h">Kebakaran hutan</span></td>
+<td><span class="m a">Otomatis</span></td>
+<td><span class="v bgd">Background</span><span class="v fg">Terlihat pengguna</span></td>
+<td><a href="https://firms.modaps.eosdis.nasa.gov" target="_blank" rel="noopener">NASA FIRMS</a> (Sensor VIIRS SNPP &amp; NOAA-20)</td>
+<td><b>Aktif &amp; Terintegrasi.</b> Data titik api NRT dengan metrik Fire Radiative Power (MW) dan tingkat keyakinan sensor. Meliputi 7 zona prioritas nasional: Kalimantan (Kalteng, Kalbar, Kalsel), Sumatera (Riau, Sumsel, Jambi), dan Papua Selatan (Merauke).</td>
+</tr>
+<tr>
+<td>Fisika Laju Massa Erupsi (MER)</td>
+<td><span class="t g">Gunung meletus</span></td>
+<td><span class="m k">Semua mode</span></td>
+<td><span class="v bgd">Background</span></td>
+<td>Mastin et al. (2009), <i>J. Volcanol. Geotherm. Res.</i></td>
+<td><b>Aktif di Mesin Fisika.</b> Formula empiris M = 140.85 &times; H<sup>4.15</sup> kg/s aktif di simulator.py untuk mengonversi tinggi kolom letusan ke laju semburan massa material abu.</td>
+</tr>
+<tr>
+<td>Fisika Biomassa &amp; Emisi Partikulat PM2.5</td>
+<td><span class="t h">Kebakaran hutan</span></td>
+<td><span class="m k">Semua mode</span></td>
+<td><span class="v bgd">Background</span></td>
+<td>Wooster et al. (2005) &amp; Andreae (2019)</td>
+<td><b>Aktif di Mesin Fisika.</b> Konversi FRP satelit menjadi laju pembakaran biomassa (0,368 kg/s per MW) dengan faktor emisi PM2.5 aktif di backend.</td>
+</tr>
+<tr>
+<td>Peta Sebaran Lahan Gambut Tropis</td>
+<td><span class="t h">Kebakaran hutan</span></td>
+<td><span class="m a">Otomatis</span></td>
+<td><span class="v bgd">Background</span><span class="v fg">Terlihat pengguna</span></td>
+<td>Wetlands International (2008) &amp; Peta Gambut KLHK</td>
+<td><b>Aktif &amp; Terintegrasi.</b> Layer poligon gambut aktif di peta dan di backend sebagai pengali emisi partikel 2,34x lipat serta estimasi gas karbon CO2e.</td>
+</tr>
+<tr>
+<td>Presipitasi Curah Hujan &amp; Wet Scavenging</td>
+<td><span class="t b">Kedua bahaya</span></td>
+<td><span class="m a">Otomatis</span></td>
+<td><span class="v bgd">Background</span><span class="v fg">Terlihat pengguna</span></td>
+<td>Open-Meteo Precipitation Forecast &amp; ECMWF</td>
+<td><b>Aktif &amp; Terintegrasi.</b> Data hujan per jam aktif menggerakkan formula pencucian atmosfer &Lambda; = a &middot; R<sup>b</sup> serta pemicu peringatan sekunder lahar dingin lereng.</td>
+</tr>
+<tr>
+<td>Kepadatan Penduduk &amp; Demografi Umur</td>
+<td><span class="t b">Kedua bahaya</span></td>
+<td><span class="m a">Otomatis</span></td>
+<td><span class="v bgd">Background</span><span class="v fg">Terlihat pengguna</span></td>
+<td><a href="https://hub.worldpop.org" target="_blank" rel="noopener">WorldPop Project (Grid Resolusi 100 Meter)</a></td>
+<td><b>Aktif &amp; Terverifikasi.</b> Lisensi CC BY 4.0. Raster kependudukan Indonesia digunakan untuk memecah total jiwa terpapar, kelompok anak-anak (&lt;15 th), dan lansia (&ge;65 th).</td>
+</tr>
+<tr>
+<td>Fasilitas Publik (Sekolah, RS, Bandara)</td>
+<td><span class="t b">Kedua bahaya</span></td>
+<td><span class="m a">Otomatis</span></td>
+<td><span class="v bgd">Background</span><span class="v fg">Terlihat pengguna</span></td>
+<td>OpenStreetMap Contributors (via Overpass API)</td>
+<td><b>Aktif &amp; Terverifikasi.</b> Lisensi ODbL. Titik koordinat sekolah, puskesmas, rumah sakit rujukan darurat, dan bandara terintegrasi untuk kalkulasi triase dan rute evakuasi.</td>
+</tr>
+<tr>
+<td>Tutupan Lahan Pertanian &amp; Sumber Air</td>
+<td><span class="t g">Gunung meletus</span></td>
+<td><span class="m a">Otomatis</span></td>
+<td><span class="v bgd">Background</span><span class="v fg">Terlihat pengguna</span></td>
+<td>ESA WorldCover 10m &amp; OpenStreetMap Hydrology</td>
+<td><b>Aktif &amp; Terintegrasi.</b> Poligon sawah, perkebunan warga, dan Daerah Aliran Sungai (DAS) di lereng dipadukan dengan jejak abu untuk menghitung hektare terdampak.</td>
+</tr>
+<tr>
+<td>Standar Perlindungan APD &amp; Bahaya Softlens</td>
+<td><span class="t b">Kedua bahaya</span></td>
+<td><span class="m k">Semua mode</span></td>
+<td><span class="v fg">Terlihat pengguna</span></td>
+<td>International Volcanic Health Hazard Network (IVHHN) &amp; BNPB</td>
+<td><b>Aktif di Modul Edukasi.</b> Pedoman medis resmi mengenai filtrasi respirator partikulat N95/KN95 dan larangan keras lensa kontak guna mencegah abrasi kornea.</td>
+</tr>
+<tr>
+<td>Standar Mutu Udara &amp; Ambang Kebijakan</td>
+<td><span class="t b">Kedua bahaya</span></td>
+<td><span class="m k">Semua mode</span></td>
+<td><span class="v fg">Terlihat pengguna</span></td>
+<td>Permen LHK No. P.14/2020 (ISPU) &amp; WHO Air Quality Guidelines 2021</td>
+<td><b>Aktif Sebagai Acuan.</b> Ambang batas triase sekolah (&ge;40% PJJ Daring) diimplementasikan, sedangkan lencana ISPU dinonaktifkan secara transparan demi integritas sains.</td>
+</tr>
+<tr>
+<td>Validasi Spasial FSS &amp; Letusan Historis</td>
+<td><span class="t g">Gunung meletus</span></td>
+<td><span class="m a">Otomatis</span></td>
+<td><span class="v bgd">Background</span><span class="v fg">Terlihat pengguna</span></td>
+<td>Crawford et al. (2022) &amp; Laporan Erupsi Anak Krakatau September 2026</td>
+<td><b>Aktif di Modul Validasi.</b> Pengujian metrik Fractions Skill Score (FSS) dan hit rate kabupaten untuk memvalidasi performa simulasi terhadap rekaman kejadian nyata.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+
+</main>
+</body>
+</html>

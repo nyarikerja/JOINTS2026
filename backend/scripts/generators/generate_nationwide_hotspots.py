@@ -3,7 +3,7 @@ import json
 import random
 from pathlib import Path
 
-BACKEND_DIR = Path(r"c:\Users\arya4\JOINTS2026\backend")
+BACKEND_DIR = Path(__file__).resolve().parents[2]
 EVENTS_DIR = BACKEND_DIR / "data" / "events"
 
 KARHUTLA_SPECS = [

@@ -47,12 +47,17 @@ backend/
     assumptions.yaml     # Transparansi asumsi ilmiah & status verifikasi
     hazards.yaml         # Parameter fisik bahaya gunung & kebakaran
   data/
-    events/              # Kejadian siap pakai (Anak Krakatau 2026-09, Live Kalimantan)
-    runs/                # Riwayat run simulasi
+    events/              # Katalog kejadian siap pakai (70 Gunung Api & 36 Kawasan Hutan)
+    layers/              # Lapisan spasial nasional (gunung api, hutan, faskes, garis pantai)
+    runs/                # Riwayat run simulasi (runtime cache)
   docs/
+    API_CONTRACT.md      # Kontrak REST API resmi & contoh respons
     SOURCES.md           # Laporan verifikasi sumber nyata
     SPEC.md              # Spesifikasi teknis v3
-  frontend-dummy/        # Antarmuka GIS pengujian offline (Leaflet lokal)
-  scripts/               # check_sources.py, snapshot_ensemble.py, download_firms.py
-  tests/                 # Pengujian unit, skema, dan fisika simulasi
+  frontend-dummy/        # Antarmuka GIS pengujian offline (Leaflet lokal MAGMA style)
+  scripts/
+    generators/          # Generator spasial & data (volcanoes, coastline, facilities, forests)
+    github/              # Automasi manajemen task GitHub Project & issues
+    verification/        # Skrip pengujian saintifik, API, & verifikasi sumber nyata
+  tests/                 # Pengujian unit, skema, dan fisika simulasi (29 tests)
 ```

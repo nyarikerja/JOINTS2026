@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$backendDir = Split-Path -Parent $scriptDir
+$backendDir = Split-Path -Parent (Split-Path -Parent $scriptDir)
 $jsonPath = Join-Path $backendDir "data\layers\forests_indonesia.json"
 $eventsDir = Join-Path $backendDir "data\events"
 
