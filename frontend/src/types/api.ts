@@ -38,6 +38,7 @@ export interface SimulationOverrides {
   frp_scale?: number;
   wind_reverse_troposphere?: boolean;
   rain_scavenging_mm_h?: number;
+  [key: string]: any;
 }
 
 export interface SimulationPayload {
@@ -45,6 +46,9 @@ export interface SimulationPayload {
   mode: ModelingMode;
   source: {
     event_id: string;
+    latitude?: number;
+    longitude?: number;
+    name?: string;
   };
   horizon_hours: number;
   n_members: number;
@@ -54,7 +58,7 @@ export interface SimulationPayload {
     mid: number;
     max: number;
   };
-  overrides?: SimulationOverrides | null;
+  overrides?: Record<string, any> | null;
 }
 
 export interface SimulationResponse {

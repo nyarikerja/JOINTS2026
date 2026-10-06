@@ -13,19 +13,19 @@ export const TabSchools: React.FC<TabSchoolsProps> = ({
   onDrawRoute
 }) => {
   return (
-    <div className="space-y-3 text-xs">
+    <div className="space-y-3 text-xs text-[#140f0e]">
       <div>
-        <span className="inline-block bg-red-950/80 text-red-400 border border-red-600/40 font-bold text-[9px] px-1.5 py-0.5 rounded tracking-wider mb-1">
+        <span className="inline-block bg-red-100 text-red-800 border border-red-300 font-bold text-[9px] px-1.5 py-0.5 rounded tracking-wider mb-1">
           PROTOKOL KESELAMATAN SISWA
         </span>
-        <h3 className="font-bold text-sm text-white">Triase Sekolah &amp; PJJ Daring</h3>
-        <p className="text-[11px] text-slate-400">
+        <h3 className="font-bold text-sm text-[#140f0e]">Triase Sekolah &amp; PJJ Daring</h3>
+        <p className="text-[11px] text-slate-600">
           Ambang batas: &ge; 40% dialihkan ke pembelajaran jarak jauh (PJJ) daring untuk mencegah ISPA akut.
         </p>
       </div>
 
       {schools.length === 0 ? (
-        <div className="p-4 text-center text-slate-400 bg-slate-900/50 rounded-lg border border-slate-800 text-xs">
+        <div className="p-4 text-center text-slate-600 bg-white/80 rounded-lg border border-black/10 text-xs shadow-xs">
           ✅ Tidak ada sekolah terdeteksi di dalam batas ambang bahaya pada kejadian ini.
         </div>
       ) : (
@@ -36,10 +36,10 @@ export const TabSchools: React.FC<TabSchoolsProps> = ({
             const isWaspada = prob >= 15 && prob < 40;
 
             const borderClass = isAwas
-              ? "border-red-600/80 bg-red-950/20"
+              ? "border-red-300 bg-red-50/70"
               : isWaspada
-              ? "border-amber-600/60 bg-amber-950/20"
-              : "border-emerald-600/40 bg-emerald-950/20";
+              ? "border-amber-300 bg-amber-50/70"
+              : "border-emerald-300 bg-emerald-50/70";
 
             const badgeText = s.action_code === "PJJ_DARING" || isAwas
               ? "AWAS • ALIHKAN KE PJJ DARING"
@@ -48,10 +48,10 @@ export const TabSchools: React.FC<TabSchoolsProps> = ({
               : "SIAGA DINI (MONITORING)";
 
             const badgeColor = isAwas
-              ? "bg-red-800 text-red-100 animate-pulse"
+              ? "bg-red-600 text-white font-bold animate-pulse"
               : isWaspada
-              ? "bg-amber-800 text-amber-200"
-              : "bg-emerald-800 text-emerald-200";
+              ? "bg-amber-600 text-white font-bold"
+              : "bg-emerald-600 text-white font-bold";
 
             const hospital = s.nearest_safe_hospital || s.nearest_hospital || {
               name: "RSUD Rujukan Terdekat",
@@ -63,48 +63,48 @@ export const TabSchools: React.FC<TabSchoolsProps> = ({
             const eta = s.eta_hours ?? s.arrival_time_earliest_h ?? 4;
 
             return (
-              <div key={s.facility_id || s.id || s.name} className={`border rounded-lg p-3 text-slate-200 ${borderClass}`}>
+              <div key={s.facility_id || s.id || s.name} className={`border rounded-lg p-3 text-[#140f0e] shadow-xs ${borderClass}`}>
                 <div className="flex items-start justify-between gap-2 mb-1.5">
                   <div>
-                    <h4 className="font-bold text-white text-xs">🏫 {s.name}</h4>
-                    <div className="text-slate-400 text-[10px]">{s.district || "Kecamatan Terpapar"} &bull; {s.province || ""}</div>
+                    <h4 className="font-bold text-[#140f0e] text-xs">🏫 {s.name}</h4>
+                    <div className="text-slate-500 text-[10px]">{s.district || "Kecamatan Terpapar"} &bull; {s.province || ""}</div>
                   </div>
-                  <span className={`px-2 py-0.5 rounded text-[9px] font-bold shrink-0 ${badgeColor}`}>
+                  <span className={`px-2 py-0.5 rounded text-[9px] font-bold shrink-0 shadow-xs ${badgeColor}`}>
                     {badgeText}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 my-2 py-1.5 px-2 bg-slate-950/80 rounded border border-slate-800">
+                <div className="grid grid-cols-2 gap-2 my-2 py-1.5 px-2 bg-white/90 rounded border border-black/10">
                   <div>
-                    <span className="text-slate-400 block text-[10px]">Peluang Paparan:</span>
-                    <strong className="text-white text-xs font-mono">{prob}%</strong>
+                    <span className="text-slate-500 block text-[10px]">Peluang Paparan:</span>
+                    <strong className="text-[#140f0e] text-xs font-mono">{prob}%</strong>
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[10px]">Estimasi Tiba (ETA):</span>
-                    <strong className="text-amber-300 text-xs font-mono">T + {eta}:00 Jam</strong>
+                    <span className="text-slate-500 block text-[10px]">Estimasi Tiba (ETA):</span>
+                    <strong className="text-amber-800 text-xs font-mono">T + {eta}:00 Jam</strong>
                   </div>
                 </div>
 
                 {s.action_detail && (
-                  <p className="text-[10px] text-slate-300 mb-2 bg-slate-900/60 p-1.5 rounded">
+                  <p className="text-[10px] text-slate-700 mb-2 bg-white/90 p-1.5 rounded border border-black/5">
                     {s.action_detail}
                   </p>
                 )}
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-[11px]">
-                  <span className="text-slate-400 truncate max-w-[170px] text-[10px]">
-                    🚑 RS Rujukan: <strong className="text-sky-300">{hospital.name}</strong> ({hospital.distance_km} km)
+                <div className="flex items-center justify-between pt-2 border-t border-black/10 text-[11px]">
+                  <span className="text-slate-600 truncate max-w-[170px] text-[10px]">
+                    🚑 RS Rujukan: <strong className="text-sky-700">{hospital.name}</strong> ({hospital.distance_km} km)
                   </span>
                   <div className="flex gap-1.5">
                     <button
                       onClick={() => onFlyTo(sLat, sLng)}
-                      className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-[10px] transition cursor-pointer"
+                      className="px-2 py-1 bg-white hover:bg-slate-100 text-[#140f0e] border border-black/15 rounded text-[10px] transition cursor-pointer shadow-xs"
                     >
                       Pusatkan
                     </button>
                     <button
                       onClick={() => onDrawRoute(s)}
-                      className="px-2 py-1 bg-sky-700 hover:bg-sky-600 text-white rounded text-[10px] font-medium transition cursor-pointer"
+                      className="px-2 py-1 bg-[#EB895B] hover:bg-[#d97746] text-white rounded text-[10px] font-medium transition cursor-pointer shadow-xs"
                     >
                       Rute Evakuasi
                     </button>
