@@ -51,10 +51,10 @@ function initMap() {
     })
     .catch(() => {});
 
-  // Muat Lapisan-lapisan Nasional
+  // Muat Lapisan-lapisan Nasional (Peta Bersih & Persisten)
   loadNationalVolcanoes();
   loadNationalForests();
-  loadHotspots("national");
+  loadHotspots();
   loadFacilities();
   loadSummaryKpi();
   startClocks();
@@ -742,7 +742,9 @@ function renderForestMarkers(forests) {
   }
 }
 
-// Tombol dari Popup Hutan Langsung
+// =============================================================================
+// 3b. Tombol dari Popup Hutan & Navigasi
+// =============================================================================
 window.selectAndSimulateForest = function(forestId, lat, lon, nHotspots) {
   // 1. Pilih jenis bahaya karhutla
   const hazardSel = document.getElementById("hazardSelect");
@@ -808,7 +810,6 @@ function onHazardChanged() {
       currentKrbCircle = null;
     }
     const currentFireId = (eventSel && eventSel.value && (eventSel.value.startsWith("hutan_") || eventSel.value.startsWith("karhutla_") || eventSel.value === "live_kalimantan")) ? eventSel.value : "hutan_sebangau";
-    loadHotspots(currentFireId);
     const fireObj = NATIONAL_KARHUTLA_EVENTS.find(k => k.id === currentFireId);
     if (fireObj) {
       map.flyTo([fireObj.lat, fireObj.lon], 9, { duration: 1.2 });
@@ -840,7 +841,6 @@ function onEventSelectChanged(e) {
     const fireObj = NATIONAL_KARHUTLA_EVENTS.find(k => k.id === val);
     if (fireObj) {
       map.flyTo([fireObj.lat, fireObj.lon], 9, { duration: 1.0 });
-      loadHotspots(val);
     }
   } else {
     if (hazardSel.value !== "volcano") {
@@ -862,29 +862,28 @@ function onEventSelectChanged(e) {
 }
 
 // =============================================================================
-// 4. Lapisan Titik Api Kebakaran (NASA FIRMS Hotspots Nasional)
+// 4. Lapisan Titik Api Kebakaran (NASA FIRMS Hotspots Nasional - Persisten)
 // =============================================================================
-function loadHotspots(eventId) {
+function loadHotspots() {
   if (hotspotsLayer) {
     map.removeLayer(hotspotsLayer);
   }
 
-  const targetEvent = eventId || "national";
-  fetch(`${API_BASE}/layers/hotspots?event_id=${targetEvent}`)
+  fetch(`${API_BASE}/layers/hotspots?event_id=national`)
     .then(r => r.json())
     .then(geo => {
       hotspotsLayer = L.geoJSON(geo, {
         pointToLayer: (feature, latlng) => {
-          const frp = feature.properties.frp || 10;
-          const radius = Math.min(Math.max(frp / 25, 3.5), 9);
+          const frp = feature.properties.frp || 15;
+          const radius = Math.min(Math.max(frp / 15, 4.5), 10.0);
 
           return L.circleMarker(latlng, {
             radius: radius,
-            fillColor: "#ef4444",
-            color: "#fca5a5",
-            weight: 1,
-            opacity: 0.9,
-            fillOpacity: 0.75
+            fillColor: frp >= 40 ? "#dc2626" : (frp >= 15 ? "#ea580c" : "#f59e0b"),
+            color: "#ffffff",
+            weight: 1.2,
+            opacity: 0.95,
+            fillOpacity: 0.85
           });
         },
         onEachFeature: (feature, layer) => {
@@ -909,24 +908,43 @@ function loadHotspots(eventId) {
         }
       });
 
-      if (document.getElementById("layerToggleHotspots").checked) {
+      const toggle = document.getElementById("layerToggleHotspots");
+      if (!toggle || toggle.checked) {
         hotspotsLayer.addTo(map);
+        if (typeof hotspotsLayer.bringToFront === "function") {
+          hotspotsLayer.bringToFront();
+        }
       }
     })
     .catch(() => {});
 }
 
 // =============================================================================
-// 5. Lapisan Fasilitas Publik (Sekolah, Faskes, Bandara dari OSM)
+// 5. Lapisan Fasilitas Publik (Sekolah, Faskes, Bandara dari Database R*Tree)
 // =============================================================================
+let _facilitiesMoveHandlerAttached = false;
+
 function loadFacilities() {
-  if (facilitiesLayer) {
-    map.removeLayer(facilitiesLayer);
+  const toggleEl = document.getElementById("layerToggleFacilities");
+  if (toggleEl && !toggleEl.checked) {
+    if (facilitiesLayer && map.hasLayer(facilitiesLayer)) {
+      map.removeLayer(facilitiesLayer);
+    }
+    return;
   }
 
-  fetch(`${API_BASE}/layers/facilities`)
+  // Ambil koordinat kotak layar (BBOX) dan zoom level peta
+  const b = map.getBounds();
+  const z = map.getZoom();
+  const bbox = `${b.getWest().toFixed(4)},${b.getSouth().toFixed(4)},${b.getEast().toFixed(4)},${b.getNorth().toFixed(4)}`;
+
+  fetch(`${API_BASE}/layers/facilities?bbox=${bbox}&zoom=${z}&limit=250`)
     .then(r => r.json())
     .then(geo => {
+      if (facilitiesLayer && map.hasLayer(facilitiesLayer)) {
+        map.removeLayer(facilitiesLayer);
+      }
+
       facilitiesLayer = L.geoJSON(geo, {
         pointToLayer: (feature, latlng) => {
           const type = feature.properties.facility_type;
@@ -935,10 +953,10 @@ function loadFacilities() {
           if (type === "airport") color = "#f59e0b"; // Bandara
 
           return L.circleMarker(latlng, {
-            radius: 4.5,
+            radius: 5,
             fillColor: color,
             color: "#ffffff",
-            weight: 1,
+            weight: 1.2,
             opacity: 1,
             fillOpacity: 0.85
           });
@@ -953,8 +971,19 @@ function loadFacilities() {
         }
       });
 
-      if (document.getElementById("layerToggleFacilities").checked) {
+      if (!toggleEl || toggleEl.checked) {
         facilitiesLayer.addTo(map);
+      }
+
+      // Pasang handler pan/zoom otomatis jika belum terpasang
+      if (!_facilitiesMoveHandlerAttached) {
+        _facilitiesMoveHandlerAttached = true;
+        map.on("moveend", () => {
+          const tEl = document.getElementById("layerToggleFacilities");
+          if (!tEl || tEl.checked) {
+            loadFacilities();
+          }
+        });
       }
     })
     .catch(err => console.error("Gagal memuat facilities:", err));
@@ -1663,6 +1692,7 @@ document.addEventListener("DOMContentLoaded", () => {
           setTimeout(() => { btnSync.innerHTML = `<span class="nav-btn-icon"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M17.65 6.35A7.96 7.96 0 0012 4a8 8 0 108 8h-2a6 6 0 11-1.76-4.24L14 10h7V3l-3.35 3.35z"/></svg></span> Live Sync`; }, 2500);
           loadSummaryKpi();
           loadNationalForests();
+          loadHotspots();
         })
         .catch(() => {
           btnSync.innerHTML = `<span class="nav-btn-icon"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg></span> Galat`;

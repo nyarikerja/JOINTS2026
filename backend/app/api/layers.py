@@ -18,7 +18,10 @@ router = APIRouter(tags=["layers"])
 def get_layer(
     name: str,
     bbox: Optional[str] = Query(None, description="west,south,east,north"),
-    event_id: Optional[str] = Query("live_kalimantan", description="ID event untuk data titik api")
+    event_id: Optional[str] = Query("live_kalimantan", description="ID event untuk data titik api"),
+    limit: Optional[int] = Query(None, description="Batas jumlah fitur"),
+    zoom: Optional[int] = Query(None, description="Level zoom peta untuk LOD"),
+    facility_type: Optional[str] = Query(None, description="Filter jenis fasilitas (school, healthcare, airport)")
 ):
     if bbox:
         parts = [float(p.strip()) for p in bbox.split(",")]
@@ -28,8 +31,13 @@ def get_layer(
         w, s, e, n = 94.0, -12.0, 142.0, 7.0
 
     if name in ["facilities", "facilities-national"]:
-        # Muat fasilitas di dalam bbox (sekarang mencakup seluruh Indonesia)
-        facilities = OverpassIngest.get_facilities_in_bbox(s, n, w, e)
+        effective_limit = limit or (500 if bbox else None)
+        facilities = OverpassIngest.get_facilities_in_bbox(
+            lat_min=s, lat_max=n, lon_min=w, lon_max=e,
+            facility_type=facility_type,
+            zoom=zoom,
+            limit=effective_limit
+        )
         features = []
         for fac in facilities:
             features.append({
@@ -39,6 +47,7 @@ def get_layer(
                     "name": fac["name"],
                     "facility_type": fac["facility_type"],
                     "district": fac.get("district", "-"),
+                    "province": fac.get("province", "-")
                 },
                 "geometry": {
                     "type": "Point",
@@ -49,6 +58,35 @@ def get_layer(
 
     elif name == "hotspots":
         target_event = event_id if event_id and event_id not in ["all", "national", "indonesia"] else "national"
+        try:
+            from app.db.repositories.hotspot_repo import HotspotRepository
+            db_hotspots = HotspotRepository.get_by_event(
+                event_id=target_event,
+                lat_min=s if bbox else None,
+                lat_max=n if bbox else None,
+                lon_min=w if bbox else None,
+                lon_max=e if bbox else None
+            )
+            if db_hotspots:
+                features = []
+                for h in db_hotspots:
+                    features.append({
+                        "type": "Feature",
+                        "properties": {
+                            "id": h["id"],
+                            "frp": h["frp"],
+                            "confidence": h["confidence"],
+                            "acq_date": h["acq_date"],
+                        },
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": [h["longitude"], h["latitude"]]
+                        }
+                    })
+                return {"type": "FeatureCollection", "features": features}
+        except Exception:
+            pass
+
         hotspots = FirmsIngest.load_event_hotspots(target_event)
         features = []
         for h in hotspots:
@@ -99,6 +137,19 @@ def get_layer(
         return {"type": "FeatureCollection", "features": features}
 
     elif name in ["volcanoes-national", "volcanoes"]:
+        try:
+            from app.db.repositories.volcano_repo import VolcanoRepository
+            volcs = VolcanoRepository.get_all(
+                lat_min=s if bbox else None,
+                lat_max=n if bbox else None,
+                lon_min=w if bbox else None,
+                lon_max=e if bbox else None
+            )
+            if volcs:
+                return VolcanoRepository.to_geojson_collection(volcs)
+        except Exception:
+            pass
+
         import json
 
         from app.core.config import BACKEND_DIR
@@ -109,6 +160,19 @@ def get_layer(
         return {"type": "FeatureCollection", "features": []}
 
     elif name in ["forests", "forests-national"]:
+        try:
+            from app.db.repositories.forest_repo import ForestRepository
+            forests_data = ForestRepository.get_all(
+                lat_min=s if bbox else None,
+                lat_max=n if bbox else None,
+                lon_min=w if bbox else None,
+                lon_max=e if bbox else None
+            )
+            if forests_data:
+                return forests_data
+        except Exception:
+            pass
+
         import json
 
         import pandas as pd
@@ -118,7 +182,7 @@ def get_layer(
         if forest_path.exists():
             with open(forest_path, "r", encoding="utf-8-sig") as f:
                 forests_data = json.load(f)
-            # Sinkronkan n_hotspots secara real-time dari data CSV FIRMS aktual
+            # Sinkronkan n_hotspots: prioritaskan jumlah hotspot spasial, perbarui jika CSV lokal ada
             for item in forests_data:
                 ev_id = item.get("id")
                 if ev_id:
@@ -126,16 +190,74 @@ def get_layer(
                     if csv_f.exists() and csv_f.stat().st_size > 0:
                         try:
                             df_h = pd.read_csv(csv_f)
-                            item["n_hotspots"] = len(df_h)
+                            item["n_hotspots"] = max(item.get("n_hotspots", 0), len(df_h))
                         except Exception:
-                            item["n_hotspots"] = 0
-                    elif csv_f.exists():
-                        item["n_hotspots"] = 0
+                            pass
             return forests_data
-        return {"forests": []}
+        return []
+
+    elif name in ["forest-boundaries", "forests-boundaries", "forest_boundaries"]:
+        try:
+            from app.db.repositories.forest_repo import ForestRepository
+            boundaries = ForestRepository.get_all_boundaries_geojson()
+            if boundaries.get("features"):
+                return boundaries
+        except Exception:
+            pass
+
+        import json
+
+        from app.core.config import BACKEND_DIR
+        bound_path = BACKEND_DIR / "data" / "layers" / "forest_boundaries.geojson"
+        if bound_path.exists():
+            with open(bound_path, "r", encoding="utf-8-sig") as f:
+                return json.load(f)
+        return {"type": "FeatureCollection", "features": []}
 
     elif name == "summary-kpi":
         import datetime
+
+        try:
+            from app.db.repositories.hotspot_repo import HotspotRepository
+            from app.db.repositories.volcano_repo import VolcanoRepository
+
+            all_volcs = VolcanoRepository.get_all()
+            if all_volcs:
+                lvl4 = sum(1 for v in all_volcs if v.get("level") == 4)
+                lvl3 = sum(1 for v in all_volcs if v.get("level") == 3)
+                lvl2 = sum(1 for v in all_volcs if v.get("level") == 2)
+                lvl1 = sum(1 for v in all_volcs if v.get("level") == 1)
+                total_volc = len(all_volcs)
+
+                hotspots = HotspotRepository.get_by_event("national")
+                n_hotspots = len(hotspots)
+                high_conf = sum(
+                    1 for h in hotspots
+                    if h.get("confidence") in ["high", "h"]
+                    or (isinstance(h.get("confidence"), (int, float)) and h.get("confidence") > 70)
+                )
+                high_pct = round((high_conf / n_hotspots * 100), 1) if n_hotspots > 0 else 0.0
+
+                now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+                return {
+                    "volcanoes": {
+                        "level_4_awas": lvl4,
+                        "level_3_siaga": lvl3,
+                        "level_2_waspada": lvl2,
+                        "level_1_normal": lvl1,
+                        "total_active_monitored": total_volc
+                    },
+                    "wildfire_hotspots": {
+                        "active_24h_firms": n_hotspots,
+                        "high_confidence_pct": high_pct,
+                        "peat_clusters": 8
+                    },
+                    "system_status": "SIAGA BENCANA ATMOSFER (24/7)",
+                    "last_sync_utc": now_iso
+                }
+        except Exception:
+            pass
+
         import json
 
         from app.core.config import BACKEND_DIR

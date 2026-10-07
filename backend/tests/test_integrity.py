@@ -138,3 +138,52 @@ def test_offline_guard(monkeypatch):
     monkeypatch.setenv("UDARASIAGA_OFFLINE", "1")
     with pytest.raises(OfflineGuardException):
         assert_online_allowed("NASA FIRMS")
+
+
+def test_forest_boundaries_layer_endpoint():
+    """
+    Uji endpoint /layers/forest-boundaries:
+    Memastikan 36 poligon batas kawasan konservasi resmi termuat secara spasial.
+    """
+    resp = client.get("/layers/forest-boundaries")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["type"] == "FeatureCollection"
+    features = data.get("features", [])
+    assert len(features) >= 36
+
+    # Periksa poligon TN Sebangau & Tanjung Puting
+    sebangau = next((f for f in features if f.get("id") == "hutan_sebangau"), None)
+    assert sebangau is not None
+    assert sebangau["geometry"]["type"] in ["Polygon", "MultiPolygon"]
+    assert sebangau["properties"]["area_ha"] > 100000
+    assert "n_hotspots" in sebangau["properties"]
+
+
+def test_forest_simulation_spatial_boundaries():
+    """
+    Uji simulasi karhutla dengan batas spasial poligon riil:
+    Memastikan simulator menyerap titik api satelit FIRMS riil di dalam batas kawasan.
+    """
+    payload = {
+        "hazard": "fire",
+        "mode": "auto",
+        "source": {"event_id": "hutan_sebangau"},
+        "horizon_hours": 6,
+        "n_members": 5,
+        "seed": 42,
+    }
+    resp = client.post("/simulate", json=payload)
+    assert resp.status_code == 200
+    res = resp.json()
+    assert "run_id" in res
+    assert res["hazard"] == "fire"
+    assert res["status"] == "completed"
+
+    # Periksa poligon asap yang dihasilkan dari titik api spasial
+    run_id = res["run_id"]
+    t_resp = client.get(f"/runs/{run_id}/tiers?t=0")
+    assert t_resp.status_code == 200
+    tiers_data = t_resp.json()
+    assert tiers_data["type"] == "FeatureCollection"
+    assert len(tiers_data["features"]) > 0

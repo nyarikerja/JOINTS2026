@@ -1,5 +1,5 @@
-import subprocess
 import json
+import subprocess
 
 GH = r"C:\Users\arya4\AppData\Local\Microsoft\WinGet\Links\gh.exe"
 REPO = "nyarikerja/JOINTS2026"

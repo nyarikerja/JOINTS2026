@@ -1,5 +1,4 @@
 import subprocess
-import json
 
 GH = r"C:\Users\arya4\AppData\Local\Microsoft\WinGet\Links\gh.exe"
 

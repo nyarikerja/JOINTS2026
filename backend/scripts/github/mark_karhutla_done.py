@@ -1,5 +1,5 @@
-import subprocess
 import json
+import subprocess
 
 GH = r"C:\Users\arya4\AppData\Local\Microsoft\WinGet\Links\gh.exe"
 REPO = "nyarikerja/JOINTS2026"
@@ -81,7 +81,7 @@ def main():
             '''
             out = run_gh("api", "graphql", "-f", f"query={query}")
             if "updateProjectV2ItemFieldValue" in out:
-                print(f"  Project Item #38 Status -> In Progress")
+                print("  Project Item #38 Status -> In Progress")
 
     print("\nDone updating GitHub Project!")
 

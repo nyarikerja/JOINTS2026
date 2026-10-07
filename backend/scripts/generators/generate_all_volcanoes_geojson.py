@@ -396,7 +396,7 @@ def build_geojson():
                 "coordinates": v["coords"]
             }
         })
-    
+
     geo = {
         "type": "FeatureCollection",
         "name": "volcanoes_indonesia_pvmbg_national",

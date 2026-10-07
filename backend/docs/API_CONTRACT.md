@@ -71,6 +71,27 @@ Seluruh contoh respons bersumber dari fixture uji nyata di `docs/fixtures/`.
 
 ## 3. Rincian Endpoint & Contoh Nyata
 
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client as Klien Frontend (React / Leaflet)
+    participant API as FastAPI Router
+    participant Engine as Mesin Lagrangian RK2
+    participant DB as Basis Data (udarasiaga.db)
+    participant Weather as Open-Meteo Ensemble
+
+    Client->>API: POST /simulate (hazard, mode, event_id, seed)
+    API->>DB: Kueri koordinat kawah/hotspot & poligon batas
+    DB-->>API: Data geospasial terindeks
+    API->>Weather: Ambil profil angin troposfer (u, v) & presipitasi
+    Weather-->>API: 15-51 anggota ansambel cuaca
+    API->>Engine: Jalankan adveksi partikel RK2 + difusi turbulen + wet scavenging
+    Engine-->>API: Trajektori partikel & kontur poligon P5-P50-P95
+    API->>DB: Kueri fasilitas terdampak via R*Tree BBOX
+    DB-->>API: Sekolah, faskes, bandara terpapar
+    API-->>Client: 200 OK (run_id, status, metadata_simulasi, disclaimer)
+```
+
 ### 3.1 Health Check: `GET /health`
 - **Tujuan:** Memeriksa kesiapan sistem, mode operasi (online/offline), dan integritas disclaimer.
 - **Contoh Respons (lihat `docs/fixtures/health.json`):**

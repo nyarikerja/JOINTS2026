@@ -136,8 +136,23 @@ class OverpassIngest:
         lat_max: float,
         lon_min: float,
         lon_max: float,
-        facility_type: str | None = None
+        facility_type: str | None = None,
+        zoom: int | None = None,
+        limit: int | None = 250
     ) -> List[Dict[str, Any]]:
+        try:
+            from app.db.repositories.facility_repo import FacilityRepository
+            db_res = FacilityRepository.get_by_bbox(
+                lat_min, lat_max, lon_min, lon_max,
+                facility_type=facility_type,
+                limit=limit,
+                zoom=zoom
+            )
+            if db_res:
+                return db_res
+        except Exception:
+            pass
+
         facilities = cls.load_all_facilities()
         results = []
         for fac in facilities:
@@ -153,6 +168,13 @@ class OverpassIngest:
     def get_facility_by_id(cls, facility_id: str) -> Dict[str, Any] | None:
         if hasattr(cls, "_synth_cache") and facility_id in cls._synth_cache:
             return cls._synth_cache[facility_id]
+        try:
+            from app.db.repositories.facility_repo import FacilityRepository
+            db_fac = FacilityRepository.get_by_id(facility_id)
+            if db_fac:
+                return db_fac
+        except Exception:
+            pass
         facilities = cls.load_all_facilities()
         for fac in facilities:
             if fac["facility_id"] == facility_id:

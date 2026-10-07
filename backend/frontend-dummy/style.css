@@ -408,6 +408,8 @@ body.enterprise-magma {
 }
 
 .dot-volcano { background: #ef4444; }
+.dot-forest { background: #10b981; }
+.dot-boundary { background: rgba(16, 185, 129, 0.4); border: 1.5px solid #10b981; border-radius: 2px; }
 .dot-fire { background: #f97316; }
 .dot-plume { background: #eab308; }
 .dot-facility { background: #38bdf8; }

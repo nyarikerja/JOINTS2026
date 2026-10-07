@@ -1,5 +1,5 @@
-import subprocess
 import json
+import subprocess
 
 GH = r"C:\Users\arya4\AppData\Local\Microsoft\WinGet\Links\gh.exe"
 
@@ -8,12 +8,12 @@ def main():
     data = json.loads(p.stdout)
     items = data.get("items", [])
     print(f"Total items in Project: {len(items)}")
-    
+
     # Group by Area and Sprint
     by_area = {}
     by_sprint = {}
     by_pic = {}
-    
+
     if items:
         print("Sample item keys:", list(items[0].keys()))
         print("Sample item:", json.dumps(items[0], indent=2))
