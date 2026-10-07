@@ -1,43 +1,103 @@
 @import "tailwindcss";
 
 /* ============================================================
+   LOCAL CUSTOM FONT: BUTLER
+   ============================================================ */
+@font-face {
+  font-family: 'Butler';
+  src: url('./assets/font/Butler-Free-Lgt-St.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Butler';
+  src: url('./assets/font/Butler-Free-Rmn-St.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Butler';
+  src: url('./assets/font/Butler-Free-Med-St.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Butler';
+  src: url('./assets/font/Butler-Free-SBd-St.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Butler';
+  src: url('./assets/font/Butler-Free-Bd-St.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Butler';
+  src: url('./assets/font/Butler-Free-XBd-St.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Butler';
+  src: url('./assets/font/Butler-Free-Blk-St.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ============================================================
    UDARA SIAGA — DESIGN SYSTEM TOKEN
-   Palette 1 (Teal/Ocean): #8AD6D1 #359FA0 #FFF0C5 #FF8C52
-   Palette 2 (Volcanic/Earth): #A14646 #DA6556 #EB895B #FDB773
-   Theme: Opsi 1 - Warm Espresso / Earthy Dark
    ============================================================ */
 
 @theme {
-  /* Brand Teal / Akuamarin (Aksen Sekunder / Laut) */
-  --color-teal-300: #8AD6D1;
-  --color-teal-500: #359FA0;
-  --color-teal-600: #2a8485;
-  --color-teal-700: #1f6667;
+  --font-serif: 'Butler', Georgia, serif;
+  --font-sans: 'Poppins', sans-serif;
 
-  /* Warm Cream / Pasir (Teks Terang) */
+  /* Color Hunt Palette: #A14646, #DA6556, #EB895B, #FDB773 */
+  --color-hunt-maroon: #A14646;
+  --color-hunt-coral:  #DA6556;
+  --color-hunt-ember:  #EB895B;
+  --color-hunt-peach:  #FDB773;
+
+  /* Brand Primary & Accents */
+  --color-ember-400: #FDB773;
+  --color-ember-500: #EB895B;
+  --color-ember-600: #DA6556;
+  --color-ember-700: #A14646;
+
+  /* Lava & Danger */
+  --color-lava-400: #FDB773;
+  --color-lava-500: #EB895B;
+  --color-lava-600: #DA6556;
+  --color-lava-700: #A14646;
+
+  /* Surface & Cream */
   --color-cream-50:  #fffef9;
   --color-cream-100: #FFF0C5;
   --color-cream-200: #ffe8a3;
 
-  /* Oranye Hangat / Terracotta (Aksen Utama / CTA #EB895B) */
-  --color-ember-400: #FDB773;
-  --color-ember-500: #EB895B;
-  --color-ember-600: #FF8C52;
-  --color-ember-700: #e07440;
-
-  /* Merah Vulkanik / Bahaya */
-  --color-lava-500: #DA6556;
-  --color-lava-600: #A14646;
-  --color-lava-700: #7d3535;
-
-  /* Surface / Background: Warm Espresso / Charcoal Cokelat Hangat */
+  /* Surface / Background: Warm Espresso / Charcoal */
   --color-surface-950: #140f0e;
   --color-surface-900: #1c1513;
   --color-surface-800: #261e1b;
   --color-surface-700: #332724;
   --color-surface-600: #443430;
 
-  /* Border bernuansa Terracotta Hangat */
+  /* Border bernuansa Terracotta Color Hunt */
   --color-border-subtle: rgba(235, 137, 91, 0.2);
   --color-border-default: rgba(235, 137, 91, 0.35);
   --color-border-strong: rgba(235, 137, 91, 0.6);
@@ -48,17 +108,17 @@
    ============================================================ */
 @layer base {
   *, ::before, ::after {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Poppins', system-ui, -apple-system, sans-serif;
   }
 
   body {
     background-color: #140f0e;
     color: #FFF0C5;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Butler', Georgia, serif;
   }
 
-  .font-mono, [class*="font-mono"] {
-    font-family: 'JetBrains Mono', monospace !important;
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', system-ui, -apple-system, sans-serif;
   }
 
   /* Scrollbar taktis hangat */

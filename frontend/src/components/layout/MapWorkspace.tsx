@@ -15,6 +15,8 @@ interface MapWorkspaceProps {
   evacuationRoute: { origin: [number, number]; dest: [number, number]; label: string } | null;
   onSelectEvent: (eventId: string, lat: number, lng: number, radiusKm: number) => void;
   resetViewTrigger: number;
+  activeRunId?: string | null;
+  isDrawerOpen?: boolean;
   onToggleLegend?: () => void;
   onLayersLoaded?: () => void;
 }
@@ -27,6 +29,8 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
   evacuationRoute,
   onSelectEvent,
   resetViewTrigger,
+  activeRunId,
+  isDrawerOpen = false,
   onToggleLegend: _onToggleLegend,
   onLayersLoaded
 }) => {
@@ -39,9 +43,9 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
   const [showVolcanoes, setShowVolcanoes] = useState(true);
   const [showHotspots, setShowHotspots] = useState(true);
   const [showPlume, setShowPlume] = useState(true);
-  const [showSchools, setShowSchools] = useState(true);
-  const [showHospitals, setShowHospitals] = useState(true);
-  const [showAirports, setShowAirports] = useState(true);
+  const [showSchools, setShowSchools] = useState(false);
+  const [showHospitals, setShowHospitals] = useState(false);
+  const [showAirports, setShowAirports] = useState(false);
   const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(true);
 
   const volcanoesLayerRef = useRef<L.GeoJSON | null>(null);
@@ -266,6 +270,19 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
     updateHotspotsViewport(mapRef.current);
   }, [showHotspots, updateHotspotsViewport]);
 
+  // Otomatis aktifkan layer analisis (plume, sekolah, faskes, bandara) ketika simulasi dijalankan
+  useEffect(() => {
+    if (activeRunId) {
+      setShowPlume(true);
+      setShowSchools(true);
+      setShowHospitals(true);
+      setShowAirports(true);
+      if (plumeLayerRef.current && mapRef.current) {
+        plumeLayerRef.current.addTo(mapRef.current);
+      }
+    }
+  }, [activeRunId]);
+
   useEffect(() => {
     if (!mapRef.current) return;
     if (showSchools) schoolsLayerRef.current?.addTo(mapRef.current);
@@ -288,6 +305,13 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
     // Terbang ke episentrum kejadian saat eventId atau hazard berubah
     if (prevEventIdRef.current !== eventId) {
       prevEventIdRef.current = eventId;
+      if (!eventId) {
+        if (krbCircleRef.current && mapRef.current) {
+          mapRef.current.removeLayer(krbCircleRef.current);
+          krbCircleRef.current = null;
+        }
+        return;
+      }
       if (mapRef.current && eventId) {
         if (hazard === "fire") {
           const fireObj = (forestsDataRef.current || []).find((f: any) => f.id === eventId);
@@ -504,22 +528,49 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
 
     if (!geoData) return;
 
-    const colors = CONFIG.COLORS[hazard] || CONFIG.COLORS.volcano;
+    const colors = hazard === "fire"
+      ? {
+          p90: { fill: "#78350f", stroke: "#451a03", fillOpacity: 0.60, weight: 2.5, dash: undefined },
+          p50: { fill: "#92400e", stroke: "#78350f", fillOpacity: 0.35, weight: 1.8, dash: "6, 4" },
+          p05: { fill: "#a16207", stroke: "#854d0e", fillOpacity: 0.15, weight: 1.0, dash: "3, 3" },
+          label: "Sebaran Asap Karhutla (PM2.5)"
+        }
+      : {
+          p90: { fill: "#991b1b", stroke: "#7f1d1d", fillOpacity: 0.60, weight: 2.5, dash: undefined },
+          p50: { fill: "#dc2626", stroke: "#b91c1c", fillOpacity: 0.35, weight: 1.8, dash: "6, 4" },
+          p05: { fill: "#f59e0b", stroke: "#d97706", fillOpacity: 0.18, weight: 1.0, dash: "3, 3" },
+          label: "Sebaran Abu Vulkanik"
+        };
 
     plumeLayerRef.current = L.geoJSON(geoData, {
       style: (feature: any) => {
-        const tier = feature.properties.tier || "mid";
-        if (tier === "p90" || tier === "min") {
-          return { color: colors.p90, fillColor: colors.p90, fillOpacity: 0.65, weight: 1.5 };
+        const tier = feature.properties?.tier;
+        let c;
+        if (tier === "minimum" || tier === "p90" || tier === "min") {
+          c = colors.p90;
+        } else if (tier === "mid" || tier === "p50") {
+          c = colors.p50;
+        } else {
+          c = colors.p05;
         }
-        if (tier === "p50" || tier === "mid") {
-          return { color: colors.p50, fillColor: colors.p50, fillOpacity: 0.40, weight: 1.2, dashArray: "3,3" };
-        }
-        return { color: colors.p05, fillColor: colors.p05, fillOpacity: 0.20, weight: 0.8 };
+        return {
+          color: c.stroke,
+          weight: c.weight,
+          opacity: 0.9,
+          fillColor: c.fill,
+          fillOpacity: c.fillOpacity,
+          dashArray: c.dash
+        };
       },
       onEachFeature: (feature: any, layer) => {
         const p = feature.properties;
-        const tierName = p.tier_label || (p.tier === "p90" || p.tier === "min" ? "Konsentrasi Tinggi (P90)" : (p.tier === "p50" || p.tier === "mid" ? "Konsentrasi Sedang (P50)" : "Jangkauan Maksimum (P05)"));
+        const tierName =
+          p.tier_label ||
+          (p.tier === "minimum" || p.tier === "p90" || p.tier === "min"
+            ? "Bahaya Tinggi (P90)"
+            : p.tier === "mid" || p.tier === "p50"
+            ? "Waspada Sedang (P50)"
+            : "Siaga Dini (P05)");
         layer.bindTooltip(`<strong>${colors.label}</strong><br>Tingkat: ${tierName}<br>Waktu: ${formatHour(currentHour)}`, {
           sticky: true
         });
@@ -551,79 +602,92 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
     <div className="relative w-full h-full">
       <div ref={mapContainerRef} className="w-full h-full bg-[#140f0e]" />
 
-      {/* 3. Panel Lapisan Spasial Aktif (Kiri Bawah) */}
-      {!isLayerPanelOpen ? (
-        <button
-          onClick={() => setIsLayerPanelOpen(true)}
-          className="absolute bottom-6 left-4 z-[500] w-10 h-10 rounded-full shadow-2xl flex items-center justify-center transition cursor-pointer active:scale-95 group"
-          style={{
-            background: "rgba(245, 239, 227, 0.95)",
-            border: "1px solid rgba(235, 137, 91, 0.45)",
-            color: "#EB895B"
-          }}
-          title="Tampilkan Lapisan Spasial"
-        >
-          <Layers className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
-        </button>
-      ) : (
-        <div
-          className="absolute bottom-6 left-4 z-[500] rounded-xl p-3.5 shadow-2xl flex flex-col gap-3 backdrop-blur-md text-[#140f0e]"
-          style={{
-            background: "rgba(245, 239, 227, 0.95)",
-            border: "1px solid rgba(235, 137, 91, 0.4)",
-            minWidth: "220px"
-          }}
-        >
-          <div className="flex items-center justify-between border-b pb-2 mb-1" style={{ borderColor: "rgba(0, 0, 0, 0.1)" }}>
-            <h3 className="text-[10px] font-extrabold tracking-widest uppercase" style={{ color: "#EB895B" }}>
-              Lapisan Spasial Aktif
-            </h3>
-            <button onClick={() => setIsLayerPanelOpen(false)} className="text-[#EB895B] hover:text-slate-800 transition cursor-pointer opacity-80 hover:opacity-100" title="Sembunyikan Panel">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-          
-          <label className="flex items-center gap-3 text-xs font-medium cursor-pointer hover:opacity-80 transition">
-            <input type="checkbox" checked={showVolcanoes} onChange={(e) => setShowVolcanoes(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B]" />
-            <img src="/1_normal.png" className="w-4 h-4 object-contain" />
-            <span>Gunungapi PVMBG</span>
-          </label>
-          
-          <label className="flex items-center gap-3 text-xs font-medium cursor-pointer hover:opacity-80 transition">
-            <input type="checkbox" checked={showHotspots} onChange={(e) => setShowHotspots(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B]" />
-            <img src="/titik_api.png" className="w-4 h-4 object-contain" />
-            <span>Titik Api NASA FIRMS</span>
-          </label>
+      {/* 2 & 3. Kontrol Navigasi Kanan Bawah: Lapisan Spasial, Kompas, dan Zoom (+ / -) */}
+      <div
+        className={`absolute bottom-6 flex flex-col items-center gap-2 z-[500] transition-all duration-300 ease-out ${
+          isDrawerOpen ? "right-[366px]" : "right-4"
+        }`}
+      >
+        {/* Tombol Lapisan Spasial Aktif */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setIsLayerPanelOpen(!isLayerPanelOpen)}
+            className="w-10 h-10 rounded-full shadow-2xl flex items-center justify-center transition cursor-pointer active:scale-95 group"
+            style={{
+              background: isLayerPanelOpen ? "#EB895B" : "rgba(245, 239, 227, 0.95)",
+              border: "1px solid rgba(235, 137, 91, 0.45)",
+              color: isLayerPanelOpen ? "#FFFFFF" : "#EB895B"
+            }}
+            title="Pengaturan Lapisan Spasial"
+          >
+            <Layers className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+          </button>
 
-          <label className="flex items-center gap-3 text-xs font-medium cursor-pointer hover:opacity-80 transition">
-            <input type="checkbox" checked={showPlume} onChange={(e) => setShowPlume(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B]" />
-            <div className="w-4 h-4 rounded-full flex items-center justify-center" style={{ background: "rgba(253, 183, 115, 0.3)", border: "1px dashed #FDB773" }}></div>
-            <span>Peluang Dispersi</span>
-          </label>
+          {/* Popover Lapisan Spasial (Muncul Mengambang di Sebelah Kiri Tombol) */}
+          {isLayerPanelOpen && (
+            <div
+              className="absolute bottom-0 right-12 rounded-xl p-3 shadow-2xl flex flex-col gap-2.5 backdrop-blur-md text-[#140f0e] border animate-in fade-in zoom-in-95 duration-200"
+              style={{
+                background: "rgba(245, 239, 227, 0.96)",
+                borderColor: "rgba(235, 137, 91, 0.4)",
+                minWidth: "210px"
+              }}
+            >
+              <div className="flex items-center justify-between border-b pb-1.5 mb-0.5" style={{ borderColor: "rgba(0, 0, 0, 0.1)" }}>
+                <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: "#EB895B" }}>
+                  Lapisan Spasial
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsLayerPanelOpen(false)}
+                  className="text-[#EB895B] hover:text-slate-800 transition cursor-pointer opacity-80 hover:opacity-100"
+                  title="Tutup Panel"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
 
-          <label className="flex items-center gap-3 text-xs font-medium cursor-pointer hover:opacity-80 transition">
-            <input type="checkbox" checked={showSchools} onChange={(e) => setShowSchools(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B]" />
-            <img src="/school.png" className="w-4 h-4 object-contain" />
-            <span>Fasilitas Sekolah</span>
-          </label>
+              <label className="flex items-center gap-2.5 text-xs font-medium cursor-pointer hover:opacity-80 transition select-none">
+                <input type="checkbox" checked={showVolcanoes} onChange={(e) => setShowVolcanoes(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B]" />
+                <img src="/1_normal.png" className="w-4 h-4 object-contain" />
+                <span>Gunungapi PVMBG</span>
+              </label>
 
-          <label className="flex items-center gap-3 text-xs font-medium cursor-pointer hover:opacity-80 transition">
-            <input type="checkbox" checked={showHospitals} onChange={(e) => setShowHospitals(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B]" />
-            <img src="/hospital.png" className="w-4 h-4 object-contain" />
-            <span>Fasilitas Kesehatan</span>
-          </label>
+              <label className="flex items-center gap-2.5 text-xs font-medium cursor-pointer hover:opacity-80 transition select-none">
+                <input type="checkbox" checked={showHotspots} onChange={(e) => setShowHotspots(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B]" />
+                <img src="/titik_api.png" className="w-4 h-4 object-contain" />
+                <span>Titik Api Satelit</span>
+              </label>
 
-          <label className="flex items-center gap-3 text-xs font-medium cursor-pointer hover:opacity-80 transition">
-            <input type="checkbox" checked={showAirports} onChange={(e) => setShowAirports(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B]" />
-            <img src="/plane.png" className="w-4 h-4 object-contain" />
-            <span>Bandara Udara</span>
-          </label>
+              <label className="flex items-center gap-2.5 text-xs font-medium cursor-pointer hover:opacity-80 transition select-none">
+                <input type="checkbox" checked={showPlume} onChange={(e) => setShowPlume(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B]" />
+                <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0" style={{ background: "rgba(253, 183, 115, 0.3)", border: "1px dashed #FDB773" }}></div>
+                <span>Peluang Dispersi</span>
+              </label>
+
+              <label className="flex items-center gap-2.5 text-xs font-medium cursor-pointer hover:opacity-80 transition select-none">
+                <input type="checkbox" checked={showSchools} onChange={(e) => setShowSchools(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B]" />
+                <img src="/school.png" className="w-4 h-4 object-contain" />
+                <span>Fasilitas Sekolah</span>
+              </label>
+
+              <label className="flex items-center gap-2.5 text-xs font-medium cursor-pointer hover:opacity-80 transition select-none">
+                <input type="checkbox" checked={showHospitals} onChange={(e) => setShowHospitals(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B]" />
+                <img src="/hospital.png" className="w-4 h-4 object-contain" />
+                <span>Fasilitas Kesehatan</span>
+              </label>
+
+              <label className="flex items-center gap-2.5 text-xs font-medium cursor-pointer hover:opacity-80 transition select-none">
+                <input type="checkbox" checked={showAirports} onChange={(e) => setShowAirports(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B]" />
+                <img src="/plane.png" className="w-4 h-4 object-contain" />
+                <span>Bandara Udara</span>
+              </label>
+            </div>
+          )}
         </div>
-      )}
 
-      {/* 2. Kontrol Navigasi Kanan Bawah: Tombol Bulat Reset Indonesia + Zoom (+ / -) */}
-      <div className="absolute bottom-6 right-4 flex flex-col items-center gap-2 z-[500]">
-        {/* Tombol Bulat Reset Tampilan Peta ke Seluruh Indonesia (Gaya Maps) */}
+        {/* Tombol Bulat Reset Tampilan Peta ke Seluruh Indonesia */}
         <button
           type="button"
           onClick={handleResetIndonesia}

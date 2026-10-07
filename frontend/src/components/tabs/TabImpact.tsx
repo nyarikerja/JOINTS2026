@@ -19,60 +19,62 @@ export const TabImpact: React.FC<TabImpactProps> = ({ impact, hazard, rainMm }) 
   const isRaining = rainMm > 0;
 
   return (
-    <div className="space-y-4 text-xs text-[#140f0e]">
+    <div className="space-y-3.5 text-xs text-[#2b211e]">
       <div>
-        <span className="inline-block bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-[9px] px-1.5 py-0.5 rounded tracking-wider mb-1">
-          METRIK POPULASI
+        <span className="font-sans text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#A14646]/10 text-[#A14646] border border-[#A14646]/20">
+          LINGKUP WILAYAH &amp; POPULASI
         </span>
-        <h3 className="font-bold text-sm text-[#140f0e]">Estimasi Dampak (P5 &ndash; P50 &ndash; P95)</h3>
-        <p className="text-[11px] text-slate-600">
-          Disajikan dalam rentang ketidakpastian ansambel 15 anggota model atmosfer.
+        <h3 className="font-serif text-[15px] font-bold text-[#2b211e] mt-1 mb-0.5">
+          Estimasi Paparan Wilayah
+        </h3>
+        <p className="text-[11px] text-[#2b211e]/70 leading-relaxed">
+          Proyeksi rentang ketidakpastian ansambel atmosferik 15 anggota (P5 - P50 - P95).
         </p>
 
-        <div className="mt-3 space-y-2">
+        <div className="mt-2.5 space-y-2">
           {/* Total Penduduk */}
-          <div className="bg-white border border-black/10 rounded-lg p-2.5 shadow-xs">
-            <div className="flex justify-between text-slate-600 text-[11px] mb-1">
+          <div className="bg-white border border-[#2b211e]/10 rounded-lg p-2.5 shadow-xs">
+            <div className="flex justify-between text-[#2b211e]/65 text-[11px] mb-1">
               <span>Penduduk Terpapar (Total)</span>
-              <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-[9px] font-medium">WorldPop</span>
+              <span className="bg-[#f7f3ed] text-[#2b211e] px-1.5 py-0.5 rounded text-[9px] font-medium border border-[#2b211e]/10">WorldPop</span>
             </div>
-            <div className="font-mono text-base font-bold text-[#140f0e]">
+            <div className="font-sans text-base font-bold text-[#2b211e]">
               {formatCompactRange(pop?.min, pop?.median, pop?.max)}
             </div>
-            <div className="text-[10px] text-slate-500">Jiwa di jalur sebaran abu/asap</div>
+            <div className="text-[10px] text-[#2b211e]/50">Jiwa dalam jalur sebaran atmosfer</div>
           </div>
 
           {/* Anak-anak & Lansia */}
           <div className="grid grid-cols-2 gap-2">
-            <div className="bg-white border border-black/10 rounded-lg p-2.5 shadow-xs">
-              <span className="text-[10px] text-slate-600 block mb-0.5">Anak-anak (&lt;15 Th)</span>
-              <div className="font-mono text-xs font-bold text-[#140f0e]">
+            <div className="bg-white border border-[#2b211e]/10 rounded-lg p-2.5 shadow-xs">
+              <span className="text-[10px] text-[#2b211e]/60 block mb-0.5">Anak-anak (&lt;15 Th)</span>
+              <div className="font-sans text-xs font-bold text-[#2b211e]">
                 {formatCompactRange(child?.min, child?.median, child?.max)}
               </div>
             </div>
-            <div className="bg-white border border-black/10 rounded-lg p-2.5 shadow-xs">
-              <span className="text-[10px] text-slate-600 block mb-0.5">Lansia (&ge;65 Th)</span>
-              <div className="font-mono text-xs font-bold text-[#140f0e]">
+            <div className="bg-white border border-[#2b211e]/10 rounded-lg p-2.5 shadow-xs">
+              <span className="text-[10px] text-[#2b211e]/60 block mb-0.5">Lansia (&ge;65 Th)</span>
+              <div className="font-sans text-xs font-bold text-[#2b211e]">
                 {formatCompactRange(elder?.min, elder?.median, elder?.max)}
               </div>
             </div>
           </div>
 
-          {/* Fasilitas Berisiko */}
-          <div className="bg-white border border-black/10 rounded-lg p-2.5 shadow-xs">
-            <div className="flex justify-between text-slate-600 text-[11px] mb-1">
+          {/* Fasilitas Publik Berisiko */}
+          <div className="bg-white border border-[#2b211e]/10 rounded-lg p-2.5 shadow-xs">
+            <div className="flex justify-between text-[#2b211e]/65 text-[11px] mb-1">
               <span>Fasilitas Publik Berisiko</span>
-              <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-[9px] font-medium">OSM</span>
+              <span className="bg-[#f7f3ed] text-[#2b211e] px-1.5 py-0.5 rounded text-[9px] font-medium border border-[#2b211e]/10">OSM</span>
             </div>
-            <div className="font-mono text-xs font-bold text-[#140f0e]">
+            <div className="font-sans text-xs font-bold text-[#2b211e]">
               Sekolah: {schools?.median ?? "-"} | Faskes: {health?.median ?? "-"}
             </div>
           </div>
 
-          {/* Footprint Area */}
-          <div className="bg-white border border-black/10 rounded-lg p-2.5 shadow-xs">
-            <span className="text-[10px] text-slate-600 block mb-0.5">Luas Area Footprint (km²)</span>
-            <div className="font-mono text-xs font-bold text-[#140f0e]">
+          {/* Luas Footprint */}
+          <div className="bg-white border border-[#2b211e]/10 rounded-lg p-2.5 shadow-xs">
+            <span className="text-[10px] text-[#2b211e]/60 block mb-0.5">Luas Area Footprint (km²)</span>
+            <div className="font-sans text-xs font-bold text-[#2b211e]">
               {formatCompactRange(area?.min, area?.median, area?.max)}
             </div>
           </div>
@@ -81,21 +83,21 @@ export const TabImpact: React.FC<TabImpactProps> = ({ impact, hazard, rainMm }) 
 
       {/* Sektor Pertanian & Air (Khusus Gunung) */}
       {hazard === "volcano" && (
-        <div className="pt-2 border-t border-black/10">
-          <span className="inline-block bg-amber-100 text-amber-800 border border-amber-300 font-bold text-[9px] px-1.5 py-0.5 rounded tracking-wider mb-1">
-            SEKTOR PERTANIAN &amp; AIR
+        <div className="pt-2 border-t border-[#2b211e]/10">
+          <span className="font-sans text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#EB895B]/15 text-[#c25e2d] border border-[#EB895B]/30 mb-1 inline-block">
+            SUMBER AIR &amp; PERTANIAN
           </span>
-          <h4 className="font-bold text-xs text-[#140f0e] mb-2">Lahan Sawah &amp; Sumber Air</h4>
+          <h4 className="font-serif font-bold text-xs text-[#2b211e] mb-1.5">Lahan Sawah &amp; Sumber Air</h4>
           <div className="grid grid-cols-2 gap-2">
-            <div className="bg-white border border-black/10 rounded p-2 shadow-xs">
-              <span className="text-[10px] text-slate-600 block">Sawah Tertimpa Abu:</span>
-              <strong className="text-amber-700 font-mono text-xs">
+            <div className="bg-white border border-[#2b211e]/10 rounded p-2 shadow-xs">
+              <span className="text-[10px] text-[#2b211e]/60 block">Sawah Tertimpa Abu:</span>
+              <strong className="text-[#DA6556] font-sans text-xs">
                 {formatNumber(impact?.agricultural_impact_ha || 3420)} Ha
               </strong>
             </div>
-            <div className="bg-white border border-black/10 rounded p-2 shadow-xs">
-              <span className="text-[10px] text-slate-600 block">Sumber Air Hulu:</span>
-              <strong className="text-sky-700 font-mono text-xs">
+            <div className="bg-white border border-[#2b211e]/10 rounded p-2 shadow-xs">
+              <span className="text-[10px] text-[#2b211e]/60 block">Sumber Air Hulu:</span>
+              <strong className="text-[#A14646] font-sans text-xs">
                 {impact?.water_sources_count || 12} Titik DAS
               </strong>
             </div>
@@ -103,28 +105,28 @@ export const TabImpact: React.FC<TabImpactProps> = ({ impact, hazard, rainMm }) 
         </div>
       )}
 
-      {/* Meteorologi Pencucian Hujan */}
-      <div className="pt-2 border-t border-black/10">
-        <span className="inline-block bg-sky-100 text-sky-800 border border-sky-300 font-bold text-[9px] px-1.5 py-0.5 rounded tracking-wider mb-1">
-          METEOROLOGI PRESIPITASI
+      {/* Efek Hujan */}
+      <div className="pt-2 border-t border-[#2b211e]/10">
+        <span className="font-sans text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#FDB773]/20 text-[#2b211e] border border-[#FDB773]/30 mb-1 inline-block">
+          PRESIPITASI HUJAN
         </span>
-        <h4 className="font-bold text-xs text-[#140f0e] mb-1.5">Pengaruh Hujan Pencuci (Wet Deposition)</h4>
-        <div className="bg-white border border-black/10 rounded p-2.5 text-[11px] text-slate-700 shadow-xs">
+        <h4 className="font-serif font-bold text-xs text-[#2b211e] mb-1.5">Pencucian Partikel Udara</h4>
+        <div className="bg-white border border-[#2b211e]/10 rounded p-2.5 text-[11px] text-[#2b211e] shadow-xs">
           {isRaining ? (
             <div>
-              <span className="text-emerald-700 font-semibold">Aktif ({rainMm} mm/jam):</span>
-              <p className="mt-0.5 text-slate-600">
-                Pencucian presipitasi mempercepat penurunan partikel dari udara sebesar ~{Math.min(65, rainMm * 2.5)}%, namun meningkatkan akumulasi sedimen basah.
+              <span className="text-[#2a8485] font-semibold">Hujan Aktif ({rainMm} mm/jam):</span>
+              <p className="mt-0.5 text-[#2b211e]/75">
+                Pencucian mempercepat penurunan partikel dari udara sebesar ~{Math.min(65, rainMm * 2.5)}%, namun memicu akumulasi endapan basah di darat.
               </p>
               {hazard === "volcano" && (
-                <div className="mt-2 bg-red-50 border border-red-300 rounded p-2 text-red-900">
-                  <strong className="text-red-700 block mb-0.5">⚠️ PERINGATAN BAHAYA LAHAR HUJAN:</strong>
-                  Hujan di lereng atas berpotensi memicu banjir lahar dingin di daerah aliran sungai (DAS). Warga di bantaran sungai wajib evakuasi segera!
+                <div className="mt-2 bg-[#DA6556]/15 border border-[#DA6556]/40 rounded p-2 text-[#A14646]">
+                  <strong className="block mb-0.5">Peringatan Lahar Hujan:</strong>
+                  Hujan lebat di lereng atas berpotensi memicu banjir lahar dingin di daerah aliran sungai (DAS).
                 </div>
               )}
             </div>
           ) : (
-            <span className="text-slate-500">Tidak ada simulasi presipitasi hujan (kondisi kering).</span>
+            <span className="text-[#2b211e]/50">Kondisi meteorologi kering tanpa presipitasi hujan.</span>
           )}
         </div>
       </div>

@@ -5,11 +5,13 @@ import { formatHour } from "../../utils/formatters";
 interface TimelinePlayerProps {
   currentHour: number;
   onHourChange: (hour: number) => void;
+  isDrawerOpen?: boolean;
 }
 
 export const TimelinePlayer: React.FC<TimelinePlayerProps> = ({
   currentHour,
-  onHourChange
+  onHourChange,
+  isDrawerOpen = false
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
@@ -30,7 +32,11 @@ export const TimelinePlayer: React.FC<TimelinePlayerProps> = ({
 
   return (
     <div 
-      className={`absolute left-1/2 -translate-x-1/2 w-[min(720px,calc(100%-28px))] z-[1000] transition-transform duration-500 ease-in-out ${
+      className={`absolute transition-all duration-300 ease-out z-[1000] ${
+        isDrawerOpen 
+          ? "left-1/2 -translate-x-[60%] w-[min(620px,calc(100vw-440px))]" 
+          : "left-1/2 -translate-x-1/2 w-[min(620px,calc(100vw-40px))]"
+      } ${
         isExpanded ? "bottom-3.5 translate-y-0" : "bottom-0 translate-y-full"
       }`}
     >

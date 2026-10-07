@@ -20,7 +20,7 @@ import type {
 
 export const App: React.FC = () => {
   const [hazard, setHazard] = useState<HazardType>("volcano");
-  const [eventId, setEventId] = useState<string>("anak_krakatau_2026_09");
+  const [eventId, setEventId] = useState<string>("");
   const [mode, setMode] = useState<ModelingMode>("auto");
   const [overrides, setOverrides] = useState<SimulationOverrides>({
     column_height_km: 12.0,
@@ -36,6 +36,7 @@ export const App: React.FC = () => {
   const [impactData, setImpactData] = useState<ImpactResponse | null>(null);
   const [facilitiesData, setFacilitiesData] = useState<FacilitiesImpactResponse | null>(null);
   const [validationData, setValidationData] = useState<ValidationResponse | null>(null);
+  const [advisoryData, setAdvisoryData] = useState<any>(null);
 
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [isLegendOpen, setIsLegendOpen] = useState<boolean>(false);
@@ -54,13 +55,13 @@ export const App: React.FC = () => {
   // Ambil poligon sebaran jam tertentu saat activeRunId aktif atau currentHour berubah
   React.useEffect(() => {
     if (!activeRunId) return;
-    if (hourlyTiersCache && hourlyTiersCache[currentHour]) return;
 
     api.getTiersAtHour(activeRunId, currentHour)
       .then((geo) => {
         setHourlyTiersCache((prev) => ({
           ...(prev || {}),
-          [currentHour]: geo
+          [currentHour]: geo,
+          [`hour_${currentHour}`]: geo
         }));
       })
       .catch((err) => console.error("Gagal memuat poligon jam", currentHour, err));
@@ -68,11 +69,7 @@ export const App: React.FC = () => {
 
   const handleHazardChange = (newHazard: HazardType) => {
     setHazard(newHazard);
-    if (newHazard === "fire" && !eventId.startsWith("hutan_")) {
-      setEventId("hutan_sebangau");
-    } else if (newHazard === "volcano" && (eventId.startsWith("hutan_") || eventId === "live_kalimantan")) {
-      setEventId("anak_krakatau_2026_09");
-    }
+    setEventId("");
   };
 
   const [simulatedEventName, setSimulatedEventName] = useState<string>("G. Anak Krakatau");
@@ -129,10 +126,11 @@ export const App: React.FC = () => {
       // Set pratinjau jam ke 12 agar poligon sebaran langsung terlihat di peta (sesuai fe-dummy)
       setCurrentHour(12);
 
-      const [impact, facilities, validation, tier12] = await Promise.all([
+      const [impact, facilities, validation, advisory, tier12] = await Promise.all([
         api.getImpact(runId).catch(() => null),
         api.getFacilitiesImpacted(runId).catch(() => null),
         api.getValidation(activeEventId).catch(() => null),
+        api.getEmergencyAdvisory(runId).catch(() => null),
         api.getTiersAtHour(runId, 12).catch(() => null)
       ]);
 
@@ -143,6 +141,7 @@ export const App: React.FC = () => {
       setImpactData(impact);
       setFacilitiesData(facilities);
       setValidationData(validation);
+      setAdvisoryData(advisory);
       setIsDrawerOpen(true);
       setProgressText(`Selesai: ${simRes.scenario_label || "15 anggota ensemble"}`);
     } catch (err: any) {
@@ -229,6 +228,8 @@ export const App: React.FC = () => {
             setEventId(newId);
           }}
           resetViewTrigger={resetViewTrigger}
+          activeRunId={activeRunId}
+          isDrawerOpen={isDrawerOpen}
           onToggleLegend={() => setIsLegendOpen((prev) => !prev)}
           onLayersLoaded={() => setIsMapReady(true)}
         />
@@ -245,11 +246,18 @@ export const App: React.FC = () => {
 
         {/* Floating Active Simulation Pill */}
         {activeRunId && (
-          <div className="absolute top-3.5 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md border border-slate-700/80 rounded-full px-3.5 py-1 z-[1000] text-xs flex items-center gap-2 shadow-xl pointer-events-none">
+          <div className="absolute top-3.5 left-1/2 -translate-x-1/2 bg-[#1c1513]/90 backdrop-blur-md border border-[#EB895B]/30 rounded-full px-3.5 py-1 z-[1000] text-xs flex items-center gap-2 shadow-xl pointer-events-none">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-slate-300">Simulasi Aktif:</span>
-            <strong className="text-white font-semibold">{simulatedEventName}</strong>
-            <span className="text-sky-400 font-mono text-[11px]">(H+{currentHour}:00)</span>
+            <span className="text-[#FFF0C5]/70">Simulasi Aktif:</span>
+            <strong className="text-[#FFF0C5] font-semibold">{simulatedEventName}</strong>
+            <span className="text-[#EB895B] font-mono text-[11px]">(H+{currentHour}:00)</span>
+          </div>
+        )}
+
+        {/* Watermark Skenario Hipotetis (Mode Coba-Coba / Experiment) */}
+        {mode === "experiment" && activeRunId && (
+          <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-amber-950/80 backdrop-blur-sm border border-amber-500/40 rounded px-2.5 py-0.5 z-[999] text-[10px] font-mono tracking-wider text-amber-200 uppercase pointer-events-none shadow-md">
+            SKENARIO HIPOTETIS &bull; BUKAN DATA RESMI
           </div>
         )}
 
@@ -274,6 +282,7 @@ export const App: React.FC = () => {
         <TimelinePlayer
           currentHour={currentHour}
           onHourChange={setCurrentHour}
+          isDrawerOpen={isDrawerOpen}
         />
 
         {/* Zona D: Tabbed Inspection Dock Melayang di Kanan */}
@@ -283,6 +292,7 @@ export const App: React.FC = () => {
           impact={impactData}
           facilities={facilitiesData}
           validation={validationData}
+          advisory={advisoryData}
           hazard={hazard}
           rainMm={mode === "experiment" ? overrides.rain_scavenging_mm_h ?? 0 : 0}
           onFlyTo={(lat, lng) => {
