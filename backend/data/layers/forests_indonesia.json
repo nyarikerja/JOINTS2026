@@ -9,7 +9,7 @@
     "lon": 113.85,
     "area_ha": 568700,
     "risk_level": "Sangat Rawan",
-    "n_hotspots": 36,
+    "n_hotspots": 354,
     "description": "Kawasan rawa gambut dalam terluas di Kalteng penyerap karbon global, episentrum kebakaran gambut musiman."
   },
   {
@@ -22,7 +22,7 @@
     "lon": 114.25,
     "area_ha": 1000000,
     "risk_level": "Sangat Rawan",
-    "n_hotspots": 34,
+    "n_hotspots": 175,
     "description": "Zona bekas proyek lahan gambut dengan kanal-kanal terbuka yang memicu pengeringan gambut dan api bawah tanah."
   },
   {
@@ -35,7 +35,7 @@
     "lon": 111.95,
     "area_ha": 415040,
     "risk_level": "Rawan",
-    "n_hotspots": 22,
+    "n_hotspots": 379,
     "description": "Cagar biosfer dunia habitat orangutan dengan kawasan gambut pesisir rawan rambatan api."
   },
   {
@@ -48,7 +48,7 @@
     "lon": 110.15,
     "area_ha": 90000,
     "risk_level": "Rawan",
-    "n_hotspots": 24,
+    "n_hotspots": 49,
     "description": "Kawasan perbukitan dan rawa gambut di Ketapang yang rentan kebakaran di musim kemarau panjang."
   },
   {
@@ -74,7 +74,7 @@
     "lon": 112.15,
     "area_ha": 132000,
     "risk_level": "Waspada",
-    "n_hotspots": 16,
+    "n_hotspots": 8,
     "description": "Lahan basah Ramsar yang mengering ekstrem saat fenomena El Nino."
   },
   {
@@ -87,7 +87,7 @@
     "lon": 115.55,
     "area_ha": 180000,
     "risk_level": "Waspada",
-    "n_hotspots": 18,
+    "n_hotspots": 233,
     "description": "Kawasan tangkapan air Kalsel dengan kerentanan kebakaran di punggungan lereng kering."
   },
   {
@@ -100,7 +100,7 @@
     "lon": 114.78,
     "area_ha": 45000,
     "risk_level": "Sangat Rawan",
-    "n_hotspots": 25,
+    "n_hotspots": 160,
     "description": "Lokasi langganan kabut asap tebal yang mengganggu operasional penerbangan Bandara Syamsudin Noor."
   },
   {
@@ -113,7 +113,7 @@
     "lon": 117.25,
     "area_ha": 198629,
     "risk_level": "Waspada",
-    "n_hotspots": 15,
+    "n_hotspots": 51,
     "description": "Sisa hutan ulin dataran rendah timur Kalimantan dengan sejarah kebakaran hebat tahun 1982 dan 1998."
   },
   {
@@ -165,7 +165,7 @@
     "lon": 104.28,
     "area_ha": 142750,
     "risk_level": "Sangat Rawan",
-    "n_hotspots": 24,
+    "n_hotspots": 143,
     "description": "Kawasan situs Ramsar lahan basah gambut dengan endapan bahan bakar organik tebal."
   },
   {
@@ -178,7 +178,7 @@
     "lon": 105.12,
     "area_ha": 88000,
     "risk_level": "Sangat Rawan",
-    "n_hotspots": 32,
+    "n_hotspots": 60,
     "description": "Episentrum karhutla gambut Sumatera Selatan yang berdampak langsung pada indeks ISPU Kota Palembang."
   },
   {
@@ -204,7 +204,7 @@
     "lon": 102.45,
     "area_ha": 144223,
     "risk_level": "Waspada",
-    "n_hotspots": 16,
+    "n_hotspots": 13,
     "description": "Zona hutan perbukitan di perbatasan Riau dan Jambi yang rawan kebakaran perbatasan di musim kering."
   },
   {
@@ -217,7 +217,7 @@
     "lon": 101.45,
     "area_ha": 1375350,
     "risk_level": "Waspada",
-    "n_hotspots": 14,
+    "n_hotspots": 1,
     "description": "Taman nasional terluas di Sumatera dengan risiko kebakaran pada zona perladangan lereng curam."
   },
   {
@@ -230,7 +230,7 @@
     "lon": 105.75,
     "area_ha": 125621,
     "risk_level": "Rawan",
-    "n_hotspots": 18,
+    "n_hotspots": 68,
     "description": "Kawasan suaka gajah dan badak dengan padang alang-alang yang sangat mudah terbakar di musim panas."
   },
   {
@@ -243,7 +243,7 @@
     "lon": 112.95,
     "area_ha": 50276,
     "risk_level": "Sangat Rawan",
-    "n_hotspots": 20,
+    "n_hotspots": 6,
     "description": "Lembah Teletubbies dan sabana kaldera Tengger yang sangat kering dan sering dilanda kebakaran savana."
   },
   {
@@ -256,7 +256,7 @@
     "lon": 114.38,
     "area_ha": 25000,
     "risk_level": "Sangat Rawan",
-    "n_hotspots": 22,
+    "n_hotspots": 12,
     "description": "'Africa van Java', ekosistem sabana tropis kering dengan siklus kebakaran alami dan pembakaran liar."
   },
   {
@@ -269,7 +269,7 @@
     "lon": 111.19,
     "area_ha": 15000,
     "risk_level": "Rawan",
-    "n_hotspots": 16,
+    "n_hotspots": 13,
     "description": "Lereng curam berbatu dengan serasah daun pinus kering yang mudah memicu kebakaran merambat cepat."
   },
   {
@@ -282,7 +282,7 @@
     "lon": 110.43,
     "area_ha": 5725,
     "risk_level": "Rawan",
-    "n_hotspots": 14,
+    "n_hotspots": 4,
     "description": "Padang rumput puncak yang rentan terbakar saat angin kencang berkecepatan tinggi di musim kemarau."
   },
   {
@@ -295,7 +295,7 @@
     "lon": 108.4,
     "area_ha": 15500,
     "risk_level": "Waspada",
-    "n_hotspots": 12,
+    "n_hotspots": 7,
     "description": "Kawasan lereng utara berbatu di daerah Cirebon-Kuningan yang kering akibat bayangan hujan."
   },
   {
@@ -308,7 +308,7 @@
     "lon": 114.45,
     "area_ha": 43420,
     "risk_level": "Waspada",
-    "n_hotspots": 15,
+    "n_hotspots": 2,
     "description": "Semenanjung Blambangan dengan padang penggembalaan Sadengan yang kering di musim timur."
   },
   {
@@ -321,7 +321,7 @@
     "lon": 119.55,
     "area_ha": 173300,
     "risk_level": "Rawan",
-    "n_hotspots": 18,
+    "n_hotspots": 8,
     "description": "Sabana padang rumput kepulauan habitat komodo dengan curah hujan tahunan sangat rendah."
   },
   {
@@ -334,7 +334,7 @@
     "lon": 119.85,
     "area_ha": 87984,
     "risk_level": "Sangat Rawan",
-    "n_hotspots": 25,
+    "n_hotspots": 1,
     "description": "Lanskap sabana terluas di NTT dengan frekuensi kebakaran padang rumput tahunan yang sangat tinggi."
   },
   {
@@ -347,7 +347,7 @@
     "lon": 118.0,
     "area_ha": 71645,
     "risk_level": "Rawan",
-    "n_hotspots": 16,
+    "n_hotspots": 2,
     "description": "Padang rumput Doro Ncanga di kaki Tambora tempat penggembalaan ternak dengan sabana mudah terbakar."
   },
   {
@@ -360,7 +360,7 @@
     "lon": 116.45,
     "area_ha": 41330,
     "risk_level": "Rawan",
-    "n_hotspots": 14,
+    "n_hotspots": 2,
     "description": "Lembah Sembalun dan jalur pendakian bukit sabana yang rawan terbakar oleh hembusan angin tenggara."
   },
   {
@@ -373,7 +373,7 @@
     "lon": 114.48,
     "area_ha": 19002,
     "risk_level": "Waspada",
-    "n_hotspots": 10,
+    "n_hotspots": 14,
     "description": "Kawasan hutan musim gugur daun habitat Jalak Bali di ujung barat Pulau Dewata."
   },
   {
@@ -399,7 +399,7 @@
     "lon": 120.15,
     "area_ha": 217991,
     "risk_level": "Waspada",
-    "n_hotspots": 14,
+    "n_hotspots": 19,
     "description": "Lembah Besoa dan Napu dengan petak-petak padang alang-alang rawan rambatan api perladangan."
   },
   {
@@ -412,7 +412,7 @@
     "lon": 123.65,
     "area_ha": 287115,
     "risk_level": "Waspada",
-    "n_hotspots": 12,
+    "n_hotspots": 60,
     "description": "Taman nasional terluas di semenanjung utara Sulawesi penghasil air dan habitat anoa."
   },
   {
@@ -425,7 +425,7 @@
     "lon": 119.75,
     "area_ha": 43750,
     "risk_level": "Waspada",
-    "n_hotspots": 11,
+    "n_hotspots": 1,
     "description": "Kawasan menara karst terluas kedua di dunia dengan serasah kering di ceruk-ceruk tebing kapur."
   },
   {
@@ -438,7 +438,7 @@
     "lon": 140.65,
     "area_ha": 413810,
     "risk_level": "Sangat Rawan",
-    "n_hotspots": 28,
+    "n_hotspots": 125,
     "description": "'Serengeti Papua', hamparan sabana kayu putih (Melaleuca) dengan kebakaran rutin musiman saat kemarau."
   },
   {
@@ -451,7 +451,7 @@
     "lon": 139.45,
     "area_ha": 650000,
     "risk_level": "Rawan",
-    "n_hotspots": 22,
+    "n_hotspots": 60,
     "description": "Hamparan rawa gambut pesisir selatan Papua dengan endapan organik tebal dan keterisolasian tinggi."
   },
   {
@@ -464,7 +464,7 @@
     "lon": 133.55,
     "area_ha": 260000,
     "risk_level": "Waspada",
-    "n_hotspots": 12,
+    "n_hotspots": 3,
     "description": "Kawasan hutan dataran rendah dan rawa pasang surut di semenanjung kepala burung Papua."
   }
 ]

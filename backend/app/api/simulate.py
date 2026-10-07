@@ -219,6 +219,25 @@ def start_simulation(req: SimulationRequest):
         hotspots = FirmsIngest.load_event_hotspots(event_id, overrides=req.overrides)
         total_frp = sum(float(h.get("frp", 0.0)) for h in hotspots)
 
+        # Jika titik api lokal minim / kosong, periksa apakah terdapat titik api riil satelit FIRMS
+        # yang jatuh di dalam poligon batas kawasan resmi (Point-in-Polygon query)
+        if len(hotspots) < 10 and not (req.overrides and "hotspots" in req.overrides):
+            bound_path = BACKEND_DIR / "data" / "layers" / "forest_boundaries.geojson"
+            if bound_path.exists():
+                try:
+                    from shapely.geometry import Point, shape
+                    b_data = json.loads(bound_path.read_text(encoding="utf-8"))
+                    f_feat = next((feat for feat in b_data.get("features", []) if feat.get("id") == event_id), None)
+                    if f_feat:
+                        f_poly = shape(f_feat["geometry"])
+                        nat_hotspots = FirmsIngest.load_event_hotspots("national")
+                        inside_pts = [h for h in nat_hotspots if f_poly.contains(Point(h["longitude"], h["latitude"]))]
+                        if len(inside_pts) > len(hotspots):
+                            hotspots = inside_pts
+                            total_frp = sum(float(h.get("frp", 0.0)) for h in hotspots)
+                except Exception:
+                    pass
+
         # Jika mode 'experiment' (skenario uji coba) atau custom point dan belum ada titik api signifikan (< 40 MW),
         # sediakan klaster titik api skenario agar pengguna dapat mengamati simulasi dispersi asap
         if (req.mode == "experiment" and total_frp < 40.0) or (not hotspots and req.mode == "experiment") or (not hotspots and req.source.latitude is not None):

@@ -118,7 +118,7 @@ def get_layer(
         if forest_path.exists():
             with open(forest_path, "r", encoding="utf-8-sig") as f:
                 forests_data = json.load(f)
-            # Sinkronkan n_hotspots secara real-time dari data CSV FIRMS aktual
+            # Sinkronkan n_hotspots: prioritaskan jumlah hotspot spasial, perbarui jika CSV lokal ada
             for item in forests_data:
                 ev_id = item.get("id")
                 if ev_id:
@@ -126,13 +126,19 @@ def get_layer(
                     if csv_f.exists() and csv_f.stat().st_size > 0:
                         try:
                             df_h = pd.read_csv(csv_f)
-                            item["n_hotspots"] = len(df_h)
+                            item["n_hotspots"] = max(item.get("n_hotspots", 0), len(df_h))
                         except Exception:
-                            item["n_hotspots"] = 0
-                    elif csv_f.exists():
-                        item["n_hotspots"] = 0
+                            pass
             return forests_data
-        return {"forests": []}
+    elif name in ["forest-boundaries", "forests-boundaries", "forest_boundaries"]:
+        import json
+
+        from app.core.config import BACKEND_DIR
+        bound_path = BACKEND_DIR / "data" / "layers" / "forest_boundaries.geojson"
+        if bound_path.exists():
+            with open(bound_path, "r", encoding="utf-8-sig") as f:
+                return json.load(f)
+        return {"type": "FeatureCollection", "features": []}
 
     elif name == "summary-kpi":
         import datetime

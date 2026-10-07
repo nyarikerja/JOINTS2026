@@ -1,15 +1,15 @@
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
 from app.engine.simulator import SimulationRunner
-from app.schemas.simulation import SimulationRequest
-from app.ingest.openmeteo import OpenMeteoIngest
 from app.ingest.firms import FirmsIngest
+from app.ingest.openmeteo import OpenMeteoIngest
+from app.schemas.simulation import SimulationRequest
 
 req = SimulationRequest(
     hazard="fire",

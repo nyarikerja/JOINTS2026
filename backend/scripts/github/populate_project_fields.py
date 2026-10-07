@@ -1,7 +1,6 @@
 import json
 import re
 import subprocess
-import sys
 
 GH_PATH = r"C:\Users\arya4\AppData\Local\Microsoft\WinGet\Links\gh.exe"
 PROJECT_ID = "PVT_kwDOFBBJ5M4BlWtI"

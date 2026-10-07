@@ -1,4 +1,6 @@
-import urllib.request, json
+import json
+import urllib.request
+
 
 def get(path):
     with urllib.request.urlopen(f'http://127.0.0.1:8000{path}') as res:

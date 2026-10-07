@@ -16,6 +16,9 @@ let facilitiesLayer = null;
 let hotspotsLayer = null;
 let volcanoesLayer = null;
 let forestsLayer = null;
+let forestBoundariesLayer = null;
+let highlightedForestPoly = null;
+let forestBoundariesData = null;
 let currentHourlyTiersCache = {};
 let timePlayInterval = null;
 let allVolcanoesData = [];
@@ -51,10 +54,11 @@ function initMap() {
     })
     .catch(() => {});
 
-  // Muat Lapisan-lapisan Nasional
+  // Muat Lapisan-lapisan Nasional (Persisten di Peta)
   loadNationalVolcanoes();
   loadNationalForests();
-  loadHotspots("national");
+  loadForestBoundaries();
+  loadHotspots();
   loadFacilities();
   loadSummaryKpi();
   startClocks();
@@ -742,6 +746,209 @@ function renderForestMarkers(forests) {
   }
 }
 
+// =============================================================================
+// 3b. Lapisan Batas Wilayah Kawasan Hutan & Konservasi (Real Forest Boundaries GeoJSON)
+// =============================================================================
+function loadForestBoundaries() {
+  fetch(`${API_BASE}/layers/forest-boundaries`)
+    .then(r => {
+      if (!r.ok) throw new Error("Endpoint /layers/forest-boundaries status " + r.status);
+      return r.json();
+    })
+    .catch(() => {
+      // Fallback ke file statis GeoJSON di folder data
+      return fetch("data/forest_boundaries.geojson").then(r => r.json());
+    })
+    .then(geo => {
+      if (geo && geo.features) {
+        forestBoundariesData = geo;
+        renderForestBoundaries(geo);
+      }
+    })
+    .catch(err => {
+      console.warn("Gagal memuat batas kawasan hutan:", err);
+    });
+}
+
+function getForestPolygonStyle(feature, isHighlighted = false) {
+  const p = feature.properties || {};
+  const nHot = p.n_hotspots || 0;
+
+  if (isHighlighted) {
+    return {
+      color: "#38bdf8",
+      weight: 3.2,
+      opacity: 0.98,
+      fillColor: nHot >= 10 ? "#ef4444" : (nHot > 0 ? "#f59e0b" : "#0284c7"),
+      fillOpacity: 0.35,
+      dashArray: null
+    };
+  }
+
+  // Warna batas berdasarkan intensitas karhutla satelit riil
+  let strokeColor = "#10b981"; // Hijau konservasi
+  let fillColor = "#059669";
+  if (nHot >= 10) {
+    strokeColor = "#ef4444"; // Merah bahaya karhutla
+    fillColor = "#dc2626";
+  } else if (nHot > 0) {
+    strokeColor = "#f59e0b"; // Oranye waspada
+    fillColor = "#d97706";
+  }
+
+  return {
+    color: strokeColor,
+    weight: 1.8,
+    opacity: 0.85,
+    fillColor: fillColor,
+    fillOpacity: 0.16,
+    dashArray: "4, 4"
+  };
+}
+
+function renderForestBoundaries(geo) {
+  if (forestBoundariesLayer) {
+    map.removeLayer(forestBoundariesLayer);
+    forestBoundariesLayer = null;
+  }
+
+  forestBoundariesLayer = L.geoJSON(geo, {
+    style: feature => getForestPolygonStyle(feature, false),
+    onEachFeature: (feature, layer) => {
+      const p = feature.properties || {};
+      const fid = feature.id || p.id;
+      const nHot = p.n_hotspots || 0;
+      const areaHa = p.area_ha ? Number(p.area_ha).toLocaleString("id-ID") : "-";
+
+      const hotspotBadge = nHot >= 10
+        ? `<span style="color:#ef4444;font-weight:700;">🔥 ${nHot} Titik Api Aktif (Karhutla)</span>`
+        : (nHot > 0
+          ? `<span style="color:#f59e0b;font-weight:700;">⚠️ ${nHot} Titik Api Terdeteksi</span>`
+          : `<span style="color:#10b981;font-weight:700;">✅ Bebas Titik Api (0 Hotspot)</span>`);
+
+      layer.bindTooltip(`
+        <div style="font-family:sans-serif;font-size:11px;line-height:1.4;">
+          <strong style="color:#38bdf8;font-size:12px;">🗺️ Batas Kawasan: ${p.name || fid}</strong><br>
+          <span style="color:#94a3b8;">Luas Kawasan: <strong style="color:#f8fafc;">${areaHa} ha</strong></span><br>
+          <span>${hotspotBadge}</span><br>
+          <small style="color:#94a3b8;">${p.forest_type || 'Kawasan Konservasi'} &bull; ${p.province || ''}</small>
+        </div>
+      `, { sticky: true, className: "volcano-tooltip" });
+
+      layer.on({
+        mouseover: e => {
+          const l = e.target;
+          if (highlightedForestPoly !== l) {
+            l.setStyle({
+              weight: 2.6,
+              opacity: 1.0,
+              fillOpacity: 0.28
+            });
+            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+              l.bringToFront();
+            }
+          }
+        },
+        mouseout: e => {
+          const l = e.target;
+          if (highlightedForestPoly !== l) {
+            forestBoundariesLayer.resetStyle(l);
+          }
+        },
+        click: e => {
+          L.DomEvent.stopPropagation(e);
+          highlightForestBoundaryLayer(layer, feature);
+
+          // Sinkronkan ke UI dropdown
+          const hazardSel = document.getElementById("hazardSelect");
+          if (hazardSel && hazardSel.value !== "fire") {
+            hazardSel.value = "fire";
+            currentHazard = "fire";
+            onHazardChanged();
+          }
+
+          const eventSel = document.getElementById("eventSelect");
+          if (eventSel) {
+            eventSel.value = fid;
+            syncComboboxTriggerUI(fid);
+          }
+
+          if (nHot < 10) {
+            const expRadio = document.querySelector('input[name="simMode"][value="experiment"]');
+            if (expRadio) {
+              expRadio.checked = true;
+              if (typeof onSimModeChanged === "function") onSimModeChanged();
+            }
+          }
+
+          const cLat = p.center_lat || (e.latlng ? e.latlng.lat : -2.5);
+          const cLon = p.center_lon || (e.latlng ? e.latlng.lng : 113.5);
+          map.flyTo([cLat, cLon], 9, { duration: 1.0 });
+
+          const popupHtml = `
+            <div class="popup-box">
+              <div class="popup-volcano-title">
+                <span>🗺️ ${p.name || fid}</span>
+                <span class="badge-level lvl-${nHot >= 10 ? 4 : (nHot > 0 ? 3 : 1)}">
+                  ${nHot >= 10 ? 'Karhutla' : (nHot > 0 ? 'Waspada' : 'Aman')}
+                </span>
+              </div>
+              <div style="color:#9db0a4;font-size:11px;margin-bottom:6px;">
+                Provinsi: <strong>${p.province || '-'}</strong> &bull; Ekosistem: <strong>${p.forest_type || '-'}</strong>
+              </div>
+              <div style="background:#131815;border:1px solid #2e3b33;border-radius:4px;padding:6px;font-size:11px;margin-bottom:8px;">
+                <div>📐 <strong>Luas Batas Poligon:</strong> ${areaHa} ha</div>
+                <div style="margin-top:2px;">🛰️ <strong>Satelit FIRMS di Kawasan:</strong> ${hotspotBadge}</div>
+                <div style="margin-top:2px;color:#94a3b8;"><small>Kerentanan: <span style="color:#fbbf24;">${p.risk_level || 'Rawan'}</span></small></div>
+              </div>
+              <button class="popup-action-btn" onclick="selectAndSimulateForest('${fid}', ${cLat}, ${cLon}, ${nHot})">
+                ${nHot < 10 ? 'Uji Skenario Kebakaran (Eksperimen)' : 'Simulasikan Sebaran Asap PM2.5'}
+              </button>
+            </div>
+          `;
+          layer.bindPopup(popupHtml, { maxWidth: 300 }).openPopup(e.latlng);
+        }
+      });
+    }
+  });
+
+  const toggle = document.getElementById("layerToggleForestBoundaries");
+  if (!toggle || toggle.checked) {
+    forestBoundariesLayer.addTo(map);
+  }
+}
+
+function highlightForestBoundaryLayer(layer, feature) {
+  if (highlightedForestPoly && forestBoundariesLayer) {
+    forestBoundariesLayer.resetStyle(highlightedForestPoly);
+  }
+  highlightedForestPoly = layer;
+  if (layer && feature) {
+    layer.setStyle(getForestPolygonStyle(feature, true));
+    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+      layer.bringToFront();
+    }
+  }
+}
+
+function highlightForestBoundaryById(forestId) {
+  if (!forestBoundariesLayer || !forestId) return;
+
+  let found = false;
+  forestBoundariesLayer.eachLayer(layer => {
+    const f = layer.feature;
+    if (f && (f.id === forestId || (f.properties && f.properties.id === forestId))) {
+      highlightForestBoundaryLayer(layer, f);
+      found = true;
+    }
+  });
+
+  if (!found && highlightedForestPoly) {
+    forestBoundariesLayer.resetStyle(highlightedForestPoly);
+    highlightedForestPoly = null;
+  }
+}
+
 // Tombol dari Popup Hutan Langsung
 window.selectAndSimulateForest = function(forestId, lat, lon, nHotspots) {
   // 1. Pilih jenis bahaya karhutla
@@ -771,12 +978,15 @@ window.selectAndSimulateForest = function(forestId, lat, lon, nHotspots) {
   eventSel.value = forestId;
   onEventSelectChanged({ target: { value: forestId } });
 
-  // 4. Zoom ke kawasan hutan
+  // 4. Sorot batas poligon riil kawasan hutan
+  highlightForestBoundaryById(forestId);
+
+  // 5. Zoom ke kawasan hutan
   if (lat && lon) {
     map.flyTo([lat, lon], 9, { duration: 1.0 });
   }
 
-  // 5. Buka drawer dan jalankan simulasi
+  // 6. Buka drawer dan jalankan simulasi
   openDrawer();
   runSimulation();
 };
@@ -808,7 +1018,7 @@ function onHazardChanged() {
       currentKrbCircle = null;
     }
     const currentFireId = (eventSel && eventSel.value && (eventSel.value.startsWith("hutan_") || eventSel.value.startsWith("karhutla_") || eventSel.value === "live_kalimantan")) ? eventSel.value : "hutan_sebangau";
-    loadHotspots(currentFireId);
+    highlightForestBoundaryById(currentFireId);
     const fireObj = NATIONAL_KARHUTLA_EVENTS.find(k => k.id === currentFireId);
     if (fireObj) {
       map.flyTo([fireObj.lat, fireObj.lon], 9, { duration: 1.2 });
@@ -816,6 +1026,10 @@ function onHazardChanged() {
       map.flyTo([-2.5, 118.0], 5, { duration: 1.2 });
     }
   } else {
+    if (highlightedForestPoly && forestBoundariesLayer) {
+      forestBoundariesLayer.resetStyle(highlightedForestPoly);
+      highlightedForestPoly = null;
+    }
     if (labelEl) labelEl.textContent = "Pilih Gunung Api Aktif (70 Lokasi PVMBG):";
     if (searchInput) searchInput.placeholder = "Cari gunung api (misal: Merapi, Lewotobi, Sinabung)...";
     if (volcControls) volcControls.classList.remove("hidden");
@@ -840,9 +1054,13 @@ function onEventSelectChanged(e) {
     const fireObj = NATIONAL_KARHUTLA_EVENTS.find(k => k.id === val);
     if (fireObj) {
       map.flyTo([fireObj.lat, fireObj.lon], 9, { duration: 1.0 });
-      loadHotspots(val);
     }
+    highlightForestBoundaryById(val);
   } else {
+    if (highlightedForestPoly && forestBoundariesLayer) {
+      forestBoundariesLayer.resetStyle(highlightedForestPoly);
+      highlightedForestPoly = null;
+    }
     if (hazardSel.value !== "volcano") {
       hazardSel.value = "volcano";
       currentHazard = "volcano";
@@ -862,15 +1080,14 @@ function onEventSelectChanged(e) {
 }
 
 // =============================================================================
-// 4. Lapisan Titik Api Kebakaran (NASA FIRMS Hotspots Nasional)
+// 4. Lapisan Titik Api Kebakaran (NASA FIRMS Hotspots Nasional - Persisten)
 // =============================================================================
-function loadHotspots(eventId) {
+function loadHotspots() {
   if (hotspotsLayer) {
     map.removeLayer(hotspotsLayer);
   }
 
-  const targetEvent = eventId || "national";
-  fetch(`${API_BASE}/layers/hotspots?event_id=${targetEvent}`)
+  fetch(`${API_BASE}/layers/hotspots?event_id=national`)
     .then(r => r.json())
     .then(geo => {
       hotspotsLayer = L.geoJSON(geo, {
@@ -909,7 +1126,8 @@ function loadHotspots(eventId) {
         }
       });
 
-      if (document.getElementById("layerToggleHotspots").checked) {
+      const toggle = document.getElementById("layerToggleHotspots");
+      if (!toggle || toggle.checked) {
         hotspotsLayer.addTo(map);
       }
     })
@@ -1663,6 +1881,8 @@ document.addEventListener("DOMContentLoaded", () => {
           setTimeout(() => { btnSync.innerHTML = `<span class="nav-btn-icon"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M17.65 6.35A7.96 7.96 0 0012 4a8 8 0 108 8h-2a6 6 0 11-1.76-4.24L14 10h7V3l-3.35 3.35z"/></svg></span> Live Sync`; }, 2500);
           loadSummaryKpi();
           loadNationalForests();
+          loadForestBoundaries();
+          loadHotspots();
         })
         .catch(() => {
           btnSync.innerHTML = `<span class="nav-btn-icon"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg></span> Galat`;
@@ -1703,6 +1923,16 @@ document.addEventListener("DOMContentLoaded", () => {
       if (forestsLayer) {
         if (e.target.checked) forestsLayer.addTo(map);
         else map.removeLayer(forestsLayer);
+      }
+    });
+  }
+
+  const toggleBoundaries = document.getElementById("layerToggleForestBoundaries");
+  if (toggleBoundaries) {
+    toggleBoundaries.addEventListener("change", e => {
+      if (forestBoundariesLayer) {
+        if (e.target.checked) forestBoundariesLayer.addTo(map);
+        else map.removeLayer(forestBoundariesLayer);
       }
     });
   }

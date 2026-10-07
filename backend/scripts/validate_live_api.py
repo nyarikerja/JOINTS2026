@@ -7,9 +7,9 @@ dan penanganan galat HTTP (422, 404, 400).
 """
 
 import json
-import urllib.request
-import urllib.error
 import sys
+import urllib.error
+import urllib.request
 
 try:
     sys.stdout.reconfigure(encoding="utf-8")
