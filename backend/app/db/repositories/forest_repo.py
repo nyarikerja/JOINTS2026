@@ -56,6 +56,7 @@ class ForestRepository:
                     "lon": row["longitude"],
                     "area_ha": row["area_ha"],
                     "risk_level": row["risk_level"],
+                    "risk": row["risk_level"],
                     "n_hotspots": row["n_hotspots"],
                     "description": row["description"]
                 })

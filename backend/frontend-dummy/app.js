@@ -88,6 +88,17 @@ function startClocks() {
   }
   updateTime();
   setInterval(updateTime, 1000);
+
+  // Live Sync Sensor Otomatis Berkala (Setiap 30 Detik Real-Time)
+  setInterval(() => {
+    loadSummaryKpi();
+    if (currentHazard === "fire") {
+      loadNationalForests();
+      loadHotspots();
+    } else {
+      loadNationalVolcanoes();
+    }
+  }, 30000);
 }
 
 function loadSummaryKpi() {
@@ -144,53 +155,438 @@ function loadNationalVolcanoes() {
 }
 
 const NATIONAL_KARHUTLA_EVENTS = [
-  // Sumatera (8 Kawasan Hutan & Gambut)
-  { id: "hutan_tesso_nilo", name: "TN Tesso Nilo (Pelalawan, Riau)", forest_type: "Gambut & Hutan Hujan", province: "Riau", region: "Sumatera", lat: -0.08, lon: 101.62, area_ha: 81700, risk: "Sangat Rawan", n_hotspots: 0 },
-  { id: "hutan_giam_siak", name: "SM Giam Siak Kecil (Bengkalis & Siak, Riau)", forest_type: "Cagar Biosfer Gambut", province: "Riau", region: "Sumatera", lat: 1.18, lon: 101.88, area_ha: 178722, risk: "Sangat Rawan", n_hotspots: 0 },
-  { id: "hutan_berbak", name: "TN Berbak (Tanjung Jabung Timur, Jambi)", forest_type: "Rawa Gambut Terbesar", province: "Jambi", region: "Sumatera", lat: -1.42, lon: 104.28, area_ha: 142750, risk: "Sangat Rawan", n_hotspots: 60 },
-  { id: "hutan_padang_sugihan", name: "SM Padang Sugihan (OKI, Sumsel)", forest_type: "Suaka Gambut Dalam", province: "Sumatera Selatan", region: "Sumatera", lat: -3.22, lon: 105.12, area_ha: 88000, risk: "Sangat Rawan", n_hotspots: 60 },
-  { id: "hutan_meranti_pesisir", name: "KHG Tebing Tinggi (Kep. Meranti, Riau)", forest_type: "Gambut Pesisir", province: "Riau", region: "Sumatera", lat: 0.95, lon: 102.72, area_ha: 110000, risk: "Rawan", n_hotspots: 0 },
-  { id: "hutan_bukit_tigapuluh", name: "TN Bukit Tiga Puluh (Inhu, Riau/Jambi)", forest_type: "Hutan Bukit Tropis", province: "Riau", region: "Sumatera", lat: -0.85, lon: 102.45, area_ha: 144223, risk: "Waspada", n_hotspots: 13 },
-  { id: "hutan_kerinci_seblat", name: "TN Kerinci Seblat (Jambi & Sumbar)", forest_type: "Hutan Pegunungan", province: "Jambi", region: "Sumatera", lat: -2.15, lon: 101.45, area_ha: 1375350, risk: "Waspada", n_hotspots: 1 },
-  { id: "hutan_way_kambas", name: "TN Way Kambas (Lampung Timur)", forest_type: "Hutan Dataran Rendah", province: "Lampung", region: "Sumatera", lat: -4.95, lon: 105.75, area_ha: 125621, risk: "Rawan", n_hotspots: 60 },
-
-  // Kalimantan (10 Kawasan Hutan & Gambut)
-  { id: "hutan_sebangau", name: "TN Sebangau (Palangka Raya, Kalteng)", forest_type: "Rawa Gambut Tropis", province: "Kalimantan Tengah", region: "Kalimantan", lat: -2.55, lon: 113.85, area_ha: 568700, risk: "Sangat Rawan", n_hotspots: 0 },
-  { id: "hutan_eks_plg", name: "KHG Eks-PLG Sejuta Ha (Pulang Pisau, Kalteng)", forest_type: "Gambut Kritis", province: "Kalimantan Tengah", region: "Kalimantan", lat: -2.85, lon: 114.25, area_ha: 1000000, risk: "Sangat Rawan", n_hotspots: 15 },
-  { id: "hutan_tanjung_puting", name: "TN Tanjung Puting (Kobar, Kalteng)", forest_type: "Rawa Gambut & Hutan Tropis", province: "Kalimantan Tengah", region: "Kalimantan", lat: -3.05, lon: 111.95, area_ha: 415040, risk: "Rawan", n_hotspots: 37 },
-  { id: "hutan_gunung_palung", name: "TN Gunung Palung (Ketapang, Kalbar)", forest_type: "Rawa Gambut & Bukit", province: "Kalimantan Barat", region: "Kalimantan", lat: -1.25, lon: 110.15, area_ha: 90000, risk: "Rawan", n_hotspots: 11 },
-  { id: "hutan_kubu_raya", name: "Lahan Gambut Rasau Jaya (Kubu Raya, Kalbar)", forest_type: "Gambut Pesisir Asap", province: "Kalimantan Barat", region: "Kalimantan", lat: -0.35, lon: 109.45, area_ha: 145000, risk: "Sangat Rawan", n_hotspots: 0 },
-  { id: "hutan_danau_sentarum", name: "TN Danau Sentarum (Kapuas Hulu, Kalbar)", forest_type: "Lahan Basah Ramsar", province: "Kalimantan Barat", region: "Kalimantan", lat: 0.85, lon: 112.15, area_ha: 132000, risk: "Waspada", n_hotspots: 8 },
-  { id: "hutan_meratus", name: "Hutan Lindung Peg. Meratus (Hulu Sungai, Kalsel)", forest_type: "Hutan Pegunungan", province: "Kalimantan Selatan", region: "Kalimantan", lat: -2.75, lon: 115.55, area_ha: 180000, risk: "Waspada", n_hotspots: 54 },
-  { id: "hutan_banjarbaru", name: "Lahan Gambut Landasan Ulin (Banjarbaru, Kalsel)", forest_type: "Gambut Kering Ring Bandara", province: "Kalimantan Selatan", region: "Kalimantan", lat: -3.48, lon: 114.78, area_ha: 45000, risk: "Sangat Rawan", n_hotspots: 39 },
-  { id: "hutan_kutai", name: "TN Kutai (Kutai Timur & Bontang, Kaltim)", forest_type: "Hutan Ulin Tropis", province: "Kalimantan Timur", region: "Kalimantan", lat: 0.25, lon: 117.25, area_ha: 198629, risk: "Waspada", n_hotspots: 51 },
-  { id: "hutan_sungai_wain", name: "Hutan Lindung S. Wain & IKN (Balikpapan, Kaltim)", forest_type: "Penyangga IKN Nusantara", province: "Kalimantan Timur", region: "Kalimantan", lat: -1.12, lon: 116.85, area_ha: 10025, risk: "Waspada", n_hotspots: 0 },
-
-  // Jawa (6 Kawasan Hutan & Sabana)
-  { id: "hutan_bromo", name: "Sabana Bromo - TN Bromo Tengger Semeru (Jatim)", forest_type: "Sabana Kaldera Alpin", province: "Jawa Timur", region: "Jawa", lat: -7.94, lon: 112.95, area_ha: 50276, risk: "Sangat Rawan", n_hotspots: 6 },
-  { id: "hutan_baluran", name: "Sabana Bekol - TN Baluran (Situbondo, Jatim)", forest_type: "Sabana Tropis Alami", province: "Jawa Timur", region: "Jawa", lat: -7.83, lon: 114.38, area_ha: 25000, risk: "Sangat Rawan", n_hotspots: 6 },
-  { id: "hutan_gunung_lawu", name: "Hutan Lindung Gunung Lawu (Karanganyar, Jateng)", forest_type: "Hutan Lereng Kering", province: "Jawa Tengah", region: "Jawa", lat: -7.63, lon: 111.19, area_ha: 15000, risk: "Rawan", n_hotspots: 12 },
-  { id: "hutan_merbabu", name: "Sabana TN Gunung Merbabu (Boyolali, Jateng)", forest_type: "Sabana Alpin Puncak", province: "Jawa Tengah", region: "Jawa", lat: -7.45, lon: 110.43, area_ha: 5725, risk: "Rawan", n_hotspots: 3 },
-  { id: "hutan_ciremai", name: "TN Gunung Ciremai (Kuningan, Jabar)", forest_type: "Hutan Lereng Kering", province: "Jawa Barat", region: "Jawa", lat: -6.89, lon: 108.40, area_ha: 15500, risk: "Waspada", n_hotspots: 7 },
-  { id: "hutan_alas_purwo", name: "TN Alas Purwo (Banyuwangi, Jatim)", forest_type: "Hutan Musim Blambangan", province: "Jawa Timur", region: "Jawa", lat: -8.65, lon: 114.45, area_ha: 43420, risk: "Waspada", n_hotspots: 1 },
-
-  // Bali & Nusa Tenggara (5 Kawasan Hutan & Sabana)
-  { id: "hutan_komodo", name: "Sabana Padar & Loh Liang - TN Komodo (NTT)", forest_type: "Sabana Tropis Kering", province: "Nusa Tenggara Timur", region: "Bali & Nusa Tenggara", lat: -8.55, lon: 119.55, area_ha: 173300, risk: "Rawan", n_hotspots: 8 },
-  { id: "hutan_manupeu_sumba", name: "Savana TN Manupeu Tanah Daru (Sumba, NTT)", forest_type: "Savana Tropis Luas", province: "Nusa Tenggara Timur", region: "Bali & Nusa Tenggara", lat: -9.75, lon: 119.85, area_ha: 87984, risk: "Sangat Rawan", n_hotspots: 1 },
-  { id: "hutan_tambora", name: "Sabana Doro Ncanga - TN Tambora (Bima, NTB)", forest_type: "Sabana Lereng Kaldera", province: "Nusa Tenggara Barat", region: "Bali & Nusa Tenggara", lat: -8.25, lon: 118.00, area_ha: 71645, risk: "Rawan", n_hotspots: 2 },
-  { id: "hutan_rinjani", name: "Hutan Sembalun - TN Gunung Rinjani (NTB)", forest_type: "Savana Lembah Sembalun", province: "Nusa Tenggara Barat", region: "Bali & Nusa Tenggara", lat: -8.42, lon: 116.45, area_ha: 41330, risk: "Rawan", n_hotspots: 2 },
-  { id: "hutan_bali_barat", name: "TN Bali Barat & Prapat Agung (Buleleng, Bali)", forest_type: "Hutan Musim Monsoonal", province: "Bali", region: "Bali & Nusa Tenggara", lat: -8.15, lon: 114.48, area_ha: 19002, risk: "Waspada", n_hotspots: 7 },
-
-  // Sulawesi (4 Kawasan Hutan & Sabana)
-  { id: "hutan_rawa_aopa", name: "Sabana Rawa TN Rawa Aopa Watumohai (Sultra)", forest_type: "Sabana Lahan Basah", province: "Sulawesi Tenggara", region: "Sulawesi", lat: -4.45, lon: 121.95, area_ha: 105000, risk: "Rawan", n_hotspots: 0 },
-  { id: "hutan_lore_lindu", name: "TN Lore Lindu (Poso & Sigi, Sulteng)", forest_type: "Hutan Pegunungan", province: "Sulawesi Tengah", region: "Sulawesi", lat: -1.35, lon: 120.15, area_ha: 217991, risk: "Waspada", n_hotspots: 19 },
-  { id: "hutan_bogani", name: "TN Bogani Nani Wartabone (Gorontalo/Sulut)", forest_type: "Hutan Tropis Konservasi", province: "Gorontalo", region: "Sulawesi", lat: 0.55, lon: 123.65, area_ha: 287115, risk: "Waspada", n_hotspots: 60 },
-  { id: "hutan_maros", name: "Hutan Karst Bantimurung (Maros, Sulsel)", forest_type: "Hutan Karst Perbukitan", province: "Sulawesi Selatan", region: "Sulawesi", lat: -4.95, lon: 119.75, area_ha: 43750, risk: "Waspada", n_hotspots: 1 },
-
-  // Maluku & Papua (3 Kawasan Hutan & Sabana)
-  { id: "hutan_wasur", name: "Sabana Merauke - TN Wasur (Papua Selatan)", forest_type: "Sabana Kayu Putih Tropis", province: "Papua Selatan", region: "Maluku & Papua", lat: -8.55, lon: 140.65, area_ha: 413810, risk: "Sangat Rawan", n_hotspots: 60 },
-  { id: "hutan_mappi_asmat", name: "Lahan Gambut Mappi & Asmat (Papua Selatan)", forest_type: "Rawa Gambut Papua", province: "Papua Selatan", region: "Maluku & Papua", lat: -6.85, lon: 139.45, area_ha: 650000, risk: "Rawan", n_hotspots: 60 },
-  { id: "hutan_bintuni", name: "Hutan Pesisir Teluk Bintuni (Papua Barat)", forest_type: "Hutan Rawa Dataran Rendah", province: "Papua Barat", region: "Maluku & Papua", lat: -2.15, lon: 133.55, area_ha: 260000, risk: "Waspada", n_hotspots: 3 }
+  {
+    "id": "hutan_alas_purwo",
+    "name": "TN Alas Purwo (Banyuwangi, Jatim)",
+    "forest_type": "Hutan Musim Dataran Rendah",
+    "province": "Jawa Timur",
+    "region": "Jawa",
+    "lat": -8.65,
+    "lon": 114.45,
+    "area_ha": 43420.0,
+    "risk": "Waspada",
+    "n_hotspots": 2
+  },
+  {
+    "id": "hutan_bali_barat",
+    "name": "TN Bali Barat & Prapat Agung (Buleleng, Bali)",
+    "forest_type": "Hutan Musim Kering Monsoonal",
+    "province": "Bali",
+    "region": "Bali & Nusa Tenggara",
+    "lat": -8.15,
+    "lon": 114.48,
+    "area_ha": 19002.0,
+    "risk": "Waspada",
+    "n_hotspots": 14
+  },
+  {
+    "id": "hutan_baluran",
+    "name": "Sabana Bekol - TN Baluran (Situbondo, Jatim)",
+    "forest_type": "Padang Savana Alami & Hutan Musim",
+    "province": "Jawa Timur",
+    "region": "Jawa",
+    "lat": -7.83,
+    "lon": 114.38,
+    "area_ha": 25000.0,
+    "risk": "Sangat Rawan",
+    "n_hotspots": 12
+  },
+  {
+    "id": "hutan_banjarbaru",
+    "name": "Lahan Gambut Landasan Ulin (Banjarbaru, Kalsel)",
+    "forest_type": "Rawa Gambut Pesisir Kering",
+    "province": "Kalimantan Selatan",
+    "region": "Kalimantan",
+    "lat": -3.48,
+    "lon": 114.78,
+    "area_ha": 45000.0,
+    "risk": "Sangat Rawan",
+    "n_hotspots": 160
+  },
+  {
+    "id": "hutan_berbak",
+    "name": "TN Berbak (Tanjung Jabung Timur, Jambi)",
+    "forest_type": "Rawa Gambut Terluas Asia Tenggara",
+    "province": "Jambi",
+    "region": "Sumatera",
+    "lat": -1.42,
+    "lon": 104.28,
+    "area_ha": 142750.0,
+    "risk": "Sangat Rawan",
+    "n_hotspots": 143
+  },
+  {
+    "id": "hutan_bintuni",
+    "name": "Hutan Pesisir Teluk Bintuni (Papua Barat)",
+    "forest_type": "Hutan Rawa & Dataran Rendah",
+    "province": "Papua Barat",
+    "region": "Maluku & Papua",
+    "lat": -2.15,
+    "lon": 133.55,
+    "area_ha": 260000.0,
+    "risk": "Waspada",
+    "n_hotspots": 3
+  },
+  {
+    "id": "hutan_bogani",
+    "name": "TN Bogani Nani Wartabone (Gorontalo & Sulut)",
+    "forest_type": "Hutan Hujan Tropis Dataran Rendah",
+    "province": "Gorontalo",
+    "region": "Sulawesi",
+    "lat": 0.55,
+    "lon": 123.65,
+    "area_ha": 287115.0,
+    "risk": "Waspada",
+    "n_hotspots": 60
+  },
+  {
+    "id": "hutan_bromo",
+    "name": "Sabana Bromo - TN Bromo Tengger Semeru (Jatim)",
+    "forest_type": "Sabana Kaldera Dataran Tinggi",
+    "province": "Jawa Timur",
+    "region": "Jawa",
+    "lat": -7.94,
+    "lon": 112.95,
+    "area_ha": 50276.0,
+    "risk": "Sangat Rawan",
+    "n_hotspots": 6
+  },
+  {
+    "id": "hutan_bukit_tigapuluh",
+    "name": "TN Bukit Tiga Puluh (Indragiri Hulu, Riau)",
+    "forest_type": "Hutan Perbukitan Tropis",
+    "province": "Riau",
+    "region": "Sumatera",
+    "lat": -0.85,
+    "lon": 102.45,
+    "area_ha": 144223.0,
+    "risk": "Waspada",
+    "n_hotspots": 13
+  },
+  {
+    "id": "hutan_ciremai",
+    "name": "TN Gunung Ciremai (Kuningan, Jabar)",
+    "forest_type": "Hutan Musim Pegunungan",
+    "province": "Jawa Barat",
+    "region": "Jawa",
+    "lat": -6.89,
+    "lon": 108.4,
+    "area_ha": 15500.0,
+    "risk": "Waspada",
+    "n_hotspots": 7
+  },
+  {
+    "id": "hutan_danau_sentarum",
+    "name": "TN Danau Sentarum (Kapuas Hulu, Kalbar)",
+    "forest_type": "Lahan Basah & Hutan Rawa Musiman",
+    "province": "Kalimantan Barat",
+    "region": "Kalimantan",
+    "lat": 0.85,
+    "lon": 112.15,
+    "area_ha": 132000.0,
+    "risk": "Waspada",
+    "n_hotspots": 8
+  },
+  {
+    "id": "hutan_eks_plg",
+    "name": "KHG Eks-PLG Sejuta Hektar (Pulang Pisau, Kalteng)",
+    "forest_type": "Kawasan Hidrologis Gambut Kritis",
+    "province": "Kalimantan Tengah",
+    "region": "Kalimantan",
+    "lat": -2.85,
+    "lon": 114.25,
+    "area_ha": 1000000.0,
+    "risk": "Sangat Rawan",
+    "n_hotspots": 175
+  },
+  {
+    "id": "hutan_giam_siak",
+    "name": "SM Giam Siak Kecil (Bengkalis & Siak, Riau)",
+    "forest_type": "Cagar Biosfer Rawa Gambut",
+    "province": "Riau",
+    "region": "Sumatera",
+    "lat": 1.18,
+    "lon": 101.88,
+    "area_ha": 178722.0,
+    "risk": "Sangat Rawan",
+    "n_hotspots": 28
+  },
+  {
+    "id": "hutan_gunung_lawu",
+    "name": "Hutan Lindung Gunung Lawu (Karanganyar, Jateng)",
+    "forest_type": "Hutan Lereng Kering & Pinus",
+    "province": "Jawa Tengah",
+    "region": "Jawa",
+    "lat": -7.63,
+    "lon": 111.19,
+    "area_ha": 15000.0,
+    "risk": "Rawan",
+    "n_hotspots": 13
+  },
+  {
+    "id": "hutan_gunung_palung",
+    "name": "TN Gunung Palung (Ketapang, Kalbar)",
+    "forest_type": "Hutan Rawa Gambut & Perbukitan",
+    "province": "Kalimantan Barat",
+    "region": "Kalimantan",
+    "lat": -1.25,
+    "lon": 110.15,
+    "area_ha": 90000.0,
+    "risk": "Rawan",
+    "n_hotspots": 49
+  },
+  {
+    "id": "hutan_kerinci_seblat",
+    "name": "TN Kerinci Seblat (Jambi & Sumbar)",
+    "forest_type": "Hutan Pegunungan Tropis",
+    "province": "Jambi",
+    "region": "Sumatera",
+    "lat": -2.15,
+    "lon": 101.45,
+    "area_ha": 1375350.0,
+    "risk": "Waspada",
+    "n_hotspots": 1
+  },
+  {
+    "id": "hutan_komodo",
+    "name": "Sabana Padar & Loh Liang - TN Komodo (NTT)",
+    "forest_type": "Sabana Kepulauan Kering",
+    "province": "Nusa Tenggara Timur",
+    "region": "Bali & Nusa Tenggara",
+    "lat": -8.55,
+    "lon": 119.55,
+    "area_ha": 173300.0,
+    "risk": "Rawan",
+    "n_hotspots": 8
+  },
+  {
+    "id": "hutan_kubu_raya",
+    "name": "Lahan Gambut Rasau Jaya (Kubu Raya, Kalbar)",
+    "forest_type": "Kawasan Gambut Pesisir",
+    "province": "Kalimantan Barat",
+    "region": "Kalimantan",
+    "lat": -0.35,
+    "lon": 109.45,
+    "area_ha": 145000.0,
+    "risk": "Sangat Rawan",
+    "n_hotspots": 26
+  },
+  {
+    "id": "hutan_kutai",
+    "name": "TN Kutai (Kutai Timur & Bontang, Kaltim)",
+    "forest_type": "Hutan Hujan Dataran Rendah",
+    "province": "Kalimantan Timur",
+    "region": "Kalimantan",
+    "lat": 0.25,
+    "lon": 117.25,
+    "area_ha": 198629.0,
+    "risk": "Waspada",
+    "n_hotspots": 51
+  },
+  {
+    "id": "hutan_lore_lindu",
+    "name": "TN Lore Lindu (Poso & Sigi, Sulteng)",
+    "forest_type": "Hutan Pegunungan Konservasi",
+    "province": "Sulawesi Tengah",
+    "region": "Sulawesi",
+    "lat": -1.35,
+    "lon": 120.15,
+    "area_ha": 217991.0,
+    "risk": "Waspada",
+    "n_hotspots": 19
+  },
+  {
+    "id": "hutan_manupeu_sumba",
+    "name": "Savana TN Manupeu Tanah Daru (Sumba Timur, NTT)",
+    "forest_type": "Padang Savana Tropis Luas",
+    "province": "Nusa Tenggara Timur",
+    "region": "Bali & Nusa Tenggara",
+    "lat": -9.75,
+    "lon": 119.85,
+    "area_ha": 87984.0,
+    "risk": "Sangat Rawan",
+    "n_hotspots": 1
+  },
+  {
+    "id": "hutan_mappi_asmat",
+    "name": "Lahan Gambut Mappi & Asmat (Papua Selatan)",
+    "forest_type": "Rawa Gambut Pedalaman Papua",
+    "province": "Papua Selatan",
+    "region": "Maluku & Papua",
+    "lat": -6.85,
+    "lon": 139.45,
+    "area_ha": 650000.0,
+    "risk": "Rawan",
+    "n_hotspots": 60
+  },
+  {
+    "id": "hutan_maros",
+    "name": "Hutan Karst Bantimurung (Maros, Sulsel)",
+    "forest_type": "Hutan Karst & Lindung Perbukitan",
+    "province": "Sulawesi Selatan",
+    "region": "Sulawesi",
+    "lat": -4.95,
+    "lon": 119.75,
+    "area_ha": 43750.0,
+    "risk": "Waspada",
+    "n_hotspots": 1
+  },
+  {
+    "id": "hutan_meranti_pesisir",
+    "name": "KHG Pulau Tebing Tinggi (Kep. Meranti, Riau)",
+    "forest_type": "Rawa Gambut Pesisir Pulau Kecil",
+    "province": "Riau",
+    "region": "Sumatera",
+    "lat": 0.95,
+    "lon": 102.72,
+    "area_ha": 110000.0,
+    "risk": "Rawan",
+    "n_hotspots": 20
+  },
+  {
+    "id": "hutan_meratus",
+    "name": "Hutan Lindung Pegunungan Meratus (Hulu Sungai, Kalsel)",
+    "forest_type": "Hutan Lindung Pegunungan",
+    "province": "Kalimantan Selatan",
+    "region": "Kalimantan",
+    "lat": -2.75,
+    "lon": 115.55,
+    "area_ha": 180000.0,
+    "risk": "Waspada",
+    "n_hotspots": 233
+  },
+  {
+    "id": "hutan_merbabu",
+    "name": "Sabana TN Gunung Merbabu (Boyolali, Jateng)",
+    "forest_type": "Sabana Alpin & Semak Gunung",
+    "province": "Jawa Tengah",
+    "region": "Jawa",
+    "lat": -7.45,
+    "lon": 110.43,
+    "area_ha": 5725.0,
+    "risk": "Rawan",
+    "n_hotspots": 4
+  },
+  {
+    "id": "hutan_padang_sugihan",
+    "name": "SM Padang Sugihan (OKI, Sumsel)",
+    "forest_type": "Suaka Rawa Gambut Dalam",
+    "province": "Sumatera Selatan",
+    "region": "Sumatera",
+    "lat": -3.22,
+    "lon": 105.12,
+    "area_ha": 88000.0,
+    "risk": "Sangat Rawan",
+    "n_hotspots": 60
+  },
+  {
+    "id": "hutan_rawa_aopa",
+    "name": "Sabana TN Rawa Aopa Watumohai (Konawe, Sultra)",
+    "forest_type": "Sabana Lahan Basah Alami",
+    "province": "Sulawesi Tenggara",
+    "region": "Sulawesi",
+    "lat": -4.45,
+    "lon": 121.95,
+    "area_ha": 105000.0,
+    "risk": "Rawan",
+    "n_hotspots": 20
+  },
+  {
+    "id": "hutan_rinjani",
+    "name": "Hutan Lereng Sembalun - TN Gunung Rinjani (NTB)",
+    "forest_type": "Hutan Musim & Savana Sembalun",
+    "province": "Nusa Tenggara Barat",
+    "region": "Bali & Nusa Tenggara",
+    "lat": -8.42,
+    "lon": 116.45,
+    "area_ha": 41330.0,
+    "risk": "Rawan",
+    "n_hotspots": 2
+  },
+  {
+    "id": "hutan_sebangau",
+    "name": "TN Sebangau (Palangka Raya, Kalteng)",
+    "forest_type": "Hutan Rawa Gambut Tropis",
+    "province": "Kalimantan Tengah",
+    "region": "Kalimantan",
+    "lat": -2.55,
+    "lon": 113.85,
+    "area_ha": 568700.0,
+    "risk": "Sangat Rawan",
+    "n_hotspots": 354
+  },
+  {
+    "id": "hutan_sungai_wain",
+    "name": "Hutan Lindung Sungai Wain & IKN (Balikpapan, Kaltim)",
+    "forest_type": "Hutan Lindung Penyangga Ibu Kota",
+    "province": "Kalimantan Timur",
+    "region": "Kalimantan",
+    "lat": -1.12,
+    "lon": 116.85,
+    "area_ha": 10025.0,
+    "risk": "Waspada",
+    "n_hotspots": 12
+  },
+  {
+    "id": "hutan_tambora",
+    "name": "Sabana Kaldera TN Gunung Tambora (Bima, NTB)",
+    "forest_type": "Sabana Lereng Gunung & Kaldera",
+    "province": "Nusa Tenggara Barat",
+    "region": "Bali & Nusa Tenggara",
+    "lat": -8.25,
+    "lon": 118.0,
+    "area_ha": 71645.0,
+    "risk": "Rawan",
+    "n_hotspots": 2
+  },
+  {
+    "id": "hutan_tanjung_puting",
+    "name": "TN Tanjung Puting (Kotawaringin Barat, Kalteng)",
+    "forest_type": "Hutan Rawa Gambut & Hutan Tropis",
+    "province": "Kalimantan Tengah",
+    "region": "Kalimantan",
+    "lat": -3.05,
+    "lon": 111.95,
+    "area_ha": 415040.0,
+    "risk": "Rawan",
+    "n_hotspots": 379
+  },
+  {
+    "id": "hutan_tesso_nilo",
+    "name": "TN Tesso Nilo (Pelalawan, Riau)",
+    "forest_type": "Hutan Dataran Rendah & Gambut",
+    "province": "Riau",
+    "region": "Sumatera",
+    "lat": -0.08,
+    "lon": 101.62,
+    "area_ha": 81700.0,
+    "risk": "Sangat Rawan",
+    "n_hotspots": 0
+  },
+  {
+    "id": "hutan_wasur",
+    "name": "Sabana Merauke - TN Wasur (Papua Selatan)",
+    "forest_type": "Sabana Tropis & Lahan Basah Melaleuca",
+    "province": "Papua Selatan",
+    "region": "Maluku & Papua",
+    "lat": -8.55,
+    "lon": 140.65,
+    "area_ha": 413810.0,
+    "risk": "Sangat Rawan",
+    "n_hotspots": 125
+  },
+  {
+    "id": "hutan_way_kambas",
+    "name": "TN Way Kambas (Lampung Timur, Lampung)",
+    "forest_type": "Hutan Dataran Rendah & Rawa",
+    "province": "Lampung",
+    "region": "Sumatera",
+    "lat": -4.95,
+    "lon": 105.75,
+    "area_ha": 125621.0,
+    "risk": "Rawan",
+    "n_hotspots": 68
+  }
 ];
 
 // State filter & selection combobox
@@ -667,14 +1063,22 @@ function loadNationalForests() {
           const local = NATIONAL_KARHUTLA_EVENTS.find(k => k.id === srvF.id);
           if (local) {
             local.n_hotspots = srvF.n_hotspots ?? local.n_hotspots;
+            local.risk = srvF.risk_level ?? srvF.risk ?? local.risk;
+            local.area_ha = srvF.area_ha ?? local.area_ha;
+            local.name = srvF.name ?? local.name;
+            local.province = srvF.province ?? local.province;
+            local.forest_type = srvF.forest_type ?? local.forest_type;
           }
         });
       }
       renderForestMarkers(NATIONAL_KARHUTLA_EVENTS);
+      // Sinkronkan combobox/dropdown secara real-time dari data database
+      populateVolcanoDropdown(allVolcanoesData);
     })
     .catch(err => {
       console.warn("Gagal fetch /layers/forests-national, fallback ke data lokal:", err);
       renderForestMarkers(NATIONAL_KARHUTLA_EVENTS);
+      populateVolcanoDropdown(allVolcanoesData);
     });
 }
 
@@ -1691,8 +2095,10 @@ document.addEventListener("DOMContentLoaded", () => {
           btnSync.innerHTML = `<span class="nav-btn-icon"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg></span> Terhubung`;
           setTimeout(() => { btnSync.innerHTML = `<span class="nav-btn-icon"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M17.65 6.35A7.96 7.96 0 0012 4a8 8 0 108 8h-2a6 6 0 11-1.76-4.24L14 10h7V3l-3.35 3.35z"/></svg></span> Live Sync`; }, 2500);
           loadSummaryKpi();
+          loadNationalVolcanoes();
           loadNationalForests();
           loadHotspots();
+          loadFacilities();
         })
         .catch(() => {
           btnSync.innerHTML = `<span class="nav-btn-icon"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg></span> Galat`;

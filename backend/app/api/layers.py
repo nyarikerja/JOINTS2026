@@ -313,6 +313,9 @@ def trigger_live_sync():
     import time
     import urllib.request
 
+    from app.db.repositories.hotspot_repo import HotspotRepository
+    from app.db.repositories.volcano_repo import VolcanoRepository
+
     t0 = time.perf_counter()
     openmeteo_status = "active_connected"
     try:
@@ -321,7 +324,8 @@ def trigger_live_sync():
         openmeteo_status = "cached_offline"
     latency_ms = round((time.perf_counter() - t0) * 1000, 1)
 
-    hotspots = FirmsIngest.load_event_hotspots("national")
+    hotspots = HotspotRepository.get_by_event("national")
+    volcanoes = VolcanoRepository.get_all()
     now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
     return {
         "status": "synchronized",
@@ -329,7 +333,7 @@ def trigger_live_sync():
         "sources": {
             "nasa_firms": {"status": "active_connected", "hotspots_detected": len(hotspots)},
             "open_meteo_ensemble": {"status": openmeteo_status, "latency_ms": latency_ms, "members": 51},
-            "pvmbg_magma_indonesia": {"status": "active_monitored", "active_volcanoes": 20}
+            "pvmbg_magma_indonesia": {"status": "active_monitored", "active_volcanoes": len(volcanoes)}
         },
-        "message": f"Telemetri multi-bahaya nasional tersinkronisasi secara real-time (latensi API: {latency_ms} ms)."
+        "message": f"Telemetri multi-bahaya nasional tersinkronisasi secara real-time (latensi API: {latency_ms} ms, {len(hotspots)} titik api aktif, {len(volcanoes)} gunung api terdata)."
     }
