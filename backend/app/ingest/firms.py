@@ -49,7 +49,12 @@ class FirmsIngest:
         if not csv_path.exists() or csv_path.stat().st_size == 0:
             return []
 
-        df = pd.read_csv(csv_path)
+        try:
+            df = pd.read_csv(csv_path)
+            if df.empty:
+                return []
+        except Exception:
+            return []
         # Standarisasi kolom
         records = []
         for idx, row in df.iterrows():

@@ -111,11 +111,27 @@ def get_layer(
     elif name in ["forests", "forests-national"]:
         import json
 
-        from app.core.config import BACKEND_DIR
+        import pandas as pd
+
+        from app.core.config import BACKEND_DIR, EVENTS_DIR
         forest_path = BACKEND_DIR / "data" / "layers" / "forests_indonesia.json"
         if forest_path.exists():
             with open(forest_path, "r", encoding="utf-8-sig") as f:
-                return json.load(f)
+                forests_data = json.load(f)
+            # Sinkronkan n_hotspots secara real-time dari data CSV FIRMS aktual
+            for item in forests_data:
+                ev_id = item.get("id")
+                if ev_id:
+                    csv_f = EVENTS_DIR / ev_id / "hotspots.csv"
+                    if csv_f.exists() and csv_f.stat().st_size > 0:
+                        try:
+                            df_h = pd.read_csv(csv_f)
+                            item["n_hotspots"] = len(df_h)
+                        except Exception:
+                            item["n_hotspots"] = 0
+                    elif csv_f.exists():
+                        item["n_hotspots"] = 0
+            return forests_data
         return {"forests": []}
 
     elif name == "summary-kpi":

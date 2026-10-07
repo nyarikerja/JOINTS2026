@@ -145,7 +145,7 @@ function loadNationalVolcanoes() {
 
 const NATIONAL_KARHUTLA_EVENTS = [
   // Sumatera (8 Kawasan Hutan & Gambut)
-  { id: "hutan_tesso_nilo", name: "TN Tesso Nilo (Pelalawan, Riau)", forest_type: "Gambut & Hutan Hujan", province: "Riau", region: "Sumatera", lat: -0.08, lon: 101.62, area_ha: 81700, risk: "Sangat Rawan", n_hotspots: 1 },
+  { id: "hutan_tesso_nilo", name: "TN Tesso Nilo (Pelalawan, Riau)", forest_type: "Gambut & Hutan Hujan", province: "Riau", region: "Sumatera", lat: -0.08, lon: 101.62, area_ha: 81700, risk: "Sangat Rawan", n_hotspots: 0 },
   { id: "hutan_giam_siak", name: "SM Giam Siak Kecil (Bengkalis & Siak, Riau)", forest_type: "Cagar Biosfer Gambut", province: "Riau", region: "Sumatera", lat: 1.18, lon: 101.88, area_ha: 178722, risk: "Sangat Rawan", n_hotspots: 0 },
   { id: "hutan_berbak", name: "TN Berbak (Tanjung Jabung Timur, Jambi)", forest_type: "Rawa Gambut Terbesar", province: "Jambi", region: "Sumatera", lat: -1.42, lon: 104.28, area_ha: 142750, risk: "Sangat Rawan", n_hotspots: 60 },
   { id: "hutan_padang_sugihan", name: "SM Padang Sugihan (OKI, Sumsel)", forest_type: "Suaka Gambut Dalam", province: "Sumatera Selatan", region: "Sumatera", lat: -3.22, lon: 105.12, area_ha: 88000, risk: "Sangat Rawan", n_hotspots: 60 },
@@ -616,17 +616,38 @@ window.selectAndSimulateVolcano = function(eventId, lat, lng, radiusKm) {
 // =============================================================================
 // 3b. Lapisan Kawasan Hutan & Konservasi Karhutla Nasional (36 Lokasi Hutan)
 // =============================================================================
-function createForestSvgIcon(risk) {
-  const isHigh = risk === "Sangat Rawan";
-  const borderCol = isHigh ? "#ef4444" : "#10b981";
-  const bgCol = isHigh ? "#2a1515" : "#112217";
+function createForestSvgIcon(forest) {
+  const nHotspots = (typeof forest === "object" && forest !== null)
+    ? (forest.n_hotspots ?? 0)
+    : (typeof forest === "number" ? forest : 0);
+
+  // Status visual berbasis pengamatan riil satelit FIRMS hari ini:
+  // 1. Kebakaran aktif masif (>= 10 titik api) -> Merah menyala + Pulse ring cepat
+  // 2. Api kecil / sporadis (1 - 9 titik api)  -> Oranye waspada + Pulse ring lembut
+  // 3. Udara bersih / aman (0 titik api)        -> Hijau tenang, TANPA pulse ring
+  let borderCol = "#10b981";
+  let bgCol = "#112217";
+  let shadowCol = "rgba(16, 185, 129, 0.4)";
+  let pulseRing = "";
+
+  if (nHotspots >= 10) {
+    borderCol = "#ef4444";
+    bgCol = "#2a1515";
+    shadowCol = "rgba(239, 68, 68, 0.7)";
+    pulseRing = '<span class="volcano-pulse-ring" style="border-color:#ef4444;"></span>';
+  } else if (nHotspots > 0) {
+    borderCol = "#f59e0b";
+    bgCol = "#261c12";
+    shadowCol = "rgba(245, 158, 11, 0.6)";
+    pulseRing = '<span class="volcano-pulse-ring" style="border-color:#f59e0b;animation-duration:2.5s;"></span>';
+  }
 
   return L.divIcon({
     className: "forest-div-icon",
     html: `
       <div class="volcano-marker-pin">
-        ${isHigh ? '<span class="volcano-pulse-ring" style="border-color:#10b981;"></span>' : ''}
-        <div style="background:${bgCol};border:2px solid ${borderCol};border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(16,185,129,0.5);">
+        ${pulseRing}
+        <div style="background:${bgCol};border:2px solid ${borderCol};border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px ${shadowCol};transition:all 0.3s ease;">
           <span style="font-size:13px;line-height:1;">🌲</span>
         </div>
       </div>
@@ -638,7 +659,23 @@ function createForestSvgIcon(risk) {
 }
 
 function loadNationalForests() {
-  renderForestMarkers(NATIONAL_KARHUTLA_EVENTS);
+  fetch(`${API_BASE}/layers/forests-national`)
+    .then(r => r.json())
+    .then(data => {
+      if (Array.isArray(data) && data.length > 0) {
+        data.forEach(srvF => {
+          const local = NATIONAL_KARHUTLA_EVENTS.find(k => k.id === srvF.id);
+          if (local) {
+            local.n_hotspots = srvF.n_hotspots ?? local.n_hotspots;
+          }
+        });
+      }
+      renderForestMarkers(NATIONAL_KARHUTLA_EVENTS);
+    })
+    .catch(err => {
+      console.warn("Gagal fetch /layers/forests-national, fallback ke data lokal:", err);
+      renderForestMarkers(NATIONAL_KARHUTLA_EVENTS);
+    });
 }
 
 function renderForestMarkers(forests) {
@@ -649,11 +686,17 @@ function renderForestMarkers(forests) {
   const markers = [];
   forests.forEach(f => {
     const marker = L.marker([f.lat, f.lon], {
-      icon: createForestSvgIcon(f.risk),
+      icon: createForestSvgIcon(f),
       title: `${f.name} - ${f.forest_type}`
     });
 
-    marker.bindTooltip(`<strong>🌲 ${f.name}</strong><br><span style="color:#34d399">${f.forest_type} &bull; ${f.risk}</span>`, {
+    const statusBadge = f.n_hotspots >= 10
+      ? `<span style="color:#ef4444;font-weight:600;">🔥 ${f.n_hotspots} Titik Api Aktif (Karhutla)</span>`
+      : (f.n_hotspots > 0
+        ? `<span style="color:#f59e0b;font-weight:600;">⚠️ ${f.n_hotspots} Titik Api Kecil</span>`
+        : `<span style="color:#10b981;font-weight:600;">✅ Aman • Udara Bersih (0 Titik Api)</span>`);
+
+    marker.bindTooltip(`<strong>🌲 ${f.name}</strong><br>${statusBadge}<br><span style="color:#94a3b8;font-size:10px;">${f.forest_type} &bull; Kerentanan: ${f.risk}</span>`, {
       direction: "top",
       offset: [0, -10],
       className: "volcano-tooltip"
@@ -662,24 +705,27 @@ function renderForestMarkers(forests) {
     const hotspotBadge = f.n_hotspots === 0
       ? '<span style="color:#10b981;font-weight:600;">0 titik aktif (Aman &bull; Udara Bersih)</span>'
       : (f.n_hotspots < 10
-        ? `<span style="color:#f59e0b;font-weight:600;">${f.n_hotspots} titik kecil (PM2.5 Rendah)</span>`
-        : `<span style="color:#ef4444;font-weight:600;">${f.n_hotspots} titik aktif (Karhutla Aktif)</span>`);
+        ? `<span style="color:#f59e0b;font-weight:600;">${f.n_hotspots} titik kecil (FRP Rendah &bull; PM2.5 Aman)</span>`
+        : `<span style="color:#ef4444;font-weight:600;">${f.n_hotspots} titik aktif (Karhutla Berbahaya)</span>`);
 
     const popupHtml = `
       <div class="popup-box">
         <div class="popup-volcano-title">
           <span>🌲 ${f.name}</span>
-          <span class="badge-level lvl-${f.risk === 'Sangat Rawan' ? 4 : 3}">${f.risk}</span>
+          <span class="badge-level lvl-${f.n_hotspots >= 10 ? 4 : (f.n_hotspots > 0 ? 3 : 1)}">
+            ${f.n_hotspots >= 10 ? 'Karhutla Aktif' : (f.n_hotspots > 0 ? 'Titik Api Kecil' : 'Aman')}
+          </span>
         </div>
         <div style="color:#9db0a4;font-size:11px;margin-bottom:6px;">
           Provinsi: <strong>${f.province}</strong> &bull; Ekosistem: <strong>${f.forest_type}</strong>
         </div>
         <div style="background:#131815;border:1px solid #2e3b33;border-radius:4px;padding:6px;font-size:11px;margin-bottom:8px;">
-          <div>[FIRMS] <strong>Titik Api Satelit:</strong> ${hotspotBadge}</div>
-          <div style="margin-top:3px;color:#cbd5e1;"><small>Estimasi Luas Kawasan: ${Number(f.area_ha).toLocaleString()} ha</small></div>
+          <div>[FIRMS] <strong>Deteksi Satelit Hari Ini:</strong> ${hotspotBadge}</div>
+          <div style="margin-top:2px;color:#94a3b8;"><small>Kerentanan Ekosistem Historis: <span style="color:${f.risk === 'Sangat Rawan' ? '#f87171' : '#fbbf24'};">${f.risk}</span></small></div>
+          <div style="margin-top:2px;color:#cbd5e1;"><small>Estimasi Luas Kawasan: ${Number(f.area_ha).toLocaleString()} ha</small></div>
         </div>
         <button class="popup-action-btn" onclick="selectAndSimulateForest('${f.id}', ${f.lat}, ${f.lon}, ${f.n_hotspots})">
-          ${f.n_hotspots === 0 ? 'Uji Skenario Kebakaran (Eksperimen)' : 'Simulasikan Sebaran Asap PM2.5'}
+          ${f.n_hotspots < 10 ? 'Uji Skenario Kebakaran (Eksperimen)' : 'Simulasikan Sebaran Asap PM2.5'}
         </button>
       </div>
     `;
@@ -704,11 +750,18 @@ window.selectAndSimulateForest = function(forestId, lat, lon, nHotspots) {
   currentHazard = "fire";
   onHazardChanged();
 
-  // 2. Jika 0 titik api, aktifkan mode eksperimen agar pengguna dapat melihat skenario simulasi
-  if (nHotspots === 0) {
+  // 2. Jika titik api < 10 (nihil atau api kecil yang tidak menghasilkan asap bahaya di mode auto),
+  // otomatis aktifkan mode eksperimen agar pengguna melihat skenario kepulan asap hipotetis
+  if (nHotspots < 10) {
     const expRadio = document.querySelector('input[name="simMode"][value="experiment"]');
     if (expRadio) {
       expRadio.checked = true;
+      if (typeof onSimModeChanged === "function") onSimModeChanged();
+    }
+  } else {
+    const autoRadio = document.querySelector('input[name="simMode"][value="auto"]');
+    if (autoRadio) {
+      autoRadio.checked = true;
       if (typeof onSimModeChanged === "function") onSimModeChanged();
     }
   }
@@ -1070,7 +1123,7 @@ function renderTiersGeoJSON(geo) {
     const progText = document.getElementById("runProgressText");
     if (progText) {
       if (currentHazard === "fire") {
-        progText.innerHTML = `<span style="color:#10b981;font-weight:600;">Status Aman &bull; Udara Bersih:</span> Satelit NASA FIRMS mencatat 0 titik api aktif berbahaya (PM2.5 &lt; 15.5 &mu;g/m&sup3;). Pilih Mode 'Coba-coba (Eksperimen)' jika ingin menguji simulasi skenario kebakaran di hutan ini.`;
+        progText.innerHTML = `<span style="color:#10b981;font-weight:600;">Status Udara Bersih &bull; Aman:</span> Satelit NASA FIRMS mendeteksi titik api minim/nihil pada kawasan ini, emisi PM2.5 di bawah ambang bahaya (&lt; 15.5 &mu;g/m&sup3;). <em>Pilih <strong>Mode 'Coba-coba (Eksperimen)'</strong> di panel kendali jika ingin menguji simulasi skenario kebakaran hipotetis.</em>`;
       }
     }
     return;
@@ -1609,6 +1662,7 @@ document.addEventListener("DOMContentLoaded", () => {
           btnSync.innerHTML = `<span class="nav-btn-icon"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg></span> Terhubung`;
           setTimeout(() => { btnSync.innerHTML = `<span class="nav-btn-icon"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M17.65 6.35A7.96 7.96 0 0012 4a8 8 0 108 8h-2a6 6 0 11-1.76-4.24L14 10h7V3l-3.35 3.35z"/></svg></span> Live Sync`; }, 2500);
           loadSummaryKpi();
+          loadNationalForests();
         })
         .catch(() => {
           btnSync.innerHTML = `<span class="nav-btn-icon"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg></span> Galat`;
