@@ -27,7 +27,7 @@ backend/
     core/                # config, logging, offline guard, units, rng
     ingest/              # satu modul per sumber data
     engine/              # partikel, hujan, agregasi ensemble
-    impact/              # penduduk, fasilitas, desa, lahan dan air, karbon, saran
+    impact/              # penduduk, fasilitas, desa, lahan dan air, karbon, saran, routing OSRM, gemini advisory, export taktis
     validation/
     schemas/
   config/
@@ -320,6 +320,9 @@ Sediakan juga **preset `experiment` bernama jelas** untuk tiap bahaya (mis. `pre
 | pembeda | POST | `/runs/compare` | Dua run berdampingan |
 | pembeda | POST | `/runs/sensitivity` | Sapuan satu parameter |
 | pembeda | GET | `/validation/{event_id}` | Hasil uji atau `not_testable` |
+| pembeda | GET | `/runs/{run_id}/evacuation-route` | Rute jalan raya riil OSRM OpenStreetMap sekolah/faskes ke RS rujukan aman |
+| pembeda | GET | `/runs/{run_id}/emergency-advisory` | AI Emergency Briefing multi-sektor (Gemini AI & BNPB: Siaran Pers & WhatsApp) |
+
 
 Keamanan dan beban: `bbox` maks 6° × 6°, `n_members` maks 100, run bersamaan maks 2, ukuran body dibatasi, panggilan FIRMS per menit dibatasi. Validasi input dengan Pydantic. CORS: `localhost`, plus origin `*` tanpa kredensial agar frontend-dummy bisa dibuka dari `file://`. OpenAPI di `/docs` rapi. `docs/API_CONTRACT.md` berisi contoh request dan respons nyata per endpoint, dan contoh respons disimpan di `docs/fixtures/`.
 

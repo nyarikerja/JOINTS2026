@@ -174,57 +174,51 @@ Hasil pemodelan diproyeksikan langsung ke peta taktis Leaflet interaktif:
 
 ---
 
-### Langkah 5: Estimasi Dampak Multi-Sektor (Tab 1)
-Laci analitik kanan otomatis terbuka dan menyajikan estimasi dampak:
+### Langkah 5: Penilaian Dampak Wilayah & Fasilitas Terpadu (Tab 1: Wilayah & Fasilitas)
+Laci analitik kanan menyajikan seluruh informasi spasial dalam **satu lingkup geografis utuh**:
 1. **Penyajian Rentang Ketidakpastian (P5 – P50 – P95)**:
    - Mematuhi prinsip data integrity: **tidak pernah menampilkan angka tunggal**. Seluruh metrik disajikan dalam batas bawah (P5), median (P50), dan batas atas (P95).
-2. **Demografi Kependudukan**:
-   - Estimasi total jiwa terpapar berdasarkan grid WorldPop.
+2. **Demografi Kependudukan & Kerentanan**:
+   - Estimasi total jiwa terpapar berdasarkan grid WorldPop 100m.
    - Perhitungan kelompok rentan khusus: Anak-anak ($< 15\text{ tahun}$) dan Lansia ($\ge 65\text{ tahun}$).
-3. **Dampak Lingkungan & Pertanian**:
+3. **Dampak Lingkungan, Pertanian, & Karhutla**:
    - Luas sawah dan kebun terdampak abu (hektare berisiko gagal panen).
    - Sumber air minum dan DAS hulu berisiko tercemar asam abu.
-   - Tonase emisi karbon kebakaran hutan ($CO_2e$ gambut dan non-gambut).
-4. **Transparansi Kategori ISPU**:
-   - Sesuai prinsip etika sains, kategori ISPU dinonaktifkan secara jujur dan transparan selama faktor emisi $PM_{2.5}$ gambut masih berstatus placeholder literatur.
+   - Tonase pelepasan karbon kebakaran hutan ($CO_2e$ gambut dan non-gambut).
+4. **Hierarki Spasial: Kecamatan sebagai Wadah Induk (*Spatial Container*)**:
+   - Menyatukan data administratif dan aset publik: Di bawah setiap kartu Kecamatan, langsung tercantum sekolah-sekolah di wilayah tersebut (dengan mandat PJJ) dan faskes rujukan terdekat.
+   - Filter chip cepat: `[Semua Wilayah]`, `[Hanya Sekolah (PJJ)]`, dan `[Hanya RS & Faskes]`.
+5. **Rute Jalan Raya Riil OpenStreetMap (OSRM)**:
+   - Menghubungkan fasilitas sekolah/faskes ke RS rujukan zona aman melalui jaringan jalan raya berbelok nyata (bukan garis lurus), lengkap dengan jarak kilometer riil dan estimasi waktu tempuh ambulans gawat darurat (menit).
 
 ---
 
-### Langkah 6: Protokol Triase Aksi Dini & Rute Evakuasi Medis (Tab 2 & 3)
-Aplikasi menurunkan estimasi sains menjadi protokol kesiapsiagaan operasional:
-1. **Triase Kebijakan Sekolah (Pendidikan)**:
-   - Peluang $\ge 40\%$: Instruksi tegas `[AWAS] SEGERA ALIHKAN KE PJJ DARING` sebelum abu tiba, wajib pemakaian masker respirator N95 bagi seluruh warga sekolah.
-   - Peluang $15\% - 39\%$: `[WASPADA] HENTIKAN AKTIVITAS OUTDOOR` (dilarang olahraga dan upacara luar kelas).
-   - Dilengkapi estimasi waktu tiba partikel tercepat (*Earliest Arrival Time*) dalam hitungan jam ($T + \text{jam}$).
-2. **Triase Rumah Sakit Rujukan Bebas Abu (Kesehatan)**:
-   - Menghubungkan sekolah terdampak ke fasilitas kesehatan terdekat yang **berada di luar zona sebaran abu** (`[RUJUKAN UTAMA] RS Aman Bebas Abu`).
-   - Mencegah evakuasi korban sesak napas akut ke rumah sakit yang udaranya justru tercemar abu pekat.
-3. **Visualisasi Rute Evakuasi Interaktif**:
-   - Mengklik tombol **"Rute Evakuasi"** pada kartu sekolah langsung memusatkan (*flyTo*) peta dan melukiskan garis rute darurat putus-putus berwarna hijau ke rumah sakit rujukan terdekat beserta jarak kilometer dan koordinasi hotline SPGDT 119.
+### Langkah 6: Pusat Komando Aksi, AI Emergency Briefing, & Edukasi Medis (Tab 2: Protokol & Edukasi AI)
+Pusat komando komunikasi publik dan protokol aksi taktis multi-sektor berbasis standar Kemenkes, WHO, IVHHN, dan PERDAMI:
+1. **AI Emergency Briefing (Didukung Google Gemini & Pusdalops BNPB)**:
+   - **Draf Siaran Pers Resmi BPBD**: Teks siap rilis media massa dengan narasi otoritatif dan terstruktur.
+   - **Draf Pesan Siaran WhatsApp Warga**: Format pesan berpoin ringkas dengan tombol 1-klik salin teks untuk dibagikan ke grup warga dan relawan.
+2. **Standar Masker Wajib: Respirator N95 vs Larangan Masker Kain**:
+   - Masker kain dan masker bedah dilarang keras karena kebocoran samping mencapai $30\% - 50\%$. Wajib menggunakan respirator N95/KN95/KF94 dengan filtrasi $\ge 95\%$ partikel hingga $0.3\text{ mikron}$.
+3. **Peringatan Medis Kritis: Larangan Mutlak Lensa Kontak (Softlens)**:
+   - Pecahan kristal silika abu vulkanik ($SiO_2$) memiliki sudut tajam mikroskopis. Pemakaian softlens menjebak silika di kornea, memicu luka robek kornea (**abrasi kornea permanen**) hingga kebutaan. Wajib memakai *Safety Goggles* berlapis karet.
+4. **Pengamanan Sumber Air Bersih & Hunian**:
+   - Penutupan tandon air minum dan sumur gali dengan terpal kedap dari fluorida dan asam sulfur. Larangan menyapu abu kering (wajib disemprot air halus / dipel basah).
+5. **Cetak Lembar Rencana Aksi Darurat (PDF / A4 Resmi)**:
+   - Tombol 1-klik untuk mengekspor dokumen resmi cetak A4 format siap serah bagi Bupati dan Tim Tanggap Darurat.
 
 ---
 
-### Langkah 7: Edukasi APD Kesehatan Masyarakat (Tab 4)
-Menyajikan panduan perlindungan diri berbasis standar medis otoritatif (IVHHN, WHO, dan BNPB):
-1. **Komparasi Masker Bedah vs Respirator N95**:
-   - **Masker Kain & Masker Bedah Biasa**: Diklasifikasikan `[TIDAK MEMENUHI STANDAR] DILARANG` karena kebocoran samping mencapai $30\% - 50\%$ dan pori-pori terlalu besar sehingga partikel silika mikroskopis tetap menembus saluran napas bawah.
-   - **Masker Partikulat N95 / KN95 / FFP2**: Diklasifikasikan `[STANDAR RESMI OTORITATIF] WAJIB` dengan filtrasi $\ge 95\%$ partikel hingga $0.3\text{ mikron}$ dengan segel rapat di hidung dan pipi.
-2. **Peringatan Medis Kritis: Larangan Lensa Kontak (Softlens)**:
-   - Memberikan peringatan tegas larangan memakai lensa kontak saat terjadi hujan abu. Pecahan kristal silika memiliki sudut tajam yang dapat terperangkap di bawah softlens dan menyebabkan luka robek kornea mata (**abrasi kornea permanen**) hingga kebutaan. Dianjurkan memakai *Safety Goggles*.
-
----
-
-### Langkah 8: Validasi Sains, Uji Sensitivitas, & Transparansi Asumsi (Tab 5)
+### Langkah 7: Validasi Sains, Uji Sensitivitas, & Transparansi Asumsi
 Membuktikan akurasi dan akuntabilitas ilmiah model:
 1. **Evaluasi Lapangan Lapis 3**:
-   - Menguji akurasi model terhadap kejadian historis (misal: Erupsi Anak Krakatau 2026 atau Karhutla Kalimantan) menggunakan metrik *Fractions Skill Score* (FSS) dan *District Hit Rate* per kabupaten.
-2. **Kurva Sensitivitas Parameter (Bar Chart Visual)**:
-   - Pengguna dapat menjalankan sapuan sensitivitas (*parameter sweep*) untuk parameter tinggi kolom letusan atau curah hujan.
-   - Hasilnya ditampilkan dalam grafik batang horizontal bergradien biru yang membandingkan dampak populasi terpapar secara visual.
+   - Menguji akurasi model terhadap kejadian historis (Erupsi Anak Krakatau 2026) menggunakan metrik *Fractions Skill Score* (FSS) dan *District Hit Rate* per kabupaten.
+2. **Kurva Sensitivitas Parameter**:
+   - Sapuan sensitivitas interaktif untuk parameter tinggi kolom letusan dan curah hujan terhadap lonjakan populasi terpapar.
 3. **Simulasi Intervensi Pemadaman Titik Api (*Cluster Extinguishment Delta*)**:
-   - Pada kejadian karhutla, pengguna dapat menekan tombol pemadaman klaster titik api teratas. Sistem menghitung seketika penurunan FRP (%), jumlah penduduk yang terlindungi, dan tonase emisi gas rumah kaca yang dicegah.
-4. **Katalog Transparansi Asumsi (D01 s.d. D24)**:
-   - Menampilkan status setiap parameter pemodelan (`sourced`, `sourced_secondary`, `assumption_placeholder`) beserta tautan referensi jurnal dan catatan batas model.
+   - Perhitungan seketika delta penurunan FRP (%), jumlah warga terlindungi, dan tonase emisi gas rumah kaca yang dicegah.
+4. **Katalog Transparansi 24 Asumsi Ilmiah (D01 s.d. D24)**:
+   - Audit terbuka status parameter model (`sourced`, `sourced_secondary`, `assumption_placeholder`) beserta tautan referensi jurnal.
 
 ---
 
@@ -241,17 +235,17 @@ flowchart TB
         direction LR
         ZB["ZONE B: FLOATING CONTROL<br/>- Pilihan Jenis Bahaya<br/>- Katalog 70 Gunung Api<br/>- 36 Kawasan Hutan<br/>- Mode Eksperimen & Run"]
         ZC["ZONE C: INTERACTIVE GIS WORKSPACE<br/>- Peta Taktis Gelap Leaflet<br/>- Kontur Multi-Probabilitas P5/P50/P95<br/>- Titik Api Satelit & R*Tree Fasilitas<br/>- Player Garis Waktu 48 Jam (T+0 s.d. T+48)"]
-        ZD["ZONE D: TABBED INSPECTION DOCK<br/>- Tab 1: Estimasi Dampak Multisektor<br/>- Tab 2: Triase Kebijakan Sekolah<br/>- Tab 3: Rute Evakuasi Faskes Aman<br/>- Tab 4: Standar Medis Masker N95<br/>- Tab 5: Audit Asumsi Sains & Validasi"]
+        ZD["ZONE D: TABBED INSPECTION DOCK (2-TAB EMAS)<br/>- Tab 1: Wilayah & Fasilitas Terdampak (Kecamatan as Container + OSRM)<br/>- Tab 2: Protokol & Edukasi AI (Gemini Briefing, APD N95, Cetak PDF)"]
     end
 
     ZA --> STRIP
     STRIP --> CoreWorkspace
 ```
 
-- **Zone A (Tactical Header)**: Logo platform, lencana status `SIAGA 24/7`, telemetri ticker nasional (jumlah gunung api Level 3/4 dan titik api satelit FIRMS), tombol uji latensi sinkronisasi, tombol putar demo otomatis, dan jam digital ganda (WIB & UTC).
-- **Zone B (Floating Control Dock)**: Panel kaca melayang di kiri atas peta untuk konfigurasi cepat skenario erupsi/karhutla tanpa menutup pandangan peta. Dapat diciutkan dengan satu klik.
-- **Zone C (Interactive GIS Workspace)**: Peta layar penuh berbasis Leaflet taktis gelap, kontrol layer independen, legenda dinamis, dan pemutar garis waktu melayang di bawah tengah peta.
-- **Zone D (Tabbed Inspection Dock)**: Laci samping kanan dengan 5 tab terstruktur (Dampak, Sekolah, Evakuasi, Edukasi APD, dan Audit Sains).
+- **Zone A (Tactical Header)**: Logo platform, lencana status `SIAGA 24/7`, telemetri ticker nasional, tombol putar demo otomatis, dan jam digital ganda (WIB & UTC).
+- **Zone B (Floating Control Dock)**: Panel kaca melayang di kiri atas peta untuk konfigurasi cepat skenario erupsi/karhutla tanpa menutup pandangan peta.
+- **Zone C (Interactive GIS Workspace)**: Peta layar penuh berbasis Leaflet taktis gelap, kontrol layer independen, legenda dinamis, rute jalan raya OSRM, dan pemutar garis waktu 48 jam.
+- **Zone D (Tabbed Inspection Dock - 2-Tab Emas)**: Laci samping kanan terpadu: **Tab 1: Wilayah & Fasilitas Terdampak** (Kecamatan sebagai wadah induk sekolah dan faskes rujukan) dan **Tab 2: Protokol & Edukasi AI** (AI briefing Gemini, broadcast WhatsApp, standar APD N95, larangan softlens, cetak PDF A4).
 
 ---
 

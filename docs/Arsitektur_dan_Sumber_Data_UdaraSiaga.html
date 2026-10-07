@@ -332,7 +332,7 @@ Terdeteksi 42 titik api satelit NASA FIRMS dengan total Fire Radiative Power (FR
 
 <section class="s"><span class="num">5</span>
 <h2>Langkah 5: Estimasi Dampak Multi-Sektor Terpadu</h2>
-<p class="sub">Menyajikan estimasi komprehensif di Laci Analitik Kanan (Tab 1) yang mencakup tiga tema: Lingkungan (Sustainability), Kesehatan (Healthcare), dan Pendidikan (Education).</p>
+<p class="sub">Menyajikan estimasi komprehensif di Laci Analitik Kanan (Tab 1: Wilayah &amp; Fasilitas) yang mencakup tiga tema: Kependudukan &amp; Lingkungan (Sustainability), Kesehatan (Healthcare), dan Pendidikan (Education).</p>
 <div class="grid">
 <div class="n b">
 <b>Penyajian Rentang P5 &ndash; P50 &ndash; P95</b>
@@ -368,62 +368,68 @@ Terdeteksi 42 titik api satelit NASA FIRMS dengan total Fire Radiative Power (FR
 </section>
 
 <section class="s"><span class="num">6</span>
-<h2>Langkah 6: Protokol Triase Aksi Dini &amp; Rute Evakuasi Medis</h2>
-<p class="sub">Mengubah estimasi sains menjadi panduan operasional taktis di lapangan melalui Tab Sekolah dan Tab Rujukan Medis di Laci Kanan.</p>
+<h2>Langkah 6: Protokol Spasial Terpadu &amp; Rute Evakuasi Jalan Raya Riil (OSRM)</h2>
+<p class="sub">Mengubah estimasi sains menjadi panduan operasional taktis melalui <b>Model 2-Tab Emas (Tab 1: Wilayah &amp; Fasilitas)</b>. Menghilangkan fragmentasi antarmuka dengan menempatkan <b>Kecamatan sebagai wadah spasial induk</b> (*spatial container*) yang menaungi estimasi warga terdampak, sekolah berstatus PJJ, dan faskes rujukan secara langsung.</p>
 <div class="grid">
 <div class="n b alert">
-<b>Triase Kebijakan Sekolah Terukur</b>
-<p><b>Peluang &ge;40%</b>: Instruksi tegas [AWAS] SEGERA ALIHKAN KE PJJ DARING sebelum abu/asap tiba, wajib masker N95.<br><b>Peluang 15&ndash;39%</b>: [WASPADA] HENTIKAN AKTIVITAS OUTDOOR (olahraga/upacara dibatalkan).<br><b>Peluang &lt;15%</b>: [SIAGA] Pemantauan arah angin.</p>
+<b>Hierarki Kecamatan &amp; Mandat PJJ Sekolah</b>
+<p>Kecamatan mengelompokkan fasilitas pendidikan di bawah yurisdiksinya secara terpadu.<br><b>Peluang &ge;40%</b>: Instruksi tegas [SIAGA TINGGI] SEGERA ALIHKAN KE PJJ DARING sebelum abu/asap tiba di lokasi siswa, wajib masker N95.<br><b>Peluang 15&ndash;39%</b>: [WASPADA] HENTIKAN KBM &amp; AKTIVITAS OUTDOOR.<br><b>Peluang &lt;15%</b>: [SIAGA DINI] Pemantauan arah angin.</p>
 <div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
 </div>
 <div class="n b safe">
-<b>Klasifikasi Fasilitas Kesehatan Bebas Abu</b>
-<p>Sistem membedakan fasilitas kesehatan menjadi: <b>Rumah Sakit Aman Bebas Abu</b> (probabilitas 0%, di luar jejak kontur abu) vs RS Penyangga vs RS Terdampak Abu, mencegah salah rujukan.</p>
+<b>Klasifikasi Faskes Bebas Abu &amp; Triase</b>
+<p>Sistem membedakan fasilitas kesehatan menjadi: <b>[ZONA AMAN] RS Rujukan Utama</b> (probabilitas 0%, di luar jejak kontur abu) vs [TRIASE LAPANGAN] RS Penyangga vs [ZONA BAHAYA] RS Terdampak Abu, mencegah salah rujukan pasien sesak napas akut.</p>
 <div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
 </div>
 <div class="n b safe">
-<b>Visualisasi Rute Evakuasi Interaktif</b>
-<p>Mengklik tombol &quot;Rute Evakuasi&quot; pada kartu sekolah langsung memusatkan (flyTo) peta dan melukiskan garis rute darurat hijau putus-putus ke RS aman terdekat beserta jarak kilometer dan koordinasi SPGDT 119.</p>
+<b>Rute Jalan Raya Riil OpenStreetMap (OSRM)</b>
+<p>Bukan garis lurus sederhana. Mengintegrasikan mesin routing OSRM (OpenStreetMap Routing Machine) yang melukiskan rute jalan raya berbelok nyata, menghitung jarak kilometer riil, dan mengestimasikan waktu tempuh ambulans gawat darurat (menit) dari sekolah/puskesmas ke RS rujukan aman terdekat.</p>
 <div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
 </div>
 <div class="n h">
 <b>Peringkat Klaster Titik Api Karhutla</b>
-<p>Titik api dikelompokkan secara spasial dan diurutkan berdasarkan kontribusi asap terbesar, memberikan panduan prioritas water bombing bagi satgas pemadam.</p>
+<p>Titik api dikelompokkan secara spasial dan diurutkan berdasarkan kontribusi asap terbesar, memberikan panduan prioritas pemadaman (water bombing) bagi satgas darat dan udara.</p>
 <div class="badge-group"><span class="t h">Kebakaran hutan</span><span class="m a">Otomatis</span><span class="v fg">Terlihat pengguna</span></div>
 </div>
 </div>
 </section>
 
 <section class="s"><span class="num">7</span>
-<h2>Langkah 7: Edukasi APD Kesehatan Masyarakat Otoritatif</h2>
-<p class="sub">Menyajikan edukasi medis perlindungan diri berbasis standar konsorsium internasional IVHHN, WHO, dan BNPB di Laci Kanan (Tab 4).</p>
+<h2>Langkah 7: Komando AI Emergency Advisory &amp; Edukasi APD Medis Otoritatif</h2>
+<p class="sub">Pusat komando komunikasi publik dan protokol mitigasi medis resmi di Laci Kanan (<b>Tab 2: Protokol &amp; Edukasi AI</b>) berbasis standar Kemenkes, WHO, IVHHN, dan PERDAMI.</p>
 <div class="grid">
+<div class="n b safe">
+<b>AI Emergency Briefing (Google Gemini &amp; Pusdalops BNPB)</b>
+<p>Otomatisasi perumusan materi komunikasi tanggap darurat resmi dengan fallback engine deterministik lokal jika offline: <b>Draf Siaran Pers Resmi BPBD</b> siap rilis media massa dan <b>Draf Pesan Siaran WhatsApp Warga</b> berpoin ringkas dengan tombol 1-klik salin teks untuk satgas/relawan.</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m a">Otomatis</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
 <div class="n b alert">
-<b>Larangan Keras Lensa Kontak (Softlens)</b>
-<p><b>Peringatan Medis Kritis:</b> Pecahan kristal silika abu vulkanik memiliki sudut mikroskopis tajam. Pemakaian lensa kontak menjebak partikel di bawah lensa, menyebabkan luka robek kornea (corneal abrasion) hingga kebutaan. Wajib segera melepas softlens dan beralih ke kacamata pelindung (goggles).</p>
+<b>Larangan Mutlak Lensa Kontak (Softlens)</b>
+<p><b>Peringatan Medis Kritis PERDAMI:</b> Pecahan kristal silika abu vulkanik ($SiO_2$) memiliki sudut mikroskopis setajam pecahan kaca. Pemakaian lensa kontak menjebak partikel di bawah lensa, memicu luka robek kornea (corneal abrasion) hingga infeksi kebutaan permanen. Wajib kenakan Safety Goggles berlapis lis karet.</p>
 <div class="badge-group"><span class="t g">Gunung meletus</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
 </div>
-<div class="n b alert">
-<b>Masker Kain &amp; Bedah: Tidak Memenuhi Standar</b>
-<p>Masker kain dan masker bedah biasa memiliki kebocoran samping sebesar 30% s.d. 50% dan pori-pori terlalu besar (&gt;3 mikron). Partikel silika tajam dan PM2.5 tetap masuk ke paru-paru. Dilarang digunakan sebagai pelindung utama bencana atmosfer.</p>
-<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
-</div>
 <div class="n b safe">
-<b>Respirator N95 / KN95 / FFP2: Standar Wajib</b>
-<p>Memiliki efisiensi filtrasi partikulat &ge;95% hingga ukuran 0,3 mikron dengan segel rapat di kontur wajah. Menjadi standar perlindungan wajib bagi warga, anak sekolah, dan relawan di zona terdampak.</p>
+<b>Standar Wajib: Respirator N95 / KN95 / KF94</b>
+<p>Masker kain dan masker bedah dilarang keras karena bocor samping 30% s.d. 50%. Wajib menggunakan respirator standar N95 dengan efisiensi filtrasi partikulat mikro &ge;95% dan klip hidung kedap udara untuk mencegah silikosis dan asma akut.</p>
 <div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
 </div>
 <div class="n b">
-<b>Dekontaminasi Fisik &amp; Sanitasi Ruangan</b>
-<p>Panduan membilas mata dengan air mengalir tanpa mengucek, membersihkan abu dari kulit dengan air dingin, menutup rapat ventilasi rumah, dan mematikan AC pendingin udara.</p>
+<b>Pengamanan Sumber Air Minum &amp; Sanitasi Hunian</b>
+<p>Protokol penutupan tandon air minum dan sumur gali dengan terpal kedap dari pencemaran fluorida dan asam sulfur. Larangan menyapu abu dalam kondisi kering (wajib semprot air halus / pel basah) dan pembersihan atap sebelum hujan.</p>
+<div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
+</div>
+<div class="n b safe">
+<b>Cetak Lembar Rencana Aksi Darurat (PDF / A4)</b>
+<p>Ekspor dokumen resmi cetak A4 siap serah bagi Bupati, Komandan Satgas BPBD, dan Tim Pusdalops yang memuat matriks rujukan taktis, sebaran sekolah, dan rute evakuasi bebas abu.</p>
 <div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div>
 </div>
 </div>
 </section>
 
+
 <section class="s last"><span class="num">8</span>
 <h2>Langkah 8: Validasi Ilmiah, Uji Sensitivitas, &amp; Transparansi Asumsi</h2>
-<p class="sub">Membuktikan akuntabilitas ilmiah sistem melalui Laci Kanan (Tab 5) dengan audit matematis, evaluasi kejadian historis, dan simulasi intervensi.</p>
+<p class="sub">Membuktikan akuntabilitas ilmiah sistem melalui audit matematis, evaluasi kejadian historis Lapis 3, uji sensitivitas, dan katalog transparansi asumsi ilmiah.</p>
 <div class="grid">
 <div class="n g">
 <b>Validasi Spasial FSS (Fractions Skill Score)</b>
@@ -470,9 +476,10 @@ Terdeteksi 42 titik api satelit NASA FIRMS dengan total Fire Radiative Power (FR
 
 <h3>Lapis 2: Fitur Pembeda Aksi Dini &amp; Dampak Terpadu</h3>
 <div class="grid">
-<div class="n b alert"><b>Triase Kebijakan Sekolah Terotomatisasi</b><p>Rekomendasi PJJ Daring total (&ge;40%) atau larangan kegiatan outdoor (15&ndash;39%) berdasar probabilitas dan jam tiba.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div></div>
-<div class="n b safe"><b>Triase RS Bebas Abu &amp; Rute Evakuasi</b><p>Identifikasi rumah sakit rujukan di luar jejak kontur abu beserta garis rute darurat hijau dan jarak km terukur.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div></div>
-<div class="n b alert"><b>Edukasi APD: Wajib N95 &amp; Larang Softlens</b><p>Peringatan bahaya abrasi kornea silika tajam akibat lensa kontak dan komparasi filtrasi respirator N95 vs masker kain.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div></div>
+<div class="n b alert"><b>Model 2-Tab Emas &amp; Hierarki Kecamatan</b><p>Kecamatan sebagai wadah spasial induk (*spatial container*) yang menaungi sekolah PJJ, faskes lokal, dan estimasi warga rentan secara terpadu tanpa fragmentasi.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div></div>
+<div class="n b safe"><b>Rute Jalan Raya Riil OSRM &amp; Triase RS</b><p>Identifikasi RS rujukan zona aman dan perutean jalan raya riil berbelok (OSRM OpenStreetMap) dengan kilometer nyata dan estimasi durasi ambulans gawat darurat.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div></div>
+<div class="n b safe"><b>AI Emergency Briefing (Gemini &amp; BNPB)</b><p>Perumusan draf Siaran Pers resmi BPBD dan draf pesan broadcast WhatsApp warga (tombol 1-klik salin teks) didukung Google Gemini AI dengan fallback engine BNPB.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m a">Otomatis</span><span class="v fg">Terlihat pengguna</span></div></div>
+<div class="n b alert"><b>Edukasi APD: Wajib N95 &amp; Larang Softlens</b><p>Standar APD medis wajib N95/KN95 dan larangan keras pemakaian lensa kontak akibat abrasi kornea silika tajam serta protokol pengamanan tandon air minum.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div></div>
 <div class="n h c"><b>Intervensi Pemadaman Titik Api Terukur</b><p>Simulasi pemadaman klaster api teratas dengan kalkulasi instan delta warga terlindungi dan emisi karbon dicegah.</p><div class="badge-group"><span class="t h">Kebakaran hutan</span><span class="m c">Coba-coba</span><span class="v fg">Terlihat pengguna</span></div></div>
 <div class="n b"><b>Rentang Dampak Multi-Sektor (P5&ndash;P50&ndash;P95)</b><p>Kuantifikasi jujur dampak kependudukan (anak &amp; lansia), kerusakan pertanian (hektare), dan sumber air bersih.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div></div>
 <div class="n b"><b>Wet Scavenging &amp; Peringatan Lahar Lereng</b><p>Perhitungan penurunan partikel akibat hujan, disertai sistem deteksi otomatis bahaya lahar dingin di sungai lereng.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v bgd">Background</span><span class="v fg">Terlihat pengguna</span></div></div>
@@ -484,7 +491,7 @@ Terdeteksi 42 titik api satelit NASA FIRMS dengan total Fire Radiative Power (FR
 <div class="n b c"><b>Grafik Batang Horisontal Sensitivitas</b><p>Sapuan parameter interaktif untuk menganalisis variabel paling sensitif terhadap lonjakan populasi terpapar.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m c">Coba-coba</span><span class="v fg">Terlihat pengguna</span></div></div>
 <div class="n b"><b>Katalog Transparansi 24 Asumsi (D01&ndash;D24)</b><p>Audit terbuka status parameter model (bersumber otoritatif vs asumsi) beserta batasan komputasi.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div></div>
 <div class="n b"><b>Penonaktifan Etis Kategori ISPU</b><p>Transparansi integritas sains menolak menampilkan kategori ISPU spekulatif selama faktor emisi gambut masih kasar.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div></div>
-<div class="n b"><b>Putar Demo Satu-Klik &amp; Ekspor Laporan</b><p>Fitur otomasi pemutaran skenario komando lengkap dan ekspor ringkasan satu halaman untuk pengambil kebijakan.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m a">Otomatis</span><span class="v fg">Terlihat pengguna</span></div></div>
+<div class="n b safe"><b>Cetak Lembar Rencana Aksi Darurat (PDF/A4)</b><p>Ekspor resmi satu halaman ringkasan operasional tanggap darurat format A4 siap cetak dan tombol Putar Demo otomatis.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m a">Otomatis</span><span class="v fg">Terlihat pengguna</span></div></div>
 </div>
 </section>
 

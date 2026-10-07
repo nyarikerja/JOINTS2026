@@ -88,6 +88,17 @@ function startClocks() {
   }
   updateTime();
   setInterval(updateTime, 1000);
+
+  // Live Sync Sensor Otomatis Berkala (Setiap 30 Detik Real-Time)
+  setInterval(() => {
+    loadSummaryKpi();
+    if (currentHazard === "fire") {
+      loadNationalForests();
+      loadHotspots();
+    } else {
+      loadNationalVolcanoes();
+    }
+  }, 30000);
 }
 
 function loadSummaryKpi() {
@@ -144,53 +155,438 @@ function loadNationalVolcanoes() {
 }
 
 const NATIONAL_KARHUTLA_EVENTS = [
-  // Sumatera (8 Kawasan Hutan & Gambut)
-  { id: "hutan_tesso_nilo", name: "TN Tesso Nilo (Pelalawan, Riau)", forest_type: "Gambut & Hutan Hujan", province: "Riau", region: "Sumatera", lat: -0.08, lon: 101.62, area_ha: 81700, risk: "Sangat Rawan", n_hotspots: 0 },
-  { id: "hutan_giam_siak", name: "SM Giam Siak Kecil (Bengkalis & Siak, Riau)", forest_type: "Cagar Biosfer Gambut", province: "Riau", region: "Sumatera", lat: 1.18, lon: 101.88, area_ha: 178722, risk: "Sangat Rawan", n_hotspots: 0 },
-  { id: "hutan_berbak", name: "TN Berbak (Tanjung Jabung Timur, Jambi)", forest_type: "Rawa Gambut Terbesar", province: "Jambi", region: "Sumatera", lat: -1.42, lon: 104.28, area_ha: 142750, risk: "Sangat Rawan", n_hotspots: 60 },
-  { id: "hutan_padang_sugihan", name: "SM Padang Sugihan (OKI, Sumsel)", forest_type: "Suaka Gambut Dalam", province: "Sumatera Selatan", region: "Sumatera", lat: -3.22, lon: 105.12, area_ha: 88000, risk: "Sangat Rawan", n_hotspots: 60 },
-  { id: "hutan_meranti_pesisir", name: "KHG Tebing Tinggi (Kep. Meranti, Riau)", forest_type: "Gambut Pesisir", province: "Riau", region: "Sumatera", lat: 0.95, lon: 102.72, area_ha: 110000, risk: "Rawan", n_hotspots: 0 },
-  { id: "hutan_bukit_tigapuluh", name: "TN Bukit Tiga Puluh (Inhu, Riau/Jambi)", forest_type: "Hutan Bukit Tropis", province: "Riau", region: "Sumatera", lat: -0.85, lon: 102.45, area_ha: 144223, risk: "Waspada", n_hotspots: 13 },
-  { id: "hutan_kerinci_seblat", name: "TN Kerinci Seblat (Jambi & Sumbar)", forest_type: "Hutan Pegunungan", province: "Jambi", region: "Sumatera", lat: -2.15, lon: 101.45, area_ha: 1375350, risk: "Waspada", n_hotspots: 1 },
-  { id: "hutan_way_kambas", name: "TN Way Kambas (Lampung Timur)", forest_type: "Hutan Dataran Rendah", province: "Lampung", region: "Sumatera", lat: -4.95, lon: 105.75, area_ha: 125621, risk: "Rawan", n_hotspots: 60 },
-
-  // Kalimantan (10 Kawasan Hutan & Gambut)
-  { id: "hutan_sebangau", name: "TN Sebangau (Palangka Raya, Kalteng)", forest_type: "Rawa Gambut Tropis", province: "Kalimantan Tengah", region: "Kalimantan", lat: -2.55, lon: 113.85, area_ha: 568700, risk: "Sangat Rawan", n_hotspots: 0 },
-  { id: "hutan_eks_plg", name: "KHG Eks-PLG Sejuta Ha (Pulang Pisau, Kalteng)", forest_type: "Gambut Kritis", province: "Kalimantan Tengah", region: "Kalimantan", lat: -2.85, lon: 114.25, area_ha: 1000000, risk: "Sangat Rawan", n_hotspots: 15 },
-  { id: "hutan_tanjung_puting", name: "TN Tanjung Puting (Kobar, Kalteng)", forest_type: "Rawa Gambut & Hutan Tropis", province: "Kalimantan Tengah", region: "Kalimantan", lat: -3.05, lon: 111.95, area_ha: 415040, risk: "Rawan", n_hotspots: 37 },
-  { id: "hutan_gunung_palung", name: "TN Gunung Palung (Ketapang, Kalbar)", forest_type: "Rawa Gambut & Bukit", province: "Kalimantan Barat", region: "Kalimantan", lat: -1.25, lon: 110.15, area_ha: 90000, risk: "Rawan", n_hotspots: 11 },
-  { id: "hutan_kubu_raya", name: "Lahan Gambut Rasau Jaya (Kubu Raya, Kalbar)", forest_type: "Gambut Pesisir Asap", province: "Kalimantan Barat", region: "Kalimantan", lat: -0.35, lon: 109.45, area_ha: 145000, risk: "Sangat Rawan", n_hotspots: 0 },
-  { id: "hutan_danau_sentarum", name: "TN Danau Sentarum (Kapuas Hulu, Kalbar)", forest_type: "Lahan Basah Ramsar", province: "Kalimantan Barat", region: "Kalimantan", lat: 0.85, lon: 112.15, area_ha: 132000, risk: "Waspada", n_hotspots: 8 },
-  { id: "hutan_meratus", name: "Hutan Lindung Peg. Meratus (Hulu Sungai, Kalsel)", forest_type: "Hutan Pegunungan", province: "Kalimantan Selatan", region: "Kalimantan", lat: -2.75, lon: 115.55, area_ha: 180000, risk: "Waspada", n_hotspots: 54 },
-  { id: "hutan_banjarbaru", name: "Lahan Gambut Landasan Ulin (Banjarbaru, Kalsel)", forest_type: "Gambut Kering Ring Bandara", province: "Kalimantan Selatan", region: "Kalimantan", lat: -3.48, lon: 114.78, area_ha: 45000, risk: "Sangat Rawan", n_hotspots: 39 },
-  { id: "hutan_kutai", name: "TN Kutai (Kutai Timur & Bontang, Kaltim)", forest_type: "Hutan Ulin Tropis", province: "Kalimantan Timur", region: "Kalimantan", lat: 0.25, lon: 117.25, area_ha: 198629, risk: "Waspada", n_hotspots: 51 },
-  { id: "hutan_sungai_wain", name: "Hutan Lindung S. Wain & IKN (Balikpapan, Kaltim)", forest_type: "Penyangga IKN Nusantara", province: "Kalimantan Timur", region: "Kalimantan", lat: -1.12, lon: 116.85, area_ha: 10025, risk: "Waspada", n_hotspots: 0 },
-
-  // Jawa (6 Kawasan Hutan & Sabana)
-  { id: "hutan_bromo", name: "Sabana Bromo - TN Bromo Tengger Semeru (Jatim)", forest_type: "Sabana Kaldera Alpin", province: "Jawa Timur", region: "Jawa", lat: -7.94, lon: 112.95, area_ha: 50276, risk: "Sangat Rawan", n_hotspots: 6 },
-  { id: "hutan_baluran", name: "Sabana Bekol - TN Baluran (Situbondo, Jatim)", forest_type: "Sabana Tropis Alami", province: "Jawa Timur", region: "Jawa", lat: -7.83, lon: 114.38, area_ha: 25000, risk: "Sangat Rawan", n_hotspots: 6 },
-  { id: "hutan_gunung_lawu", name: "Hutan Lindung Gunung Lawu (Karanganyar, Jateng)", forest_type: "Hutan Lereng Kering", province: "Jawa Tengah", region: "Jawa", lat: -7.63, lon: 111.19, area_ha: 15000, risk: "Rawan", n_hotspots: 12 },
-  { id: "hutan_merbabu", name: "Sabana TN Gunung Merbabu (Boyolali, Jateng)", forest_type: "Sabana Alpin Puncak", province: "Jawa Tengah", region: "Jawa", lat: -7.45, lon: 110.43, area_ha: 5725, risk: "Rawan", n_hotspots: 3 },
-  { id: "hutan_ciremai", name: "TN Gunung Ciremai (Kuningan, Jabar)", forest_type: "Hutan Lereng Kering", province: "Jawa Barat", region: "Jawa", lat: -6.89, lon: 108.40, area_ha: 15500, risk: "Waspada", n_hotspots: 7 },
-  { id: "hutan_alas_purwo", name: "TN Alas Purwo (Banyuwangi, Jatim)", forest_type: "Hutan Musim Blambangan", province: "Jawa Timur", region: "Jawa", lat: -8.65, lon: 114.45, area_ha: 43420, risk: "Waspada", n_hotspots: 1 },
-
-  // Bali & Nusa Tenggara (5 Kawasan Hutan & Sabana)
-  { id: "hutan_komodo", name: "Sabana Padar & Loh Liang - TN Komodo (NTT)", forest_type: "Sabana Tropis Kering", province: "Nusa Tenggara Timur", region: "Bali & Nusa Tenggara", lat: -8.55, lon: 119.55, area_ha: 173300, risk: "Rawan", n_hotspots: 8 },
-  { id: "hutan_manupeu_sumba", name: "Savana TN Manupeu Tanah Daru (Sumba, NTT)", forest_type: "Savana Tropis Luas", province: "Nusa Tenggara Timur", region: "Bali & Nusa Tenggara", lat: -9.75, lon: 119.85, area_ha: 87984, risk: "Sangat Rawan", n_hotspots: 1 },
-  { id: "hutan_tambora", name: "Sabana Doro Ncanga - TN Tambora (Bima, NTB)", forest_type: "Sabana Lereng Kaldera", province: "Nusa Tenggara Barat", region: "Bali & Nusa Tenggara", lat: -8.25, lon: 118.00, area_ha: 71645, risk: "Rawan", n_hotspots: 2 },
-  { id: "hutan_rinjani", name: "Hutan Sembalun - TN Gunung Rinjani (NTB)", forest_type: "Savana Lembah Sembalun", province: "Nusa Tenggara Barat", region: "Bali & Nusa Tenggara", lat: -8.42, lon: 116.45, area_ha: 41330, risk: "Rawan", n_hotspots: 2 },
-  { id: "hutan_bali_barat", name: "TN Bali Barat & Prapat Agung (Buleleng, Bali)", forest_type: "Hutan Musim Monsoonal", province: "Bali", region: "Bali & Nusa Tenggara", lat: -8.15, lon: 114.48, area_ha: 19002, risk: "Waspada", n_hotspots: 7 },
-
-  // Sulawesi (4 Kawasan Hutan & Sabana)
-  { id: "hutan_rawa_aopa", name: "Sabana Rawa TN Rawa Aopa Watumohai (Sultra)", forest_type: "Sabana Lahan Basah", province: "Sulawesi Tenggara", region: "Sulawesi", lat: -4.45, lon: 121.95, area_ha: 105000, risk: "Rawan", n_hotspots: 0 },
-  { id: "hutan_lore_lindu", name: "TN Lore Lindu (Poso & Sigi, Sulteng)", forest_type: "Hutan Pegunungan", province: "Sulawesi Tengah", region: "Sulawesi", lat: -1.35, lon: 120.15, area_ha: 217991, risk: "Waspada", n_hotspots: 19 },
-  { id: "hutan_bogani", name: "TN Bogani Nani Wartabone (Gorontalo/Sulut)", forest_type: "Hutan Tropis Konservasi", province: "Gorontalo", region: "Sulawesi", lat: 0.55, lon: 123.65, area_ha: 287115, risk: "Waspada", n_hotspots: 60 },
-  { id: "hutan_maros", name: "Hutan Karst Bantimurung (Maros, Sulsel)", forest_type: "Hutan Karst Perbukitan", province: "Sulawesi Selatan", region: "Sulawesi", lat: -4.95, lon: 119.75, area_ha: 43750, risk: "Waspada", n_hotspots: 1 },
-
-  // Maluku & Papua (3 Kawasan Hutan & Sabana)
-  { id: "hutan_wasur", name: "Sabana Merauke - TN Wasur (Papua Selatan)", forest_type: "Sabana Kayu Putih Tropis", province: "Papua Selatan", region: "Maluku & Papua", lat: -8.55, lon: 140.65, area_ha: 413810, risk: "Sangat Rawan", n_hotspots: 60 },
-  { id: "hutan_mappi_asmat", name: "Lahan Gambut Mappi & Asmat (Papua Selatan)", forest_type: "Rawa Gambut Papua", province: "Papua Selatan", region: "Maluku & Papua", lat: -6.85, lon: 139.45, area_ha: 650000, risk: "Rawan", n_hotspots: 60 },
-  { id: "hutan_bintuni", name: "Hutan Pesisir Teluk Bintuni (Papua Barat)", forest_type: "Hutan Rawa Dataran Rendah", province: "Papua Barat", region: "Maluku & Papua", lat: -2.15, lon: 133.55, area_ha: 260000, risk: "Waspada", n_hotspots: 3 }
+  {
+    "id": "hutan_alas_purwo",
+    "name": "TN Alas Purwo (Banyuwangi, Jatim)",
+    "forest_type": "Hutan Musim Dataran Rendah",
+    "province": "Jawa Timur",
+    "region": "Jawa",
+    "lat": -8.65,
+    "lon": 114.45,
+    "area_ha": 43420.0,
+    "risk": "Waspada",
+    "n_hotspots": 2
+  },
+  {
+    "id": "hutan_bali_barat",
+    "name": "TN Bali Barat & Prapat Agung (Buleleng, Bali)",
+    "forest_type": "Hutan Musim Kering Monsoonal",
+    "province": "Bali",
+    "region": "Bali & Nusa Tenggara",
+    "lat": -8.15,
+    "lon": 114.48,
+    "area_ha": 19002.0,
+    "risk": "Waspada",
+    "n_hotspots": 14
+  },
+  {
+    "id": "hutan_baluran",
+    "name": "Sabana Bekol - TN Baluran (Situbondo, Jatim)",
+    "forest_type": "Padang Savana Alami & Hutan Musim",
+    "province": "Jawa Timur",
+    "region": "Jawa",
+    "lat": -7.83,
+    "lon": 114.38,
+    "area_ha": 25000.0,
+    "risk": "Sangat Rawan",
+    "n_hotspots": 12
+  },
+  {
+    "id": "hutan_banjarbaru",
+    "name": "Lahan Gambut Landasan Ulin (Banjarbaru, Kalsel)",
+    "forest_type": "Rawa Gambut Pesisir Kering",
+    "province": "Kalimantan Selatan",
+    "region": "Kalimantan",
+    "lat": -3.48,
+    "lon": 114.78,
+    "area_ha": 45000.0,
+    "risk": "Sangat Rawan",
+    "n_hotspots": 160
+  },
+  {
+    "id": "hutan_berbak",
+    "name": "TN Berbak (Tanjung Jabung Timur, Jambi)",
+    "forest_type": "Rawa Gambut Terluas Asia Tenggara",
+    "province": "Jambi",
+    "region": "Sumatera",
+    "lat": -1.42,
+    "lon": 104.28,
+    "area_ha": 142750.0,
+    "risk": "Sangat Rawan",
+    "n_hotspots": 143
+  },
+  {
+    "id": "hutan_bintuni",
+    "name": "Hutan Pesisir Teluk Bintuni (Papua Barat)",
+    "forest_type": "Hutan Rawa & Dataran Rendah",
+    "province": "Papua Barat",
+    "region": "Maluku & Papua",
+    "lat": -2.15,
+    "lon": 133.55,
+    "area_ha": 260000.0,
+    "risk": "Waspada",
+    "n_hotspots": 3
+  },
+  {
+    "id": "hutan_bogani",
+    "name": "TN Bogani Nani Wartabone (Gorontalo & Sulut)",
+    "forest_type": "Hutan Hujan Tropis Dataran Rendah",
+    "province": "Gorontalo",
+    "region": "Sulawesi",
+    "lat": 0.55,
+    "lon": 123.65,
+    "area_ha": 287115.0,
+    "risk": "Waspada",
+    "n_hotspots": 60
+  },
+  {
+    "id": "hutan_bromo",
+    "name": "Sabana Bromo - TN Bromo Tengger Semeru (Jatim)",
+    "forest_type": "Sabana Kaldera Dataran Tinggi",
+    "province": "Jawa Timur",
+    "region": "Jawa",
+    "lat": -7.94,
+    "lon": 112.95,
+    "area_ha": 50276.0,
+    "risk": "Sangat Rawan",
+    "n_hotspots": 6
+  },
+  {
+    "id": "hutan_bukit_tigapuluh",
+    "name": "TN Bukit Tiga Puluh (Indragiri Hulu, Riau)",
+    "forest_type": "Hutan Perbukitan Tropis",
+    "province": "Riau",
+    "region": "Sumatera",
+    "lat": -0.85,
+    "lon": 102.45,
+    "area_ha": 144223.0,
+    "risk": "Waspada",
+    "n_hotspots": 13
+  },
+  {
+    "id": "hutan_ciremai",
+    "name": "TN Gunung Ciremai (Kuningan, Jabar)",
+    "forest_type": "Hutan Musim Pegunungan",
+    "province": "Jawa Barat",
+    "region": "Jawa",
+    "lat": -6.89,
+    "lon": 108.4,
+    "area_ha": 15500.0,
+    "risk": "Waspada",
+    "n_hotspots": 7
+  },
+  {
+    "id": "hutan_danau_sentarum",
+    "name": "TN Danau Sentarum (Kapuas Hulu, Kalbar)",
+    "forest_type": "Lahan Basah & Hutan Rawa Musiman",
+    "province": "Kalimantan Barat",
+    "region": "Kalimantan",
+    "lat": 0.85,
+    "lon": 112.15,
+    "area_ha": 132000.0,
+    "risk": "Waspada",
+    "n_hotspots": 8
+  },
+  {
+    "id": "hutan_eks_plg",
+    "name": "KHG Eks-PLG Sejuta Hektar (Pulang Pisau, Kalteng)",
+    "forest_type": "Kawasan Hidrologis Gambut Kritis",
+    "province": "Kalimantan Tengah",
+    "region": "Kalimantan",
+    "lat": -2.85,
+    "lon": 114.25,
+    "area_ha": 1000000.0,
+    "risk": "Sangat Rawan",
+    "n_hotspots": 175
+  },
+  {
+    "id": "hutan_giam_siak",
+    "name": "SM Giam Siak Kecil (Bengkalis & Siak, Riau)",
+    "forest_type": "Cagar Biosfer Rawa Gambut",
+    "province": "Riau",
+    "region": "Sumatera",
+    "lat": 1.18,
+    "lon": 101.88,
+    "area_ha": 178722.0,
+    "risk": "Sangat Rawan",
+    "n_hotspots": 28
+  },
+  {
+    "id": "hutan_gunung_lawu",
+    "name": "Hutan Lindung Gunung Lawu (Karanganyar, Jateng)",
+    "forest_type": "Hutan Lereng Kering & Pinus",
+    "province": "Jawa Tengah",
+    "region": "Jawa",
+    "lat": -7.63,
+    "lon": 111.19,
+    "area_ha": 15000.0,
+    "risk": "Rawan",
+    "n_hotspots": 13
+  },
+  {
+    "id": "hutan_gunung_palung",
+    "name": "TN Gunung Palung (Ketapang, Kalbar)",
+    "forest_type": "Hutan Rawa Gambut & Perbukitan",
+    "province": "Kalimantan Barat",
+    "region": "Kalimantan",
+    "lat": -1.25,
+    "lon": 110.15,
+    "area_ha": 90000.0,
+    "risk": "Rawan",
+    "n_hotspots": 49
+  },
+  {
+    "id": "hutan_kerinci_seblat",
+    "name": "TN Kerinci Seblat (Jambi & Sumbar)",
+    "forest_type": "Hutan Pegunungan Tropis",
+    "province": "Jambi",
+    "region": "Sumatera",
+    "lat": -2.15,
+    "lon": 101.45,
+    "area_ha": 1375350.0,
+    "risk": "Waspada",
+    "n_hotspots": 1
+  },
+  {
+    "id": "hutan_komodo",
+    "name": "Sabana Padar & Loh Liang - TN Komodo (NTT)",
+    "forest_type": "Sabana Kepulauan Kering",
+    "province": "Nusa Tenggara Timur",
+    "region": "Bali & Nusa Tenggara",
+    "lat": -8.55,
+    "lon": 119.55,
+    "area_ha": 173300.0,
+    "risk": "Rawan",
+    "n_hotspots": 8
+  },
+  {
+    "id": "hutan_kubu_raya",
+    "name": "Lahan Gambut Rasau Jaya (Kubu Raya, Kalbar)",
+    "forest_type": "Kawasan Gambut Pesisir",
+    "province": "Kalimantan Barat",
+    "region": "Kalimantan",
+    "lat": -0.35,
+    "lon": 109.45,
+    "area_ha": 145000.0,
+    "risk": "Sangat Rawan",
+    "n_hotspots": 26
+  },
+  {
+    "id": "hutan_kutai",
+    "name": "TN Kutai (Kutai Timur & Bontang, Kaltim)",
+    "forest_type": "Hutan Hujan Dataran Rendah",
+    "province": "Kalimantan Timur",
+    "region": "Kalimantan",
+    "lat": 0.25,
+    "lon": 117.25,
+    "area_ha": 198629.0,
+    "risk": "Waspada",
+    "n_hotspots": 51
+  },
+  {
+    "id": "hutan_lore_lindu",
+    "name": "TN Lore Lindu (Poso & Sigi, Sulteng)",
+    "forest_type": "Hutan Pegunungan Konservasi",
+    "province": "Sulawesi Tengah",
+    "region": "Sulawesi",
+    "lat": -1.35,
+    "lon": 120.15,
+    "area_ha": 217991.0,
+    "risk": "Waspada",
+    "n_hotspots": 19
+  },
+  {
+    "id": "hutan_manupeu_sumba",
+    "name": "Savana TN Manupeu Tanah Daru (Sumba Timur, NTT)",
+    "forest_type": "Padang Savana Tropis Luas",
+    "province": "Nusa Tenggara Timur",
+    "region": "Bali & Nusa Tenggara",
+    "lat": -9.75,
+    "lon": 119.85,
+    "area_ha": 87984.0,
+    "risk": "Sangat Rawan",
+    "n_hotspots": 1
+  },
+  {
+    "id": "hutan_mappi_asmat",
+    "name": "Lahan Gambut Mappi & Asmat (Papua Selatan)",
+    "forest_type": "Rawa Gambut Pedalaman Papua",
+    "province": "Papua Selatan",
+    "region": "Maluku & Papua",
+    "lat": -6.85,
+    "lon": 139.45,
+    "area_ha": 650000.0,
+    "risk": "Rawan",
+    "n_hotspots": 60
+  },
+  {
+    "id": "hutan_maros",
+    "name": "Hutan Karst Bantimurung (Maros, Sulsel)",
+    "forest_type": "Hutan Karst & Lindung Perbukitan",
+    "province": "Sulawesi Selatan",
+    "region": "Sulawesi",
+    "lat": -4.95,
+    "lon": 119.75,
+    "area_ha": 43750.0,
+    "risk": "Waspada",
+    "n_hotspots": 1
+  },
+  {
+    "id": "hutan_meranti_pesisir",
+    "name": "KHG Pulau Tebing Tinggi (Kep. Meranti, Riau)",
+    "forest_type": "Rawa Gambut Pesisir Pulau Kecil",
+    "province": "Riau",
+    "region": "Sumatera",
+    "lat": 0.95,
+    "lon": 102.72,
+    "area_ha": 110000.0,
+    "risk": "Rawan",
+    "n_hotspots": 20
+  },
+  {
+    "id": "hutan_meratus",
+    "name": "Hutan Lindung Pegunungan Meratus (Hulu Sungai, Kalsel)",
+    "forest_type": "Hutan Lindung Pegunungan",
+    "province": "Kalimantan Selatan",
+    "region": "Kalimantan",
+    "lat": -2.75,
+    "lon": 115.55,
+    "area_ha": 180000.0,
+    "risk": "Waspada",
+    "n_hotspots": 233
+  },
+  {
+    "id": "hutan_merbabu",
+    "name": "Sabana TN Gunung Merbabu (Boyolali, Jateng)",
+    "forest_type": "Sabana Alpin & Semak Gunung",
+    "province": "Jawa Tengah",
+    "region": "Jawa",
+    "lat": -7.45,
+    "lon": 110.43,
+    "area_ha": 5725.0,
+    "risk": "Rawan",
+    "n_hotspots": 4
+  },
+  {
+    "id": "hutan_padang_sugihan",
+    "name": "SM Padang Sugihan (OKI, Sumsel)",
+    "forest_type": "Suaka Rawa Gambut Dalam",
+    "province": "Sumatera Selatan",
+    "region": "Sumatera",
+    "lat": -3.22,
+    "lon": 105.12,
+    "area_ha": 88000.0,
+    "risk": "Sangat Rawan",
+    "n_hotspots": 60
+  },
+  {
+    "id": "hutan_rawa_aopa",
+    "name": "Sabana TN Rawa Aopa Watumohai (Konawe, Sultra)",
+    "forest_type": "Sabana Lahan Basah Alami",
+    "province": "Sulawesi Tenggara",
+    "region": "Sulawesi",
+    "lat": -4.45,
+    "lon": 121.95,
+    "area_ha": 105000.0,
+    "risk": "Rawan",
+    "n_hotspots": 20
+  },
+  {
+    "id": "hutan_rinjani",
+    "name": "Hutan Lereng Sembalun - TN Gunung Rinjani (NTB)",
+    "forest_type": "Hutan Musim & Savana Sembalun",
+    "province": "Nusa Tenggara Barat",
+    "region": "Bali & Nusa Tenggara",
+    "lat": -8.42,
+    "lon": 116.45,
+    "area_ha": 41330.0,
+    "risk": "Rawan",
+    "n_hotspots": 2
+  },
+  {
+    "id": "hutan_sebangau",
+    "name": "TN Sebangau (Palangka Raya, Kalteng)",
+    "forest_type": "Hutan Rawa Gambut Tropis",
+    "province": "Kalimantan Tengah",
+    "region": "Kalimantan",
+    "lat": -2.55,
+    "lon": 113.85,
+    "area_ha": 568700.0,
+    "risk": "Sangat Rawan",
+    "n_hotspots": 354
+  },
+  {
+    "id": "hutan_sungai_wain",
+    "name": "Hutan Lindung Sungai Wain & IKN (Balikpapan, Kaltim)",
+    "forest_type": "Hutan Lindung Penyangga Ibu Kota",
+    "province": "Kalimantan Timur",
+    "region": "Kalimantan",
+    "lat": -1.12,
+    "lon": 116.85,
+    "area_ha": 10025.0,
+    "risk": "Waspada",
+    "n_hotspots": 12
+  },
+  {
+    "id": "hutan_tambora",
+    "name": "Sabana Kaldera TN Gunung Tambora (Bima, NTB)",
+    "forest_type": "Sabana Lereng Gunung & Kaldera",
+    "province": "Nusa Tenggara Barat",
+    "region": "Bali & Nusa Tenggara",
+    "lat": -8.25,
+    "lon": 118.0,
+    "area_ha": 71645.0,
+    "risk": "Rawan",
+    "n_hotspots": 2
+  },
+  {
+    "id": "hutan_tanjung_puting",
+    "name": "TN Tanjung Puting (Kotawaringin Barat, Kalteng)",
+    "forest_type": "Hutan Rawa Gambut & Hutan Tropis",
+    "province": "Kalimantan Tengah",
+    "region": "Kalimantan",
+    "lat": -3.05,
+    "lon": 111.95,
+    "area_ha": 415040.0,
+    "risk": "Rawan",
+    "n_hotspots": 379
+  },
+  {
+    "id": "hutan_tesso_nilo",
+    "name": "TN Tesso Nilo (Pelalawan, Riau)",
+    "forest_type": "Hutan Dataran Rendah & Gambut",
+    "province": "Riau",
+    "region": "Sumatera",
+    "lat": -0.08,
+    "lon": 101.62,
+    "area_ha": 81700.0,
+    "risk": "Sangat Rawan",
+    "n_hotspots": 0
+  },
+  {
+    "id": "hutan_wasur",
+    "name": "Sabana Merauke - TN Wasur (Papua Selatan)",
+    "forest_type": "Sabana Tropis & Lahan Basah Melaleuca",
+    "province": "Papua Selatan",
+    "region": "Maluku & Papua",
+    "lat": -8.55,
+    "lon": 140.65,
+    "area_ha": 413810.0,
+    "risk": "Sangat Rawan",
+    "n_hotspots": 125
+  },
+  {
+    "id": "hutan_way_kambas",
+    "name": "TN Way Kambas (Lampung Timur, Lampung)",
+    "forest_type": "Hutan Dataran Rendah & Rawa",
+    "province": "Lampung",
+    "region": "Sumatera",
+    "lat": -4.95,
+    "lon": 105.75,
+    "area_ha": 125621.0,
+    "risk": "Rawan",
+    "n_hotspots": 68
+  }
 ];
 
 // State filter & selection combobox
@@ -667,14 +1063,22 @@ function loadNationalForests() {
           const local = NATIONAL_KARHUTLA_EVENTS.find(k => k.id === srvF.id);
           if (local) {
             local.n_hotspots = srvF.n_hotspots ?? local.n_hotspots;
+            local.risk = srvF.risk_level ?? srvF.risk ?? local.risk;
+            local.area_ha = srvF.area_ha ?? local.area_ha;
+            local.name = srvF.name ?? local.name;
+            local.province = srvF.province ?? local.province;
+            local.forest_type = srvF.forest_type ?? local.forest_type;
           }
         });
       }
       renderForestMarkers(NATIONAL_KARHUTLA_EVENTS);
+      // Sinkronkan combobox/dropdown secara real-time dari data database
+      populateVolcanoDropdown(allVolcanoesData);
     })
     .catch(err => {
       console.warn("Gagal fetch /layers/forests-national, fallback ke data lokal:", err);
       renderForestMarkers(NATIONAL_KARHUTLA_EVENTS);
+      populateVolcanoDropdown(allVolcanoesData);
     });
 }
 
@@ -1367,13 +1771,13 @@ function loadImpact() {
       // Muat Lapis 2 & 3
       loadLapis2Features(formatR);
       loadImpactedFacilities();
+      loadEmergencyAdvisory();
     })
     .catch(err => console.error("Gagal muat dampak:", err));
 }
 
 // =============================================================================
-// =============================================================================
-// 8B. Protokol Aksi Sekolah (PJJ Daring) & Evakuasi Medis Rumah Sakit
+// 8B. Protokol Aksi Sekolah (PJJ Daring) & Evakuasi Medis Rumah Sakit (OSRM)
 // =============================================================================
 let cachedImpactedFacilities = null;
 let currentEvacRouteLayer = null;
@@ -1382,30 +1786,129 @@ function drawEvacuationRoute(fromLat, fromLon, toLat, toLon, fromName, toName, d
   if (currentEvacRouteLayer) {
     map.removeLayer(currentEvacRouteLayer);
   }
-  const latlngs = [[fromLat, fromLon], [toLat, toLon]];
-  currentEvacRouteLayer = L.polyline(latlngs, {
-    color: "#10b981",
-    weight: 3.5,
-    opacity: 0.95,
-    dashArray: "6, 9"
-  }).addTo(map);
 
-  map.fitBounds(L.latLngBounds(latlngs), { padding: [60, 60] });
+  const runParam = currentRunId || "latest";
+  const url = `${API_BASE}/runs/${runParam}/evacuation-route?from_lat=${fromLat}&from_lon=${fromLon}&to_lat=${toLat}&to_lon=${toLon}&from_name=${encodeURIComponent(fromName)}&to_name=${encodeURIComponent(toName)}`;
 
-  const midLat = (fromLat + toLat) / 2.0;
-  const midLon = (fromLon + toLon) / 2.0;
-  L.popup()
-    .setLatLng([midLat, midLon])
-    .setContent(`
-      <div style="font-size:11px;font-family:sans-serif;color:#f8fafc;padding:3px;">
-        <strong style="color:#34d399;">Rute Evakuasi Medis (${distKm} km)</strong><br>
-        <span style="color:#94a3b8;">Asal:</span> <strong>${fromName}</strong><br>
-        <span style="color:#94a3b8;">Tujuan:</span> <strong style="color:#38bdf8;">${toName}</strong><br>
-        <small style="color:#fbbf24;">Prioritas: Pasien sesak napas akut &amp; trauma partikulat.</small>
-      </div>
-    `)
-    .openOn(map);
+  fetch(url)
+    .then(r => r.json())
+    .then(route => {
+      const coords = (route.coordinates && route.coordinates.length > 0)
+        ? route.coordinates
+        : [[fromLat, fromLon], [toLat, toLon]];
+
+      currentEvacRouteLayer = L.polyline(coords, {
+        color: "#10b981",
+        weight: 4.5,
+        opacity: 0.95,
+        lineJoin: "round"
+      }).addTo(map);
+
+      map.fitBounds(L.latLngBounds(coords), { padding: [60, 60] });
+
+      const midIdx = Math.floor(coords.length / 2);
+      const midPoint = coords[midIdx] || [(fromLat + toLat) / 2.0, (fromLon + toLon) / 2.0];
+
+      L.popup()
+        .setLatLng(midPoint)
+        .setContent(`
+          <div style="font-size:11px;font-family:sans-serif;color:#f8fafc;padding:4px;min-width:200px;">
+            <div style="font-weight:800;color:#34d399;margin-bottom:3px;font-size:11.5px;">🚑 Koridor Evakuasi Jalan Raya Riil</div>
+            <div><span style="color:#94a3b8;">Jarak Tempuh Jalan:</span> <strong class="mono" style="color:#f8fafc;">${route.distance_km || distKm} km</strong></div>
+            <div><span style="color:#94a3b8;">Waktu Tempuh Ambulans:</span> <strong class="mono" style="color:#fbbf24;">~${route.estimated_duration_minutes || 20} menit</strong></div>
+            <div style="margin-top:4px;border-top:1px dashed #334155;padding-top:4px;">
+              <span style="color:#94a3b8;">Asal:</span> <strong>${fromName}</strong><br>
+              <span style="color:#94a3b8;">Tujuan:</span> <strong style="color:#38bdf8;">${toName}</strong>
+            </div>
+            <div style="margin-top:4px;font-size:9.5px;color:#64748b;">Mesin: ${route.routing_engine || 'OSRM OpenStreetMap'}</div>
+          </div>
+        `)
+        .openOn(map);
+    })
+    .catch(() => {
+      const latlngs = [[fromLat, fromLon], [toLat, toLon]];
+      currentEvacRouteLayer = L.polyline(latlngs, {
+        color: "#10b981",
+        weight: 3.5,
+        opacity: 0.95,
+        dashArray: "6, 9"
+      }).addTo(map);
+      map.fitBounds(L.latLngBounds(latlngs), { padding: [60, 60] });
+    });
 }
+
+function loadEmergencyAdvisory() {
+  if (!currentRunId) return;
+
+  fetch(`${API_BASE}/runs/${currentRunId}/emergency-advisory`)
+    .then(r => r.json())
+    .then(adv => {
+      // 1. Banner Alert
+      const banner = document.getElementById("advisoryAlertBanner");
+      const titleEl = document.getElementById("advisoryAlertLevel");
+      const subEl = document.getElementById("advisoryAlertSubtitle");
+      if (banner && titleEl) {
+        banner.style.background = adv.badge_bg || "#dc2626";
+        titleEl.textContent = adv.alert_level || "SIAGA TANGGAP DARURAT";
+        if (subEl) subEl.textContent = `Skenario: ${adv.scenario_label || '-'} • Tindakan perlindungan segera diaktifkan.`;
+      }
+
+      // 2. Populasi & Kecamatan
+      const pSum = adv.population_summary || {};
+      const chEl = document.getElementById("advisoryChildVal");
+      const elEl = document.getElementById("advisoryElderVal");
+      if (chEl) chEl.textContent = `${Math.round(pSum.children_median || 0).toLocaleString()} jiwa`;
+      if (elEl) elEl.textContent = `${Math.round(pSum.elderly_median || 0).toLocaleString()} jiwa`;
+
+      const distList = document.getElementById("advisoryDistrictsList");
+      if (distList) {
+        distList.innerHTML = "";
+        const dArr = pSum.priority_districts || [];
+        if (dArr.length === 0) {
+          distList.innerHTML = `<span class="district-pill" style="font-size:11px;background:#1e293b;border:1px solid #334155;color:#94a3b8;padding:3px 8px;border-radius:4px;">Wilayah terdampak langsung terpusat di episentrum bahaya.</span>`;
+        } else {
+          dArr.forEach(d => {
+            const span = document.createElement("span");
+            span.className = "district-pill";
+            span.style.cssText = "font-size:11px;background:#1e293b;border:1px solid #38bdf8;color:#38bdf8;padding:3px 8px;border-radius:4px;font-weight:600;";
+            span.textContent = `📍 Kec. ${d}`;
+            distList.appendChild(span);
+          });
+        }
+      }
+
+      // 3. AI Emergency Briefing (Gemini AI / Expert Engine)
+      const briefing = adv.gemini_briefing || {};
+      const badgeEngine = document.getElementById("aiEngineBadge");
+      const prTitle = document.getElementById("aiPrTitle");
+      const prBody = document.getElementById("aiPrBody");
+      const waBody = document.getElementById("aiWaBody");
+
+      if (badgeEngine && briefing.engine) badgeEngine.textContent = briefing.engine;
+      if (prTitle && briefing.press_release_title) prTitle.textContent = briefing.press_release_title;
+      if (prBody && briefing.press_release_body) prBody.textContent = briefing.press_release_body;
+      if (waBody && briefing.whatsapp_broadcast) waBody.textContent = briefing.whatsapp_broadcast;
+
+      const btnCopy = document.getElementById("btnCopyWa");
+      if (btnCopy) {
+        btnCopy.onclick = () => {
+          if (waBody && waBody.textContent) {
+            navigator.clipboard.writeText(waBody.textContent).then(() => {
+              btnCopy.textContent = "Tersalin!";
+              btnCopy.style.background = "#059669";
+              setTimeout(() => {
+                btnCopy.textContent = "Salin Teks";
+                btnCopy.style.background = "#047857";
+              }, 2000);
+            });
+          }
+        };
+      }
+    })
+    .catch(err => console.error("Gagal muat AI emergency advisory:", err));
+}
+
+let currentDistrictFilter = "all";
 
 function loadImpactedFacilities() {
   if (!currentRunId) return;
@@ -1416,9 +1919,224 @@ function loadImpactedFacilities() {
       cachedImpactedFacilities = data;
       renderSchoolsList(data.schools || []);
       renderEvacHospitalsList(data.evacuation_referral_hospitals || []);
+      renderDistrictHierarchy(data.schools || [], data.evacuation_referral_hospitals || [], currentDistrictFilter);
     })
     .catch(err => console.error("Gagal muat fasilitas terdampak:", err));
 }
+
+function initDistrictFilterButtons() {
+  const chips = document.querySelectorAll(".district-filter-chips .d-chip-btn");
+  chips.forEach(btn => {
+    btn.addEventListener("click", () => {
+      chips.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentDistrictFilter = btn.getAttribute("data-filter") || "all";
+      if (cachedImpactedFacilities) {
+        renderDistrictHierarchy(
+          cachedImpactedFacilities.schools || [],
+          cachedImpactedFacilities.evacuation_referral_hospitals || [],
+          currentDistrictFilter
+        );
+      }
+    });
+  });
+}
+
+function renderDistrictHierarchy(schools, hospitals, filterMode = "all") {
+  const container = document.getElementById("districtHierarchyContainer");
+  if (!container) return;
+  container.innerHTML = "";
+
+  const safeSchools = Array.isArray(schools) ? schools : [];
+  const safeHospitals = Array.isArray(hospitals) ? hospitals : [];
+
+  if (safeSchools.length === 0 && safeHospitals.length === 0) {
+    container.innerHTML = `<div class="empty-state">Tidak ada sekolah atau fasilitas kesehatan di zona risiko paparan &ge; 5%.</div>`;
+    return;
+  }
+
+  // Kelompokkan spasial berdasarkan Kecamatan
+  const districtMap = new Map();
+
+  function getOrInitDistrict(rawName) {
+    let norm = (rawName || "Wilayah Sekitar").trim();
+    if (!norm.toLowerCase().startsWith("kecamatan") && !norm.toLowerCase().startsWith("kec.")) {
+      norm = `Kecamatan ${norm}`;
+    }
+    if (!districtMap.has(norm)) {
+      districtMap.set(norm, {
+        name: norm,
+        schools: [],
+        hospitals: [],
+        maxExposure: 0
+      });
+    }
+    return districtMap.get(norm);
+  }
+
+  safeSchools.forEach(sch => {
+    const dObj = getOrInitDistrict(sch.district);
+    dObj.schools.push(sch);
+    if ((sch.exposure_pct || 0) > dObj.maxExposure) {
+      dObj.maxExposure = sch.exposure_pct;
+    }
+  });
+
+  safeHospitals.forEach(h => {
+    const dObj = getOrInitDistrict(h.district);
+    dObj.hospitals.push(h);
+    if ((h.exposure_pct || 0) > dObj.maxExposure) {
+      dObj.maxExposure = h.exposure_pct;
+    }
+  });
+
+  // Urutkan kecamatan berdasarkan tingkat bahaya / paparan tertinggi ke terendah
+  const sortedDistricts = Array.from(districtMap.values()).sort((a, b) => b.maxExposure - a.maxExposure);
+
+  let renderedCount = 0;
+
+  sortedDistricts.forEach(d => {
+    const displaySchools = filterMode === "hospitals" ? [] : d.schools;
+    const displayHospitals = filterMode === "schools" ? [] : d.hospitals;
+
+    if (displaySchools.length === 0 && displayHospitals.length === 0) {
+      return;
+    }
+
+    renderedCount++;
+    const card = document.createElement("div");
+    card.className = "district-group-card";
+
+    let badgeClass = "badge-info";
+    let badgeLabel = "[SIAGA DINI]";
+    if (d.maxExposure >= 40) {
+      badgeClass = "badge-danger";
+      badgeLabel = "[SIAGA TINGGI]";
+    } else if (d.maxExposure >= 15) {
+      badgeClass = "badge-warning";
+      badgeLabel = "[WASPADA]";
+    }
+
+    const summaryParts = [];
+    if (d.schools.length > 0) summaryParts.push(`${d.schools.length} Sekolah`);
+    if (d.hospitals.length > 0) summaryParts.push(`${d.hospitals.length} Faskes`);
+
+    let bodyHtml = "";
+
+    // 1. Sub-seksi Sekolah di Kecamatan Ini
+    if (displaySchools.length > 0) {
+      bodyHtml += `
+        <div>
+          <div class="district-sub-section-title">
+            <span>🏫 Fasilitas Pendidikan (${displaySchools.length}) &bull; Mandat PJJ</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+      `;
+
+      displaySchools.forEach(sch => {
+        const early = sch.arrival_time_earliest_h !== null && sch.arrival_time_earliest_h !== undefined ? `T + ${sch.arrival_time_earliest_h} jam` : "-";
+        const probColor = (sch.exposure_pct || 0) >= 50 ? "#ef4444" : ((sch.exposure_pct || 0) >= 20 ? "#f59e0b" : "#10b981");
+
+        let evacSnippet = "";
+        if (sch.nearest_safe_hospital) {
+          const h = sch.nearest_safe_hospital;
+          const cleanSchName = (sch.name || "").replace(/'/g, "\\'");
+          const cleanHName = (h.name || "").replace(/'/g, "\\'");
+          evacSnippet = `
+            <div style="margin-top:6px;padding:5px 7px;background:rgba(16,185,129,0.08);border-left:3px solid #10b981;border-radius:4px;font-size:10px;">
+              <div style="font-weight:700;color:#34d399;">Rujukan Bebas Abu: ${h.name} (${h.distance_km} km) &bull; ${h.status_badge || '[ZONA AMAN]'}</div>
+              <button class="evac-route-btn" style="margin-top:4px;" onclick="event.stopPropagation();drawEvacuationRoute(${sch.latitude}, ${sch.longitude}, ${h.latitude}, ${h.longitude}, '${cleanSchName}', '${cleanHName}', ${h.distance_km})">
+                Lihat Rute Jalan Evakuasi (OSRM)
+              </button>
+            </div>
+          `;
+        }
+
+        bodyHtml += `
+          <div class="fac-item-card" onclick="map.flyTo([${sch.latitude}, ${sch.longitude}], 13, {duration: 1.0});selectFacility('${sch.facility_id}')">
+            <div class="fac-item-header">
+              <span class="fac-item-name">${sch.name}</span>
+              <span class="fac-item-badge" style="background:${sch.badge_color || '#ef4444'}">${sch.alert_level}</span>
+            </div>
+            <div class="fac-item-meta">
+              <span>Peluang Abu: <strong style="color:${probColor}">${sch.exposure_pct}%</strong></span>
+              <span>Estimasi Tiba: <strong>${early}</strong></span>
+            </div>
+            <div class="fac-item-action">
+              <strong>Arahan Dini:</strong> ${sch.action_detail}
+            </div>
+            ${evacSnippet}
+          </div>
+        `;
+      });
+
+      bodyHtml += `</div></div>`;
+    }
+
+    // 2. Sub-seksi Faskes / RS di Kecamatan Ini
+    if (displayHospitals.length > 0) {
+      bodyHtml += `
+        <div style="margin-top:${displaySchools.length > 0 ? '6px' : '0'};">
+          <div class="district-sub-section-title">
+            <span>🏥 Fasilitas Kesehatan (${displayHospitals.length}) &bull; Kesiapsiagaan &amp; Triase</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+      `;
+
+      displayHospitals.forEach(h => {
+        const borderClass = h.is_safe ? "safe-border" : ((h.exposure_pct || 0) < 35 ? "triage-border" : "danger-border");
+        const capsHtml = (h.capabilities || []).map(c => `<span class="evac-cap-pill">${c}</span>`).join("");
+
+        bodyHtml += `
+          <div class="evac-hospital-card ${borderClass}" onclick="map.flyTo([${h.latitude}, ${h.longitude}], 13, {duration: 1.0});selectFacility('${h.facility_id}')">
+            <div class="evac-hospital-header">
+              <div>
+                <div class="evac-hospital-title">${h.name}</div>
+                <div style="font-size:10px;color:#94a3b8;">${h.status_badge}</div>
+              </div>
+              <div class="evac-hospital-dist mono">${h.distance_from_epicenter_km} km</div>
+            </div>
+            <div style="font-size:10px;color:#cbd5e1;margin-top:3px;line-height:1.35;">
+              <strong>Peran:</strong> ${h.evac_recommendation}
+            </div>
+            <div class="evac-caps-row">${capsHtml}</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px;">
+              <span style="font-size:9.5px;color:#f59e0b;font-weight:600;">Hotline: ${h.emergency_hotline}</span>
+              <button class="evac-route-btn" onclick="event.stopPropagation();map.flyTo([${h.latitude}, ${h.longitude}], 13, {duration: 1.0});selectFacility('${h.facility_id}')">
+                Fokus di Peta
+              </button>
+            </div>
+          </div>
+        `;
+      });
+
+      bodyHtml += `</div></div>`;
+    }
+
+    card.innerHTML = `
+      <div class="district-group-header">
+        <div class="district-title">
+          <span>📍</span>
+          <span>${d.name}</span>
+          <span class="district-badge ${badgeClass}">${badgeLabel}</span>
+        </div>
+        <div class="mono" style="font-size:10.5px;color:#94a3b8;">
+          ${summaryParts.join(" &bull; ")}
+        </div>
+      </div>
+      <div class="district-group-body">
+        ${bodyHtml}
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
+
+  if (renderedCount === 0) {
+    container.innerHTML = `<div class="empty-state">Tidak ada fasilitas yang cocok dengan filter yang dipilih.</div>`;
+  }
+}
+
 
 function renderSchoolsList(schools) {
   const container = document.getElementById("schoolsListContainer");
@@ -1691,8 +2409,10 @@ document.addEventListener("DOMContentLoaded", () => {
           btnSync.innerHTML = `<span class="nav-btn-icon"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg></span> Terhubung`;
           setTimeout(() => { btnSync.innerHTML = `<span class="nav-btn-icon"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M17.65 6.35A7.96 7.96 0 0012 4a8 8 0 108 8h-2a6 6 0 11-1.76-4.24L14 10h7V3l-3.35 3.35z"/></svg></span> Live Sync`; }, 2500);
           loadSummaryKpi();
+          loadNationalVolcanoes();
           loadNationalForests();
           loadHotspots();
+          loadFacilities();
         })
         .catch(() => {
           btnSync.innerHTML = `<span class="nav-btn-icon"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg></span> Galat`;
@@ -1949,7 +2669,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   });
 
-  // Tombol Ekspor Cetak
+  // Tombol Ekspor Cetak Laporan & Lembar Aksi Darurat
   document.getElementById("btnExportPrint").addEventListener("click", () => {
     if (!currentRunId) {
       alert("Jalankan simulasi terlebih dahulu sebelum mengekspor laporan.");
@@ -1958,10 +2678,24 @@ document.addEventListener("DOMContentLoaded", () => {
     window.open(`${API_BASE}/runs/${currentRunId}/export?format=html`, "_blank");
   });
 
-  // Tombol Uji Validasi
-  document.getElementById("btnCheckValidation").addEventListener("click", () => {
-    const eventId = document.getElementById("eventSelect").value;
-    const box = document.getElementById("validationResultBox");
+  const btnAdvPrint = document.getElementById("btnExportAdvisoryPrint");
+  if (btnAdvPrint) {
+    btnAdvPrint.addEventListener("click", () => {
+      if (!currentRunId) {
+        alert("Jalankan simulasi terlebih dahulu sebelum mencetak lembar aksi darurat.");
+        return;
+      }
+      window.open(`${API_BASE}/runs/${currentRunId}/export?format=html`, "_blank");
+    });
+  }
+
+  // Tombol Uji Validasi (Fallback)
+  const btnVal = document.getElementById("btnCheckValidation");
+  if (btnVal) {
+    btnVal.addEventListener("click", () => {
+      const eventId = document.getElementById("eventSelect").value;
+      const box = document.getElementById("validationResultBox");
+      if (!box) return;
     box.innerHTML = "Memeriksa evaluasi validasi kejadian...";
 
     fetch(`${API_BASE}/validation/${eventId}`)
@@ -1993,10 +2727,12 @@ document.addEventListener("DOMContentLoaded", () => {
       .catch(err => {
         box.innerHTML = `<span style="color:#ef4444">Galat: ${err}</span>`;
       });
-  });
+    });
+  }
 
-  // Inisialisasi Tab Navigasi Laci Kanan (5 Tab) & Dock Melayang Kiri
+  // Inisialisasi Tab Navigasi Laci Kanan (2 Tab Emas) & Dock Melayang Kiri
   initDrawerTabs();
+  initDistrictFilterButtons();
   initDockToggle();
   setupCustomPointMode();
   initCustomControls();
@@ -2018,6 +2754,9 @@ function switchDrawerTab(tabId) {
   const activePane = document.getElementById(tabId);
   if (activeBtn) activeBtn.classList.add("active");
   if (activePane) activePane.classList.add("active");
+  if (tabId === "tabPaneScience" && typeof loadEmergencyAdvisory === "function") {
+    loadEmergencyAdvisory();
+  }
 }
 
 function initDockToggle() {

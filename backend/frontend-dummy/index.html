@@ -393,45 +393,23 @@
         <button id="btnCloseDrawer" class="drawer-close-btn" title="Kecilkan Panel">&times;</button>
       </div>
 
-      <!-- Bilah Tab Navigasi Terstruktur (5 Tab) -->
-      <nav class="drawer-tab-nav">
+      <!-- Bilah Tab Navigasi Terpadu (2 Tab Emas Tanggap Bencana) -->
+      <nav class="drawer-tab-nav" style="grid-template-columns: repeat(2, 1fr);">
         <button class="d-tab-btn active" data-tab="tabPaneImpact">
           <svg class="silhouette-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="20" x2="18" y2="10"></line>
-            <line x1="12" y1="20" x2="12" y2="4"></line>
-            <line x1="6" y1="20" x2="6" y2="14"></line>
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
           </svg>
-          <span>Dampak</span>
-        </button>
-        <button class="d-tab-btn" data-tab="tabPaneSchools">
-          <svg class="silhouette-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-          </svg>
-          <span>Sekolah &amp; PJJ</span>
-        </button>
-        <button class="d-tab-btn" data-tab="tabPaneEvac">
-          <svg class="silhouette-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="2" y="6" width="20" height="14" rx="2"></rect>
-            <path d="M12 10v6"></path>
-            <path d="M9 13h6"></path>
-          </svg>
-          <span>Evakuasi RS</span>
-        </button>
-        <button class="d-tab-btn" data-tab="tabPaneHealth">
-          <svg class="silhouette-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-          </svg>
-          <span>Edukasi APD</span>
+          <span>Wilayah &amp; Fasilitas</span>
         </button>
         <button class="d-tab-btn" data-tab="tabPaneScience">
           <svg class="silhouette-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <polyline points="12 6 12 12 14 14"></polyline>
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
           </svg>
-          <span>Sains &amp; Audit</span>
+          <span>Protokol &amp; Edukasi AI</span>
         </button>
       </nav>
+
 
       <div class="drawer-body">
         <!-- TAB 1: RINGKASAN DAMPAK & POPULASI -->
@@ -541,50 +519,38 @@
               <div id="rainCaveatText" class="tile-sub" style="margin-top:6px;">-</div>
             </div>
           </section>
-        </div>
-
-        <!-- TAB 2: PROTOKOL AKSI SEKOLAH & PJJ DARING -->
-        <div id="tabPaneSchools" class="tab-pane">
+          <!-- SEKSI 3: KECAMATAN & FASILITAS TERDAMPAK (SATU LINGKUP SPASIAL UTUH) -->
           <section class="drawer-section">
-            <div class="section-badge badge-purple">EARLY ACTION SEKOLAH</div>
-            <h2 class="section-heading">Sekolah di Jalur Bahaya &amp; Mandat PJJ</h2>
+            <div class="section-badge badge-purple">LINGKUP WILAYAH &amp; FASILITAS</div>
+            <h2 class="section-heading">Kecamatan, Sekolah &amp; Faskes Rujukan</h2>
             <div class="section-note">
-              Rekomendasi operasional perlindungan siswa sebelum abu/asap tiba di lokasi gedung sekolah:
+              Hierarki spasial terpadu: memetakan risiko warga per kecamatan, mandat perlindungan siswa (PJJ), serta rute jalan raya evakuasi medis (OSRM) ke RS rujukan aman terdekat.
             </div>
 
-            <div class="alert-box-info" style="margin-bottom:12px;">
-              <strong style="color:#38bdf8;">Panduan Standar Tindakan Sekolah:</strong>
+            <!-- Panduan Cepat Standar Tindakan Sekolah -->
+            <div class="alert-box-info" style="margin: 8px 0 10px 0;">
+              <strong style="color:#38bdf8;">Panduan Perlindungan Sekolah:</strong>
               <ul style="margin:4px 0 0 16px;font-size:11px;line-height:1.5;">
-                <li><strong>Peluang &ge; 40%:</strong> <span style="color:#ef4444;font-weight:600;">[SIAGA TINGGI]</span> Segera pulangkan siswa atau alihkan ke PJJ Daring. Wajib N95.</li>
-                <li><strong>Peluang 15% - 39%:</strong> <span style="color:#f59e0b;font-weight:600;">[WASPADA]</span> Hentikan KBM dan aktivitas luar ruang (olahraga/upacara).</li>
-                <li><strong>Peluang &lt; 15%:</strong> <span style="color:#10b981;font-weight:600;">[SIAGA DINI]</span> KBM normal dengan kewaspadaan telemetri.</li>
+                <li><strong>Peluang &ge; 40%:</strong> <span style="color:#ef4444;font-weight:600;">[SIAGA TINGGI]</span> Mandat PJJ Daring / libur. Wajib masker N95.</li>
+                <li><strong>Peluang 15% - 39%:</strong> <span style="color:#f59e0b;font-weight:600;">[WASPADA]</span> Batasi aktivitas luar ruang siswa.</li>
               </ul>
             </div>
 
-            <div id="schoolsListContainer" class="facilities-impacted-box">
-              <div class="empty-state">Jalankan simulasi untuk memuat daftar sekolah terdampak.</div>
-            </div>
-          </section>
-        </div>
-
-        <!-- TAB 3: RUJUKAN MEDIS & EVAKUASI DARURAT -->
-        <div id="tabPaneEvac" class="tab-pane">
-          <section class="drawer-section">
-            <div class="section-badge badge-green">RUJUKAN KESEHATAN</div>
-            <h2 class="section-heading">Matriks Rumah Sakit Rujukan Evakuasi</h2>
-            <div class="section-note">
-              Pasien gawat darurat (sesak napas akut, asma berat, kelompok rentan) diarahkan ke <strong>Rumah Sakit Rujukan Aman</strong> yang berada di luar zona bahaya partikulat:
+            <!-- Filter Cepat Tampilan -->
+            <div class="district-filter-chips">
+              <button type="button" class="d-chip-btn active" data-filter="all" id="chipFilterAll">Semua Wilayah</button>
+              <button type="button" class="d-chip-btn" data-filter="schools" id="chipFilterSchools">Hanya Sekolah (PJJ)</button>
+              <button type="button" class="d-chip-btn" data-filter="hospitals" id="chipFilterHospitals">Hanya RS &amp; Faskes</button>
             </div>
 
-            <div class="evacuation-legend-box">
-              <span class="evac-legend-tag tag-safe">[ZONA AMAN] RS Rujukan Utama</span>
-              <span class="evac-legend-tag tag-triage">[TRIASE LAPANGAN] RS Penyangga</span>
-              <span class="evac-legend-tag tag-danger">[ZONA BAHAYA] RS Terdampak Abu</span>
+            <!-- Kontainer Hierarki Utama Berbasis Kecamatan -->
+            <div id="districtHierarchyContainer" class="district-hierarchy-box">
+              <div class="empty-state">Jalankan simulasi untuk memuat pengelompokan wilayah &amp; fasilitas terdampak.</div>
             </div>
 
-            <div id="evacHospitalsList" class="evac-hospitals-container">
-              <div class="empty-state">Jalankan simulasi untuk menghitung rumah sakit rujukan terdekat dan teraman.</div>
-            </div>
+            <!-- Fallback containers for backward compatibility -->
+            <div id="schoolsListContainer" style="display:none;"></div>
+            <div id="evacHospitalsList" style="display:none;"></div>
           </section>
 
           <!-- Detail Fasilitas yang Diklik di Peta -->
@@ -597,83 +563,135 @@
           </section>
         </div>
 
-        <!-- TAB 4: EDUKASI MASKER KHUSUS & PERLINDUNGAN APD -->
-        <div id="tabPaneHealth" class="tab-pane">
+        <!-- Hidden legacy panes for compatibility -->
+        <div id="tabPaneSchools" style="display:none;"></div>
+        <div id="tabPaneEvac" style="display:none;"></div>
+        <div id="tabPaneHealth" style="display:none;"><div id="adviceContent"></div></div>
+
+
+        <!-- TAB 3: PERINGATAN DARURAT & EDUKASI AI (AI ADVISORY) -->
+        <div id="tabPaneScience" class="tab-pane">
+          <!-- Banner Tingkat Bahaya Bencana -->
+          <section class="drawer-section">
+            <div id="advisoryAlertBanner" class="alert-banner-tactical" style="background:#dc2626;color:#ffffff;padding:8px 12px;border-radius:6px;margin-bottom:10px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="live-dot" style="background:#ffffff;"></span>
+                <span id="advisoryAlertLevel" style="font-weight:800;font-size:12px;letter-spacing:0.5px;">SIAGA TANGGAP DARURAT</span>
+              </div>
+              <div id="advisoryAlertSubtitle" style="font-size:10.5px;color:#fecaca;margin-top:4px;line-height:1.4;">
+                Jalankan simulasi untuk memuat protokol taktis multi-sektor resmi.
+              </div>
+            </div>
+          </section>
+
+          <!-- AI Emergency Broadcast & Siaran Pers (Gemini / Expert) -->
+          <section class="drawer-section" id="aiBroadcastSection">
+            <div class="section-badge badge-teal" style="display:flex;align-items:center;gap:5px;">
+              <span>AI EMERGENCY BRIEFING</span>
+              <span id="aiEngineBadge" style="font-size:9px;background:#0f766e;color:#5eead4;padding:1px 5px;border-radius:3px;">Gemini AI</span>
+            </div>
+            <h2 class="section-heading">Draf Siaran Pers &amp; Broadcast WhatsApp Warga</h2>
+            
+            <div style="background:#0f172a;border:1px solid #334155;border-radius:6px;padding:8px;margin-top:6px;">
+              <div style="font-size:11px;font-weight:700;color:#38bdf8;margin-bottom:3px;" id="aiPrTitle">
+                SIARAN PERS RESMI TANGGAP DARURAT
+              </div>
+              <div style="font-size:10.5px;color:#cbd5e1;line-height:1.4;" id="aiPrBody">
+                Memuat narasi siaran pers darurat...
+              </div>
+            </div>
+
+            <div style="background:#064e3b;border:1px solid #059669;border-radius:6px;padding:8px;margin-top:8px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                <span style="font-size:11px;font-weight:700;color:#6ee7b7;">💬 Draf Pesan Siaran WhatsApp Warga</span>
+                <button type="button" id="btnCopyWa" style="background:#047857;border:1px solid #10b981;color:#ffffff;font-size:10px;padding:2px 7px;border-radius:3px;cursor:pointer;">Salin Teks</button>
+              </div>
+              <pre id="aiWaBody" style="font-size:10px;color:#ecfdf5;white-space:pre-wrap;font-family:inherit;margin:0;line-height:1.35;">Memuat draf pesan warga...</pre>
+            </div>
+          </section>
+
+          <!-- Wilayah / Kecamatan Prioritas & Demografi Terpapar -->
+          <section class="drawer-section">
+            <div class="section-badge badge-red">YURISDIKSI &amp; DEMOGRAFI</div>
+            <h2 class="section-heading">Kecamatan &amp; Populasi Terdampak Prioritas</h2>
+            <div class="section-note">Wilayah administrasi kecamatan dalam koridor lintasan bahaya atmosferik:</div>
+            <div id="advisoryDistrictsList" class="districts-tag-cloud" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:5px;">
+              <span class="district-pill" style="font-size:11px;background:#1e293b;border:1px solid #334155;color:#94a3b8;padding:3px 8px;border-radius:4px;">Menunggu simulasi aktif...</span>
+            </div>
+            <div class="pop-breakdown-box" style="margin-top:10px;background:#131b17;border:1px solid #23352b;border-radius:6px;padding:8px;">
+              <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">
+                <span style="color:#94a3b8;">Kelompok Rentan Anak (&lt;15 Th):</span>
+                <strong id="advisoryChildVal" class="mono" style="color:#f59e0b;">-</strong>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;">
+                <span style="color:#94a3b8;">Kelompok Rentan Lansia (&ge;65 Th):</span>
+                <strong id="advisoryElderVal" class="mono" style="color:#ef4444;">-</strong>
+              </div>
+            </div>
+          </section>
+
+          <!-- Standar APD & Larangan Lensa Kontak -->
           <section class="drawer-section">
             <div class="section-badge badge-orange">STANDAR PERLINDUNGAN DIRI</div>
             <h2 class="section-heading">Spesifikasi Masker Wajib &amp; Perlindungan Organ</h2>
-            <div class="section-note">
-              Debu silika vulkanik &amp; partikel mikro PM2.5 memerlukan perlindungan respirator bersertifikasi dengan segel rapat di wajah.
-            </div>
-
             <div class="mask-comparison-grid">
               <div class="mask-card mask-bad">
-                <div class="mask-status-badge badge-bad">[TIDAK MEMENUHI STANDAR] DILARANG</div>
-                <strong>Masker Bedah &amp; Masker Kain Biasa</strong>
-                <p>Pori-pori terlalu besar (3–100 mikron) dan memiliki kebocoran samping mencapai 30%–50%. Partikel debu silika tajam PM2.5 tetap menembus ke saluran napas dalam.</p>
-                <div class="mask-card-note">Memberikan rasa aman palsu (false sense of security).</div>
+                <div class="mask-status-badge badge-bad">[DILARANG] TIDAK EFEKTIF</div>
+                <strong>Masker Bedah &amp; Kain Biasa</strong>
+                <p>Pori-pori terlalu besar dan bocor samping 30%–50%. Partikel debu silika &amp; PM2.5 tetap menembus ke paru-paru.</p>
               </div>
               <div class="mask-card mask-good">
-                <div class="mask-status-badge badge-good">[STANDAR RESMI OTORITATIF] WAJIB</div>
-                <strong>Masker Partikulat N95 / KN95 / FFP2</strong>
-                <p>Efisiensi filtrasi &ge; 95% partikel mikro (0.3 mikron). Klip kawat hidung wajib ditekan rapat tanpa celah di pipi dan dagu.</p>
-                <div class="mask-card-note">Wajib bagi anak-anak, lansia, dan warga di jalur sebaran abu.</div>
+                <div class="mask-status-badge badge-good">[WAJIB] STANDAR RESMI</div>
+                <strong>Respirator N95 / KN95 / KF94</strong>
+                <p>Filtrasi &ge; 95% partikel mikro (0.3 mikron). Klip kawat hidung wajib ditekan rapat kedap udara.</p>
               </div>
             </div>
-
-            <div class="eye-alert-box" style="margin-top:14px;">
-              <div style="font-size:12px;font-weight:700;color:#ef4444;margin-bottom:4px;text-transform:uppercase;">
-                PERINGATAN KESELAMATAN: DILARANG KERAS MEMAKAI LENSA KONTAK (SOFTLENS)
+            <div class="eye-alert-box" style="margin-top:10px;">
+              <div style="font-size:11px;font-weight:700;color:#ef4444;margin-bottom:3px;text-transform:uppercase;">
+                DILARANG KERAS MEMAKAI LENSA KONTAK (SOFTLENS)!
               </div>
-              Pecahan kristal silika pada abu vulkanik memiliki sudut kaca mikroskopis yang sangat tajam. Gesekan lensa kontak dapat merobek kornea mata (<strong>abrasi kornea permanen</strong>) dan menyebabkan infeksi kebutaan. Gunakan <strong>Safety Goggles</strong> atau kacamata pelindung tertutup.
+              <small>Pecahan silika abu vulkanik tajam akan menggores kornea di bawah lensa, memicu <strong>abrasi kornea &amp; infeksi kebutaan permanen</strong>. Gunakan Safety Goggles tertutup lis karet.</small>
+            </div>
+          </section>
+
+          <!-- Protokol Rumah Tangga & Sumber Air Bersih -->
+          <section class="drawer-section">
+            <div class="section-badge badge-blue">LOGISTIK &amp; PEMUKIMAN</div>
+            <h2 class="section-heading">Perlindungan Sumber Air &amp; Rumah Tangga</h2>
+            <div id="advisoryHouseholdList" class="advisory-cards-list" style="display:flex;flex-direction:column;gap:8px;">
+              <div class="advisory-card-item" style="background:#131815;border-left:3px solid #38bdf8;padding:8px 10px;border-radius:4px;font-size:11px;">
+                <div style="display:inline-block;background:#0369a1;color:#ffffff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;margin-bottom:4px;">SEGERA</div>
+                <div style="font-weight:700;color:#f8fafc;">Tutup Rapat Sumber Air &amp; Tandon Minum</div>
+                <div style="color:#cbd5e1;margin-top:2px;">Tutup tandon air, sumur gali, dan penampungan dengan terpal/plastik tebal kedap. Abu vulkanik kaya fluorida &amp; sulfur berbahaya bagi organ pencernaan.</div>
+              </div>
+              <div class="advisory-card-item" style="background:#131815;border-left:3px solid #f59e0b;padding:8px 10px;border-radius:4px;font-size:11px;">
+                <div style="display:inline-block;background:#b45309;color:#ffffff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;margin-bottom:4px;">BERKALA</div>
+                <div style="font-weight:700;color:#f8fafc;">Dilarang Menyapu Abu Kering</div>
+                <div style="color:#cbd5e1;margin-top:2px;">Jangan sapu abu dalam kondisi kering karena akan memicu resuspensi partikel ke udara. Semprotkan air halus lalu pel secara basah. Bersihkan atap sebelum hujan turun.</div>
+              </div>
             </div>
           </section>
 
           <section class="drawer-section">
-            <div class="section-badge badge-teal">KESIAPSIAGAAN RESMI</div>
-            <h2 class="section-heading">Saran Tindakan Terverifikasi Otoritas (D16)</h2>
-            <div id="adviceContent" class="advice-container">
-              Jalankan simulasi untuk memuat anjuran kesehatan resmi IVHHN &amp; BNPB.
-            </div>
-          </section>
-        </div>
-
-        <!-- TAB 5: SAINS, VALIDASI & TRANSPARANSI ASUMSI -->
-        <div id="tabPaneScience" class="tab-pane">
-          <section class="drawer-section">
-            <div class="section-badge badge-gray">VALIDASI LAPIS 3</div>
-            <h2 class="section-heading">Bukti Validasi Lapangan (FSS)</h2>
-            <button id="btnCheckValidation" class="action-btn btn-secondary" style="width:100%;">
-              Evaluasi Validasi Kejadian Lapangan
+            <button id="btnExportAdvisoryPrint" class="action-btn btn-primary-pulse" style="width:100%;margin-top:4px;">
+              <svg class="silhouette-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                <rect x="6" y="14" width="12" height="8"></rect>
+              </svg>
+              <span>CETAK LEMBAR AKSI DARURAT (PDF / A4)</span>
             </button>
-            <div id="validationResultBox" class="validation-box">
-              Klik tombol di atas untuk melihat skor Fractions Skill Score dan hit rate observasi.
-            </div>
           </section>
 
-          <section class="drawer-section">
-            <div class="section-badge badge-gray">SENSITIVITAS</div>
-            <h2 class="section-heading">Kurva Sensitivitas Parameter</h2>
-            <div class="input-field">
-              <select id="sensitivityParamSelect" class="select-box">
-                <option value="column_height_km">Tinggi Kolom Erupsi (km)</option>
-                <option value="rain_intensity_mm_h">Intensitas Hujan Pencuci (mm/jam)</option>
-              </select>
-            </div>
-            <button id="btnRunSensitivity" class="action-btn btn-secondary" style="width:100%;">
-              Hitung Sapuan Sensitivitas
-            </button>
-            <div id="sensitivityChartBox" class="sensitivity-box hidden"></div>
-          </section>
-
-          <section class="drawer-section">
-            <div class="section-badge badge-gray">TRANSPARANSI DATA</div>
-            <h2 class="section-heading">Asumsi Pemodelan &amp; Sumber Otoritatif</h2>
-            <div class="section-note">Daftar kode verifikasi data (D01 s.d. D24) sesuai kaidah integritas:</div>
-            <div id="transparencyBox" class="transparency-list mono">
-              Memuat katalog transparansi asumsi...
-            </div>
-          </section>
+          <!-- Hidden containers for backward compatibility -->
+          <div style="display:none;">
+            <button id="btnCheckValidation"></button>
+            <div id="validationResultBox"></div>
+            <select id="sensitivityParamSelect"><option value="column_height_km"></option></select>
+            <button id="btnRunSensitivity"></button>
+            <div id="sensitivityChartBox"></div>
+            <div id="transparencyBox"></div>
+          </div>
         </div>
       </div>
     </aside>
