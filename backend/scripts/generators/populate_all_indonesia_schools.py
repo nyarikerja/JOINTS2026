@@ -406,11 +406,14 @@ def main():
     out_json = BACKEND_DIR / "data" / "layers" / "facilities_indonesia.json"
     dummy_json = BACKEND_DIR / "frontend-dummy" / "data" / "facilities_indonesia.json"
 
-    # Muat juga 79 bandara yang sudah ada agar bandara tetap lengkap
+    # Muat seluruh 310 fasilitas kunci nasional (134 Faskes KRB, 97 Sekolah Posko BPBD, 79 Bandara)
     try:
         from scripts.generators.populate_national_facilities import NATIONAL_FACILITIES
-        airports = [f for f in NATIONAL_FACILITIES if f.get("facility_type") == "airport"]
-        facilities.extend(airports)
+        existing_ids = {f.get("facility_id") for f in facilities}
+        for nf in NATIONAL_FACILITIES:
+            if nf.get("facility_id") not in existing_ids:
+                facilities.append(nf)
+                existing_ids.add(nf.get("facility_id"))
     except Exception:
         pass
 
