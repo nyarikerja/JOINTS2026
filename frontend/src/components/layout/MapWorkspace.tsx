@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Compass, Plus, Minus, Layers, X } from "lucide-react";
@@ -16,6 +16,7 @@ interface MapWorkspaceProps {
   onSelectEvent: (eventId: string, lat: number, lng: number, radiusKm: number) => void;
   resetViewTrigger: number;
   onToggleLegend?: () => void;
+  onLayersLoaded?: () => void;
 }
 
 export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
@@ -26,7 +27,8 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
   evacuationRoute,
   onSelectEvent,
   resetViewTrigger,
-  onToggleLegend: _onToggleLegend
+  onToggleLegend: _onToggleLegend,
+  onLayersLoaded
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -44,6 +46,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
 
   const volcanoesLayerRef = useRef<L.GeoJSON | null>(null);
   const hotspotsLayerRef = useRef<L.GeoJSON | null>(null);
+  const rawHotspotsRef = useRef<any[]>([]);
   const schoolsLayerRef = useRef<L.GeoJSON | null>(null);
   const hospitalsLayerRef = useRef<L.GeoJSON | null>(null);
   const airportsLayerRef = useRef<L.GeoJSON | null>(null);
@@ -95,6 +98,72 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
     }
   };
 
+  // Update Hotspot layer dengan Viewport Culling & LOD zoom
+  const updateHotspotsViewport = useCallback((map: L.Map) => {
+    if (!showHotspots) {
+      if (hotspotsLayerRef.current) map.removeLayer(hotspotsLayerRef.current);
+      return;
+    }
+
+    const allFeatures = rawHotspotsRef.current;
+    if (!allFeatures.length) return;
+
+    if (hotspotsLayerRef.current) map.removeLayer(hotspotsLayerRef.current);
+
+    const bounds = map.getBounds().pad(0.15); // Buffer 15% di luar viewport
+    const zoom = map.getZoom();
+
+    // Saring fitur yang ada di viewport
+    const inBounds = allFeatures.filter((f: any) => {
+      const c = f.geometry?.coordinates;
+      if (!c) return false;
+      return bounds.contains([c[1], c[0]]);
+    });
+
+    // LOD: jika zoom jauh (< 7), batasi max 150 titik terpanas (FRP tertinggi)
+    let visibleFeatures = inBounds;
+    if (zoom < 7 && inBounds.length > 150) {
+      visibleFeatures = [...inBounds]
+        .sort((a, b) => (b.properties?.frp || 0) - (a.properties?.frp || 0))
+        .slice(0, 150);
+    } else if (zoom < 9 && inBounds.length > 400) {
+      visibleFeatures = [...inBounds]
+        .sort((a, b) => (b.properties?.frp || 0) - (a.properties?.frp || 0))
+        .slice(0, 400);
+    }
+
+    hotspotsLayerRef.current = L.geoJSON({ type: "FeatureCollection", features: visibleFeatures } as any, {
+      pointToLayer: (_feature: any, latlng) => {
+        const icon = L.divIcon({
+          className: "hotspot-icon",
+          html: `<img src="/titik_api.png" class="w-5 h-5 object-contain drop-shadow-md pointer-events-auto" />`,
+          iconSize: [20, 20],
+          iconAnchor: [10, 10]
+        });
+        return L.marker(latlng, { icon });
+      },
+      onEachFeature: (feature: any, layer) => {
+        const p = feature.properties;
+        layer.bindTooltip(
+          `<strong>Titik Api VIIRS</strong><br>FRP: ${p.frp || '-'} MW`,
+          { direction: "top" }
+        );
+      }
+    }).addTo(map);
+  }, [showHotspots]);
+
+  const loadHotspots = useCallback(async (map: L.Map, targetEventId?: string) => {
+    try {
+      const target = targetEventId || (hazard === "fire" ? eventId : "national");
+      const geo = await api.getHotspots(target);
+      const features = geo.features || [];
+      rawHotspotsRef.current = features;
+      updateHotspotsViewport(map);
+    } catch {
+      // Offline fallback
+    }
+  }, [hazard, eventId, updateHotspotsViewport]);
+
   // Inisialisasi Peta Leaflet
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -105,7 +174,17 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
       zoom: cfg.zoom,
       minZoom: cfg.minZoom,
       maxZoom: cfg.maxZoom,
-      zoomControl: false
+      zoomControl: false,
+      preferCanvas: true,            // Render vektor poligon plume & batas wilayah di GPU Canvas
+      wheelPxPerZoomLevel: 120,      // Zoom scroll lebih halus dan presisi
+      wheelDebounceTime: 40,
+      zoomAnimation: true,
+      fadeAnimation: true,
+      markerZoomAnimation: true,
+      inertia: true,                 // Luncuran halus saat geser peta dilepas
+      inertiaDeceleration: 3000,
+      inertiaMaxSpeed: 1500,
+      easeLinearity: 0.2
     });
 
     // Pasang Basemap Default (Satelit Esri + Labels)
@@ -122,17 +201,33 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
       })
       .catch(() => {});
 
-    // Load Layers
-    loadVolcanoes(map);
-    loadForests();
-    loadHotspots(map);
-    loadFacilities(map);
+    // Hook moveend dengan debounce ringan untuk Viewport Culling titik api
+    let moveTimeout: ReturnType<typeof setTimeout> | null = null;
+    const onMoveEnd = () => {
+      if (moveTimeout) clearTimeout(moveTimeout);
+      moveTimeout = setTimeout(() => {
+        updateHotspotsViewport(map);
+      }, 80);
+    };
+    map.on("moveend", onMoveEnd);
+
+    // Load semua layer secara paralel
+    Promise.allSettled([
+      loadVolcanoes(map),
+      loadForests(),
+      loadHotspots(map),
+      loadFacilities(map)
+    ]).finally(() => {
+      onLayersLoaded?.();
+    });
 
     return () => {
+      if (moveTimeout) clearTimeout(moveTimeout);
+      map.off("moveend", onMoveEnd);
       map.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [updateHotspotsViewport]);
 
   // Reset View Handler
   useEffect(() => {
@@ -147,15 +242,15 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
 
   // Otomatis arahkan kamera peta ke lokasi kejadian terpilih
   const EVENT_COORDS: Record<string, [number, number, number]> = {
-    anak_krakatau_2026_09: [-6.102, 105.423, 9],
-    merapi_yogyakarta: [-7.540, 110.446, 10],
-    lewotobi_laki_laki: [-8.538, 122.768, 10],
-    marapi_sumatera: [-0.381, 100.473, 10],
-    semeru: [-8.108, 112.922, 10],
-    agung: [-8.343, 115.508, 10],
-    rinjani: [-8.420, 116.470, 10],
-    sinabung: [3.170, 98.392, 10],
-    live_kalimantan: [-2.200, 113.900, 8]
+    anak_krakatau_2026_09: [-6.102, 105.423, 10.5],
+    merapi_yogyakarta: [-7.540, 110.446, 11],
+    lewotobi_laki_laki: [-8.538, 122.768, 11],
+    marapi_sumatera: [-0.381, 100.473, 11],
+    semeru: [-8.108, 112.922, 11],
+    agung: [-8.343, 115.508, 11],
+    rinjani: [-8.420, 116.470, 11],
+    sinabung: [3.170, 98.392, 11],
+    live_kalimantan: [-2.200, 113.900, 8.5]
   };
 
   const prevEventIdRef = useRef<string>(eventId);
@@ -168,9 +263,8 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
 
   useEffect(() => {
     if (!mapRef.current) return;
-    if (showHotspots) hotspotsLayerRef.current?.addTo(mapRef.current);
-    else hotspotsLayerRef.current?.remove();
-  }, [showHotspots]);
+    updateHotspotsViewport(mapRef.current);
+  }, [showHotspots, updateHotspotsViewport]);
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -198,10 +292,10 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
         if (hazard === "fire") {
           const fireObj = (forestsDataRef.current || []).find((f: any) => f.id === eventId);
           if (fireObj) {
-            mapRef.current.flyTo([fireObj.lat, fireObj.lon], 9, { duration: 1.0 });
+            mapRef.current.flyTo([fireObj.lat, fireObj.lon], 10, { duration: 1.8, easeLinearity: 0.25 });
           } else if (EVENT_COORDS[eventId]) {
             const target = EVENT_COORDS[eventId];
-            mapRef.current.flyTo([target[0], target[1]], target[2], { duration: 1.0 });
+            mapRef.current.flyTo([target[0], target[1]], target[2], { duration: 1.8, easeLinearity: 0.25 });
           }
           if (krbCircleRef.current) {
             mapRef.current.removeLayer(krbCircleRef.current);
@@ -214,11 +308,11 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
           );
           if (feat && feat.geometry && feat.geometry.coordinates) {
             const c = feat.geometry.coordinates;
-            mapRef.current.flyTo([c[1], c[0]], 9, { duration: 1.0 });
-            highlightKrb(mapRef.current, c[1], c[0], feat.properties?.radius_bahaya_km || 5.0);
+            mapRef.current.flyTo([c[1], c[0]], 11, { duration: 1.8, easeLinearity: 0.25 });
+            highlightKrb(mapRef.current, c[1], c[0], feat.properties?.radius_bahaya_km || 5.0, feat.properties?.name);
           } else if (EVENT_COORDS[eventId]) {
             const target = EVENT_COORDS[eventId];
-            mapRef.current.flyTo([target[0], target[1]], target[2], { duration: 1.0 });
+            mapRef.current.flyTo([target[0], target[1]], target[2], { duration: 1.8, easeLinearity: 0.25 });
             highlightKrb(mapRef.current, target[0], target[1], 5.0);
           }
         }
@@ -260,14 +354,14 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
           const icon = L.divIcon({
             className: "volcano-div-icon",
             html: `
-              <div class="relative flex items-center justify-center">
+              <div class="relative w-8 h-8 flex items-center justify-center overflow-visible">
                 ${pulseHtml}
-                <img src="${imageSrc}" class="w-6 h-6 object-contain drop-shadow-md z-10 relative" style="transform: translateY(-2px);" />
+                <img src="${imageSrc}" class="w-7 h-7 object-contain drop-shadow-md z-10 relative select-none pointer-events-none" />
               </div>
             `,
-            iconSize: [24, 24],
-            iconAnchor: [12, 24],
-            popupAnchor: [0, -24]
+            iconSize: [32, 32],
+            iconAnchor: [16, 16],
+            popupAnchor: [0, -16]
           });
 
           return L.marker(latlng, { icon });
@@ -282,42 +376,23 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
           });
 
           layer.on("click", () => {
-            highlightKrb(map, coords[1], coords[0], p.radius_bahaya_km);
+            map.flyTo([coords[1], coords[0]], 11, { duration: 1.8, easeLinearity: 0.25 });
+            highlightKrb(map, coords[1], coords[0], p.radius_bahaya_km, p.name);
             onSelectEvent(p.event_id || p.id, coords[1], coords[0], p.radius_bahaya_km);
           });
         }
       }).addTo(map);
-    } catch {
-      // Offline fallback
-    }
-  };
 
-  const loadHotspots = async (map: L.Map, targetEventId?: string) => {
-    try {
-      const target = targetEventId || (hazard === "fire" ? eventId : "national");
-      const geo = await api.getHotspots(target);
-      const features = geo.features || [];
-
-      if (hotspotsLayerRef.current) map.removeLayer(hotspotsLayerRef.current);
-
-      hotspotsLayerRef.current = L.geoJSON({ type: "FeatureCollection", features } as any, {
-        pointToLayer: (_feature: any, latlng) => {
-          const icon = L.divIcon({
-            className: "hotspot-icon",
-            html: `<img src="/titik_api.png" class="w-5 h-5 object-contain drop-shadow-md" />`,
-            iconSize: [20, 20],
-            iconAnchor: [10, 10]
-          });
-          return L.marker(latlng, { icon });
-        },
-        onEachFeature: (feature: any, layer) => {
-          const p = feature.properties;
-          layer.bindTooltip(
-            `🔥 <strong>Titik Api VIIRS</strong><br>Daya Panas (FRP): ${p.frp || '-'} MW`,
-            { direction: "top" }
-          );
+      // Tampilkan langsung zona KRB saat layer gunung pertama kali selesai dimuat
+      if (hazard === "volcano" && eventId) {
+        const activeVolc = features.find(
+          (f: any) => (f.properties?.event_id || f.properties?.id || f.id) === eventId
+        );
+        if (activeVolc && activeVolc.geometry?.coordinates) {
+          const c = activeVolc.geometry.coordinates;
+          highlightKrb(map, c[1], c[0], activeVolc.properties?.radius_bahaya_km || 5.0, activeVolc.properties?.name);
         }
-      }).addTo(map);
+      }
     } catch {
       // Offline fallback
     }
@@ -392,19 +467,27 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
     }
   };
 
-  const highlightKrb = (map: L.Map, lat: number, lng: number, radiusKm: number) => {
+  const highlightKrb = (map: L.Map, lat: number, lng: number, radiusKm: number, volcanoName?: string) => {
     if (krbCircleRef.current) map.removeLayer(krbCircleRef.current);
 
+    const radKm = radiusKm || 5.0;
     krbCircleRef.current = L.circle([lat, lng], {
-      radius: (radiusKm || 5.0) * 1000,
+      radius: radKm * 1000,
       color: "#DA6556",
       weight: 1.5,
       dashArray: "4, 4",
-      fillColor: "#A14646",
-      fillOpacity: 0.12
+      fillColor: "#DA6556",
+      fillOpacity: 0.12,
+      interactive: true
     }).addTo(map);
 
-    krbCircleRef.current.bindTooltip(`Zona Rekomendasi Bahaya PVMBG (${radiusKm} km)`, { sticky: true });
+    krbCircleRef.current.bindTooltip(
+      `<div class="text-xs font-mono">
+        <strong>KRB PVMBG: ${volcanoName || "Gunung Api"}</strong><br/>
+        Radius Bahaya: ${radKm} km
+      </div>`,
+      { sticky: true }
+    );
   };
 
   // Render Poligon Plume saat jam berubah atau cache diperbarui
@@ -459,7 +542,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
         opacity: 0.95
       }).addTo(map);
 
-      evacRouteLineRef.current.bindTooltip(`🚑 ${evacuationRoute.label}`, { permanent: true, direction: "center" });
+      evacRouteLineRef.current.bindTooltip(`Rute Evakuasi: ${evacuationRoute.label}`, { permanent: true, direction: "center" });
       map.fitBounds(evacRouteLineRef.current.getBounds(), { padding: [60, 60], maxZoom: 13 });
     }
   }, [evacuationRoute]);

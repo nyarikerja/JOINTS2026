@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Loader2 } from "lucide-react";
 import { TacticalHeader } from "./components/layout/TacticalHeader";
 import { ControllerDock } from "./components/layout/ControllerDock";
 import { MapWorkspace } from "./components/layout/MapWorkspace";
@@ -48,6 +49,7 @@ export const App: React.FC = () => {
   } | null>(null);
 
   const [resetViewTrigger, setResetViewTrigger] = useState<number>(0);
+  const [isMapReady, setIsMapReady] = useState<boolean>(false);
 
   // Ambil poligon sebaran jam tertentu saat activeRunId aktif atau currentHour berubah
   React.useEffect(() => {
@@ -228,7 +230,18 @@ export const App: React.FC = () => {
           }}
           resetViewTrigger={resetViewTrigger}
           onToggleLegend={() => setIsLegendOpen((prev) => !prev)}
+          onLayersLoaded={() => setIsMapReady(true)}
         />
+
+        {/* Global Loading Overlay (Di bawah Navbar) */}
+        {!isMapReady && (
+          <div className="absolute inset-0 z-[1500] bg-[#140f0e] flex flex-col items-center justify-center gap-3 select-none pointer-events-none">
+            <Loader2 className="w-6 h-6 text-[#EB895B] animate-spin" />
+            <span className="font-mono text-xs uppercase tracking-wider text-[#FFF0C5]/80">
+              Memuat Data Spasial
+            </span>
+          </div>
+        )}
 
         {/* Floating Active Simulation Pill */}
         {activeRunId && (

@@ -231,6 +231,21 @@ header {
 }
 
 /* ============================================================
+   MAP ACCELERATION & MARKER SMOOTHING
+   ============================================================ */
+.hotspot-icon,
+.fac-icon-school,
+.fac-icon-hospital,
+.fac-icon-airport {
+  contain: layout style paint;
+  will-change: transform;
+}
+
+.volcano-div-icon {
+  overflow: visible !important;
+}
+
+/* ============================================================
    DARK TILES FILTER (Mode Gelap Peta)
    ============================================================ */
 .dark-tiles {
