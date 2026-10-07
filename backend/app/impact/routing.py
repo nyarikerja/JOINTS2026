@@ -110,6 +110,18 @@ def get_real_road_evacuation_route(
                     road_distance_km = round(distance_m / 1000.0, 2)
                     duration_minutes = max(round(duration_s / 60.0), 1)
 
+                    # Pastikan polyline menyambung sempurna tepat dari titik asal ke titik tujuan (tanpa celah mengambang)
+                    origin_pt = [round(origin_lat, 5), round(origin_lon, 5)]
+                    dest_pt = [round(dest_lat, 5), round(dest_lon, 5)]
+
+                    if not coordinates_latlng:
+                        coordinates_latlng = [origin_pt, dest_pt]
+                    else:
+                        if coordinates_latlng[0] != origin_pt:
+                            coordinates_latlng.insert(0, origin_pt)
+                        if coordinates_latlng[-1] != dest_pt:
+                            coordinates_latlng.append(dest_pt)
+
                     return {
                         "routing_engine": "OSRM OpenStreetMap (Live Road Network)",
                         "origin": {"name": origin_name, "latitude": origin_lat, "longitude": origin_lon},

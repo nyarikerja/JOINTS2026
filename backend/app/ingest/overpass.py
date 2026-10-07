@@ -15,57 +15,73 @@ DEMO_FACILITIES = [
         "facility_id": "fac_sch_01",
         "name": "SDN 1 Kalianda",
         "facility_type": "school",
-        "latitude": -5.735,
-        "longitude": 105.589,
+        "latitude": -5.7265,
+        "longitude": 105.5935,
         "district": "Lampung Selatan"
     },
     {
         "facility_id": "fac_sch_02",
         "name": "SMP Negeri 1 Rajabasa",
         "facility_type": "school",
-        "latitude": -5.812,
-        "longitude": 105.620,
+        "latitude": -5.8280,
+        "longitude": 105.6080,
         "district": "Lampung Selatan"
     },
     {
         "facility_id": "fac_sch_03",
         "name": "SMK Negeri 1 Labuan",
         "facility_type": "school",
-        "latitude": -6.378,
-        "longitude": 105.828,
+        "latitude": -6.3765,
+        "longitude": 105.8340,
         "district": "Pandeglang"
     },
     {
         "facility_id": "fac_sch_04",
         "name": "SDN Sumur 01",
         "facility_type": "school",
-        "latitude": -6.650,
-        "longitude": 105.580,
+        "latitude": -6.6520,
+        "longitude": 105.5913,
         "district": "Pandeglang"
     },
     {
         "facility_id": "fac_hc_01",
         "name": "RSUD Bob Bazar Kalianda",
         "facility_type": "healthcare",
-        "latitude": -5.728,
-        "longitude": 105.592,
+        "latitude": -5.7285,
+        "longitude": 105.5945,
         "district": "Lampung Selatan"
     },
     {
         "facility_id": "fac_hc_02",
         "name": "Puskesmas Rawat Inap Rajabasa",
         "facility_type": "healthcare",
-        "latitude": -5.815,
-        "longitude": 105.622,
+        "latitude": -5.8250,
+        "longitude": 105.6050,
         "district": "Lampung Selatan"
     },
     {
         "facility_id": "fac_hc_03",
         "name": "Puskesmas Labuan",
         "facility_type": "healthcare",
-        "latitude": -6.381,
-        "longitude": 105.830,
+        "latitude": -6.3815,
+        "longitude": 105.8345,
         "district": "Pandeglang"
+    },
+    {
+        "facility_id": "fac_hc_04",
+        "name": "Puskesmas Rawat Inap Sidomulyo",
+        "facility_type": "healthcare",
+        "latitude": -5.5450,
+        "longitude": 105.5245,
+        "district": "Lampung Selatan"
+    },
+    {
+        "facility_id": "fac_hc_05",
+        "name": "RSUD Dr. H. Abdul Moeloek",
+        "facility_type": "healthcare",
+        "latitude": -5.4050,
+        "longitude": 105.2600,
+        "district": "Bandar Lampung"
     },
     {
         "facility_id": "fac_air_01",

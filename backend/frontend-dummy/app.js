@@ -1785,6 +1785,7 @@ let currentEvacRouteLayer = null;
 function drawEvacuationRoute(fromLat, fromLon, toLat, toLon, fromName, toName, distKm) {
   if (currentEvacRouteLayer) {
     map.removeLayer(currentEvacRouteLayer);
+    currentEvacRouteLayer = null;
   }
 
   const runParam = currentRunId || "latest";
@@ -1797,42 +1798,118 @@ function drawEvacuationRoute(fromLat, fromLon, toLat, toLon, fromName, toName, d
         ? route.coordinates
         : [[fromLat, fromLon], [toLat, toLon]];
 
-      currentEvacRouteLayer = L.polyline(coords, {
+      // 1. Dual-stroke glowing road polyline
+      const outerGlow = L.polyline(coords, {
+        color: "#059669",
+        weight: 8,
+        opacity: 0.35,
+        lineCap: "round",
+        lineJoin: "round"
+      });
+
+      const mainLine = L.polyline(coords, {
         color: "#10b981",
         weight: 4.5,
         opacity: 0.95,
+        lineCap: "round",
         lineJoin: "round"
-      }).addTo(map);
+      });
 
-      map.fitBounds(L.latLngBounds(coords), { padding: [60, 60] });
+      // 2. Pin Penanda Titik Asal (Sekolah / Shelter)
+      const originIcon = L.divIcon({
+        className: "evac-origin-pin",
+        html: `
+          <div style="background:#10b981;color:#ffffff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 0 12px rgba(16,185,129,0.7);border:2px solid #ffffff;cursor:pointer;">
+            🏫
+          </div>
+        `,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+      });
+      const originMarker = L.marker([fromLat, fromLon], { icon: originIcon });
+      originMarker.bindTooltip(`<strong>[ASAL EVAKUASI]</strong> ${fromName}`, {
+        permanent: false,
+        direction: "top"
+      });
+
+      // 3. Pin Penanda Titik Tujuan (RS Rujukan Bebas Abu)
+      const destIcon = L.divIcon({
+        className: "evac-dest-pin",
+        html: `
+          <div style="background:#0284c7;color:#ffffff;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 0 14px rgba(2,132,199,0.8);border:2px solid #ffffff;cursor:pointer;">
+            🏥
+          </div>
+        `,
+        iconSize: [30, 30],
+        iconAnchor: [15, 15]
+      });
+      const destMarker = L.marker([toLat, toLon], { icon: destIcon });
+      destMarker.bindTooltip(`<strong>[TUJUAN RUJUKAN]</strong> ${toName}`, {
+        permanent: false,
+        direction: "top"
+      });
+
+      currentEvacRouteLayer = L.layerGroup([outerGlow, mainLine, originMarker, destMarker]).addTo(map);
+
+      // Fit bounds mencakup seluruh jalur dan kedua pin ujung
+      const allPoints = [[fromLat, fromLon], [toLat, toLon], ...coords];
+      map.fitBounds(L.latLngBounds(allPoints), { padding: [60, 60] });
 
       const midIdx = Math.floor(coords.length / 2);
       const midPoint = coords[midIdx] || [(fromLat + toLat) / 2.0, (fromLon + toLon) / 2.0];
 
-      L.popup()
+      L.popup({ autoClose: true, closeOnClick: true })
         .setLatLng(midPoint)
         .setContent(`
-          <div style="font-size:11px;font-family:sans-serif;color:#f8fafc;padding:4px;min-width:200px;">
-            <div style="font-weight:800;color:#34d399;margin-bottom:3px;font-size:11.5px;">🚑 Koridor Evakuasi Jalan Raya Riil</div>
-            <div><span style="color:#94a3b8;">Jarak Tempuh Jalan:</span> <strong class="mono" style="color:#f8fafc;">${route.distance_km || distKm} km</strong></div>
-            <div><span style="color:#94a3b8;">Waktu Tempuh Ambulans:</span> <strong class="mono" style="color:#fbbf24;">~${route.estimated_duration_minutes || 20} menit</strong></div>
-            <div style="margin-top:4px;border-top:1px dashed #334155;padding-top:4px;">
-              <span style="color:#94a3b8;">Asal:</span> <strong>${fromName}</strong><br>
-              <span style="color:#94a3b8;">Tujuan:</span> <strong style="color:#38bdf8;">${toName}</strong>
+          <div style="font-size:11.5px;font-family:sans-serif;color:#f8fafc;padding:5px;min-width:230px;line-height:1.4;">
+            <div style="font-weight:800;color:#34d399;margin-bottom:4px;font-size:12px;border-bottom:1px solid rgba(52,211,153,0.3);padding-bottom:3px;">
+              🚑 Koridor Evakuasi Jalan Raya Riil
             </div>
-            <div style="margin-top:4px;font-size:9.5px;color:#64748b;">Mesin: ${route.routing_engine || 'OSRM OpenStreetMap'}</div>
+            <div style="margin-bottom:2px;"><span style="color:#94a3b8;">🏫 Asal:</span> <strong style="color:#f8fafc;">${fromName}</strong></div>
+            <div style="margin-bottom:5px;"><span style="color:#94a3b8;">🏥 Rujukan:</span> <strong style="color:#38bdf8;">${toName}</strong></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#0f172a;padding:5px 8px;border-radius:6px;margin-bottom:5px;border:1px solid #1e293b;">
+              <div>
+                <span style="font-size:10px;color:#94a3b8;">Jarak Tempuh</span><br>
+                <strong class="mono" style="color:#10b981;font-size:12px;">${route.distance_km || distKm} km</strong>
+              </div>
+              <div>
+                <span style="font-size:10px;color:#94a3b8;">Durasi Ambulans</span><br>
+                <strong class="mono" style="color:#fbbf24;font-size:12px;">~${route.estimated_duration_minutes || 20} menit</strong>
+              </div>
+            </div>
+            <div style="font-size:9.5px;color:#64748b;display:flex;justify-content:space-between;">
+              <span>Rute Darat Aman Terverifikasi</span>
+              <span class="mono">${route.is_real_road ? 'OSRM Live' : 'Sintesis'}</span>
+            </div>
           </div>
         `)
         .openOn(map);
     })
     .catch(() => {
       const latlngs = [[fromLat, fromLon], [toLat, toLon]];
-      currentEvacRouteLayer = L.polyline(latlngs, {
+      const line = L.polyline(latlngs, {
         color: "#10b981",
         weight: 3.5,
         opacity: 0.95,
         dashArray: "6, 9"
-      }).addTo(map);
+      });
+      const originIcon = L.divIcon({
+        className: "evac-origin-pin",
+        html: `<div style="background:#10b981;color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;">🏫</div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+      });
+      const destIcon = L.divIcon({
+        className: "evac-dest-pin",
+        html: `<div style="background:#0284c7;color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;">🏥</div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+      });
+      currentEvacRouteLayer = L.layerGroup([
+        line,
+        L.marker([fromLat, fromLon], { icon: originIcon }),
+        L.marker([toLat, toLon], { icon: destIcon })
+      ]).addTo(map);
       map.fitBounds(L.latLngBounds(latlngs), { padding: [60, 60] });
     });
 }

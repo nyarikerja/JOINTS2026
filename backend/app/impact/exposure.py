@@ -39,6 +39,57 @@ def _safe_float(val: Any) -> float | None:
         return None
 
 
+def get_landmass_region(fac: Dict[str, Any]) -> str:
+    """
+    Menentukan kluster pulau/daratan kontigu untuk memastikan rute evakuasi darat
+    tidak menyeberangi lautan/selat (misal: sekolah di Lampung tidak dirujuk ke Banten/Jawa).
+    """
+    prov = str(fac.get("province") or "").lower()
+    dist = str(fac.get("district") or "").lower()
+    lat = float(fac.get("latitude") or 0.0)
+    lon = float(fac.get("longitude") or 0.0)
+
+    # 1. Klasifikasi berdasarkan nama Provinsi / Kabupaten
+    sumatera_kw = ["sumatera", "lampung", "aceh", "riau", "jambi", "bengkulu", "babel", "bangka", "belitung"]
+    if any(k in prov or k in dist for k in sumatera_kw):
+        return "sumatera"
+
+    jawa_kw = ["jawa", "banten", "dki", "jakarta", "diy", "yogyakarta", "serang", "cilegon", "pandeglang", "lebak", "tangerang"]
+    if any(k in prov or k in dist for k in jawa_kw):
+        return "jawa"
+
+    bali_nusa_kw = ["bali", "lombok", "ntb", "ntt", "sumbawa", "bima", "dompu", "flores", "timor", "alor", "lembata", "sumba"]
+    if any(k in prov or k in dist for k in bali_nusa_kw):
+        return "bali_nusa"
+
+    kalimantan_kw = ["kalimantan", "kalteng", "kalsel", "kalbar", "kaltim", "kaltara", "palangka", "sampit", "banjar", "pontianak", "balikpapan", "samarinda"]
+    if any(k in prov or k in dist for k in kalimantan_kw):
+        return "kalimantan"
+
+    sulawesi_kw = ["sulawesi", "sulut", "sulteng", "sulsel", "sultra", "sulbar", "gorontalo", "manado", "palu", "makassar", "kendari", "mamuju"]
+    if any(k in prov or k in dist for k in sulawesi_kw):
+        return "sulawesi"
+
+    maluku_papua_kw = ["maluku", "papua", "ambon", "ternate", "jayapura", "sorong", "merauke", "timika", "biak"]
+    if any(k in prov or k in dist for k in maluku_papua_kw):
+        return "maluku_papua"
+
+    # 2. Heuristik Geospasial batas Selat Sunda & Nusantara
+    if lat > -6.0 and lon < 105.82:
+        return "sumatera"
+    if lat <= -5.8 and lat >= -9.0 and lon >= 105.82 and lon < 115.0:
+        return "jawa"
+    if lat >= -4.5 and lat <= 4.5 and lon >= 108.5 and lon <= 119.5:
+        return "kalimantan"
+    if lat >= -6.0 and lat <= 2.5 and lon >= 119.5 and lon <= 126.0:
+        return "sulawesi"
+    if lat < -7.5 and lon >= 114.5 and lon <= 126.0:
+        return "bali_nusa"
+
+    return "unknown"
+
+
+
 
 def calculate_impact_ranges(
     run_output: Dict[str, Any],
@@ -348,12 +399,20 @@ def get_exposed_facilities_list(
                 item["action_detail"] = "KBM berjalan normal dengan kewaspadaan telemetri berkala."
 
             # Cari RS terdekat & RS rujukan aman terdekat untuk evakuasi korban sekolah ini
+            # Wajib pada daratan/pulau yang sama (menolak rute ambulans menyeberang selat/lautan)
+            sch_landmass = get_landmass_region(fac)
+            same_landmass_hospitals = [
+                h for h in hospital_eval_list
+                if get_landmass_region(h) == sch_landmass
+            ]
+            eval_hospitals = same_landmass_hospitals if same_landmass_hospitals else hospital_eval_list
+
             nearest_h = None
             min_dist = float("inf")
             nearest_safe_h = None
             min_safe_dist = float("inf")
 
-            for h in hospital_eval_list:
+            for h in eval_hospitals:
                 dist = haversine_km(fac["latitude"], fac["longitude"], h["latitude"], h["longitude"])
                 if dist < min_dist:
                     min_dist = dist
