@@ -6,6 +6,8 @@ Menyediakan endpoint REST API, dokumentasi OpenAPI (/docs), dan frontend dummy (
 """
 
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -13,12 +15,34 @@ from fastapi.staticfiles import StaticFiles
 from app.api import attributions, events, health, lapis2, lapis3, layers, simulate
 from app.core.config import BACKEND_DIR, settings
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Inisialisasi otomatis skema database saat startup
+    try:
+        from app.db.repositories.volcano_repo import VolcanoRepository
+        from app.db.schema import init_db_schema
+        from app.db.session import get_db_connection
+
+        conn = get_db_connection()
+        init_db_schema(conn)
+        conn.close()
+
+        if VolcanoRepository.count_all() == 0:
+            from scripts.db.seed_database import seed_all
+            seed_all()
+    except Exception as e:
+        print(f"Warning: Database auto-init error: {e}")
+    yield
+
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description=settings.DESCRIPTION,
     version=settings.VERSION,
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # CORS: localhost dan wildcard untuk mendukung pembukaan frontend dari file://

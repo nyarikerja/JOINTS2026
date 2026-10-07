@@ -112,27 +112,45 @@ def list_events():
                         pass
 
     # 2. Tambahkan seluruh gunung api dari katalog 70 gunung api nasional
-    volc_path = BACKEND_DIR / "data" / "layers" / "volcanoes_indonesia.geojson"
-    if volc_path.exists():
-        try:
-            geo = json.loads(volc_path.read_text(encoding="utf-8-sig"))
-            for f in geo.get("features", []):
-                p = f.get("properties", {})
-                eid = p.get("id") or p.get("event_id")
-                if eid and eid not in seen_ids:
-                    events_list.append({
-                        "event_id": eid,
-                        "hazard": "volcano",
-                        "name": f"[{p.get('level_name', 'Level I')}] {p.get('name')} ({p.get('province')})",
-                        "region": p.get("region", "Indonesia"),
-                        "elevation_m": p.get("elevation_m"),
-                        "members_source": "open_meteo_live_forecast_api",
-                        "n_members": 51,
-                        "data_status": {"weather": "open_meteo_live_or_ensemble", "vona": "pvmbg_national_catalog"}
-                    })
-                    seen_ids.add(eid)
-        except Exception:
-            pass
+    try:
+        from app.db.repositories.volcano_repo import VolcanoRepository
+        db_volcs = VolcanoRepository.get_all()
+        for v in db_volcs:
+            eid = v.get("id") or v.get("event_id")
+            if eid and eid not in seen_ids:
+                events_list.append({
+                    "event_id": eid,
+                    "hazard": "volcano",
+                    "name": f"[{v.get('level_name', 'Level I')}] {v.get('name')} ({v.get('province')})",
+                    "region": v.get("region", "Indonesia"),
+                    "elevation_m": v.get("elevation_m"),
+                    "members_source": "open_meteo_live_forecast_api",
+                    "n_members": 51,
+                    "data_status": {"weather": "open_meteo_live_or_ensemble", "vona": "pvmbg_national_catalog"}
+                })
+                seen_ids.add(eid)
+    except Exception:
+        volc_path = BACKEND_DIR / "data" / "layers" / "volcanoes_indonesia.geojson"
+        if volc_path.exists():
+            try:
+                geo = json.loads(volc_path.read_text(encoding="utf-8-sig"))
+                for f in geo.get("features", []):
+                    p = f.get("properties", {})
+                    eid = p.get("id") or p.get("event_id")
+                    if eid and eid not in seen_ids:
+                        events_list.append({
+                            "event_id": eid,
+                            "hazard": "volcano",
+                            "name": f"[{p.get('level_name', 'Level I')}] {p.get('name')} ({p.get('province')})",
+                            "region": p.get("region", "Indonesia"),
+                            "elevation_m": p.get("elevation_m"),
+                            "members_source": "open_meteo_live_forecast_api",
+                            "n_members": 51,
+                            "data_status": {"weather": "open_meteo_live_or_ensemble", "vona": "pvmbg_national_catalog"}
+                        })
+                        seen_ids.add(eid)
+            except Exception:
+                pass
 
     # 3. Tambahkan seluruh zona karhutla nasional
     for eid, k in NATIONAL_KARHUTLA.items():

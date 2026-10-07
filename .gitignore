@@ -18,6 +18,12 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
+# SQLite Caches & Journal files
+*.db-wal
+*.db-shm
+*.sqlite-wal
+*.sqlite-shm
+
 # Large Simulation Outputs & Raw Data (Keep repo lightweight)
 data/runs/*.json
 **/data/runs/*.json

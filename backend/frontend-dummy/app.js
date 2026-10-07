@@ -917,16 +917,31 @@ function loadHotspots() {
 }
 
 // =============================================================================
-// 5. Lapisan Fasilitas Publik (Sekolah, Faskes, Bandara dari OSM)
+// 5. Lapisan Fasilitas Publik (Sekolah, Faskes, Bandara dari Database R*Tree)
 // =============================================================================
+let _facilitiesMoveHandlerAttached = false;
+
 function loadFacilities() {
-  if (facilitiesLayer) {
-    map.removeLayer(facilitiesLayer);
+  const toggleEl = document.getElementById("layerToggleFacilities");
+  if (toggleEl && !toggleEl.checked) {
+    if (facilitiesLayer && map.hasLayer(facilitiesLayer)) {
+      map.removeLayer(facilitiesLayer);
+    }
+    return;
   }
 
-  fetch(`${API_BASE}/layers/facilities`)
+  // Ambil koordinat kotak layar (BBOX) dan zoom level peta
+  const b = map.getBounds();
+  const z = map.getZoom();
+  const bbox = `${b.getWest().toFixed(4)},${b.getSouth().toFixed(4)},${b.getEast().toFixed(4)},${b.getNorth().toFixed(4)}`;
+
+  fetch(`${API_BASE}/layers/facilities?bbox=${bbox}&zoom=${z}&limit=250`)
     .then(r => r.json())
     .then(geo => {
+      if (facilitiesLayer && map.hasLayer(facilitiesLayer)) {
+        map.removeLayer(facilitiesLayer);
+      }
+
       facilitiesLayer = L.geoJSON(geo, {
         pointToLayer: (feature, latlng) => {
           const type = feature.properties.facility_type;
@@ -935,10 +950,10 @@ function loadFacilities() {
           if (type === "airport") color = "#f59e0b"; // Bandara
 
           return L.circleMarker(latlng, {
-            radius: 4.5,
+            radius: 5,
             fillColor: color,
             color: "#ffffff",
-            weight: 1,
+            weight: 1.2,
             opacity: 1,
             fillOpacity: 0.85
           });
@@ -953,8 +968,19 @@ function loadFacilities() {
         }
       });
 
-      if (document.getElementById("layerToggleFacilities").checked) {
+      if (!toggleEl || toggleEl.checked) {
         facilitiesLayer.addTo(map);
+      }
+
+      // Pasang handler pan/zoom otomatis jika belum terpasang
+      if (!_facilitiesMoveHandlerAttached) {
+        _facilitiesMoveHandlerAttached = true;
+        map.on("moveend", () => {
+          const tEl = document.getElementById("layerToggleFacilities");
+          if (!tEl || tEl.checked) {
+            loadFacilities();
+          }
+        });
       }
     })
     .catch(err => console.error("Gagal memuat facilities:", err));

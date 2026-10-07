@@ -69,23 +69,35 @@ def start_simulation(req: SimulationRequest):
                             pass
 
     if not event_meta:
-        # Cek apakah event_id ada di katalog 70 gunung api nasional
-        volc_path = BACKEND_DIR / "data" / "layers" / "volcanoes_indonesia.geojson"
+        # Cek apakah event_id ada di database katalog gunung api nasional
         volc_feature = None
-        if volc_path.exists():
-            try:
-                geo = json.loads(volc_path.read_text(encoding="utf-8-sig"))
-                clean_e = event_id.replace("_", "").lower()
-                for feat in geo.get("features", []):
-                    f_id = (feat.get("properties", {}).get("id") or "").lower()
-                    f_ev = (feat.get("properties", {}).get("event_id") or "").lower()
-                    clean_fid = f_id.replace("_", "")
-                    clean_fev = f_ev.replace("_", "")
-                    if clean_fid == clean_e or clean_fev == clean_e or clean_fid.startswith(clean_e) or clean_e in clean_fid:
-                        volc_feature = feat
-                        break
-            except Exception:
-                pass
+        try:
+            from app.db.repositories.volcano_repo import VolcanoRepository
+            v_obj = VolcanoRepository.get_by_id(event_id)
+            if v_obj:
+                volc_feature = {
+                    "properties": v_obj,
+                    "geometry": {"coordinates": [v_obj["longitude"], v_obj["latitude"]]}
+                }
+        except Exception:
+            pass
+
+        if not volc_feature:
+            volc_path = BACKEND_DIR / "data" / "layers" / "volcanoes_indonesia.geojson"
+            if volc_path.exists():
+                try:
+                    geo = json.loads(volc_path.read_text(encoding="utf-8-sig"))
+                    clean_e = event_id.replace("_", "").lower()
+                    for feat in geo.get("features", []):
+                        f_id = (feat.get("properties", {}).get("id") or "").lower()
+                        f_ev = (feat.get("properties", {}).get("event_id") or "").lower()
+                        clean_fid = f_id.replace("_", "")
+                        clean_fev = f_ev.replace("_", "")
+                        if clean_fid == clean_e or clean_fev == clean_e or clean_fid.startswith(clean_e) or clean_e in clean_fid:
+                            volc_feature = feat
+                            break
+                except Exception:
+                    pass
 
         if volc_feature:
             p = volc_feature["properties"]
@@ -163,26 +175,35 @@ def start_simulation(req: SimulationRequest):
             meta_file.write_text(json.dumps(event_meta, indent=2, ensure_ascii=False), encoding="utf-8")
 
         else:
-            # Cek katalog 36 hutan nasional
-            forest_path = BACKEND_DIR / "data" / "layers" / "forests_indonesia.json"
+            # Cek database katalog 36 hutan nasional
             forest_obj = None
-            if forest_path.exists():
-                try:
-                    f_data = json.loads(forest_path.read_text(encoding="utf-8-sig"))
-                    f_list = f_data if isinstance(f_data, list) else f_data.get("forests", [])
-                    clean_e = event_id.lower().replace("_", "")
-                    for f_item in f_list:
-                        fid = (f_item.get("id") or "").lower()
-                        clean_fid = fid.replace("_", "")
-                        if clean_fid == clean_e or clean_fid.startswith(clean_e) or clean_e in clean_fid:
-                            forest_obj = f_item
-                            break
-                except Exception:
-                    pass
+            try:
+                from app.db.repositories.forest_repo import ForestRepository
+                db_f = ForestRepository.get_by_id(event_id)
+                if db_f:
+                    forest_obj = db_f
+            except Exception:
+                pass
+
+            if not forest_obj:
+                forest_path = BACKEND_DIR / "data" / "layers" / "forests_indonesia.json"
+                if forest_path.exists():
+                    try:
+                        f_data = json.loads(forest_path.read_text(encoding="utf-8-sig"))
+                        f_list = f_data if isinstance(f_data, list) else f_data.get("forests", [])
+                        clean_e = event_id.lower().replace("_", "")
+                        for f_item in f_list:
+                            fid = (f_item.get("id") or "").lower()
+                            clean_fid = fid.replace("_", "")
+                            if clean_fid == clean_e or clean_fid.startswith(clean_e) or clean_e in clean_fid:
+                                forest_obj = f_item
+                                break
+                    except Exception:
+                        pass
 
             if forest_obj:
-                f_lat = float(forest_obj["lat"])
-                f_lon = float(forest_obj["lon"])
+                f_lat = float(forest_obj.get("lat") or forest_obj.get("latitude") or 0.0)
+                f_lon = float(forest_obj.get("lon") or forest_obj.get("longitude") or 0.0)
                 event_meta = {
                     "event_id": event_id,
                     "hazard": "fire",
@@ -222,19 +243,35 @@ def start_simulation(req: SimulationRequest):
         # Jika titik api lokal minim / kosong, periksa apakah terdapat titik api riil satelit FIRMS
         # yang jatuh di dalam poligon batas kawasan resmi (Point-in-Polygon query)
         if len(hotspots) < 10 and not (req.overrides and "hotspots" in req.overrides):
-            bound_path = BACKEND_DIR / "data" / "layers" / "forest_boundaries.geojson"
-            if bound_path.exists():
+            f_geom = None
+            try:
+                from app.db.repositories.forest_repo import ForestRepository
+                db_forest = ForestRepository.get_by_id(event_id)
+                if db_forest and db_forest.get("geometry"):
+                    f_geom = db_forest["geometry"]
+            except Exception:
+                pass
+
+            if not f_geom:
+                bound_path = BACKEND_DIR / "data" / "layers" / "forest_boundaries.geojson"
+                if bound_path.exists():
+                    try:
+                        b_data = json.loads(bound_path.read_text(encoding="utf-8"))
+                        f_feat = next((feat for feat in b_data.get("features", []) if feat.get("id") == event_id), None)
+                        if f_feat:
+                            f_geom = f_feat["geometry"]
+                    except Exception:
+                        pass
+
+            if f_geom:
                 try:
                     from shapely.geometry import Point, shape
-                    b_data = json.loads(bound_path.read_text(encoding="utf-8"))
-                    f_feat = next((feat for feat in b_data.get("features", []) if feat.get("id") == event_id), None)
-                    if f_feat:
-                        f_poly = shape(f_feat["geometry"])
-                        nat_hotspots = FirmsIngest.load_event_hotspots("national")
-                        inside_pts = [h for h in nat_hotspots if f_poly.contains(Point(h["longitude"], h["latitude"]))]
-                        if len(inside_pts) > len(hotspots):
-                            hotspots = inside_pts
-                            total_frp = sum(float(h.get("frp", 0.0)) for h in hotspots)
+                    f_poly = shape(f_geom)
+                    nat_hotspots = FirmsIngest.load_event_hotspots("national")
+                    inside_pts = [h for h in nat_hotspots if f_poly.contains(Point(h["longitude"], h["latitude"]))]
+                    if len(inside_pts) > len(hotspots):
+                        hotspots = inside_pts
+                        total_frp = sum(float(h.get("frp", 0.0)) for h in hotspots)
                 except Exception:
                     pass
 
