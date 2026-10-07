@@ -183,7 +183,8 @@ def get_event_detail(event_id: str):
     clean_eid = event_id.replace("_", "").lower()
     if EVENTS_DIR.exists():
         for d in EVENTS_DIR.iterdir():
-            if d.is_dir() and d.name.replace("_", "").lower() == clean_eid:
+            d_clean = d.name.replace("_", "").lower()
+            if d.is_dir() and (d_clean == clean_eid or d_clean.startswith(clean_eid) or clean_eid in d_clean):
                 mf = d / "meta.json"
                 if mf.exists():
                     try:

@@ -27,6 +27,15 @@ def evaluate_event_validation(event_id: str, run_output: Dict[str, Any] | None =
     """
     event_dir = BACKEND_DIR / "data" / "events" / event_id
     if not event_dir.exists():
+        clean_eid = event_id.replace("_", "").lower()
+        events_base = BACKEND_DIR / "data" / "events"
+        if events_base.exists():
+            for d in events_base.iterdir():
+                d_clean = d.name.replace("_", "").lower()
+                if d.is_dir() and (d_clean == clean_eid or d_clean.startswith(clean_eid) or clean_eid in d_clean):
+                    event_dir = d
+                    break
+    if not event_dir.exists():
         return {
             "event_id": event_id,
             "status": "error",
