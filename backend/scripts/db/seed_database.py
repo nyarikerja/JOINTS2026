@@ -94,46 +94,31 @@ def seed_all():
     else:
         print("⚠️ File facilities_indonesia.json tidak ditemukan.")
 
-    # 5. Seeding Titik Api Satelit (FIRMS Hotspots)
+    # 5. Seeding Titik Api Satelit (Seluruh 36 Kawasan Hutan & Event Karhutla Nasional)
     hotspots_to_insert = []
-
-    # Hotspots Live Kalimantan
-    kalimantan_csv = BACKEND_DIR / "data" / "events" / "live_kalimantan" / "hotspots.csv"
-    if kalimantan_csv.exists():
-        with open(kalimantan_csv, "r", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                try:
-                    hotspots_to_insert.append({
-                        "event_id": "live_kalimantan",
-                        "latitude": float(row["latitude"]),
-                        "longitude": float(row["longitude"]),
-                        "brightness": float(row.get("brightness", 320.0)),
-                        "confidence": row.get("confidence", "nominal"),
-                        "frp": float(row.get("frp", 15.0)),
-                        "acq_date": row.get("acq_date", "2026-10-06")
-                    })
-                except Exception:
-                    continue
-
-    # Hotspots Tesso Nilo
-    tesso_csv = BACKEND_DIR / "data" / "events" / "hutan_tesso_nilo" / "hotspots.csv"
-    if tesso_csv.exists():
-        with open(tesso_csv, "r", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                try:
-                    hotspots_to_insert.append({
-                        "event_id": "hutan_tesso_nilo",
-                        "latitude": float(row["latitude"]),
-                        "longitude": float(row["longitude"]),
-                        "brightness": float(row.get("brightness", 320.0)),
-                        "confidence": row.get("confidence", "nominal"),
-                        "frp": float(row.get("frp", 15.0)),
-                        "acq_date": row.get("acq_date", "2026-10-06")
-                    })
-                except Exception:
-                    continue
+    events_dir = BACKEND_DIR / "data" / "events"
+    if events_dir.exists():
+        for event_folder in sorted(events_dir.iterdir()):
+            if not event_folder.is_dir():
+                continue
+            event_id = event_folder.name
+            csv_path = event_folder / "hotspots.csv"
+            if csv_path.exists():
+                with open(csv_path, "r", encoding="utf-8") as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        try:
+                            hotspots_to_insert.append({
+                                "event_id": event_id,
+                                "latitude": float(row["latitude"]),
+                                "longitude": float(row["longitude"]),
+                                "brightness": float(row.get("brightness", 320.0)),
+                                "confidence": row.get("confidence", "nominal"),
+                                "frp": float(row.get("frp", 15.0)),
+                                "acq_date": row.get("acq_date", "2026-10-06")
+                            })
+                        except Exception:
+                            continue
 
     if hotspots_to_insert:
         # Bersihkan dulu hotspots lama sebelum insert

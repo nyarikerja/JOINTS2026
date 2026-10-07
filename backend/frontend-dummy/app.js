@@ -874,16 +874,16 @@ function loadHotspots() {
     .then(geo => {
       hotspotsLayer = L.geoJSON(geo, {
         pointToLayer: (feature, latlng) => {
-          const frp = feature.properties.frp || 10;
-          const radius = Math.min(Math.max(frp / 25, 3.5), 9);
+          const frp = feature.properties.frp || 15;
+          const radius = Math.min(Math.max(frp / 15, 4.5), 10.0);
 
           return L.circleMarker(latlng, {
             radius: radius,
-            fillColor: "#ef4444",
-            color: "#fca5a5",
-            weight: 1,
-            opacity: 0.9,
-            fillOpacity: 0.75
+            fillColor: frp >= 40 ? "#dc2626" : (frp >= 15 ? "#ea580c" : "#f59e0b"),
+            color: "#ffffff",
+            weight: 1.2,
+            opacity: 0.95,
+            fillOpacity: 0.85
           });
         },
         onEachFeature: (feature, layer) => {
@@ -911,6 +911,9 @@ function loadHotspots() {
       const toggle = document.getElementById("layerToggleHotspots");
       if (!toggle || toggle.checked) {
         hotspotsLayer.addTo(map);
+        if (typeof hotspotsLayer.bringToFront === "function") {
+          hotspotsLayer.bringToFront();
+        }
       }
     })
     .catch(() => {});
