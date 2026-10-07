@@ -219,7 +219,8 @@ def export_run_summary(run_id: str, format: str = Query("json", enum=["json", "h
     data = _get_run_data(run_id)
     grid_meta = data["grid"]
     from app.engine.grid import SimulationGrid
-    from app.impact.exposure import calculate_impact_ranges
+    from app.impact.exposure import calculate_impact_ranges, get_exposed_facilities_list
+    from app.impact.advisory import generate_emergency_advisory
 
     grid = SimulationGrid(
         lat_min=grid_meta["lat_min"],
@@ -231,6 +232,14 @@ def export_run_summary(run_id: str, format: str = Query("json", enum=["json", "h
     impact_data = data.get("impact") or calculate_impact_ranges(data, grid)
     advice_data = get_action_advice(data)
     assumptions_data = get_assumptions_list()
+
+    facilities_data = {}
+    try:
+        facilities_data = get_exposed_facilities_list(data, grid)
+    except Exception:
+        pass
+
+    advisory_data = generate_emergency_advisory(data, impact_data, facilities_data)
 
     export_payload = {
         "run_id": run_id,
@@ -244,6 +253,8 @@ def export_run_summary(run_id: str, format: str = Query("json", enum=["json", "h
         "impact": impact_data,
         "advice": advice_data,
         "assumptions_used": assumptions_data[:8],
+        "advisory": advisory_data,
+        "facilities": facilities_data,
     }
 
     if format == "html":
@@ -251,6 +262,61 @@ def export_run_summary(run_id: str, format: str = Query("json", enum=["json", "h
         return HTMLResponse(content=html_content, status_code=200)
 
     return export_payload
+
+
+@router.get("/runs/{run_id}/emergency-advisory")
+def get_run_emergency_advisory(run_id: str) -> Dict[str, Any]:
+    """
+    Menghasilkan protokol darurat multi-sektor cerdas (AI Emergency Advisory)
+    meliputi Kecamatan terdampak, edukasi APD Kemenkes, SPAB Sekolah, dan Faskes.
+    """
+    data = _get_run_data(run_id)
+    grid_meta = data["grid"]
+    from app.engine.grid import SimulationGrid
+    from app.impact.exposure import calculate_impact_ranges, get_exposed_facilities_list
+    from app.impact.advisory import generate_emergency_advisory
+
+    grid = SimulationGrid(
+        lat_min=grid_meta["lat_min"],
+        lat_max=grid_meta["lat_max"],
+        lon_min=grid_meta["lon_min"],
+        lon_max=grid_meta["lon_max"],
+        resolution_deg=grid_meta["resolution_deg"],
+    )
+    impact_data = data.get("impact") or calculate_impact_ranges(data, grid)
+    facilities_data = {}
+    try:
+        facilities_data = get_exposed_facilities_list(data, grid)
+    except Exception:
+        pass
+
+    return generate_emergency_advisory(data, impact_data, facilities_data)
+
+
+@router.get("/runs/{run_id}/evacuation-route")
+def get_evacuation_corridor_route(
+    run_id: str,
+    from_lat: float = Query(..., description="Latitude titik asal (sekolah/posko)"),
+    from_lon: float = Query(..., description="Longitude titik asal"),
+    to_lat: float = Query(..., description="Latitude tujuan (RS rujukan aman)"),
+    to_lon: float = Query(..., description="Longitude tujuan"),
+    from_name: str = Query("Titik Evakuasi", description="Nama lokasi asal"),
+    to_name: str = Query("RS Rujukan Aman", description="Nama RS tujuan"),
+) -> Dict[str, Any]:
+    """
+    Menghitung rute jalan raya riil (bukan garis lurus) menggunakan OSRM OpenStreetMap
+    antara sekolah terdampak dan rumah sakit rujukan aman terdekat.
+    """
+    from app.impact.routing import get_real_road_evacuation_route
+    return get_real_road_evacuation_route(
+        origin_lat=from_lat,
+        origin_lon=from_lon,
+        dest_lat=to_lat,
+        dest_lon=to_lon,
+        origin_name=from_name,
+        dest_name=to_name,
+    )
+
 
 
 @router.get("/runs/{run_id}/lahar-warning")
