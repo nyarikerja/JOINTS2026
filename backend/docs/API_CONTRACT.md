@@ -66,6 +66,9 @@ Seluruh contoh respons bersumber dari fixture uji nyata di `docs/fixtures/`.
 | **Kesiapsiagaan Dini (L3)** | `GET` | `/runs/{run_id}/decision-matrix` | Matriks pemicu aksi (*Trigger Action Matrix*) & checklist kesiapsiagaan |
 | **Kesiapsiagaan Dini (L3)** | `GET` | `/runs/{run_id}/cross-border` | Analisis pelacakan risiko asap lintas batas (*Transboundary Haze*) |
 | **Kesiapsiagaan Dini (L3)** | `GET` | `/runs/{run_id}/evacuation-routes` | Peta rute evakuasi aman dan penetapan zona larangan (KRB Buffer) |
+| **Kesiapsiagaan Dini (L3)** | `GET` | `/runs/{run_id}/evacuation-route` | Rute jalan raya riil OSRM OpenStreetMap dari sekolah/faskes ke RS rujukan aman |
+| **Kesiapsiagaan Dini (L3)** | `GET` | `/runs/{run_id}/emergency-advisory` | AI Emergency Briefing multi-sektor (Gemini AI & BNPB: Siaran Pers & WhatsApp) |
+
 
 ---
 
@@ -547,4 +550,75 @@ sequenceDiagram
   "warning_text": "PERINGATAN LAHAR HUJAN: Hujan dengan intensitas melampaui 20 mm/jam..."
 }
 ```
+
+---
+
+### 3.19 Rute Evakuasi Jalan Raya Riil OSRM: `GET /runs/{run_id}/evacuation-route`
+- **Tujuan:** Menghitung koridor rute evakuasi jalan raya riil berbelok (bukan garis lurus) dari fasilitas asal (sekolah/faskes) ke rumah sakit rujukan aman terdekat menggunakan OpenStreetMap Routing Machine (OSRM).
+- **Query Params:**
+  - `from_lat` (float, wajib): Lintang titik asal
+  - `from_lon` (float, wajib): Bujur titik asal
+  - `to_lat` (float, wajib): Lintang RS rujukan
+  - `to_lon` (float, wajib): Bujur RS rujukan
+  - `from_name` (string, opsional): Nama fasilitas asal
+  - `to_name` (string, opsional): Nama RS rujukan
+- **Contoh Respons:**
+```json
+{
+  "status": "success",
+  "from_name": "SDN 1 Sambirejo",
+  "to_name": "RSUD Sleman",
+  "distance_km": 21.4,
+  "duration_minutes": 32.5,
+  "mode": "osrm_real_road",
+  "route_coordinates": [
+    [-7.7812, 110.4912],
+    [-7.7805, 110.4901],
+    [-7.7782, 110.4850],
+    [-7.6890, 110.3421]
+  ],
+  "turn_by_turn": [
+    { "instruction": "Mulai dari SDN 1 Sambirejo menuju Jl. Raya Prambanan", "distance_m": 450, "duration_s": 60 },
+    { "instruction": "Belok kanan ke Jl. Magelang", "distance_m": 12400, "duration_s": 980 }
+  ],
+  "disclaimer": "Rute ini dihasilkan dari jaringan jalan OpenStreetMap..."
+}
+```
+
+---
+
+### 3.20 AI Emergency Advisory Multi-Sektor: `GET /runs/{run_id}/emergency-advisory`
+- **Tujuan:** Perumusan protokol taktis tanggap darurat resmi dan materi komunikasi publik secara otomatis (didukung Google Gemini API dengan fallback deterministik standar Pusdalops BNPB tanpa emoji bebas spekulasi).
+- **Contoh Respons:**
+```json
+{
+  "run_id": "sim_volcano_auto_...",
+  "alert_level": "SIAGA TANGGAP DARURAT",
+  "badge_bg": "#dc2626",
+  "scenario_label": "G. Anak Krakatau - Level III (SIAGA)",
+  "population_summary": {
+    "total_median": 8650.0,
+    "children_median": 1820.0,
+    "elderly_median": 910.0,
+    "priority_districts": ["Kecamatan Rajabasa", "Kecamatan Kalianda", "Kecamatan Bakauheni"]
+  },
+  "gemini_briefing": {
+    "engine": "Google Gemini AI (gemini-1.5-flash)",
+    "status": "ai_generated",
+    "press_release_title": "SIARAN PERS PUSDALOPS BPBD: PERINGATAN DINI KESIAPSIAGAAN ANCAMAN ERUPSI G. ANAK KRAKATAU",
+    "press_release_body": "Pusat Pengendalian Operasi Badan Penanggulangan Bencana Daerah (Pusdalops BPBD) bersama Dinas Kesehatan menerbitkan peringatan kesiapsiagaan dini menyusul dinamika aktivitas erupsi gunung api pada skenario G. Anak Krakatau - Level III (SIAGA)...",
+    "whatsapp_broadcast": "PEMBERITAHUAN RESMI PUSDALOPS BPBD & DINAS KESEHATAN\nNomor: 360/PUSDALOPS/DARURAT/G._ANAK_KRAKATAU\nPerihal: Arahan Kesiapsiagaan Dini Paparan Erupsi Gunung Api\n\nWilayah Prioritas Pengawasan: Kecamatan Rajabasa, Kalianda, Bakauheni\nEstimasi Warga Terpapar: 8,650 jiwa (Mencakup 1,820 anak-anak dan 910 lansia)\n\nInstruksi Perlindungan Diri dan Lingkungan:\n1. Standar Perlindungan Pernapasan: Wajib menggunakan respirator partikulat N95/KN95/KF94 dengan klip hidung tertutup rapat. Masker kain dan masker bedah dilarang sebagai pelindung utama karena memiliki kebocoran samping hingga 50%.\n2. Perlindungan Mata: Dilarang keras memakai lensa kontak (softlens). Debu abu silika (SiO2) bersifat tajam dan abrasif yang dapat merobek kornea mata (abrasi kornea) dan memicu kebutaan permanen. Gunakan kacamata pelindung tertutup (Safety Goggles).\n3. Sanitasi Sumber Air Minum: Tutup rapat seluruh tandon air minum, penampungan, dan sumur gali keluarga menggunakan terpal kedap guna menghindari kontaminasi senyawa asam sulfur dan racun fluorida.\n4. Isolasi Ruang Tinggal: Tutup ventilasi rumah dan pasang kain basah pada celah pintu/jendela. Jangan menyapu abu dalam kondisi kering; gunakan semprotan air halus dan pel basah.\n5. Perlindungan Siswa Sekolah: Satuan pendidikan di zona terdampak beralih ke Pembelajaran Jarak Jauh (PJJ Daring).\n\nPusat Bantuan & Komando Darurat:\n- Layanan Gawat Darurat Medis: SPGDT 119\n- Posko Terpadu Pusdalops BPBD: Call Center 112",
+    "key_callout": "Gunakan respirator N95, dilarang memakai lensa kontak, dan amankan sumber air keluarga."
+  },
+  "ppe_standards": {
+    "mask_required": "Respirator N95 / KN95 / KF94 (Filtrasi >= 95% partikel silika & PM2.5)",
+    "mask_forbidden": "Masker kain & masker bedah (bocor samping 30-50%, tidak efektif)",
+    "eye_protection": "Safety Goggles tertutup lis karet",
+    "contact_lens_ban": "DILARANG KERAS MEMAKAI LENSA KONTAK (SOFTLENS) karena abrasi kornea silika tajam"
+  },
+  "spab_remote_learning_mandate": "Sekolah di wilayah paparan >= 40% wajib menghentikan KBM tatap muka dan beralih ke PJJ Daring",
+  "water_security": "Tutup rapat tandon air minum dan sumur gali dari racun fluorida dan asam sulfur"
+}
+```
+
 

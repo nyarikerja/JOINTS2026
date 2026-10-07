@@ -35,9 +35,12 @@ graph TD
 
     subgraph Impact["4. Estimasi Dampak & Protokol Aksi Dini"]
         D1[Agregasi Gaussian & Poligon Kontur P5 - P50 - P95]
-        D2[Triase Sekolah: Rekomendasi PJJ Daring >= 40%]
-        D3[Triase Evakuasi: Rumah Sakit Aman Bebas Abu]
-        D4[Ekspor GeoJSON, NetCDF, CSV, Parquet]
+        D2[Hierarki Spasial: Kecamatan sebagai Wadah Induk]
+        D3[Triase Sekolah SPAB: Mandat PJJ Daring >= 40%]
+        D4[Routing Jalan Raya Riil OSRM ke RS Rujukan Aman]
+        D5[AI Emergency Advisory Gemini: Siaran Pers & WhatsApp]
+        D6[Mitigasi APD Medis N95, Larangan Softlens & Air Minum]
+        D7[Ekspor Lembar Rencana Aksi Darurat Cetak A4 / PDF]
     end
 
     Ingest --> Storage
@@ -108,7 +111,11 @@ backend/
 │   │       ├── forest_repo.py    # Manajemen 36 hutan dan geometri poligon batas riil
 │   │       └── hotspot_repo.py   # Kueri titik api satelit NASA FIRMS
 │   ├── engine/                # Mesin adveksi Runge-Kutta 2, difusi turbulen, wet scavenging
-│   ├── impact/                # Estimasi dampak demografi WorldPop dan fasilitas publik
+│   ├── impact/                # Estimasi dampak, routing OSRM, Gemini AI advisory, ekspor PDF
+│   │   ├── advisory.py        # Protokol tanggap multi-sektor & mesin darurat BNPB
+│   │   ├── gemini_advisory.py # Integrasi Google Gemini AI briefing & WhatsApp broadcast
+│   │   ├── routing.py         # Mesin rute jalan raya riil OSRM OpenStreetMap
+│   │   └── export.py          # Generator lembar rencana aksi tanggap darurat format cetak A4
 │   ├── ingest/                # Modul ingest telemetri (Open-Meteo, FIRMS, OSM Overpass)
 │   ├── main.py                # Titik masuk aplikasi FastAPI dan lifespan otomatis
 │   └── schemas/               # Validasi kontrak request/response Pydantic v2
