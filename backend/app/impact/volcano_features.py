@@ -32,18 +32,23 @@ def calculate_land_water_impact(
     cropland_fraction = 0.35
     water_source_fraction = 0.05
 
+    from app.engine.landmask import LandMask
+    land_mask = LandMask.get_mask(grid.lats, grid.lons)
+
     cropland_areas_ha = []
     water_affected_counts = []
 
     for m in range(n_members):
         exp_m = ever_exp[m]
-        # Total area terdampak dalam hektar (1 km² = 100 ha)
-        tot_area_km2 = np.sum(grid.cell_area_m2[exp_m]) / 1e6
-        tot_area_ha = tot_area_km2 * 100.0
+        # Hanya hitung sel yang berada di daratan kepulauan Indonesia (abaikan laut/selat lepas)
+        exp_land = exp_m & land_mask
 
-        cropland_ha = tot_area_ha * cropland_fraction
-        # Perkiraan jumlah titik sumber air/segmen sungai (rata-rata 1 sumber air per 15 km²)
-        water_pts = int(tot_area_km2 * water_source_fraction * 2.0)
+        tot_land_km2 = float(np.sum(grid.cell_area_m2[exp_land])) / 1e6
+        tot_land_ha = tot_land_km2 * 100.0
+
+        cropland_ha = tot_land_ha * cropland_fraction
+        # Perkiraan jumlah titik sumber air/segmen sungai di daratan (rata-rata 1 sumber air per 10 km² daratan)
+        water_pts = int(round(tot_land_km2 * water_source_fraction * 2.0))
 
         cropland_areas_ha.append(cropland_ha)
         water_affected_counts.append(water_pts)
@@ -56,11 +61,19 @@ def calculate_land_water_impact(
             "max": round(float(np.percentile(arr, 95)), 1),
         }
 
+    def to_range_int(arr_vals):
+        arr = np.array(arr_vals)
+        return {
+            "min": int(round(float(np.percentile(arr, 5)))),
+            "median": int(round(float(np.percentile(arr, 50)))),
+            "max": int(round(float(np.percentile(arr, 95)))),
+        }
+
     return {
         "run_id": run_output["run_id"],
         "hazard": "volcano",
         "cropland_exposed_ha": to_range(cropland_areas_ha),
-        "water_sources_exposed_count": to_range(water_affected_counts),
+        "water_sources_exposed_count": to_range_int(water_affected_counts),
         "ash_wetness_warning": (
             "Hujan lebat di lereng yang tertimbun endapan abu tebal dapat melipatgandakan beban struktur atap "
             "dan memicu aliran lahar dingin di daerah aliran sungai (DAS)."

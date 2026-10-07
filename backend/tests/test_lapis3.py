@@ -167,3 +167,81 @@ def test_lahar_warning(sample_volcano_run):
     assert data["lahar_risk_level"] in ["waspada", "siaga", "rendah"]
     assert "rainfall_threshold_trigger_mm_h" in data
     assert len(data.get("vulnerable_drainage_basins", [])) > 0
+
+
+def test_landmask_and_land_water_integrity(sample_volcano_run):
+    """
+    Validasi integritas daratan vs lautan dan dampak lahan pertanian/sumber air:
+    1. LandMask membedakan daratan vs lautan lepas secara presisi.
+    2. Endpoint /runs/{run_id}/land-water menghasilkan rentang realistis.
+    3. Cacah sumber air berupa bilangan bulat (integer), bukan desimal fiktif.
+    """
+    from app.engine.landmask import LandMask
+
+    # Uji titik daratan vs lautan lepas
+    assert LandMask.is_point_on_land(-5.7315, 105.5965) is True  # Kalianda (Daratan)
+    assert LandMask.is_point_on_land(-6.3765, 105.8340) is True  # Labuan (Daratan)
+    assert LandMask.is_point_on_land(-5.9500, 105.6500) is False  # Selat Sunda Tengah (Lautan)
+    assert LandMask.is_point_on_land(-5.5000, 107.0000) is False  # Laut Jawa (Lautan)
+
+    resp = client.get(f"/runs/{sample_volcano_run}/land-water")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "cropland_exposed_ha" in data
+    assert "water_sources_exposed_count" in data
+
+    crop = data["cropland_exposed_ha"]
+    assert crop["min"] <= crop["median"] <= crop["max"]
+
+    water = data["water_sources_exposed_count"]
+    assert isinstance(water["min"], int)
+    assert isinstance(water["median"], int)
+    assert isinstance(water["max"], int)
+    assert water["min"] <= water["median"] <= water["max"]
+
+
+def test_evacuation_route_endpoint(sample_volcano_run):
+    """
+    Uji integrasi rute evakuasi jalan raya riil OSRM:
+    Koordinat awal persis di titik sekolah asal, koordinat akhir persis di gerbang RS rujukan.
+    """
+    from_lat, from_lon = -5.7315, 105.5965  # SMAN 1 Kalianda
+    to_lat, to_lon = -5.7285, 105.5945      # RSUD Bob Bazar
+    url = f"/runs/{sample_volcano_run}/evacuation-route?from_lat={from_lat}&from_lon={from_lon}&to_lat={to_lat}&to_lon={to_lon}&from_name=SMAN+1+Kalianda&to_name=RSUD+Bob+Bazar"
+    resp = client.get(url)
+    assert resp.status_code == 200
+    route = resp.json()
+    assert route["status"] == "success"
+    assert route["distance_km"] > 0
+    assert route["estimated_duration_minutes"] >= 1
+    coords = route["coordinates"]
+    assert len(coords) >= 2
+    # Presisi ujung-ke-ujung tanpa celah mengambang
+    assert coords[0] == [from_lat, from_lon]
+    assert coords[-1] == [to_lat, to_lon]
+
+
+def test_facilities_island_contiguity_and_no_ocean_facilities(sample_volcano_run):
+    """
+    Uji kontiguitas daratan:
+    Sekolah di Sumatera TIDAK BOLEH dirujuk ke faskes di seberang laut (Jawa).
+    Semua fasilitas di database berada di daratan.
+    """
+    from app.impact.exposure import get_landmass_region
+
+    resp = client.get(f"/runs/{sample_volcano_run}/facilities-impacted?min_prob=0.01")
+    assert resp.status_code == 200
+    data = resp.json()
+    schools = data.get("schools", [])
+
+    for sch in schools:
+        sch_region = get_landmass_region(sch)
+        target_h = sch.get("nearest_safe_hospital")
+        if target_h:
+            h_region = get_landmass_region(target_h)
+            # Jika sekolah di Sumatera, rujukan RS wajib di Sumatera
+            if sch_region == "sumatera":
+                assert h_region == "sumatera", f"Sekolah {sch['name']} dirujuk melintasi laut ke {target_h['name']}"
+            elif sch_region == "jawa":
+                assert h_region == "jawa", f"Sekolah {sch['name']} dirujuk melintasi laut ke {target_h['name']}"
+

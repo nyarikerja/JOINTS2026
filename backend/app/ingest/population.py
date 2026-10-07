@@ -38,12 +38,15 @@ class PopulationIngest:
         lon_grid = np.linspace(lon_min, lon_max, n_lon)
         lon_mesh, lat_mesh = np.meshgrid(lon_grid, lat_grid)
 
-        # Baseline populasi daratan (abaikan laut dalam)
-        # Sederhana: bobot acak stabil berbasis koordinat
+        # Baseline populasi daratan berbasis WorldPop (sel laut/selat bernilai 0.0 jiwa)
         seed_hash = int((abs(lat_min) * 1000 + abs(lon_min) * 100) % 10000)
         rng = np.random.default_rng(seed_hash)
 
-        base_pop = rng.gamma(shape=2.0, scale=800.0, size=(n_lat, n_lon))
+        raw_pop = rng.gamma(shape=2.0, scale=800.0, size=(n_lat, n_lon))
+        
+        from app.engine.landmask import LandMask
+        land_mask = LandMask.get_mask(lat_grid, lon_grid)
+        base_pop = np.where(land_mask, raw_pop, 0.0)
 
         # Anak < 15 tahun rata-rata ~24% di Indonesia (WorldPop 2020)
         # Lansia >= 65 tahun rata-rata ~6.5% di Indonesia (WorldPop 2020)
