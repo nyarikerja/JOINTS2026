@@ -1920,41 +1920,61 @@ function loadEmergencyAdvisory() {
   fetch(`${API_BASE}/runs/${currentRunId}/emergency-advisory`)
     .then(r => r.json())
     .then(adv => {
-      // 1. Banner Alert
+      // 1. Header Banner & Status
       const banner = document.getElementById("advisoryAlertBanner");
       const titleEl = document.getElementById("advisoryAlertLevel");
       const subEl = document.getElementById("advisoryAlertSubtitle");
-      if (banner && titleEl) {
-        banner.style.background = adv.badge_bg || "#dc2626";
-        titleEl.textContent = adv.alert_level || "SIAGA TANGGAP DARURAT";
-        if (subEl) subEl.textContent = `Skenario: ${adv.scenario_label || '-'} • Tindakan perlindungan segera diaktifkan.`;
-      }
+      const scenarioTag = document.getElementById("advisoryScenarioTag");
+      const alertPill = document.getElementById("advisoryAlertPill");
 
-      // 2. Populasi & Kecamatan
+      if (titleEl) titleEl.textContent = adv.alert_level || "SIAGA TANGGAP DARURAT";
+      if (alertPill && adv.badge_bg) alertPill.style.background = adv.badge_bg;
+      if (scenarioTag) scenarioTag.textContent = `Skenario: ${adv.scenario_label || 'Operasional Ansambel 48 Jam'}`;
+      if (subEl) subEl.textContent = `Protokol resmi multi-sektor aktif • Tindakan mitigasi darurat diberlakukan di wilayah lintasan.`;
+
+      // 2. KPI Ringkasan Eksekutif (4 Kartu)
       const pSum = adv.population_summary || {};
+      const totalPop = Math.round(pSum.total_median || 0);
+      const childPop = Math.round(pSum.children_median || 0);
+      const elderPop = Math.round(pSum.elderly_median || 0);
+      const vulnerablePop = childPop + elderPop;
+
+      const kpiTotalEl = document.getElementById("advisoryTotalPopVal");
+      const kpiVulnEl = document.getElementById("advisoryVulnerableVal");
+      const kpiSchoolEl = document.getElementById("advisorySchoolsVal");
+      const kpiHealthEl = document.getElementById("advisoryHealthVal");
+
+      if (kpiTotalEl) kpiTotalEl.textContent = totalPop > 0 ? `${totalPop.toLocaleString()} jiwa` : "-";
+      if (kpiVulnEl) kpiVulnEl.textContent = vulnerablePop > 0 ? `${vulnerablePop.toLocaleString()} jiwa` : "-";
+      
+      const schoolsCnt = adv.schools_count != null ? adv.schools_count : (adv.school_guidance && adv.school_guidance.schools_count != null ? adv.school_guidance.schools_count : 0);
+      const healthCnt = adv.healthcare_count != null ? adv.healthcare_count : 0;
+      if (kpiSchoolEl) kpiSchoolEl.textContent = `${schoolsCnt} Unit`;
+      if (kpiHealthEl) kpiHealthEl.textContent = `${healthCnt} Faskes`;
+
       const chEl = document.getElementById("advisoryChildVal");
       const elEl = document.getElementById("advisoryElderVal");
-      if (chEl) chEl.textContent = `${Math.round(pSum.children_median || 0).toLocaleString()} jiwa`;
-      if (elEl) elEl.textContent = `${Math.round(pSum.elderly_median || 0).toLocaleString()} jiwa`;
+      if (chEl) chEl.textContent = `${childPop.toLocaleString()} jiwa`;
+      if (elEl) elEl.textContent = `${elderPop.toLocaleString()} jiwa`;
 
+      // 3. Wilayah Administrasi Terdampak Prioritas
       const distList = document.getElementById("advisoryDistrictsList");
       if (distList) {
         distList.innerHTML = "";
         const dArr = pSum.priority_districts || [];
         if (dArr.length === 0) {
-          distList.innerHTML = `<span class="district-pill" style="font-size:11px;background:#1e293b;border:1px solid #334155;color:#94a3b8;padding:3px 8px;border-radius:4px;">Wilayah terdampak langsung terpusat di episentrum bahaya.</span>`;
+          distList.innerHTML = `<span class="district-chip-pill empty">Wilayah episentrum utama bahaya</span>`;
         } else {
           dArr.forEach(d => {
             const span = document.createElement("span");
-            span.className = "district-pill";
-            span.style.cssText = "font-size:11px;background:#1e293b;border:1px solid #38bdf8;color:#38bdf8;padding:3px 8px;border-radius:4px;font-weight:600;";
-            span.textContent = `📍 Kec. ${d}`;
+            span.className = "district-chip-pill";
+            span.textContent = `📍 ${d}`;
             distList.appendChild(span);
           });
         }
       }
 
-      // 3. AI Emergency Briefing (Gemini AI / Expert Engine)
+      // 4. AI Emergency Briefing (Gemini AI Synthesizer / Expert Engine)
       const briefing = adv.gemini_briefing || {};
       const badgeEngine = document.getElementById("aiEngineBadge");
       const prTitle = document.getElementById("aiPrTitle");
@@ -1966,17 +1986,50 @@ function loadEmergencyAdvisory() {
       if (prBody && briefing.press_release_body) prBody.textContent = briefing.press_release_body;
       if (waBody && briefing.whatsapp_broadcast) waBody.textContent = briefing.whatsapp_broadcast;
 
-      const btnCopy = document.getElementById("btnCopyWa");
-      if (btnCopy) {
-        btnCopy.onclick = () => {
+      // 5. Tab Switcher (Siaran Pers vs WhatsApp)
+      const tabBtnPr = document.getElementById("tabBtnPressRelease");
+      const tabBtnWa = document.getElementById("tabBtnWhatsapp");
+      const panePr = document.getElementById("panePressRelease");
+      const paneWa = document.getElementById("paneWhatsapp");
+
+      if (tabBtnPr && tabBtnWa && panePr && paneWa) {
+        tabBtnPr.onclick = () => {
+          tabBtnPr.classList.add("active");
+          tabBtnWa.classList.remove("active");
+          panePr.style.display = "block";
+          paneWa.style.display = "none";
+        };
+        tabBtnWa.onclick = () => {
+          tabBtnWa.classList.add("active");
+          tabBtnPr.classList.remove("active");
+          paneWa.style.display = "block";
+          panePr.style.display = "none";
+        };
+      }
+
+      // 6. Tombol Salin Siaran Pers & WhatsApp
+      const btnCopyPr = document.getElementById("btnCopyPr");
+      if (btnCopyPr) {
+        btnCopyPr.onclick = () => {
+          const textToCopy = `${prTitle ? prTitle.textContent + "\n\n" : ""}${prBody ? prBody.textContent : ""}`;
+          if (textToCopy) {
+            navigator.clipboard.writeText(textToCopy).then(() => {
+              const oldHtml = btnCopyPr.innerHTML;
+              btnCopyPr.textContent = "Tersalin!";
+              setTimeout(() => { btnCopyPr.innerHTML = oldHtml; }, 2000);
+            });
+          }
+        };
+      }
+
+      const btnCopyWa = document.getElementById("btnCopyWa");
+      if (btnCopyWa) {
+        btnCopyWa.onclick = () => {
           if (waBody && waBody.textContent) {
             navigator.clipboard.writeText(waBody.textContent).then(() => {
-              btnCopy.textContent = "Tersalin!";
-              btnCopy.style.background = "#059669";
-              setTimeout(() => {
-                btnCopy.textContent = "Salin Teks";
-                btnCopy.style.background = "#047857";
-              }, 2000);
+              const oldHtml = btnCopyWa.innerHTML;
+              btnCopyWa.textContent = "Tersalin!";
+              setTimeout(() => { btnCopyWa.innerHTML = oldHtml; }, 2000);
             });
           }
         };

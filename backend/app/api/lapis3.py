@@ -284,11 +284,17 @@ def get_run_emergency_advisory(run_id: str) -> Dict[str, Any]:
         resolution_deg=grid_meta["resolution_deg"],
     )
     impact_data = data.get("impact") or calculate_impact_ranges(data, grid)
-    facilities_data = {}
-    try:
-        facilities_data = get_exposed_facilities_list(data, grid)
-    except Exception:
-        pass
+    facilities_data = data.get("facilities_impacted") or {}
+    if not facilities_data or not facilities_data.get("schools"):
+        try:
+            from app.api.simulate import RUNS_CACHE
+            cache_data = RUNS_CACHE.get(run_id)
+            if cache_data and "hourly_exposure_masks" in cache_data:
+                facilities_data = get_exposed_facilities_list(cache_data, grid)
+            elif "hourly_exposure_masks" in data:
+                facilities_data = get_exposed_facilities_list(data, grid)
+        except Exception:
+            pass
 
     return generate_emergency_advisory(data, impact_data, facilities_data)
 

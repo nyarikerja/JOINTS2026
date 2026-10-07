@@ -2142,6 +2142,282 @@ body.enterprise-magma {
   gap: 4px;
 }
 
+/* =========================================================================
+   EXECUTIVE AI EMERGENCY ADVISORY & TANGGAP DARURAT STUDIO (PREMIUM UI)
+   ========================================================================= */
 
+.advisory-command-header {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+}
 
+.advisory-command-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981, #38bdf8);
+}
 
+.advisory-status-ribbon {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.advisory-alert-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #fff;
+  background: #dc2626;
+  box-shadow: 0 0 12px rgba(220, 38, 38, 0.5);
+}
+
+.advisory-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+  animation: pulse-beacon 1.5s infinite;
+}
+
+@keyframes pulse-beacon {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.8; }
+}
+
+.advisory-scenario-tag {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.advisory-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.advisory-kpi-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.advisory-kpi-card:hover {
+  border-color: rgba(56, 189, 248, 0.5);
+  transform: translateY(-1px);
+}
+
+.advisory-kpi-label {
+  font-size: 10px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.advisory-kpi-val {
+  font-size: 15px;
+  font-weight: 800;
+  font-family: var(--font-mono, monospace);
+  color: #f8fafc;
+}
+
+.advisory-kpi-sub {
+  font-size: 9.5px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* Studio Tabs (Siaran Pers vs WhatsApp) */
+.briefing-switcher-bar {
+  display: flex;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 3px;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.briefing-tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.briefing-tab-btn.active {
+  background: #1e293b;
+  color: #38bdf8;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+.briefing-tab-btn.btn-wa-tab.active {
+  color: #34d399;
+}
+
+.briefing-document-card {
+  background: #0b1120;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 12px 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.briefing-doc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid #1e293b;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.briefing-doc-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #38bdf8;
+  line-height: 1.35;
+}
+
+.briefing-doc-meta {
+  font-size: 9.5px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.briefing-doc-body {
+  font-size: 11px;
+  line-height: 1.6;
+  color: #cbd5e1;
+  white-space: pre-line;
+}
+
+/* WhatsApp Message Card */
+.wa-broadcast-container {
+  background: #042f2e;
+  border: 1px solid #059669;
+  border-radius: 8px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 14px rgba(4, 47, 46, 0.45);
+}
+
+.wa-broadcast-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #065f46;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.wa-badge-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #065f46;
+  color: #a7f3d0;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.btn-action-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #059669;
+  border: 1px solid #10b981;
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-action-copy:hover {
+  background: #10b981;
+}
+
+.wa-body-pre {
+  font-family: inherit;
+  font-size: 10.5px;
+  color: #ecfdf5;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  margin: 0;
+  background: rgba(0,0,0,0.25);
+  padding: 10px;
+  border-radius: 6px;
+  border-left: 3px solid #10b981;
+}
+
+/* District Tag Cloud */
+.district-chips-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.district-chip-pill {
+  font-size: 10.5px;
+  font-weight: 600;
+  background: #1e293b;
+  border: 1px solid #38bdf8;
+  color: #e0f2fe;
+  padding: 3px 9px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.2s ease;
+}
+
+.district-chip-pill:hover {
+  background: #0284c7;
+  color: #fff;
+}
+
+.district-chip-pill.empty {
+  border-color: #475569;
+  color: #94a3b8;
+}

@@ -571,62 +571,131 @@
 
         <!-- TAB 3: PERINGATAN DARURAT & EDUKASI AI (AI ADVISORY) -->
         <div id="tabPaneScience" class="tab-pane">
-          <!-- Banner Tingkat Bahaya Bencana -->
-          <section class="drawer-section">
-            <div id="advisoryAlertBanner" class="alert-banner-tactical" style="background:#dc2626;color:#ffffff;padding:8px 12px;border-radius:6px;margin-bottom:10px;">
-              <div style="display:flex;align-items:center;gap:8px;">
-                <span class="live-dot" style="background:#ffffff;"></span>
-                <span id="advisoryAlertLevel" style="font-weight:800;font-size:12px;letter-spacing:0.5px;">SIAGA TANGGAP DARURAT</span>
+          <!-- Incident Command Header & Alert Level -->
+          <div class="advisory-command-header" id="advisoryAlertBanner">
+            <div class="advisory-status-ribbon">
+              <div class="advisory-alert-pill" id="advisoryAlertPill">
+                <span class="advisory-pulse-dot"></span>
+                <span id="advisoryAlertLevel">SIAGA TANGGAP DARURAT</span>
               </div>
-              <div id="advisoryAlertSubtitle" style="font-size:10.5px;color:#fecaca;margin-top:4px;line-height:1.4;">
-                Jalankan simulasi untuk memuat protokol taktis multi-sektor resmi.
+              <div class="advisory-scenario-tag" id="advisoryScenarioTag">
+                Skenario: Operasional Ansambel 48 Jam
               </div>
             </div>
-          </section>
+            <div id="advisoryAlertSubtitle" style="font-size:11px;color:#cbd5e1;line-height:1.45;margin-bottom:6px;">
+              Jalankan simulasi untuk memuat protokol taktis multi-sektor dan draf siaran darurat resmi.
+            </div>
 
-          <!-- AI Emergency Broadcast & Siaran Pers (Gemini / Expert) -->
-          <section class="drawer-section" id="aiBroadcastSection">
-            <div class="section-badge badge-teal" style="display:flex;align-items:center;gap:5px;">
-              <span>AI EMERGENCY BRIEFING</span>
-              <span id="aiEngineBadge" style="font-size:9px;background:#0f766e;color:#5eead4;padding:1px 5px;border-radius:3px;">Gemini AI</span>
+            <!-- KPI Metrik Eksekutif (4 Indikator Kunci) -->
+            <div class="advisory-kpi-grid">
+              <div class="advisory-kpi-card">
+                <span class="advisory-kpi-label">Total Terpapar</span>
+                <span class="advisory-kpi-val" id="advisoryTotalPopVal">-</span>
+                <span class="advisory-kpi-sub">Jiwa (Median WorldPop)</span>
+              </div>
+              <div class="advisory-kpi-card">
+                <span class="advisory-kpi-label">Kelompok Rentan</span>
+                <span class="advisory-kpi-val" id="advisoryVulnerableVal">-</span>
+                <span class="advisory-kpi-sub">Anak (&lt;15) &amp; Lansia (&ge;65)</span>
+              </div>
+              <div class="advisory-kpi-card">
+                <span class="advisory-kpi-label">Satuan Pendidikan</span>
+                <span class="advisory-kpi-val" id="advisorySchoolsVal">-</span>
+                <span class="advisory-kpi-sub">Sekolah di Zona Waspada</span>
+              </div>
+              <div class="advisory-kpi-card">
+                <span class="advisory-kpi-label">Fasilitas Kesehatan</span>
+                <span class="advisory-kpi-val" id="advisoryHealthVal">-</span>
+                <span class="advisory-kpi-sub">RS/Puskesmas Siaga Oksigen</span>
+              </div>
             </div>
-            <h2 class="section-heading">Draf Siaran Pers &amp; Broadcast WhatsApp Warga</h2>
+          </div>
+
+          <!-- Wilayah / Kecamatan Prioritas Pengawasan -->
+          <section class="drawer-section">
+            <div class="section-badge badge-red">YURISDIKSI &amp; KORIDOR BAHAYA</div>
+            <h2 class="section-heading">Wilayah Administrasi Terdampak Prioritas</h2>
+            <div class="section-note">Kabupaten dan kecamatan riil dalam lintasan jejak partikulat:</div>
+            <div id="advisoryDistrictsList" class="district-chips-cloud">
+              <span class="district-chip-pill empty">Menunggu hasil komputasi model...</span>
+            </div>
             
-            <div style="background:#0f172a;border:1px solid #334155;border-radius:6px;padding:8px;margin-top:6px;">
-              <div style="font-size:11px;font-weight:700;color:#38bdf8;margin-bottom:3px;" id="aiPrTitle">
-                SIARAN PERS RESMI TANGGAP DARURAT
-              </div>
-              <div style="font-size:10.5px;color:#cbd5e1;line-height:1.4;" id="aiPrBody">
-                Memuat narasi siaran pers darurat...
-              </div>
-            </div>
-
-            <div style="background:#064e3b;border:1px solid #059669;border-radius:6px;padding:8px;margin-top:8px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                <span style="font-size:11px;font-weight:700;color:#6ee7b7;">💬 Draf Pesan Siaran WhatsApp Warga</span>
-                <button type="button" id="btnCopyWa" style="background:#047857;border:1px solid #10b981;color:#ffffff;font-size:10px;padding:2px 7px;border-radius:3px;cursor:pointer;">Salin Teks</button>
-              </div>
-              <pre id="aiWaBody" style="font-size:10px;color:#ecfdf5;white-space:pre-wrap;font-family:inherit;margin:0;line-height:1.35;">Memuat draf pesan warga...</pre>
+            <!-- Hidden fallback containers for demography detail -->
+            <div style="display:none;">
+              <span id="advisoryChildVal">-</span>
+              <span id="advisoryElderVal">-</span>
             </div>
           </section>
 
-          <!-- Wilayah / Kecamatan Prioritas & Demografi Terpapar -->
-          <section class="drawer-section">
-            <div class="section-badge badge-red">YURISDIKSI &amp; DEMOGRAFI</div>
-            <h2 class="section-heading">Kecamatan &amp; Populasi Terdampak Prioritas</h2>
-            <div class="section-note">Wilayah administrasi kecamatan dalam koridor lintasan bahaya atmosferik:</div>
-            <div id="advisoryDistrictsList" class="districts-tag-cloud" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:5px;">
-              <span class="district-pill" style="font-size:11px;background:#1e293b;border:1px solid #334155;color:#94a3b8;padding:3px 8px;border-radius:4px;">Menunggu simulasi aktif...</span>
+          <!-- Draf Siaran Pers Pusdalops & Broadcast Pesan Warga (Switcher Tabs) -->
+          <section class="drawer-section" id="aiBroadcastSection">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <div class="section-badge badge-teal" style="display:inline-flex;align-items:center;gap:5px;margin:0;">
+                <span>AI EMERGENCY BRIEFING</span>
+                <span id="aiEngineBadge" style="font-size:9px;background:#0f766e;color:#5eead4;padding:1px 5px;border-radius:3px;">Gemini AI Synthesizer</span>
+              </div>
             </div>
-            <div class="pop-breakdown-box" style="margin-top:10px;background:#131b17;border:1px solid #23352b;border-radius:6px;padding:8px;">
-              <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">
-                <span style="color:#94a3b8;">Kelompok Rentan Anak (&lt;15 Th):</span>
-                <strong id="advisoryChildVal" class="mono" style="color:#f59e0b;">-</strong>
+            <h2 class="section-heading">Draf Komunikasi Darurat Resmi &amp; Publik</h2>
+            <div class="section-note" style="margin-bottom:8px;">
+              Pilih format diseminasi informasi resmi multi-kanal untuk Pusdalops dan warga:
+            </div>
+
+            <!-- Switcher Bar: Siaran Pers vs Pesan WhatsApp -->
+            <div class="briefing-switcher-bar">
+              <button type="button" class="briefing-tab-btn active" id="tabBtnPressRelease">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                <span>Siaran Pers Resmi Pusdalops</span>
+              </button>
+              <button type="button" class="briefing-tab-btn btn-wa-tab" id="tabBtnWhatsapp">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                </svg>
+                <span>Broadcast Pesan WhatsApp Warga</span>
+              </button>
+            </div>
+
+            <!-- Pane 1: Siaran Pers Media & Wartawan -->
+            <div id="panePressRelease" class="briefing-document-card">
+              <div class="briefing-doc-header">
+                <div>
+                  <div class="briefing-doc-title" id="aiPrTitle">SIARAN PERS RESMI TANGGAP DARURAT</div>
+                  <div class="briefing-doc-meta">Standar Protokol: Pusdalops BNPB / BPBD &bull; Siap Rilis</div>
+                </div>
+                <button type="button" class="btn-action-copy" id="btnCopyPr" style="background:#0284c7;border-color:#38bdf8;">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                  <span>Salin Siaran Pers</span>
+                </button>
               </div>
-              <div style="display:flex;justify-content:space-between;font-size:11px;">
-                <span style="color:#94a3b8;">Kelompok Rentan Lansia (&ge;65 Th):</span>
-                <strong id="advisoryElderVal" class="mono" style="color:#ef4444;">-</strong>
+              <div class="briefing-doc-body" id="aiPrBody">
+                Memuat narasi siaran pers darurat resmi...
               </div>
+            </div>
+
+            <!-- Pane 2: Pesan Ringkas WhatsApp Warga -->
+            <div id="paneWhatsapp" class="wa-broadcast-container" style="display:none;">
+              <div class="wa-broadcast-header">
+                <span class="wa-badge-live">
+                  <span class="advisory-pulse-dot" style="background:#34d399;width:6px;height:6px;"></span>
+                  Format Diseminasi WhatsApp Komunitas
+                </span>
+                <button type="button" class="btn-action-copy" id="btnCopyWa">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                  <span>Salin Pesan WA</span>
+                </button>
+              </div>
+              <pre id="aiWaBody" class="wa-body-pre">Memuat draf pesan siaran warga...</pre>
             </div>
           </section>
 
@@ -638,23 +707,23 @@
               <div class="mask-card mask-bad">
                 <div class="mask-status-badge badge-bad">[DILARANG] TIDAK EFEKTIF</div>
                 <strong>Masker Bedah &amp; Kain Biasa</strong>
-                <p>Pori-pori terlalu besar dan bocor samping 30%–50%. Partikel debu silika &amp; PM2.5 tetap menembus ke paru-paru.</p>
+                <p>Pori-pori terlalu besar dan bocor samping 30%–50%. Partikel debu silika &amp; PM2.5 tetap menembus ke alveolus paru-paru.</p>
               </div>
               <div class="mask-card mask-good">
                 <div class="mask-status-badge badge-good">[WAJIB] STANDAR RESMI</div>
                 <strong>Respirator N95 / KN95 / KF94</strong>
-                <p>Filtrasi &ge; 95% partikel mikro (0.3 mikron). Klip kawat hidung wajib ditekan rapat kedap udara.</p>
+                <p>Filtrasi &ge; 95% partikel mikro (0.3 mikron). Klip kawat hidung wajib ditekan rapat kedap udara pada wajah.</p>
               </div>
             </div>
             <div class="eye-alert-box" style="margin-top:10px;">
               <div style="font-size:11px;font-weight:700;color:#ef4444;margin-bottom:3px;text-transform:uppercase;">
                 DILARANG KERAS MEMAKAI LENSA KONTAK (SOFTLENS)!
               </div>
-              <small>Pecahan silika abu vulkanik tajam akan menggores kornea di bawah lensa, memicu <strong>abrasi kornea &amp; infeksi kebutaan permanen</strong>. Gunakan Safety Goggles tertutup lis karet.</small>
+              <small>Pecahan silika abu vulkanik tajam akan terperangkap di bawah lensa, memicu <strong>abrasi kornea &amp; infeksi kebutaan permanen</strong>. Gunakan Safety Goggles bertutup rapat.</small>
             </div>
           </section>
 
-          <!-- Protokol Rumah Tangga & Sumber Air Bersih -->
+          <!-- Protokol Logistik & Rumah Tangga -->
           <section class="drawer-section">
             <div class="section-badge badge-blue">LOGISTIK &amp; PEMUKIMAN</div>
             <h2 class="section-heading">Perlindungan Sumber Air &amp; Rumah Tangga</h2>

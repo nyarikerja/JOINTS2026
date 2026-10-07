@@ -125,6 +125,30 @@ Kembalikan HANYA format JSON valid tanpa tanda pembungkus markdown (```json):
                 continue
 
     # Fallback Deterministik Cerdas (Standar Resmi Pusdalops BNPB / Kemenkes RI)
+    if school_count > 0:
+        school_action_text = (
+            f"Menindaklanjuti potensi bahaya tersebut, sebanyak {school_count} satuan pendidikan di wilayah koridor terdampak "
+            f"diinstruksikan segera mengalihkan kegiatan belajar mengajar ke Pembelajaran Jarak Jauh (PJJ Daring) sesuai kerangka SPAB Kemendikbud-BNPB. "
+        )
+        wa_school_point = f"5. Perlindungan Siswa Sekolah: Sebanyak {school_count} satuan pendidikan di zona terdampak dialihkan ke Pembelajaran Jarak Jauh (PJJ Daring). Siswa diimbau tetap berada di dalam ruangan tertutup."
+    else:
+        school_action_text = (
+            "Seluruh satuan pendidikan di wilayah koridor penyangga diimbau meningkatkan kewaspadaan, membatasi kegiatan luar ruang, "
+            "dan bersiap mengalihkan kegiatan ke PJJ Daring jika terjadi eskalasi sebaran partikel. "
+        )
+        wa_school_point = "5. Kesiapsiagaan Satuan Pendidikan: Sekolah di wilayah penyangga diimbau meniadakan aktivitas luar ruang (olahraga/upacara) dan memantau perkembangan arah angin."
+
+    if healthcare_count > 0:
+        health_action_text = (
+            f"Fasilitas pelayanan kesehatan ({healthcare_count} faskes) disiagakan dengan Ruang Udara Bersih dan pasokan oksigen medis "
+            f"guna mengantisipasi lonjakan kasus sindrom pernapasan akut."
+        )
+    else:
+        health_action_text = (
+            "Fasilitas pelayanan kesehatan di wilayah terdekat disiagakan dengan Ruang Udara Bersih dan pasokan oksigen medis "
+            "untuk mengantisipasi potensi lonjakan keluhan pernapasan warga kelompok rentan."
+        )
+
     default_pr_title = f"SIARAN PERS PUSDALOPS BPBD: PERINGATAN DINI KESIAPSIAGAAN ANCAMAN {hazard_label.upper()} ({scenario_label})"
     default_pr_body = (
         f"Pusat Pengendalian Operasi Badan Penanggulangan Bencana Daerah (Pusdalops BPBD) bersama Dinas Kesehatan "
@@ -132,10 +156,7 @@ Kembalikan HANYA format JSON valid tanpa tanda pembungkus markdown (```json):
         f"Berdasarkan hasil pemodelan dispersi partikulat atmosferik, sebaran partikel terdeteksi mengarah ke koridor "
         f"{districts_str} dengan estimasi populasi berisiko terpapar mencapai {total_pop:,.0f} jiwa, yang mencakup {children:,.0f} anak-anak "
         f"dan {elderly:,.0f} lansia berisiko tinggi.\n\n"
-        f"Menindaklanjuti potensi bahaya tersebut, seluruh satuan pendidikan ({school_count} sekolah) di wilayah koridor terdampak "
-        f"diinstruksikan segera mengalihkan kegiatan belajar mengajar ke Pembelajaran Jarak Jauh (PJJ Daring) sesuai kerangka SPAB. "
-        f"Fasilitas pelayanan kesehatan ({healthcare_count} faskes) disiagakan dengan Ruang Udara Bersih dan pasokan oksigen medis "
-        f"guna mengantisipasi lonjakan kasus sindrom pernapasan akut."
+        f"{school_action_text}{health_action_text}"
     )
     default_wa = (
         f"PEMBERITAHUAN RESMI PUSDALOPS BPBD & DINAS KESEHATAN\n"
@@ -148,7 +169,7 @@ Kembalikan HANYA format JSON valid tanpa tanda pembungkus markdown (```json):
         f"2. Perlindungan Mata: Dilarang keras memakai lensa kontak (softlens). Debu abu silika (SiO2) bersifat tajam dan abrasif yang dapat merobek kornea mata (abrasi kornea) dan memicu kebutaan permanen. Gunakan kacamata pelindung tertutup (Safety Goggles).\n"
         f"3. Sanitasi Sumber Air Minum: Tutup rapat seluruh tandon air minum, penampungan, dan sumur gali keluarga menggunakan terpal kedap guna menghindari kontaminasi senyawa asam sulfur dan racun fluorida.\n"
         f"4. Isolasi Ruang Tinggal: Tutup ventilasi rumah dan pasang kain basah pada celah pintu/jendela. Jangan menyapu abu dalam kondisi kering karena akan memicu resuspensi partikel ke udara pernapasan; gunakan semprotan air halus dan pel basah.\n"
-        f"5. Perlindungan Siswa Sekolah: Satuan pendidikan di zona terdampak beralih ke Pembelajaran Jarak Jauh (PJJ Daring). Siswa diimbau tetap berada di dalam ruangan tertutup.\n\n"
+        f"{wa_school_point}\n\n"
         f"Pusat Bantuan & Komando Darurat:\n"
         f"- Layanan Gawat Darurat Medis: SPGDT 119\n"
         f"- Posko Terpadu Pusdalops BPBD: Call Center 112"

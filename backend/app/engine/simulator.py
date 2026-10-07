@@ -289,9 +289,14 @@ class SimulationRunner:
             }
         }
 
-        # Precompute impact ranges agar selalu tersimpan di berkas JSON disk
-        from app.impact.exposure import calculate_impact_ranges
+        # Precompute impact ranges & fasilitas terdampak agar selalu tersimpan di berkas JSON disk
+        from app.impact.exposure import calculate_impact_ranges, get_exposed_facilities_list
         run_output["impact"] = calculate_impact_ranges(run_output, grid)
+        try:
+            run_output["facilities_impacted"] = get_exposed_facilities_list(run_output, grid)
+        except Exception as e:
+            print(f"Warning: gagal precompute facilities_impacted: {e}")
+            run_output["facilities_impacted"] = {}
 
         # Simpan ke data/runs/{run_id}.json
         save_path = RUNS_DIR / f"{self.run_id}.json"
