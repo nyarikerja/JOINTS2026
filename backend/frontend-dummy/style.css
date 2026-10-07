@@ -2000,4 +2000,148 @@ body.enterprise-magma {
   transition: width 0.4s ease;
 }
 
+/* AI Emergency Advisory Tactical Styles */
+.alert-banner-tactical {
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.25);
+  border: 1px solid rgba(254, 202, 202, 0.2);
+}
+
+.districts-tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.district-pill {
+  transition: all 0.2s ease;
+}
+
+.district-pill:hover {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+}
+
+.advisory-card-item {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease;
+}
+
+.advisory-card-item:hover {
+  transform: translateX(3px);
+}
+
+/* 7. Kontainer Spasial Terpadu: Hierarki Kecamatan & Fasilitas (Model 2-Tab Emas) */
+.district-filter-chips {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0 10px;
+  flex-wrap: wrap;
+}
+
+.d-chip-btn {
+  background: #181e1a;
+  border: 1px solid #28342c;
+  color: #94a3b8;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 4px 11px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.d-chip-btn:hover {
+  border-color: #38bdf8;
+  color: #f1f5f9;
+}
+
+.d-chip-btn.active {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: #38bdf8;
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.district-hierarchy-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.district-group-card {
+  background: #151b17;
+  border: 1px solid #28352d;
+  border-radius: 7px;
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.district-group-card:hover {
+  border-color: #3b5042;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
+}
+
+.district-group-header {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.district-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.district-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.district-badge.badge-danger {
+  background: #dc2626;
+  color: #fff;
+}
+
+.district-badge.badge-warning {
+  background: #d97706;
+  color: #fff;
+}
+
+.district-badge.badge-info {
+  background: #0284c7;
+  color: #fff;
+}
+
+.district-group-body {
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.district-sub-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+
+
 
