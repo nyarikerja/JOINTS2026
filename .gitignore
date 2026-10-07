@@ -17,14 +17,17 @@ __pycache__/
 *.so
 .pytest_cache/
 .ruff_cache/
+.coverage
+htmlcov/
+*.log
 
-# SQLite Caches & Journal files
+# SQLite Journal & Shared Memory Files
 *.db-wal
 *.db-shm
 *.sqlite-wal
 *.sqlite-shm
 
-# Large Simulation Outputs & Raw Data (Keep repo lightweight)
+# Large Simulation Outputs & Temporary Caches
 data/runs/*.json
 **/data/runs/*.json
 data/raw/
@@ -36,8 +39,15 @@ important-file/
 .DS_Store
 Thumbs.db
 
-# Frontend Dependencies
+# Frontend Dependencies & Build Artifacts
 node_modules/
+**/node_modules/
 dist/
+**/dist/
 build/
-
+**/build/
+.vite/
+**/.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

@@ -57,53 +57,50 @@ npm run build
 # Eksekusi seluruh 29 pengujian unit, fisika, lapis 2, dan lapis 3
 pytest tests/
 
+```bash
 # Pemeriksaan linter kode Python (Ruff)
-ruff check app/
+ruff check app/ tests/
 ```
-*Hasil Verifikasi: 29/29 PASSED (100% lulus dalam ~3.8 detik), 0 lint warning.*
+*Hasil Verifikasi: 37/37 PASSED (100% lulus dalam ~5.5 detik), 0 lint warning.*
 
 ---
 
 ## Diagram Alur Kerja Sistem (End-to-End Architecture)
 
-```
-+-------------------------------------------------------------------------------------------------+
-|                                1. SUMBER DATA OTORITATIF (INGEST)                               |
-|  - PVMBG MAGMA: Elevasi kawah, koordinat vent, radius KRB, laporan VONA resmi                  |
-|  - NASA FIRMS: Deteksi titik api NRT satelit VIIRS SNPP/NOAA-20 beserta Fire Radiative Power    |
-|  - Open-Meteo: Vektor angin atmosfer multi-level (u, v) dan presipitasi hujan (15-51 ensemble) |
-|  - WorldPop: Grid densitas kependudukan resolusi 100m (total jiwa, demografi anak & lansia)     |
-|  - OpenStreetMap (Overpass): Fasilitas publik (sekolah, puskesmas, rumah sakit rujukan, bandara)|
-+-------------------------------------------------------------------------------------------------+
-                                                |
-                                                v
-+-------------------------------------------------------------------------------------------------+
-|                         2. MESIN DISPERSI LAGRANGIAN RK2 (PHYSICS ENGINE)                       |
-|  - Erupsi Vulkanik: Laju Emisi Massa Mastin et al. (2009) [M = 140.85 * H^4.15 kg/s]            |
-|  - Karhutla Gambut: Konversi FRP Wooster et al. (2005) [0.27 - 0.37 - 0.45 kg/MJ]               |
-|  - Adveksi-Difusi: Integrasi Runge-Kutta Ordo 2 (RK2) + Difusi Turbulen Atmosfer (80 m2/s)      |
-|  - Pencucian Presipitasi: Wet Scavenging Lambda = a * R^b + Peringatan Lahar Hujan Lereng       |
-|  - Agregasi Probabilitas: Difusi Gaussian Kontinu + Poligon Vektor Shapely MultiPolygon         |
-+-------------------------------------------------------------------------------------------------+
-                                                |
-                                                v
-+-------------------------------------------------------------------------------------------------+
-|                         3. ESTIMASI DAMPAK & PROTOKOL AKSI DINI (IMPACT)                        |
-|  - Kuantifikasi Ketidakpastian: Rentang P5 (Min) - P50 (Median) - P95 (Max)                     |
-|  - Triase Sekolah: Rekomendasi PJJ Daring (>=40%) / Pembatasan Luar Ruang (15-39%)             |
-|  - Triase Evakuasi Faskes: Klasifikasi RS Aman Bebas Abu vs Penyangga + Rute Terukur (km)       |
-|  - Dampak Lingkungan: Hektare sawah/kebun, sumber air minum, tonase emisi karbon gambut        |
-|  - Integritas Etika: Penonaktifan ISPU transparan selama faktor emisi masih placeholder        |
-+-------------------------------------------------------------------------------------------------+
-                                                |
-                                                v
-+-------------------------------------------------------------------------------------------------+
-|                        4. PLATFORM KOMANDO GIS TAKTIS (4-ZONE COMMAND CANVAS)                   |
-|  - Zone A: Tactical Header & Telemetri Nasional (WIB & UTC)                                     |
-|  - Zone B: Panel Konfigurasi Kejadian Melayang (Gunung PVMBG vs Karhutla FIRMS)                |
-|  - Zone C: Peta Interaktif Leaflet Dark Mode, Palet Hazard-Aware, & Timeline Player 48 Jam      |
-|  - Zone D: Laci Analitik 5 Tab (Dampak, Sekolah, Rujukan Medis, Edukasi APD, Audit Sains)       |
-+-------------------------------------------------------------------------------------------------+
+```mermaid
+flowchart TD
+    subgraph S1["1. SUMBER DATA OTORITATIF (INGEST)"]
+        A1["PVMBG MAGMA: Elevasi kawah, koordinat vent, radius KRB, VONA"]
+        A2["NASA FIRMS: Titik api NRT satelit VIIRS SNPP / NOAA-20 & FRP"]
+        A3["Open-Meteo Ensemble: Vektor angin multi-level (u, v) & presipitasi"]
+        A4["WorldPop: Grid demografi 100m (total jiwa, anak <15, lansia >=65)"]
+        A5["Kemendikbud & Kemenkes: Sekolah posko evakuasi BPBD, RS rujukan, bandara"]
+    end
+
+    subgraph S2["2. BASIS DATA SPASIAL TERPUSAT (STORAGE & R*TREE)"]
+        B1[("SQLite Relasional: udarasiaga.db")]
+        B2{{"Indeks Spasial Virtual: R*Tree Tables"}}
+        B3["Pola Akses Data: Repository Pattern (LOD & BBOX Viewport < 1 ms)"]
+        B1 --- B2 --- B3
+    end
+
+    subgraph S3["3. MESIN DISPERSI LAGRANGIAN RK2 (PHYSICS ENGINE)"]
+        C1["Erupsi Vulkanik: Laju Massa Mastin et al. 2009 (M = 140.85 * H^4.15 kg/s)"]
+        C2["Karhutla Gambut: Konversi FRP Wooster et al. 2005 (0.27 - 0.37 - 0.45 kg/MJ)"]
+        C3["Adveksi-Difusi: Integrasi Runge-Kutta Ordo 2 + Difusi Turbulen (80 m2/s)"]
+        C4["Pencucian Presipitasi: Wet Scavenging Lambda = a * R^b & Bahaya Lahar Dingin"]
+    end
+
+    subgraph S4["4. ESTIMASI DAMPAK & PROTOKOL AKSI DINI (IMPACT & UI)"]
+        D1["Agregasi Kontur Gaussian: Rentang Ketidakpastian P5 - P50 - P95"]
+        D2["Triase Sekolah: Rekomendasi PJJ Daring (>=40%) / Pembatasan Luar Ruang"]
+        D3["Triase Fasilitas Kesehatan: Rujukan ke RS Aman Bebas Abu Terdekat"]
+        D4["Visualisasi Kanvas Taktis 4-Zona & Player Garis Waktu 48 Jam"]
+    end
+
+    S1 --> S2
+    S2 --> S3
+    S3 --> S4
 ```
 
 ---
@@ -235,22 +232,20 @@ Membuktikan akurasi dan akuntabilitas ilmiah model:
 
 Antarmuka web UdaraSiaga mengadopsi tata letak kanvas komando terpadu untuk mencegah beban kognitif (*cognitive overload*):
 
-```
-+-----------------------------------------------------------------------------------+
-| ZONE A: TACTICAL COMMAND HEADER (Brand, Live Sync Ping, KPI Status Nasional)      |
-+-----------------------------------------------------------------------------------+
-| STRIP: [PROTOKOL RESMI] SISTEM PERINGATAN DINI & AKSI PENCEGAHAN BENCANA          |
-+-------------------+-------------------------------------------+-------------------+
-| ZONE B:           | ZONE C: INTERACTIVE GIS WORKSPACE         | ZONE D:           |
-| FLOATING CONTROL  |                                           | TABBED INSPECTION |
-| (Panel Bencana,   | - Peta Taktis Gelap (Full Bleed Leaflet)  | DOCK (Laci Kanan) |
-|  70 Gunung PVMBG, | - Poligon Dispersi Berwarna Hazard-Aware  |                   |
-|  Mode Eksperimen, | - Hotspot NASA & Titik Fasilitas Publik   | [Tab 1: Dampak]   |
-|  Jalankan Sim)    | - Legenda Dinamis Kiri Bawah              | [Tab 2: Sekolah]  |
-|                   | +---------------------------------------+ | [Tab 3: Evakuasi] |
-| (Dapat Diciutkan) | | TIMELINE PLAYER (T+0 s.d. T+48 Jam)   | | [Tab 4: Edukasi]  |
-|                   | +---------------------------------------+ | [Tab 5: Audit]    |
-+-------------------+-------------------------------------------+-------------------+
+```mermaid
+flowchart TB
+    ZA["ZONE A: TACTICAL COMMAND HEADER (Brand, Live Telemetry, UTC/WIB Dual Clock)"]
+    STRIP["BANNER: PROTOKOL RESMI KESIAPSIAGAAN & AKSI PENCEGAHAN BENCANA NASIONAL"]
+
+    subgraph CoreWorkspace["RUANG KERJA UTAMA TAKTIS"]
+        direction LR
+        ZB["ZONE B: FLOATING CONTROL<br/>- Pilihan Jenis Bahaya<br/>- Katalog 70 Gunung Api<br/>- 36 Kawasan Hutan<br/>- Mode Eksperimen & Run"]
+        ZC["ZONE C: INTERACTIVE GIS WORKSPACE<br/>- Peta Taktis Gelap Leaflet<br/>- Kontur Multi-Probabilitas P5/P50/P95<br/>- Titik Api Satelit & R*Tree Fasilitas<br/>- Player Garis Waktu 48 Jam (T+0 s.d. T+48)"]
+        ZD["ZONE D: TABBED INSPECTION DOCK<br/>- Tab 1: Estimasi Dampak Multisektor<br/>- Tab 2: Triase Kebijakan Sekolah<br/>- Tab 3: Rute Evakuasi Faskes Aman<br/>- Tab 4: Standar Medis Masker N95<br/>- Tab 5: Audit Asumsi Sains & Validasi"]
+    end
+
+    ZA --> STRIP
+    STRIP --> CoreWorkspace
 ```
 
 - **Zone A (Tactical Header)**: Logo platform, lencana status `SIAGA 24/7`, telemetri ticker nasional (jumlah gunung api Level 3/4 dan titik api satelit FIRMS), tombol uji latensi sinkronisasi, tombol putar demo otomatis, dan jam digital ganda (WIB & UTC).
