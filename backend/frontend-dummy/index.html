@@ -6,7 +6,7 @@
   <title>UdaraSiaga Indonesia | Pusat Pemodelan &amp; Dispersi Bahaya Atmosfer Nasional</title>
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
   <link rel="icon" type="image/svg+xml" href="/favicon.ico">
-  <link rel="stylesheet" href="style.css?v=20261006_09">
+  <link rel="stylesheet" href="style.css?v=20261008_18">
 </head>
 <body class="enterprise-magma">
   <!-- Bilah Navigasi & Telemetri Darurat Atas (MAGMA Tactical Header) -->
@@ -537,11 +537,25 @@
             </div>
 
             <!-- Filter Cepat Tampilan -->
-            <div class="district-filter-chips">
-              <button type="button" class="d-chip-btn active" data-filter="all" id="chipFilterAll">Semua Wilayah</button>
-              <button type="button" class="d-chip-btn" data-filter="schools" id="chipFilterSchools">Hanya Sekolah (PJJ)</button>
-              <button type="button" class="d-chip-btn" data-filter="hospitals" id="chipFilterHospitals">Hanya RS &amp; Faskes</button>
+            <div class="district-filter-group" style="margin: 8px 0 10px 0;">
+              <div style="font-size: 10px; color: #9db0a4; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Filter Tingkat Bahaya Zona:</div>
+              <div class="district-tier-chips" style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:8px;">
+                <button type="button" class="d-chip-btn active" data-tier="all" id="tierFilterAll">Semua Tingkat</button>
+                <button type="button" class="d-chip-btn" data-tier="minimum" id="tierFilterMin" style="border-color: rgba(239,68,68,0.5);">Sangat Tinggi (P90)</button>
+                <button type="button" class="d-chip-btn" data-tier="mid" id="tierFilterMid" style="border-color: rgba(245,158,11,0.5);">Sedang (P50)</button>
+                <button type="button" class="d-chip-btn" data-tier="maximum" id="tierFilterMax" style="border-color: rgba(251,191,36,0.5);">Ringan / Dikit (P05)</button>
+              </div>
+
+              <div style="font-size: 10px; color: #9db0a4; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Tampilkan Fasilitas:</div>
+              <div class="district-filter-chips" style="display:flex; gap:5px; flex-wrap:wrap;">
+                <button type="button" class="d-chip-btn active" data-filter="all" id="chipFilterAll">Semua Fasilitas</button>
+                <button type="button" class="d-chip-btn" data-filter="schools" id="chipFilterSchools">Hanya Sekolah (PJJ)</button>
+                <button type="button" class="d-chip-btn" data-filter="hospitals" id="chipFilterHospitals">Hanya RS &amp; Faskes</button>
+              </div>
             </div>
+
+            <!-- Indikator Banner Zona Terpilih di Peta -->
+            <div id="selectedZoneBanner" style="display:none; margin: 10px 0;"></div>
 
             <!-- Kontainer Hierarki Utama Berbasis Kecamatan -->
             <div id="districtHierarchyContainer" class="district-hierarchy-box">
@@ -798,6 +812,6 @@
   </div>
 
   <script src="vendor/leaflet/leaflet.js"></script>
-  <script src="app.js?v=20261007_15"></script>
+  <script src="app.js?v=20261008_19"></script>
 </body>
 </html>

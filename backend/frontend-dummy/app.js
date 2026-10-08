@@ -1562,6 +1562,12 @@ function renderTiersGeoJSON(geo) {
     return;
   }
 
+  if (currentTiersLayer) {
+    map.removeLayer(currentTiersLayer);
+    currentTiersLayer = null;
+  }
+  selectedPlumeLayer = null;
+
   if (!document.getElementById("layerTogglePlume").checked) {
     return;
   }
@@ -1570,26 +1576,8 @@ function renderTiersGeoJSON(geo) {
   const palette = PLUME_PALETTES[currentHazard] || PLUME_PALETTES.volcano;
 
   currentTiersLayer = L.geoJSON(geo, {
-    smoothFactor: 1.2,
-    style: feature => {
-      const tier = feature.properties.tier;
-      let p;
-      if (tier === "minimum") {
-        p = palette.minimum;
-      } else if (tier === "mid") {
-        p = palette.mid;
-      } else {
-        p = palette.max;
-      }
-      return {
-        color: p.stroke,
-        weight: p.weight,
-        opacity: p.strokeOpacity,
-        fillColor: p.fill,
-        fillOpacity: p.fillOpacity,
-        dashArray: p.dash
-      };
-    },
+    smoothFactor: 0.8,
+    style: feature => getPlumeLayerDefaultStyle(feature),
     onEachFeature: (feature, layer) => {
       const props = feature.properties;
       const tierKey = props.tier === "minimum" ? "minimum" : (props.tier === "mid" ? "mid" : "max");
@@ -1600,15 +1588,326 @@ function renderTiersGeoJSON(geo) {
         `<strong>${tierLabel}</strong><br><small>Klik untuk melihat daftar sekolah &amp; RS di jalur ${hazardNoun}</small>`,
         { sticky: true }
       );
-      layer.on("click", () => {
-        openDrawer();
-        switchDrawerTab("tabPaneSchools");
+      layer.on("click", (e) => {
+        // Hentikan propagasi event agar tidak mereset diri sendiri lewat map.on("click")
+        if (e) {
+          if (L.DomEvent && typeof L.DomEvent.stopPropagation === "function") {
+            L.DomEvent.stopPropagation(e);
+          }
+          if (typeof e.stopPropagation === "function") {
+            e.stopPropagation();
+          }
+          if (e.originalEvent) {
+            if (L.DomEvent && typeof L.DomEvent.stopPropagation === "function") {
+              L.DomEvent.stopPropagation(e.originalEvent);
+            }
+            if (typeof e.originalEvent.stopPropagation === "function") {
+              e.originalEvent.stopPropagation();
+            }
+            if (e.originalEvent.target && typeof e.originalEvent.target.blur === "function") {
+              e.originalEvent.target.blur();
+            }
+          }
+        }
+        if (document.activeElement && typeof document.activeElement.blur === "function") {
+          document.activeElement.blur();
+        }
+
+        // 1. Reset gaya kontur poligon yang sebelumnya terpilih (jika ada)
+        if (selectedPlumeLayer && selectedPlumeLayer !== layer) {
+          applyPlumeHighlight(selectedPlumeLayer, false);
+        }
+
+        // 2. Beri highlight garis tepi putih yang tegas persis mengikuti lekukan bentuk zona yang diklik
+        selectedPlumeLayer = layer;
+        applyPlumeHighlight(layer, true);
+
+        // 3. Arahkan laci analitik secara presisi ke zona terpilih & daftar fasilitas
+        focusDrawerOnZone(props.tier, tierLabel);
       });
     }
   }).addTo(map);
 
   // Perbarui seluruh legenda sebaran
   updatePlumeLegend(currentHazard);
+}
+
+let selectedPlumeLayer = null;
+
+function getLayerTier(target) {
+  if (!target) return "max";
+  if (typeof target === "string") {
+    if (target === "minimum" || target === "min") return "minimum";
+    if (target === "mid") return "mid";
+    return "max";
+  }
+  if (target.feature && target.feature.properties) {
+    const t = target.feature.properties.tier;
+    if (t === "minimum" || t === "min") return "minimum";
+    if (t === "mid") return "mid";
+    return "max";
+  }
+  return "max";
+}
+
+function getTiersSublayers() {
+  const sub = { max: [], mid: [], min: [] };
+  if (!currentTiersLayer) return sub;
+  currentTiersLayer.eachLayer(l => {
+    if (!l.feature) return;
+    const t = getLayerTier(l);
+    if (t === "minimum") sub.min.push(l);
+    else if (t === "mid") sub.mid.push(l);
+    else sub.max.push(l);
+  });
+  return sub;
+}
+
+function setPlumeLayerStyle(l, styleOpts, isContour = false) {
+  if (!l) return;
+  l.setStyle(styleOpts);
+  if (l._path) {
+    if (isContour) {
+      l._path.classList.add("plume-selected-contour");
+      l._path.setAttribute("stroke", styleOpts.color || "#ffffff");
+      l._path.setAttribute("stroke-width", String(styleOpts.weight || 3.2));
+      l._path.setAttribute("stroke-opacity", String(styleOpts.opacity !== undefined ? styleOpts.opacity : 1));
+      l._path.removeAttribute("stroke-dasharray");
+    } else {
+      l._path.classList.remove("plume-selected-contour");
+      l._path.setAttribute("stroke", styleOpts.color);
+      l._path.setAttribute("stroke-width", String(styleOpts.weight));
+      l._path.setAttribute("stroke-opacity", String(styleOpts.opacity));
+      if (styleOpts.dashArray) {
+        l._path.setAttribute("stroke-dasharray", styleOpts.dashArray);
+      } else {
+        l._path.removeAttribute("stroke-dasharray");
+      }
+    }
+    if (styleOpts.fillColor) l._path.setAttribute("fill", styleOpts.fillColor);
+    if (styleOpts.fillOpacity !== undefined) l._path.setAttribute("fill-opacity", String(styleOpts.fillOpacity));
+  }
+}
+
+function applyPlumeHighlight(targetLayer, isSelected) {
+  const sub = getTiersSublayers();
+  const allLayers = [...sub.max, ...sub.mid, ...sub.min];
+
+  if (!isSelected || !targetLayer) {
+    allLayers.forEach(l => {
+      const def = getPlumeLayerDefaultStyle(l.feature);
+      setPlumeLayerStyle(l, def, false);
+    });
+    return;
+  }
+
+  const clickedTier = getLayerTier(targetLayer);
+  const palette = PLUME_PALETTES[currentHazard] || PLUME_PALETTES.volcano;
+
+  if (clickedTier === "max") {
+    // =========================================================================
+    // KASUS 1: SIAGA DINI (P05) DIKLIK
+    // BORDER GANDA TERISOLASI PENUH:
+    // 1. Batas luar Siaga Dini (max) ditegaskan dengan kontur putih solid (3.2px)
+    // 2. Batas dalam Siaga Dini (berbatasan dengan Waspada/mid) JUGA diberi kontur putih solid (3.0px)
+    // 3. Area dalam (mid & min) diredamkan drastis (fillOpacity 0.08 & 0.10)
+    //    sehingga terlihat tegas bahwa HANYA pita Siaga Dini yang diklik & aktif!
+    // =========================================================================
+    sub.max.forEach(l => {
+      setPlumeLayerStyle(l, {
+        color: "#ffffff",
+        weight: 3.2,
+        opacity: 1.0,
+        dashArray: "",
+        fillColor: palette.max.fill,
+        fillOpacity: 0.28
+      }, true);
+    });
+
+    sub.mid.forEach(l => {
+      // mid membentuk dinding batas dalam dari pita Siaga Dini
+      setPlumeLayerStyle(l, {
+        color: "#ffffff",
+        weight: 3.0,
+        opacity: 1.0,
+        dashArray: "",
+        fillColor: palette.mid.fill,
+        fillOpacity: 0.08
+      }, true);
+    });
+
+    sub.min.forEach(l => {
+      // min (inti terdalam) diredamkan total
+      setPlumeLayerStyle(l, {
+        color: palette.minimum.stroke,
+        weight: 1.2,
+        opacity: 0.25,
+        dashArray: "",
+        fillColor: palette.minimum.fill,
+        fillOpacity: 0.10
+      }, false);
+    });
+
+  } else if (clickedTier === "mid") {
+    // =========================================================================
+    // KASUS 2: WASPADA (P50) DIKLIK
+    // BORDER GANDA:
+    // 1. Batas luar Waspada (mid) diberi kontur putih solid (3.2px)
+    // 2. Batas dalam Waspada (berbatasan dengan Sangat Tinggi/min) JUGA diberi kontur putih solid (3.0px)
+    // 3. Area luar (max) dan inti (min) diredamkan
+    // =========================================================================
+    sub.max.forEach(l => {
+      setPlumeLayerStyle(l, {
+        color: palette.max.stroke,
+        weight: 1.0,
+        opacity: 0.25,
+        dashArray: "3, 3",
+        fillColor: palette.max.fill,
+        fillOpacity: 0.05
+      }, false);
+    });
+
+    sub.mid.forEach(l => {
+      setPlumeLayerStyle(l, {
+        color: "#ffffff",
+        weight: 3.2,
+        opacity: 1.0,
+        dashArray: "",
+        fillColor: palette.mid.fill,
+        fillOpacity: 0.48
+      }, true);
+    });
+
+    sub.min.forEach(l => {
+      // min membentuk batas dalam dari zona Waspada
+      setPlumeLayerStyle(l, {
+        color: "#ffffff",
+        weight: 3.0,
+        opacity: 1.0,
+        dashArray: "",
+        fillColor: palette.minimum.fill,
+        fillOpacity: 0.18
+      }, true);
+    });
+
+  } else if (clickedTier === "minimum") {
+    // =========================================================================
+    // KASUS 3: SANGAT TINGGI / INTI EKSTREM (P90) DIKLIK
+    // 1. Batas zona inti (min) ditegaskan dengan kontur putih solid (3.2px)
+    // 2. Area luar (mid dan max) diredamkan
+    // =========================================================================
+    sub.max.forEach(l => {
+      setPlumeLayerStyle(l, {
+        color: palette.max.stroke,
+        weight: 1.0,
+        opacity: 0.20,
+        dashArray: "3, 3",
+        fillColor: palette.max.fill,
+        fillOpacity: 0.04
+      }, false);
+    });
+
+    sub.mid.forEach(l => {
+      setPlumeLayerStyle(l, {
+        color: palette.mid.stroke,
+        weight: 1.0,
+        opacity: 0.25,
+        dashArray: "6, 4",
+        fillColor: palette.mid.fill,
+        fillOpacity: 0.08
+      }, false);
+    });
+
+    sub.min.forEach(l => {
+      setPlumeLayerStyle(l, {
+        color: "#ffffff",
+        weight: 3.2,
+        opacity: 1.0,
+        dashArray: "",
+        fillColor: palette.minimum.fill,
+        fillOpacity: 0.70
+      }, true);
+    });
+  }
+}
+
+function focusDrawerOnZone(tierKey, tierLabel) {
+  openDrawer();
+  switchDrawerTab("tabPaneImpact");
+
+  // Normalisasi tier key (agar konsisten 'maximum', 'mid', 'minimum')
+  if (tierKey === "max") tierKey = "maximum";
+
+  // Aktifkan filter tingkat bahaya zona yang sesuai dengan zona di peta!
+  setTierFilter(tierKey);
+
+  // Tampilkan kartu info zona terpilih di laci
+  const zoneBanner = document.getElementById("selectedZoneBanner");
+  if (zoneBanner) {
+    const isFire = currentHazard === "fire";
+    let tierColor = "#fbbf24";
+    let tierBadge = isFire ? "[SIAGA DINI] Haze Tipis (P05)" : "[SIAGA DINI] Debu Halus (P05)";
+    let tierProb = "Peluang Paparan 5% - 14% (Dikit / Ringan)";
+    let tierDesc = isFire
+      ? "Wilayah sebaran kabut asap tipis tertiup angin (terkena dikit/ringan). Pemantauan indeks kualitas udara berkala & faskes rujukan aman."
+      : "Wilayah sebaran abu halus tertiup angin troposfer (terkena dikit/ringan). Pemantauan indeks kualitas udara berkala & RS rujukan aman.";
+
+    if (tierKey === "minimum") {
+      tierColor = "#dc2626";
+      tierBadge = isFire ? "[INTI BAHAYA EKSTREM] Asap Pekat (P90)" : "[INTI BAHAYA EKSTREM] Debu Pekat (P90)";
+      tierProb = "Peluang Paparan ≥ 90% (Sangat Tinggi)";
+      tierDesc = "Zona inti konsentrasi partikel sangat berbahaya (sangat tinggi). Mandat PJJ penuh / libur sekolah, evakuasi warga rentan ke RS rujukan aman.";
+    } else if (tierKey === "mid") {
+      tierColor = "#f59e0b";
+      tierBadge = isFire ? "[WASPADA TINGGI] Kabut Asap (P50)" : "[WASPADA TINGGI] Debu Sedang (P50)";
+      tierProb = "Peluang Paparan ≥ 50% (Sedang)";
+      tierDesc = "Zona sebaran partikel lebat (terkena sedang). Pembatasan aktivitas luar ruangan siswa, pembagian masker, triase faskes penyangga.";
+    }
+
+    zoneBanner.innerHTML = `
+      <div style="border: 1px solid ${tierColor}; background: rgba(0, 0, 0, 0.65); border-left: 5px solid ${tierColor}; padding: 10px 12px; border-radius: 6px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+          <strong style="color: ${tierColor}; font-size: 12.5px;">${tierBadge}</strong>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <span class="mono" style="font-size: 10px; background: rgba(255,255,255,0.12); padding: 2px 6px; border-radius: 4px; color: #fff;">${tierProb}</span>
+            <button type="button" onclick="setTierFilter('all')" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #38bdf8; font-size: 10px; padding: 2px 6px; border-radius: 4px; cursor: pointer;" title="Tampilkan semua kecamatan">Semua Tingkat &times;</button>
+          </div>
+        </div>
+        <p style="font-size: 11px; color: #d1d5db; line-height: 1.45; margin: 0 0 6px 0;">${tierDesc}</p>
+        <div style="font-size: 10.5px; color: #38bdf8; font-weight: 600;">
+          Daftar kecamatan &amp; fasilitas di bawah telah difilter khusus pada zona ini:
+        </div>
+      </div>
+    `;
+    zoneBanner.style.display = "block";
+  }
+
+  // Scroll presisi ke banner zona terpilih setelah animasi laci selesai (270ms)
+  setTimeout(() => {
+    const banner = document.getElementById("selectedZoneBanner") || document.getElementById("districtHierarchyContainer");
+    const drawerBody = document.querySelector(".drawer-body");
+    if (banner && drawerBody) {
+      const targetY = banner.offsetTop - 14;
+      drawerBody.scrollTo({ top: Math.max(0, targetY), behavior: "smooth" });
+    }
+  }, 270);
+}
+
+function getPlumeLayerDefaultStyle(feature) {
+  const palette = PLUME_PALETTES[currentHazard] || PLUME_PALETTES.volcano;
+  const tier = feature && feature.properties ? feature.properties.tier : "max";
+  let p = tier === "minimum" ? palette.minimum : (tier === "mid" ? palette.mid : palette.max);
+  return {
+    color: p.stroke,
+    weight: p.weight,
+    opacity: p.strokeOpacity,
+    fillColor: p.fill,
+    fillOpacity: p.fillOpacity,
+    dashArray: p.dash,
+    lineJoin: "round",
+    lineCap: "round",
+    className: `plume-polygon-tier plume-tier-${tier}`
+  };
 }
 
 // =============================================================================
@@ -1861,12 +2160,13 @@ function drawEvacuationRoute(fromLat, fromLon, toLat, toLon, fromName, toName, d
       L.popup({ autoClose: true, closeOnClick: true })
         .setLatLng(midPoint)
         .setContent(`
-          <div style="font-size:11.5px;font-family:sans-serif;color:#f8fafc;padding:5px;min-width:230px;line-height:1.4;">
-            <div style="font-weight:800;color:#34d399;margin-bottom:4px;font-size:12px;border-bottom:1px solid rgba(52,211,153,0.3);padding-bottom:3px;">
-              🚑 Koridor Evakuasi Jalan Raya Riil
+          <div style="font-size:11.5px;font-family:sans-serif;color:#f8fafc;padding:5px;min-width:245px;line-height:1.4;">
+            <div style="font-weight:800;color:#34d399;margin-bottom:4px;font-size:12px;border-bottom:1px solid rgba(52,211,153,0.3);padding-bottom:3px;display:flex;justify-content:space-between;align-items:center;">
+              <span>🚑 Koridor Evakuasi Minim Dampak</span>
+              <span style="font-size:9.5px;background:rgba(16,185,129,0.2);color:#34d399;padding:1px 5px;border-radius:3px;">Terverifikasi Aman</span>
             </div>
             <div style="margin-bottom:2px;"><span style="color:#94a3b8;">🏫 Asal:</span> <strong style="color:#f8fafc;">${fromName}</strong></div>
-            <div style="margin-bottom:5px;"><span style="color:#94a3b8;">🏥 Rujukan:</span> <strong style="color:#38bdf8;">${toName}</strong></div>
+            <div style="margin-bottom:5px;"><span style="color:#94a3b8;">🏥 Faskes Rujukan:</span> <strong style="color:#38bdf8;">${toName}</strong></div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#0f172a;padding:5px 8px;border-radius:6px;margin-bottom:5px;border:1px solid #1e293b;">
               <div>
                 <span style="font-size:10px;color:#94a3b8;">Jarak Tempuh</span><br>
@@ -1877,8 +2177,11 @@ function drawEvacuationRoute(fromLat, fromLon, toLat, toLon, fromName, toName, d
                 <strong class="mono" style="color:#fbbf24;font-size:12px;">~${route.estimated_duration_minutes || 20} menit</strong>
               </div>
             </div>
-            <div style="font-size:9.5px;color:#64748b;display:flex;justify-content:space-between;">
-              <span>Rute Darat Aman Terverifikasi</span>
+            <div style="font-size:9.5px;color:#cbd5e1;background:rgba(15,23,42,0.6);border-left:2px solid #10b981;padding:4px 6px;margin-bottom:4px;border-radius:3px;line-height:1.35;">
+              ${route.safety_note || 'Jalur terverifikasi aman: menjauhi arah kawah aktif dan memprioritaskan faskes terdekat berisiko minimal.'}
+            </div>
+            <div style="font-size:9px;color:#64748b;display:flex;justify-content:space-between;">
+              <span>${route.hazard_avoided ? 'Detour Bebas Bahaya' : 'Koridor Langsung Bebas Bahaya'}</span>
               <span class="mono">${route.is_real_road ? 'OSRM Live' : 'Sintesis'}</span>
             </div>
           </div>
@@ -2039,6 +2342,30 @@ function loadEmergencyAdvisory() {
 }
 
 let currentDistrictFilter = "all";
+let currentTierFilter = "all";
+
+function setTierFilter(tierKey) {
+  if (tierKey === "max") tierKey = "maximum";
+  currentTierFilter = tierKey;
+  document.querySelectorAll(".district-tier-chips .d-chip-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-tier") === tierKey);
+  });
+  if (tierKey === "all") {
+    const zoneBanner = document.getElementById("selectedZoneBanner");
+    if (zoneBanner) zoneBanner.style.display = "none";
+    if (selectedPlumeLayer) {
+      applyPlumeHighlight(null, false);
+      selectedPlumeLayer = null;
+    }
+  }
+  if (cachedImpactedFacilities) {
+    renderDistrictHierarchy(
+      cachedImpactedFacilities.schools || [],
+      cachedImpactedFacilities.evacuation_referral_hospitals || [],
+      currentDistrictFilter
+    );
+  }
+}
 
 function loadImpactedFacilities() {
   if (!currentRunId) return;
@@ -2055,6 +2382,7 @@ function loadImpactedFacilities() {
 }
 
 function initDistrictFilterButtons() {
+  // 1. Filter Jenis Fasilitas
   const chips = document.querySelectorAll(".district-filter-chips .d-chip-btn");
   chips.forEach(btn => {
     btn.addEventListener("click", () => {
@@ -2067,6 +2395,22 @@ function initDistrictFilterButtons() {
           cachedImpactedFacilities.evacuation_referral_hospitals || [],
           currentDistrictFilter
         );
+      }
+    });
+  });
+
+  // 2. Filter Tingkat Bahaya Zona
+  const tierChips = document.querySelectorAll(".district-tier-chips .d-chip-btn");
+  tierChips.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const tierVal = btn.getAttribute("data-tier") || "all";
+      setTierFilter(tierVal);
+      if (tierVal === "all") {
+        applyPlumeHighlight(null, false);
+        selectedPlumeLayer = null;
+      } else {
+        selectedPlumeLayer = tierVal;
+        applyPlumeHighlight(tierVal, true);
       }
     });
   });
@@ -2126,16 +2470,30 @@ function renderDistrictHierarchy(schools, hospitals, filterMode = "all") {
   let renderedCount = 0;
 
   sortedDistricts.forEach(d => {
-    const displaySchools = filterMode === "hospitals" ? [] : d.schools;
-    const displayHospitals = filterMode === "schools" ? [] : d.hospitals;
+    let displaySchools = filterMode === "hospitals" ? [] : d.schools;
+    let displayHospitals = filterMode === "schools" ? [] : d.hospitals;
+
+    // Filter fasilitas dan kecamatan berdasarkan tingkat bahaya terpilih (currentTierFilter)
+    // 3 Tingkatan Bahaya:
+    // - minimum (P90 / Sangat Tinggi): paparan >= 40% (sekolah mandat PJJ / RS zona bahaya)
+    // - mid (P50 / Sedang): 15% <= paparan < 40% (sekolah waspada outdoor / faskes triase penyangga)
+    // - maximum (P05 / Ringan / Dikit): paparan < 15% (sekolah siaga dini / faskes rujukan bebas paparan)
+    if (currentTierFilter === "minimum") {
+      displaySchools = displaySchools.filter(s => (s.exposure_pct || 0) >= 40);
+      displayHospitals = displayHospitals.filter(h => (h.exposure_pct || 0) >= 35);
+    } else if (currentTierFilter === "mid") {
+      displaySchools = displaySchools.filter(s => (s.exposure_pct || 0) >= 15 && (s.exposure_pct || 0) < 40);
+      displayHospitals = displayHospitals.filter(h => (h.exposure_pct || 0) >= 10 && (h.exposure_pct || 0) < 35);
+    } else if (currentTierFilter === "maximum") {
+      displaySchools = displaySchools.filter(s => (s.exposure_pct || 0) < 15);
+      displayHospitals = displayHospitals.filter(h => (h.exposure_pct || 0) < 10 || h.is_safe);
+    }
 
     if (displaySchools.length === 0 && displayHospitals.length === 0) {
       return;
     }
 
     renderedCount++;
-    const card = document.createElement("div");
-    card.className = "district-group-card";
 
     let badgeClass = "badge-info";
     let badgeLabel = "[SIAGA DINI]";
@@ -2148,8 +2506,11 @@ function renderDistrictHierarchy(schools, hospitals, filterMode = "all") {
     }
 
     const summaryParts = [];
-    if (d.schools.length > 0) summaryParts.push(`${d.schools.length} Sekolah`);
-    if (d.hospitals.length > 0) summaryParts.push(`${d.hospitals.length} Faskes`);
+    if (displaySchools.length > 0) summaryParts.push(`${displaySchools.length} Sekolah`);
+    if (displayHospitals.length > 0) summaryParts.push(`${displayHospitals.length} Faskes`);
+
+    const card = document.createElement("div");
+    card.className = "district-group-card";
 
     let bodyHtml = "";
 
@@ -2263,7 +2624,16 @@ function renderDistrictHierarchy(schools, hospitals, filterMode = "all") {
   });
 
   if (renderedCount === 0) {
-    container.innerHTML = `<div class="empty-state">Tidak ada fasilitas yang cocok dengan filter yang dipilih.</div>`;
+    let tierText = currentTierFilter === "minimum" ? "Sangat Tinggi (P90)" : (currentTierFilter === "mid" ? "Sedang (P50)" : (currentTierFilter === "maximum" ? "Ringan / Dikit (P05)" : ""));
+    let filterMsg = tierText ? `tingkat bahaya <strong>${tierText}</strong>` : "kriteria filter";
+    container.innerHTML = `
+      <div class="empty-state" style="padding: 18px 12px; text-align: center;">
+        Tidak ada fasilitas publik di ${filterMsg}.<br>
+        <button type="button" class="d-chip-btn" style="margin-top: 10px; display: inline-block;" onclick="setTierFilter('all')">
+          Tampilkan Semua Tingkat Wilayah
+        </button>
+      </div>
+    `;
   }
 }
 
@@ -2878,6 +3248,10 @@ function initDrawerTabs() {
 }
 
 function switchDrawerTab(tabId) {
+  // Aliaskan tab lama ke tab terpadu baru jika terpanggil
+  if (tabId === "tabPaneSchools" || tabId === "tabPaneEvac" || tabId === "tabPaneHealth") {
+    tabId = "tabPaneImpact";
+  }
   document.querySelectorAll(".d-tab-btn").forEach(b => b.classList.remove("active"));
   document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
   const activeBtn = document.querySelector(`.d-tab-btn[data-tab='${tabId}']`);
@@ -2934,6 +3308,13 @@ function setupCustomPointMode() {
   }
 
   map.on("click", (e) => {
+    // Reset kontur seleksi putih HANYA jika klik dilakukan di luar area poligon abu/asap
+    if (selectedPlumeLayer && !isCustomPointMode) {
+      applyPlumeHighlight(selectedPlumeLayer, false);
+      selectedPlumeLayer = null;
+      const zoneBanner = document.getElementById("selectedZoneBanner");
+      if (zoneBanner) zoneBanner.style.display = "none";
+    }
     if (!isCustomPointMode) return;
     customPointCoords = { lat: e.latlng.lat, lng: e.latlng.lng };
     if (customPointMarker) {

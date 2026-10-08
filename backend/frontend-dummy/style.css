@@ -1652,6 +1652,55 @@ body.enterprise-magma {
 .ispu-sangattidaksehat { background: #dc2626; color: #fff; }
 .ispu-berbahaya { background: #7f1d1d; color: #fff; }
 
+/* ==========================================================================
+   Leaflet Focus & Vector Outline Reset
+   Menghilangkan kotak batas / outline fokus default browser (Chrome/Edge)
+   saat poligon sebaran abu/asap atau fitur interaktif diklik pada peta
+   ========================================================================== */
+.leaflet-container path:focus,
+.leaflet-container path:focus-visible,
+.leaflet-container svg:focus,
+.leaflet-container svg:focus-visible,
+.leaflet-container:focus,
+.leaflet-container:focus-visible,
+.leaflet-pane > svg path:focus,
+.leaflet-pane > svg path:focus-visible,
+.leaflet-pane > svg path.leaflet-interactive:focus,
+.leaflet-pane > svg path.leaflet-interactive:focus-visible,
+.leaflet-interactive:focus,
+.leaflet-interactive:focus-visible,
+path.leaflet-interactive:focus,
+path.leaflet-interactive:focus-visible,
+path:focus,
+path:focus-visible,
+svg:focus,
+svg:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* ==========================================================================
+   Plume Atmospheric Contours & Dynamic Selected Highlight
+   Menampilkan kontur putih tegas berpendar mengikuti lekukan sebaran saat zona diklik
+   ========================================================================== */
+.plume-polygon-tier {
+  transition: stroke 0.18s ease, stroke-width 0.18s ease, stroke-opacity 0.18s ease, fill-opacity 0.18s ease;
+  stroke-linejoin: round !important;
+  stroke-linecap: round !important;
+}
+
+path.plume-selected-contour,
+svg.leaflet-zoom-animated path.plume-selected-contour,
+.leaflet-pane > svg path.plume-selected-contour,
+.plume-selected-contour {
+  stroke: #ffffff !important;
+  stroke-width: 3.2px !important;
+  stroke-opacity: 1 !important;
+  stroke-dasharray: none !important;
+  filter: none !important;
+  animation: none !important;
+}
+
 /* Custom Leaflet Dark Popups */
 .leaflet-popup-content-wrapper {
   background: #181f1b !important;
