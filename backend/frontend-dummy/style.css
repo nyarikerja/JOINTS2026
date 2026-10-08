@@ -2470,3 +2470,27 @@ svg.leaflet-zoom-animated path.plume-selected-contour,
   border-color: #475569;
   color: #94a3b8;
 }
+
+.jump-time-btn {
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+  font-size: 9.5px;
+  font-family: inherit;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-left: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  line-height: 1.3;
+}
+
+.jump-time-btn:hover {
+  background: rgba(56, 189, 248, 0.28);
+  border-color: #38bdf8;
+  color: #ffffff;
+}

@@ -17,6 +17,7 @@ let hotspotsLayer = null;
 let volcanoesLayer = null;
 let forestsLayer = null;
 let currentHourlyTiersCache = {};
+let currentSelectedHour = 12;
 let timePlayInterval = null;
 let allVolcanoesData = [];
 
@@ -1328,6 +1329,175 @@ function loadHotspots() {
 // =============================================================================
 let _facilitiesMoveHandlerAttached = false;
 
+function pointInGeoJSONGeometry(lat, lon, geometry) {
+  if (!geometry || !geometry.coordinates) return false;
+
+  function pointInRing(x, y, ring) {
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const xi = ring[i][0], yi = ring[i][1];
+      const xj = ring[j][0], yj = ring[j][1];
+      const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  }
+
+  function pointInPolygonCoords(x, y, rings) {
+    if (!rings || rings.length === 0) return false;
+    if (!pointInRing(x, y, rings[0])) return false;
+    for (let h = 1; h < rings.length; h++) {
+      if (pointInRing(x, y, rings[h])) return false;
+    }
+    return true;
+  }
+
+  const x = lon;
+  const y = lat;
+
+  if (geometry.type === "Polygon") {
+    return pointInPolygonCoords(x, y, geometry.coordinates);
+  } else if (geometry.type === "MultiPolygon") {
+    for (const polyRings of geometry.coordinates) {
+      if (pointInPolygonCoords(x, y, polyRings)) return true;
+    }
+    return false;
+  }
+  return false;
+}
+window.pointInGeoJSONGeometry = pointInGeoJSONGeometry;
+
+function renderImpactedFacilitiesOnMap() {
+  const toggleEl = document.getElementById("layerToggleFacilities");
+  if (facilitiesLayer && map.hasLayer(facilitiesLayer)) {
+    map.removeLayer(facilitiesLayer);
+    facilitiesLayer = null;
+  }
+  if (toggleEl && !toggleEl.checked) return;
+  if (!cachedImpactedFacilities) return;
+
+  const hourGeo = currentHourlyTiersCache[currentSelectedHour];
+  const markers = [];
+
+  // 1. Sekolah di Jalur Bahaya pada jam T aktif
+  const schools = cachedImpactedFacilities.schools || [];
+  schools.forEach(sch => {
+    // a. Harus sudah tiba sebelum atau pada jam aktif ini
+    if (sch.arrival_time_earliest_h !== null && sch.arrival_time_earliest_h !== undefined) {
+      if (sch.arrival_time_earliest_h > currentSelectedHour) return;
+    } else {
+      return;
+    }
+
+    const expPct = sch.exposure_pct || 0;
+    if (expPct < 5) return; // Eksklusif hanya fasilitas yang benar-benar terpapar!
+
+    // b. Filter berdasarkan tingkat bahaya terpilih / sebaran awan jam T aktif
+    if (currentTierFilter === "minimum") {
+      if (expPct < 90) return;
+      if (selectedPlumeGeometry && !pointInGeoJSONGeometry(sch.latitude, sch.longitude, selectedPlumeGeometry)) return;
+    } else if (currentTierFilter === "mid") {
+      if (expPct < 50 || expPct >= 90) return;
+      if (selectedPlumeGeometry && !pointInGeoJSONGeometry(sch.latitude, sch.longitude, selectedPlumeGeometry)) return;
+    } else if (currentTierFilter === "maximum") {
+      if (expPct < 5 || expPct >= 50) return;
+      if (selectedPlumeGeometry && !pointInGeoJSONGeometry(sch.latitude, sch.longitude, selectedPlumeGeometry)) return;
+    } else {
+      // currentTierFilter === 'all'
+      if (hourGeo && hourGeo.features && hourGeo.features.length > 0) {
+        const insideAny = hourGeo.features.some(f => pointInGeoJSONGeometry(sch.latitude, sch.longitude, f.geometry));
+        if (!insideAny) return;
+      }
+    }
+
+    let markerColor = "#fbbf24"; // Siaga Dini (P05)
+    if (expPct >= 90) markerColor = "#ef4444"; // Sangat Tinggi (P90)
+    else if (expPct >= 50) markerColor = "#f59e0b"; // Waspada (P50)
+
+    const m = L.circleMarker([sch.latitude, sch.longitude], {
+      radius: 6,
+      fillColor: markerColor,
+      color: "#ffffff",
+      weight: 1.8,
+      opacity: 1.0,
+      fillOpacity: 0.95
+    });
+
+    const earlyText = sch.arrival_time_earliest_h !== null && sch.arrival_time_earliest_h !== undefined
+      ? `T + ${sch.arrival_time_earliest_h} jam`
+      : "-";
+
+    m.bindTooltip(
+      `<strong>[${sch.alert_level || 'SEKOLAH'}] ${sch.name}</strong><br>` +
+      `<small>Peluang Abu: <b>${sch.exposure_pct}%</b> &bull; Estimasi Tiba: <b>${earlyText}</b></small><br>` +
+      `<span style="color:#38bdf8;font-size:9.5px;">Klik untuk evaluasi aksi SPAB</span>`,
+      { direction: "top", sticky: true }
+    );
+
+    m.on("click", (e) => {
+      if (e && e.stopPropagation) e.stopPropagation();
+      selectFacility(sch.facility_id);
+    });
+
+    markers.push(m);
+  });
+
+  // 2. Faskes / RS Rujukan Evakuasi Aman
+  const hospitals = cachedImpactedFacilities.evacuation_referral_hospitals || [];
+  hospitals.forEach(h => {
+    // Jika zona bahaya tertentu diklik, JANGAN gambar RS aman (RS aman ada di luar zona bahaya!)
+    if (currentTierFilter && currentTierFilter !== "all") {
+      if (h.is_safe) return;
+      if (selectedPlumeGeometry && !pointInGeoJSONGeometry(h.latitude, h.longitude, selectedPlumeGeometry)) return;
+      if (currentTierFilter === "minimum" && (h.exposure_pct || 0) < 90) return;
+      if (currentTierFilter === "mid" && ((h.exposure_pct || 0) < 50 || (h.exposure_pct || 0) >= 90)) return;
+      if (currentTierFilter === "maximum" && ((h.exposure_pct || 0) < 5 || (h.exposure_pct || 0) >= 50)) return;
+    } else {
+      // currentTierFilter === 'all':
+      if (!h.is_safe) {
+        if ((h.exposure_pct || 0) < 5) return;
+        if (h.arrival_time_earliest_h !== null && h.arrival_time_earliest_h > currentSelectedHour) return;
+        if (hourGeo && hourGeo.features && hourGeo.features.length > 0) {
+          const insideAny = hourGeo.features.some(f => pointInGeoJSONGeometry(h.latitude, h.longitude, f.geometry));
+          if (!insideAny) return;
+        }
+      }
+    }
+
+    const markerRadius = h.is_safe ? 6.5 : 5.5;
+    const markerColor = h.is_safe ? "#0284c7" : ((h.exposure_pct || 0) >= 90 ? "#ef4444" : "#f59e0b");
+
+    const m = L.circleMarker([h.latitude, h.longitude], {
+      radius: markerRadius,
+      fillColor: markerColor,
+      color: h.is_safe ? "#38bdf8" : "#ffffff",
+      weight: 2.0,
+      opacity: 1.0,
+      fillOpacity: 0.90
+    });
+
+    m.bindTooltip(
+      `<strong>🏥 ${h.name}</strong><br>` +
+      `<small style="color:${h.badge_color || '#38bdf8'};font-weight:700;">${h.status_badge || '[RUJUKAN]'}</small><br>` +
+      `<small>${h.distance_from_epicenter_km} km dari episentrum &bull; Hotline: ${h.emergency_hotline}</small>`,
+      { direction: "top", sticky: true }
+    );
+
+    m.on("click", (e) => {
+      if (e && e.stopPropagation) e.stopPropagation();
+      selectFacility(h.facility_id);
+    });
+
+    markers.push(m);
+  });
+
+  facilitiesLayer = L.layerGroup(markers);
+  if (!toggleEl || toggleEl.checked) {
+    facilitiesLayer.addTo(map);
+  }
+}
+window.renderImpactedFacilitiesOnMap = renderImpactedFacilitiesOnMap;
+
 function loadFacilities() {
   const toggleEl = document.getElementById("layerToggleFacilities");
   if (toggleEl && !toggleEl.checked) {
@@ -1337,60 +1507,17 @@ function loadFacilities() {
     return;
   }
 
-  // Ambil koordinat kotak layar (BBOX) dan zoom level peta
-  const b = map.getBounds();
-  const z = map.getZoom();
-  const bbox = `${b.getWest().toFixed(4)},${b.getSouth().toFixed(4)},${b.getEast().toFixed(4)},${b.getNorth().toFixed(4)}`;
+  // Jika simulasi sedang aktif, HANYA tampilkan fasilitas terdampak dan RS rujukan aman!
+  // Menjamin fasilitas yang berada di luar daerah bahaya TIDAK AKAN PERNAH muncul sebagai titik di peta!
+  if (currentRunId && cachedImpactedFacilities) {
+    renderImpactedFacilitiesOnMap();
+    return;
+  }
 
-  fetch(`${API_BASE}/layers/facilities?bbox=${bbox}&zoom=${z}&limit=250`)
-    .then(r => r.json())
-    .then(geo => {
-      if (facilitiesLayer && map.hasLayer(facilitiesLayer)) {
-        map.removeLayer(facilitiesLayer);
-      }
-
-      facilitiesLayer = L.geoJSON(geo, {
-        pointToLayer: (feature, latlng) => {
-          const type = feature.properties.facility_type;
-          let color = "#3b82f6"; // Rumah Sakit / Puskesmas
-          if (type === "school") color = "#10b981"; // Sekolah
-          if (type === "airport") color = "#f59e0b"; // Bandara
-
-          return L.circleMarker(latlng, {
-            radius: 5,
-            fillColor: color,
-            color: "#ffffff",
-            weight: 1.2,
-            opacity: 1,
-            fillOpacity: 0.85
-          });
-        },
-        onEachFeature: (feature, layer) => {
-          layer.on("click", () => {
-            selectFacility(feature.properties.facility_id);
-          });
-          layer.bindTooltip(`${feature.properties.name} (${feature.properties.facility_type})`, {
-            direction: "top"
-          });
-        }
-      });
-
-      if (!toggleEl || toggleEl.checked) {
-        facilitiesLayer.addTo(map);
-      }
-
-      // Pasang handler pan/zoom otomatis jika belum terpasang
-      if (!_facilitiesMoveHandlerAttached) {
-        _facilitiesMoveHandlerAttached = true;
-        map.on("moveend", () => {
-          const tEl = document.getElementById("layerToggleFacilities");
-          if (!tEl || tEl.checked) {
-            loadFacilities();
-          }
-        });
-      }
-    })
-    .catch(err => console.error("Gagal memuat facilities:", err));
+  // Jika belum ada simulasi aktif: jangan gambar titik acak yang membingungkan
+  if (facilitiesLayer && map.hasLayer(facilitiesLayer)) {
+    map.removeLayer(facilitiesLayer);
+  }
 }
 
 // Kartu Keputusan Fasilitas Publik
@@ -1417,12 +1544,12 @@ function selectFacility(facilityId) {
       const early = data.arrival_time_earliest_h !== null ? `T + ${Math.round(data.arrival_time_earliest_h)} jam` : "Aman (Di luar jejak)";
       const likely = data.arrival_time_most_likely_h !== null ? `T + ${Math.round(data.arrival_time_most_likely_h)} jam` : "-";
 
-      let recText = "[NORMAL] Pantau arah angin dan perkembangan sebaran secara berkala.";
-      if (probPercent >= 40) {
+      let recText = "[SIAGA DINI] Pantau arah angin dan perkembangan kualitas udara secara berkala.";
+      if (probPercent >= 90) {
         recText = data.facility_type === 'school' 
           ? "<strong>[SIAGA TINGGI] SEGERA ALIHKAN KE PJJ DARING:</strong> Pulangkan siswa atau instruksikan belajar dari rumah sebelum abu tiba. Seluruh warga sekolah wajib memakai <strong>Masker Respirator N95/KN95</strong>."
           : "<strong>[SIAGA DARURAT FASKES]</strong> Siapkan ruang isolasi berfilter HEPA dan cadangan tabung O2 medis untuk lonjakan pasien ISPA/asma.";
-      } else if (probPercent >= 15) {
+      } else if (probPercent >= 50) {
         recText = data.facility_type === 'school'
           ? "<strong>[WASPADA] HENTIKAN AKTIVITAS OUTDOOR:</strong> Dilarang olahraga dan upacara di luar kelas. Siapkan masker N95 di UKS."
           : "<strong>[WASPADA FASKES]</strong> Pastikan stok nebulizer dan masker partikulat siap siaga.";
@@ -1432,7 +1559,7 @@ function selectFacility(facilityId) {
         <div class="decision-card-active">
           <div class="decision-name">[FASILITAS] ${data.name} (${data.facility_type.toUpperCase()})</div>
           <div class="decision-row"><span>Wilayah / Kabupaten:</span><span class="mono">${data.district}</span></div>
-          <div class="decision-row"><span>Peluang Terpapar:</span><strong class="mono" style="color:${probPercent > 50 ? '#ef4444' : (probPercent > 20 ? '#f59e0b' : '#10b981')}">${probPercent}%</strong></div>
+          <div class="decision-row"><span>Peluang Terpapar:</span><strong class="mono" style="color:${probPercent >= 90 ? '#ef4444' : (probPercent >= 50 ? '#f59e0b' : '#10b981')}">${probPercent}%</strong></div>
           <div class="decision-row"><span>Waktu Tiba Tercepat:</span><span class="mono">${early}</span></div>
           <div class="decision-row"><span>Waktu Tiba Paling Mungkin:</span><span class="mono">${likely}</span></div>
           <div style="margin-top:8px;padding:7px;background:rgba(2,132,199,0.12);border-left:3px solid #0284c7;border-radius:4px;">
@@ -1451,6 +1578,8 @@ function selectFacility(facilityId) {
 // 6. Poligon Peluang Tiga Tingkat (P90 Inti, P50 Sedang, P5 Jangkauan Maks)
 // =============================================================================
 function updateTiersOnMap(hour) {
+  currentSelectedHour = hour;
+
   if (currentHourlyTiersCache[hour]) {
     renderTiersGeoJSON(currentHourlyTiersCache[hour]);
     return;
@@ -1620,7 +1749,9 @@ function renderTiersGeoJSON(geo) {
 
         // 2. Beri highlight garis tepi putih yang tegas persis mengikuti lekukan bentuk zona yang diklik
         selectedPlumeLayer = layer;
+        selectedPlumeGeometry = layer.feature ? layer.feature.geometry : null;
         applyPlumeHighlight(layer, true);
+        renderImpactedFacilitiesOnMap();
 
         // 3. Arahkan laci analitik secara presisi ke zona terpilih & daftar fasilitas
         focusDrawerOnZone(props.tier, tierLabel);
@@ -1630,9 +1761,46 @@ function renderTiersGeoJSON(geo) {
 
   // Perbarui seluruh legenda sebaran
   updatePlumeLegend(currentHazard);
+
+  // Sinkronkan layer seleksi aktif untuk jam ini
+  if (currentTierFilter && currentTierFilter !== "all") {
+    const sub = getTiersSublayers();
+    const target = currentTierFilter === "minimum" ? sub.min[0] : (currentTierFilter === "mid" ? sub.mid[0] : sub.max[0]);
+    if (target) {
+      selectedPlumeLayer = target;
+      selectedPlumeGeometry = target.feature ? target.feature.geometry : null;
+      applyPlumeHighlight(target, true);
+    } else {
+      selectedPlumeLayer = null;
+      selectedPlumeGeometry = null;
+      applyPlumeHighlight(null, false);
+    }
+  } else {
+    selectedPlumeLayer = null;
+    selectedPlumeGeometry = null;
+  }
+
+  // Perbarui titik fasilitas di peta dan daftar di laci sesuai jam ini
+  renderImpactedFacilitiesOnMap();
+  if (cachedImpactedFacilities) {
+    renderDistrictHierarchy(
+      cachedImpactedFacilities.schools || [],
+      cachedImpactedFacilities.evacuation_referral_hospitals || [],
+      currentDistrictFilter
+    );
+  }
+
+  const zoneBanner = document.getElementById("selectedZoneBanner");
+  if (zoneBanner && currentTierFilter !== "all") {
+    const activeHrEl = document.getElementById("zoneBannerActiveHour");
+    if (activeHrEl) {
+      activeHrEl.textContent = `Jam T+${currentSelectedHour < 10 ? '0' : ''}${currentSelectedHour}:00`;
+    }
+  }
 }
 
 let selectedPlumeLayer = null;
+let selectedPlumeGeometry = null;
 
 function getLayerTier(target) {
   if (!target) return "max";
@@ -1847,7 +2015,7 @@ function focusDrawerOnZone(tierKey, tierLabel) {
     const isFire = currentHazard === "fire";
     let tierColor = "#fbbf24";
     let tierBadge = isFire ? "[SIAGA DINI] Haze Tipis (P05)" : "[SIAGA DINI] Debu Halus (P05)";
-    let tierProb = "Peluang Paparan 5% - 14% (Dikit / Ringan)";
+    let tierProb = "Peluang Paparan 5% - 49% (Siaga Dini)";
     let tierDesc = isFire
       ? "Wilayah sebaran kabut asap tipis tertiup angin (terkena dikit/ringan). Pemantauan indeks kualitas udara berkala & faskes rujukan aman."
       : "Wilayah sebaran abu halus tertiup angin troposfer (terkena dikit/ringan). Pemantauan indeks kualitas udara berkala & RS rujukan aman.";
@@ -1860,7 +2028,7 @@ function focusDrawerOnZone(tierKey, tierLabel) {
     } else if (tierKey === "mid") {
       tierColor = "#f59e0b";
       tierBadge = isFire ? "[WASPADA TINGGI] Kabut Asap (P50)" : "[WASPADA TINGGI] Debu Sedang (P50)";
-      tierProb = "Peluang Paparan ≥ 50% (Sedang)";
+      tierProb = "Peluang Paparan 50% - 89% (Waspada Sedang)";
       tierDesc = "Zona sebaran partikel lebat (terkena sedang). Pembatasan aktivitas luar ruangan siswa, pembagian masker, triase faskes penyangga.";
     }
 
@@ -1875,7 +2043,7 @@ function focusDrawerOnZone(tierKey, tierLabel) {
         </div>
         <p style="font-size: 11px; color: #d1d5db; line-height: 1.45; margin: 0 0 6px 0;">${tierDesc}</p>
         <div style="font-size: 10.5px; color: #38bdf8; font-weight: 600;">
-          Daftar kecamatan &amp; fasilitas di bawah telah difilter khusus pada zona ini:
+          Daftar kecamatan &amp; fasilitas di bawah otomatis tersinkronisasi pada <span id="zoneBannerActiveHour">Jam T+${currentSelectedHour < 10 ? '0' : ''}${currentSelectedHour}:00</span>:
         </div>
       </div>
     `;
@@ -2353,10 +2521,23 @@ function setTierFilter(tierKey) {
   if (tierKey === "all") {
     const zoneBanner = document.getElementById("selectedZoneBanner");
     if (zoneBanner) zoneBanner.style.display = "none";
-    if (selectedPlumeLayer) {
-      applyPlumeHighlight(null, false);
+    selectedPlumeLayer = null;
+    selectedPlumeGeometry = null;
+    applyPlumeHighlight(null, false);
+    renderImpactedFacilitiesOnMap();
+  } else if (currentTiersLayer) {
+    const sub = getTiersSublayers();
+    const target = tierKey === "minimum" ? sub.min[0] : (tierKey === "mid" ? sub.mid[0] : sub.max[0]);
+    if (target) {
+      selectedPlumeLayer = target;
+      selectedPlumeGeometry = target.feature ? target.feature.geometry : null;
+      applyPlumeHighlight(target, true);
+    } else {
       selectedPlumeLayer = null;
+      selectedPlumeGeometry = null;
+      applyPlumeHighlight(null, false);
     }
+    renderImpactedFacilitiesOnMap();
   }
   if (cachedImpactedFacilities) {
     renderDistrictHierarchy(
@@ -2377,6 +2558,7 @@ function loadImpactedFacilities() {
       renderSchoolsList(data.schools || []);
       renderEvacHospitalsList(data.evacuation_referral_hospitals || []);
       renderDistrictHierarchy(data.schools || [], data.evacuation_referral_hospitals || [], currentDistrictFilter);
+      renderImpactedFacilitiesOnMap();
     })
     .catch(err => console.error("Gagal muat fasilitas terdampak:", err));
 }
@@ -2405,16 +2587,26 @@ function initDistrictFilterButtons() {
     btn.addEventListener("click", () => {
       const tierVal = btn.getAttribute("data-tier") || "all";
       setTierFilter(tierVal);
-      if (tierVal === "all") {
-        applyPlumeHighlight(null, false);
-        selectedPlumeLayer = null;
-      } else {
-        selectedPlumeLayer = tierVal;
-        applyPlumeHighlight(tierVal, true);
-      }
     });
   });
 }
+
+function jumpToArrivalHour(hour, coords) {
+  const slider = document.getElementById("timeSlider");
+  const timeDisp = document.getElementById("timeDisplay");
+  const val = Math.max(0, Math.min(48, Math.round(hour)));
+  if (slider) {
+    slider.value = val;
+  }
+  if (timeDisp) {
+    timeDisp.textContent = `T + ${val < 10 ? '0' : ''}${val}:00 Jam`;
+  }
+  updateTiersOnMap(val);
+  if (coords && map) {
+    map.flyTo(coords, 12, { duration: 0.9 });
+  }
+}
+window.jumpToArrivalHour = jumpToArrivalHour;
 
 function renderDistrictHierarchy(schools, hospitals, filterMode = "all") {
   const container = document.getElementById("districtHierarchyContainer");
@@ -2428,6 +2620,57 @@ function renderDistrictHierarchy(schools, hospitals, filterMode = "all") {
     container.innerHTML = `<div class="empty-state">Tidak ada sekolah atau fasilitas kesehatan di zona risiko paparan &ge; 5%.</div>`;
     return;
   }
+
+  const hourGeo = currentHourlyTiersCache[currentSelectedHour];
+
+  // Helper verifikasi apakah fasilitas terpapar di jam T aktif dan tier terpilih
+  function isFacilityExposedAtActiveHour(fac, isHospital = false) {
+    if (isHospital && fac.is_safe) {
+      // RS rujukan aman hanya ditampilkan jika filter tier = 'all'
+      return currentTierFilter === "all";
+    }
+
+    // 1. Cek waktu tiba: asap/abu harus sudah tiba sebelum atau pada jam aktif ini
+    if (fac.arrival_time_earliest_h !== null && fac.arrival_time_earliest_h !== undefined) {
+      if (fac.arrival_time_earliest_h > currentSelectedHour) return false;
+    } else {
+      return false;
+    }
+
+    const expPct = fac.exposure_pct || 0;
+    if (expPct < 5) return false;
+
+    // 2. Filter berdasarkan tingkat bahaya aktif
+    if (currentTierFilter === "minimum") {
+      if (expPct < 90) return false;
+      if (selectedPlumeGeometry) {
+        return pointInGeoJSONGeometry(fac.latitude, fac.longitude, selectedPlumeGeometry);
+      }
+      return true;
+    } else if (currentTierFilter === "mid") {
+      if (expPct < 50 || expPct >= 90) return false;
+      if (selectedPlumeGeometry) {
+        return pointInGeoJSONGeometry(fac.latitude, fac.longitude, selectedPlumeGeometry);
+      }
+      return true;
+    } else if (currentTierFilter === "maximum") {
+      if (expPct < 5 || expPct >= 50) return false;
+      if (selectedPlumeGeometry) {
+        return pointInGeoJSONGeometry(fac.latitude, fac.longitude, selectedPlumeGeometry);
+      }
+      return true;
+    } else {
+      // currentTierFilter === 'all'
+      if (hourGeo && hourGeo.features && hourGeo.features.length > 0) {
+        return hourGeo.features.some(f => pointInGeoJSONGeometry(fac.latitude, fac.longitude, f.geometry));
+      }
+      return true;
+    }
+  }
+
+  // Filter fasilitas sesuai jam aktif dan tier
+  const activeSchools = safeSchools.filter(s => isFacilityExposedAtActiveHour(s, false));
+  const activeHospitals = safeHospitals.filter(h => isFacilityExposedAtActiveHour(h, true));
 
   // Kelompokkan spasial berdasarkan Kecamatan
   const districtMap = new Map();
@@ -2448,7 +2691,7 @@ function renderDistrictHierarchy(schools, hospitals, filterMode = "all") {
     return districtMap.get(norm);
   }
 
-  safeSchools.forEach(sch => {
+  activeSchools.forEach(sch => {
     const dObj = getOrInitDistrict(sch.district);
     dObj.schools.push(sch);
     if ((sch.exposure_pct || 0) > dObj.maxExposure) {
@@ -2456,7 +2699,7 @@ function renderDistrictHierarchy(schools, hospitals, filterMode = "all") {
     }
   });
 
-  safeHospitals.forEach(h => {
+  activeHospitals.forEach(h => {
     const dObj = getOrInitDistrict(h.district);
     dObj.hospitals.push(h);
     if ((h.exposure_pct || 0) > dObj.maxExposure) {
@@ -2473,22 +2716,6 @@ function renderDistrictHierarchy(schools, hospitals, filterMode = "all") {
     let displaySchools = filterMode === "hospitals" ? [] : d.schools;
     let displayHospitals = filterMode === "schools" ? [] : d.hospitals;
 
-    // Filter fasilitas dan kecamatan berdasarkan tingkat bahaya terpilih (currentTierFilter)
-    // 3 Tingkatan Bahaya:
-    // - minimum (P90 / Sangat Tinggi): paparan >= 40% (sekolah mandat PJJ / RS zona bahaya)
-    // - mid (P50 / Sedang): 15% <= paparan < 40% (sekolah waspada outdoor / faskes triase penyangga)
-    // - maximum (P05 / Ringan / Dikit): paparan < 15% (sekolah siaga dini / faskes rujukan bebas paparan)
-    if (currentTierFilter === "minimum") {
-      displaySchools = displaySchools.filter(s => (s.exposure_pct || 0) >= 40);
-      displayHospitals = displayHospitals.filter(h => (h.exposure_pct || 0) >= 35);
-    } else if (currentTierFilter === "mid") {
-      displaySchools = displaySchools.filter(s => (s.exposure_pct || 0) >= 15 && (s.exposure_pct || 0) < 40);
-      displayHospitals = displayHospitals.filter(h => (h.exposure_pct || 0) >= 10 && (h.exposure_pct || 0) < 35);
-    } else if (currentTierFilter === "maximum") {
-      displaySchools = displaySchools.filter(s => (s.exposure_pct || 0) < 15);
-      displayHospitals = displayHospitals.filter(h => (h.exposure_pct || 0) < 10 || h.is_safe);
-    }
-
     if (displaySchools.length === 0 && displayHospitals.length === 0) {
       return;
     }
@@ -2497,10 +2724,10 @@ function renderDistrictHierarchy(schools, hospitals, filterMode = "all") {
 
     let badgeClass = "badge-info";
     let badgeLabel = "[SIAGA DINI]";
-    if (d.maxExposure >= 40) {
+    if (d.maxExposure >= 90) {
       badgeClass = "badge-danger";
       badgeLabel = "[SIAGA TINGGI]";
-    } else if (d.maxExposure >= 15) {
+    } else if (d.maxExposure >= 50) {
       badgeClass = "badge-warning";
       badgeLabel = "[WASPADA]";
     }
@@ -2526,7 +2753,7 @@ function renderDistrictHierarchy(schools, hospitals, filterMode = "all") {
 
       displaySchools.forEach(sch => {
         const early = sch.arrival_time_earliest_h !== null && sch.arrival_time_earliest_h !== undefined ? `T + ${sch.arrival_time_earliest_h} jam` : "-";
-        const probColor = (sch.exposure_pct || 0) >= 50 ? "#ef4444" : ((sch.exposure_pct || 0) >= 20 ? "#f59e0b" : "#10b981");
+        const probColor = (sch.exposure_pct || 0) >= 90 ? "#ef4444" : ((sch.exposure_pct || 0) >= 50 ? "#f59e0b" : "#10b981");
 
         let evacSnippet = "";
         if (sch.nearest_safe_hospital) {
@@ -2549,9 +2776,10 @@ function renderDistrictHierarchy(schools, hospitals, filterMode = "all") {
               <span class="fac-item-name">${sch.name}</span>
               <span class="fac-item-badge" style="background:${sch.badge_color || '#ef4444'}">${sch.alert_level}</span>
             </div>
-            <div class="fac-item-meta">
+            <div class="fac-item-meta" style="flex-wrap:wrap;gap:6px;align-items:center;">
               <span>Peluang Abu: <strong style="color:${probColor}">${sch.exposure_pct}%</strong></span>
               <span>Estimasi Tiba: <strong>${early}</strong></span>
+              <span style="font-size:10px; color:#38bdf8; background:rgba(56,189,248,0.12); padding:1px 6px; border-radius:3px;">Aktif di Jam T+${currentSelectedHour}:00</span>
             </div>
             <div class="fac-item-action">
               <strong>Arahan Dini:</strong> ${sch.action_detail}
@@ -2624,16 +2852,25 @@ function renderDistrictHierarchy(schools, hospitals, filterMode = "all") {
   });
 
   if (renderedCount === 0) {
-    let tierText = currentTierFilter === "minimum" ? "Sangat Tinggi (P90)" : (currentTierFilter === "mid" ? "Sedang (P50)" : (currentTierFilter === "maximum" ? "Ringan / Dikit (P05)" : ""));
+    let tierText = currentTierFilter === "minimum" ? "Inti Bahaya Ekstrem (P90 ≥ 90%)" : (currentTierFilter === "mid" ? "Area Waspada (P50: 50%–89%)" : (currentTierFilter === "maximum" ? "Siaga Dini (P05: 5%–49%)" : ""));
     let filterMsg = tierText ? `tingkat bahaya <strong>${tierText}</strong>` : "kriteria filter";
     container.innerHTML = `
       <div class="empty-state" style="padding: 18px 12px; text-align: center;">
-        Tidak ada fasilitas publik di ${filterMsg}.<br>
+        <div style="font-weight:600;color:#38bdf8;margin-bottom:6px;">Status pada Jam T+${currentSelectedHour}:00</div>
+        Tidak ada fasilitas publik di ${filterMsg} pada jam ini.<br>
         <button type="button" class="d-chip-btn" style="margin-top: 10px; display: inline-block;" onclick="setTierFilter('all')">
           Tampilkan Semua Tingkat Wilayah
         </button>
       </div>
     `;
+  } else {
+    const statusHeader = document.createElement("div");
+    statusHeader.style.cssText = "display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:6px 10px;background:rgba(255,255,255,0.05);border-radius:6px;font-size:11px;border-left:3px solid #38bdf8;";
+    statusHeader.innerHTML = `
+      <span>Posisi Awan: <strong style="color:#38bdf8;">Jam T+${currentSelectedHour}:00</strong></span>
+      <span style="color:#94a3b8;">${renderedCount} Kecamatan &bull; ${activeSchools.length} Sekolah</span>
+    `;
+    container.prepend(statusHeader);
   }
 }
 
@@ -3312,8 +3549,8 @@ function setupCustomPointMode() {
     if (selectedPlumeLayer && !isCustomPointMode) {
       applyPlumeHighlight(selectedPlumeLayer, false);
       selectedPlumeLayer = null;
-      const zoneBanner = document.getElementById("selectedZoneBanner");
-      if (zoneBanner) zoneBanner.style.display = "none";
+      selectedPlumeGeometry = null;
+      setTierFilter("all");
     }
     if (!isCustomPointMode) return;
     customPointCoords = { lat: e.latlng.lat, lng: e.latlng.lng };
