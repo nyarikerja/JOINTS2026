@@ -407,22 +407,68 @@ def get_exposed_facilities_list(
             ]
             eval_hospitals = same_landmass_hospitals if same_landmass_hospitals else hospital_eval_list
 
-            nearest_h = None
-            min_dist = float("inf")
-            nearest_safe_h = None
-            min_safe_dist = float("inf")
+            # Cari RS terdekat & RS rujukan aman minim dampak untuk evakuasi korban sekolah ini
+            # Menolak evakuasi yang memindahkan ambulans semakin dekat ke kawah aktif / menembus KRB pekat
+            fac_lat = fac["latitude"]
+            fac_lon = fac["longitude"]
+            fac_to_center = haversine_km(fac_lat, fac_lon, c_lat, c_lon)
+
+            best_safe_h = None
+            best_safe_score = float("inf")
+            nearest_any_h = None
+            min_any_dist = float("inf")
 
             for h in eval_hospitals:
-                dist = haversine_km(fac["latitude"], fac["longitude"], h["latitude"], h["longitude"])
-                if dist < min_dist:
-                    min_dist = dist
-                    nearest_h = {**h, "distance_km": round(dist, 1)}
-                if h["is_safe"] and dist < min_safe_dist:
-                    min_safe_dist = dist
-                    nearest_safe_h = {**h, "distance_km": round(dist, 1)}
+                h_lat = h["latitude"]
+                h_lon = h["longitude"]
+                dist = haversine_km(fac_lat, fac_lon, h_lat, h_lon)
+                h_to_center = haversine_km(h_lat, h_lon, c_lat, c_lon)
+                h_prob = h.get("exposure_probability", 0.0)
 
-            item["nearest_hospital"] = nearest_h
-            target_evac = nearest_safe_h or nearest_h
+                if dist < min_any_dist:
+                    min_any_dist = dist
+                    nearest_any_h = {**h, "distance_km": round(dist, 1)}
+
+                # Sampel 7 titik di koridor untuk memeriksa apakah jalur mendekati kawah aktif
+                corridor_min_crater = min(
+                    haversine_km(
+                        fac_lat + (i / 6.0) * (h_lat - fac_lat),
+                        fac_lon + (i / 6.0) * (h_lon - fac_lon),
+                        c_lat,
+                        c_lon
+                    )
+                    for i in range(7)
+                )
+
+                # 1. Penalti Incursion Kawah: Rute dilarang memindahkan ambulans mendekati kawah aktif (< 12 km)
+                crater_penalty = 0.0
+                if corridor_min_crater < 12.0:
+                    crater_penalty += (12.0 - corridor_min_crater) * 6.0
+                if h_to_center < fac_to_center - 2.0:
+                    crater_penalty += (fac_to_center - h_to_center) * 3.0
+
+                # 2. Penalti Paparan Bahaya RS
+                if h_prob >= 0.35:
+                    exp_penalty = 45.0 + (h_prob * 30.0)
+                elif h_prob >= 0.15:
+                    exp_penalty = h_prob * 10.0
+                else:
+                    exp_penalty = 0.0
+
+                score = dist + crater_penalty + exp_penalty
+
+                if score < best_safe_score:
+                    best_safe_score = score
+                    badge_desc = "[RUJUKAN AMAN] Koridor Bebas Bahaya" if h.get("is_safe") else "[TRIASE MINIM DAMPAK] Bebas Radius Bahaya"
+                    best_safe_h = {
+                        **h,
+                        "distance_km": round(dist, 1),
+                        "corridor_min_crater_km": round(corridor_min_crater, 1),
+                        "status_badge": badge_desc
+                    }
+
+            item["nearest_hospital"] = nearest_any_h
+            target_evac = best_safe_h or nearest_any_h
             item["nearest_safe_hospital"] = target_evac
             if target_evac:
                 item["evacuation_protocol"] = (
