@@ -49,6 +49,7 @@ def start_simulation(req: SimulationRequest):
     meta_file = event_dir / "meta.json"
 
     # 1. Muat metadata kejadian (Otomatis bangun metadata jika event berasal dari katalog nasional atau titik kustom)
+    event_meta = None
     if meta_file.exists():
         event_meta = json.loads(meta_file.read_text(encoding="utf-8-sig"))
     else:

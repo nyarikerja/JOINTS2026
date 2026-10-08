@@ -377,9 +377,9 @@ def get_exposed_facilities_list(
             "arrival_time_most_likely_h": round(likely_h, 1) if likely_h is not None else None,
         }
 
-        # Rekomendasi aksi operasional pencegahan & evakuasi
+        # Rekomendasi aksi operasional pencegahan & evakuasi (sinkron dengan tier P90, P50, P05)
         if ftype == "school":
-            if prob >= 0.40:
+            if prob >= 0.90:
                 item["alert_level"] = "SIAGA TINGGI"
                 item["badge_color"] = "#ef4444"
                 item["recommendation"] = "ALIHKAN KE PJJ DARING (BELAJAR DARI RUMAH)"
@@ -387,7 +387,7 @@ def get_exposed_facilities_list(
                     f"Hentikan KBM tatap muka. Pulangkan siswa sebelum T+{item['arrival_time_earliest_h'] or 'segera'} jam "
                     f"atau alihkan langsung ke daring. Amankan ruang kelas dan tutup ventilasi."
                 )
-            elif prob >= 0.15:
+            elif prob >= 0.50:
                 item["alert_level"] = "WASPADA"
                 item["badge_color"] = "#f59e0b"
                 item["recommendation"] = "HENTIKAN AKTIVITAS LUAR RUANG (OUTDOOR)"
@@ -417,17 +417,22 @@ def get_exposed_facilities_list(
             best_safe_score = float("inf")
             nearest_any_h = None
             min_any_dist = float("inf")
+            # Cari RS rujukan aman terdekat (prioritaskan 100% RS yang berstatus is_safe == True)
+            safe_pool = [h for h in eval_hospitals if h.get("is_safe")]
+            search_pool = safe_pool if safe_pool else eval_hospitals
 
             for h in eval_hospitals:
+                dist = haversine_km(fac_lat, fac_lon, h["latitude"], h["longitude"])
+                if dist < min_any_dist:
+                    min_any_dist = dist
+                    nearest_any_h = {**h, "distance_km": round(dist, 1)}
+
+            for h in search_pool:
                 h_lat = h["latitude"]
                 h_lon = h["longitude"]
                 dist = haversine_km(fac_lat, fac_lon, h_lat, h_lon)
                 h_to_center = haversine_km(h_lat, h_lon, c_lat, c_lon)
                 h_prob = h.get("exposure_probability", 0.0)
-
-                if dist < min_any_dist:
-                    min_any_dist = dist
-                    nearest_any_h = {**h, "distance_km": round(dist, 1)}
 
                 # Sampel 7 titik di koridor untuk memeriksa apakah jalur mendekati kawah aktif
                 corridor_min_crater = min(
@@ -480,7 +485,7 @@ def get_exposed_facilities_list(
             schools.append(item)
 
         elif ftype == "healthcare":
-            if prob >= 0.40:
+            if prob >= 0.90:
                 item["alert_level"] = "SIAGA DARURAT"
                 item["badge_color"] = "#ef4444"
                 item["recommendation"] = "SIAPKAN RUANG ISOLASI & NEBULIZER ISPA"
@@ -488,11 +493,16 @@ def get_exposed_facilities_list(
                     f"Siapkan stok cadangan O2 dan obat pernapasan sebelum T+{item['arrival_time_earliest_h'] or 'segera'} jam. "
                     f"Wajibkan APD masker N95 untuk seluruh nakes dan pasien."
                 )
-            else:
+            elif prob >= 0.50:
                 item["alert_level"] = "WASPADA FASKES"
                 item["badge_color"] = "#f59e0b"
                 item["recommendation"] = "INVENTARISASI LOGISTIK PERNAPASAN"
                 item["action_detail"] = "Pastikan masker medis partikulat dan nebulizer siap operasi."
+            else:
+                item["alert_level"] = "SIAGA DINI FASKES"
+                item["badge_color"] = "#10b981"
+                item["recommendation"] = "MONITORING POSKO KESEHATAN"
+                item["action_detail"] = "Kesiapsiagaan pemantauan keluhan pernapasan warga berkala."
             healthcare.append(item)
 
         else:
