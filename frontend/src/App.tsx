@@ -55,6 +55,7 @@ export const App: React.FC = () => {
   const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; _t: number } | null>(null);
   const [resetViewTrigger, setResetViewTrigger] = useState<number>(0);
   const [isMapReady, setIsMapReady] = useState<boolean>(false);
+  const [selectedEventName, setSelectedEventName] = useState<string>("G. Anak Krakatau");
 
   // Ambil poligon sebaran jam tertentu saat activeRunId aktif atau currentHour berubah
   React.useEffect(() => {
@@ -141,7 +142,9 @@ export const App: React.FC = () => {
       const simRes = await api.runSimulation(payload);
       const runId = simRes.run_id;
       setActiveRunId(runId);
-      setSimulatedEventName(simRes.scenario_label || activeEventId);
+      
+      // Gunakan selectedEventName karena backend hanya mengembalikan "kejadian observasi" tanpa nama gunung
+      setSimulatedEventName(selectedEventName || simRes.scenario_label || activeEventId);
 
       setProgressText("Mengekstrak kontur poligon & dampak populasi...");
       setLoadingProgress(85);
@@ -370,6 +373,7 @@ export const App: React.FC = () => {
           onHazardChange={handleHazardChange}
           eventId={eventId}
           onEventChange={handleEventChange}
+          onEventNameChange={setSelectedEventName}
           mode={mode}
           onModeChange={setMode}
           overrides={overrides}

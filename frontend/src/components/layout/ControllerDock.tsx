@@ -10,6 +10,7 @@ interface ControllerDockProps {
   onHazardChange: (hazard: HazardType) => void;
   eventId: string;
   onEventChange: (eventId: string) => void;
+  onEventNameChange?: (name: string) => void;
   mode: ModelingMode;
   onModeChange: (mode: ModelingMode) => void;
   overrides: SimulationOverrides;
@@ -26,6 +27,7 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
   onHazardChange,
   eventId,
   onEventChange,
+  onEventNameChange,
   mode,
   onModeChange,
   overrides,
@@ -151,6 +153,16 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
 
     return items;
   }, [hazard, selectedRegion, volcanoGroups, forestGroups]);
+
+  React.useEffect(() => {
+    if (onEventNameChange) {
+      const selected = eventItems.find((i) => String(i.id) === eventId);
+      if (selected) {
+        const nameOnly = selected.label.split(" • ")[0];
+        onEventNameChange(nameOnly);
+      }
+    }
+  }, [eventId, eventItems, onEventNameChange]);
 
   return (
     <div
