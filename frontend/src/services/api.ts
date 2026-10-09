@@ -58,6 +58,7 @@ export const api = {
   getValidation: (eventId: string) => request<ValidationResponse>(`/validation/${eventId}`),
   getTiersAtHour: (runId: string, hour: number) => request<any>(`/runs/${runId}/tiers?t=${hour}`),
   getHealthGuidance: (runId: string) => request<any>(`/runs/${runId}/health-guidance`),
+  getEmergencyAdvisory: (runId: string) => request<any>(`/runs/${runId}/emergency-advisory`),
   getEvents: () => request<any>("/events"),
   getNationalForests: () => request<any>("/layers/forests"),
   playDemo: (eventId: string) => request<any>(`/demo/play/${eventId}`)
