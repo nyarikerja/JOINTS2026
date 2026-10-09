@@ -63,6 +63,9 @@
       <a href="#hasil"><i aria-hidden="true">06</i>Keluaran</a>
       <a href="#sumber"><i aria-hidden="true">07</i>Rujukan</a>
     </nav>
+    <button class="audio-btn" id="audioBtn" type="button" aria-pressed="false" aria-label="Nyalakan suara suasana alam" title="Nyalakan suara alam">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path class="spk" d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path class="wv wv1" d="M15.5 9.2a4 4 0 0 1 0 5.6"/><path class="wv wv2" d="M18.2 6.6a7.6 7.6 0 0 1 0 10.8"/><path class="mute" d="M15.5 9.5l5 5M20.5 9.5l-5 5"/></svg>
+    </button>
     <a class="nav-cta" href="#coba">Jalankan simulasi<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
     <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="navLinks" aria-label="Buka menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16M4 16h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg></button>
     <span class="progress" id="progress" aria-hidden="true"></span>
@@ -346,6 +349,7 @@
 
 <script src="vendor/lenis.min.js"></script>
 <script src="vendor/three.min.js"></script>
+<script src="js/audio.js"></script>
 <script src="js/page.js"></script>
 <script src="js/folk.js"></script>
 <script src="js/scene.js"></script>

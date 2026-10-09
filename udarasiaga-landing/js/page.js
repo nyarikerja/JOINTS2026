@@ -28,8 +28,21 @@
   /* ---------- mode lihat lanskap ---------- */
   var vbtn=$('#viewBtn');
   function setFocus(on){document.body.classList.toggle('focus',on);vbtn.setAttribute('aria-pressed',on?'true':'false');vbtn.querySelector('span').textContent=on?'Tampilkan konten':'Lihat lanskap';}
-  vbtn.addEventListener('click',function(){setFocus(!document.body.classList.contains('focus'));});
+  vbtn.addEventListener('click',function(){if(window.HLAudio)window.HLAudio.playClick();setFocus(!document.body.classList.contains('focus'));});
   addEventListener('keydown',function(e){if(e.key==='Escape')setFocus(false);});
+
+  /* ---------- kontrol audio suasana ---------- */
+  var aBtn=$('#audioBtn');
+  if(aBtn){
+    aBtn.addEventListener('click',function(){
+      if(!window.HLAudio)return;
+      var on=window.HLAudio.toggle();
+      aBtn.setAttribute('aria-pressed',on?'true':'false');
+      aBtn.classList.toggle('playing',on);
+      aBtn.setAttribute('aria-label',on?'Matikan suara suasana alam':'Nyalakan suara suasana alam');
+      aBtn.title=on?'Matikan suara alam':'Nyalakan suara alam';
+    });
+  }
 
   /* ---------- menu HP ---------- */
   var mBtn=$('#menuBtn'),mNav=$('#navLinks');
@@ -89,6 +102,7 @@
     var a=ev.target.closest&&ev.target.closest('a[href^="#"]');if(!a)return;
     var id=a.getAttribute('href').slice(1),t=id&&document.getElementById(id);if(!t)return;
     if(a.closest('#rail')){
+      if(window.HLAudio)window.HLAudio.playClick();
       a.classList.remove('clicked');
       void a.offsetWidth;
       a.classList.add('clicked');
@@ -128,6 +142,7 @@
     T.scene=e<.5?A.scene:B.scene;
     var near=e<.5?idx:j;if(near!==curIdx){curIdx=near;onScene(items[near]);}
     var max=document.documentElement.scrollHeight-innerHeight;US.prog=max>0?Math.min(1,scrollY/max):0;
+    if(window.HLAudio&&window.HLAudio.isPlaying())window.HLAudio.update(T);
   }
 
   /* ---------- rail ikon suasana + chip jam ---------- */

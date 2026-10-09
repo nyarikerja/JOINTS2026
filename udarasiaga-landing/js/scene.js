@@ -987,7 +987,7 @@
     camera.rotateZ(roll);
     var fv=0;
     if(!reduce&&S.storm>.5){
-      if(time>nextFlash){flash=1;nextFlash=time+1.4+Math.random()*3.6;strike();}
+      if(time>nextFlash){flash=1;nextFlash=time+1.4+Math.random()*3.6;strike();if(window.HLAudio)window.HLAudio.thunder(S.storm);}
       flash*=Math.exp(-dt*6);fv=flash*(.65+.35*Math.sin(time*90));
     }else{flash*=Math.exp(-dt*10);fv=flash*.6;}
     skyU.uFlash.value=fv;boltM.opacity=Math.min(1,fv*1.4);shared.uFlash.value=fv*S.storm;
