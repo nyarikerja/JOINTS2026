@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HelaLoka Indonesia | Peringatan dini abu vulkanik dan asap karhutla</title>
+<meta name="description" content="HelaLoka memodelkan sebaran abu vulkanik dan asap kebakaran lahan dari data pemantauan resmi, lalu menerjemahkannya menjadi prioritas tindakan untuk sekolah, fasilitas kesehatan, dan warga.">
+<meta name="theme-color" content="#16302A">
+<meta property="og:type" content="website"><meta property="og:locale" content="id_ID"><meta property="og:site_name" content="HelaLoka Indonesia">
+<meta property="og:title" content="HelaLoka Indonesia"><meta property="og:description" content="Model dispersi ensemble untuk abu vulkanik dan asap karhutla, diterjemahkan menjadi prioritas tindakan di lapangan.">
+<meta property="og:image" content="og-image.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="HelaLoka Indonesia, sistem peringatan aksi dini multi-bahaya">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="HelaLoka Indonesia"><meta name="twitter:description" content="Model dispersi ensemble untuk abu vulkanik dan asap karhutla, diterjemahkan menjadi prioritas tindakan di lapangan."><meta name="twitter:image" content="og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 21C3 9 12 3 21 3c0 9-6 18-18 18z' fill='%2316302A'/%3E%3Cpath d='M5 19 15 9' stroke='%23E7B566' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"HelaLoka Indonesia","inLanguage":"id","description":"Model dispersi ensemble untuk abu vulkanik dan asap kebakaran lahan di Indonesia, diterjemahkan menjadi prioritas tindakan bagi sekolah, fasilitas kesehatan, dan warga."}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=Manrope:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=Manrope:wght@400;500;600;700&display=swap"></noscript>
+<link rel="stylesheet" href="css/style.css">
+<script>document.documentElement.classList.add('js')</script>
+</head>
+<body>
+<a class="skip" href="#konten">Lewati ke konten</a>
+<noscript><p style="position:relative;z-index:50;margin:0;padding:10px 16px;background:#16302A;color:#FBF4E4;text-align:center">Animasi dan simulasi memerlukan JavaScript. Seluruh teks dan rujukan tetap dapat dibaca.</p></noscript>
+
+<canvas id="gl" aria-hidden="true"></canvas>
+<nav class="rail" id="rail" aria-label="Suasana halaman"></nav>
+<div class="wclock" id="wclock" aria-hidden="true"><svg viewBox="-62 -62 124 124">
+  <defs>
+    <radialGradient id="wcFace" cx="38%" cy="32%" r="75%"><stop offset="0" stop-color="#FFFBF0"/><stop offset=".7" stop-color="#F3EAD2"/><stop offset="1" stop-color="#E2D3AE"/></radialGradient>
+    <linearGradient id="wcRim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8C6A43"/><stop offset=".5" stop-color="#5E4128"/><stop offset="1" stop-color="#3B2818"/></linearGradient>
+    <path id="wcLeaf" d="M0 0C-3.6-2.2-6.4-6.6-4.6-10.6-3.4-13.2-1.2-13.4 0-15.6 1.2-13.4 3.4-13.2 4.6-10.6 6.4-6.6 3.6-2.2 0 0Z"/>
+  </defs>
+  <circle r="49" fill="url(#wcRim)"/><circle r="45.5" class="wc-face" fill="url(#wcFace)"/>
+  <circle r="45.5" fill="none" stroke="rgba(60,40,20,.25)" stroke-width="1"/>
+  <g id="wcT"></g><g id="wcV"></g>
+  <g id="wcH"><path d="M-2 6L-1.4-15Q0-17.5 1.4-15L2 6Z" fill="#4A3220"/><use href="#wcLeaf" class="wc-lf" transform="translate(0 -15) scale(.62)"/></g>
+  <g id="wcM"><path d="M-1.2 8L-.6-27L.6-27L1.2 8Z" fill="#3B2818"/><use href="#wcLeaf" class="wc-lf2" transform="translate(0 -26) scale(.5)"/></g>
+  <circle r="4" fill="#3B2818"/><g class="wc-bud"><circle r="2.3"/></g>
+</svg></div>
+<div class="scene-chip" id="sceneChip" aria-hidden="true"><i class="sc-ic"></i><time id="wcL">06.54</time><span>Fajar</span></div>
+
+<div class="annot" id="annot" aria-hidden="true">
+  <div class="co" data-a="plume"><i></i><span><b>Kolom erupsi</b><em id="coKm">sekitar 5,0 km di atas kawah</em></span></div>
+  <div class="co" data-a="lava"><i></i><span><b>Guguran lava pijar</b><em>mengikuti alur lembah di lereng</em></span></div>
+  <div class="co" data-a="mud"><i></i><span><b>Lahar hujan</b><em>endapan abu terbawa aliran air</em></span></div>
+  <div class="co" data-a="lake"><i></i><span><b>Sumber air warga</b><em>rentan tercemar endapan abu</em></span></div>
+  <div class="co" data-a="fire"><i></i><span><b>Titik panas</b><em>terdeteksi satelit VIIRS</em></span></div>
+</div>
+
+<header class="nav" id="nav">
+  <div class="nav-in">
+    <a class="brand" href="#beranda" aria-label="HelaLoka Indonesia, ke atas">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21C3 9 12 3 21 3c0 9-6 18-18 18z" fill="#E7B566"/><path d="M5 19 15 9M9 15h4M11 13V9" stroke="#16302A" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span class="brand-t">HelaLoka<small>Indonesia</small></span>
+    </a>
+    <nav class="nav-links" id="navLinks" aria-label="Navigasi utama">
+      <span class="nav-pill" aria-hidden="true"></span>
+      <a href="#erupsi"><i aria-hidden="true">02</i>Abu vulkanik</a>
+      <a href="#karhutla"><i aria-hidden="true">03</i>Asap karhutla</a>
+      <a href="#coba"><i aria-hidden="true">04</i>Simulasi</a>
+      <a href="#cara-kerja"><i aria-hidden="true">05</i>Metode</a>
+      <a href="#hasil"><i aria-hidden="true">06</i>Keluaran</a>
+      <a href="#sumber"><i aria-hidden="true">07</i>Rujukan</a>
+    </nav>
+    <button class="audio-btn" id="audioBtn" type="button" aria-pressed="false" aria-label="Nyalakan suara suasana alam" title="Nyalakan suara alam">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path class="spk" d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path class="wv wv1" d="M15.5 9.2a4 4 0 0 1 0 5.6"/><path class="wv wv2" d="M18.2 6.6a7.6 7.6 0 0 1 0 10.8"/><path class="mute" d="M15.5 9.5l5 5M20.5 9.5l-5 5"/></svg>
+    </button>
+    <a class="nav-cta" href="#coba">Jalankan simulasi<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+    <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="navLinks" aria-label="Buka menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16M4 16h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg></button>
+    <span class="progress" id="progress" aria-hidden="true"></span>
+  </div>
+</header>
+
+<main id="konten">
+  <!-- 00 · beranda (fajar) -->
+  <section id="beranda" class="sec hero" data-label="Beranda" data-scene="sunrise" data-ash=".12" data-smoke="0" data-fire="0" data-lava=".5" data-ext=".35" data-mud="0" data-sl="Fajar">
+    <div class="wrap">
+      <div class="hero-copy">
+        <p class="kicker">JOINTS UGM 2026 · Peringatan aksi dini multi-bahaya</p>
+        <h1><span class="h1a">HelaLoka</span><span class="h1b">Indonesia</span></h1>
+        <p class="lede">HelaLoka memodelkan sebaran abu vulkanik dan asap kebakaran lahan dari data pemantauan resmi, lalu menerjemahkannya menjadi daftar wilayah, sekolah, dan fasilitas kesehatan yang perlu bersiap lebih dulu.</p>
+        <div class="cta">
+          <a class="btn fill" href="#coba">Jalankan simulasi <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-5-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          <a class="btn ghost" href="#hasil">Lihat contoh keluaran</a>
+        </div>
+      </div>
+      <ul class="facts" data-speed=".05">
+        <li class="leaf sm rv"><b data-count="70">70</b><span>gunung api Tipe A dalam katalog PVMBG</span></li>
+        <li class="leaf sm r rv"><b data-count="36">36</b><span>kawasan hutan dan gambut rawan terbakar</span></li>
+        <li class="leaf sm r rv"><b data-count="100" data-suffix=" m">100 m</b><span>resolusi grid kependudukan untuk menghitung paparan</span></li>
+        <li class="leaf sm rv"><b>P5–P95</b><span>rentang ketidakpastian pada setiap estimasi dampak</span></li>
+      </ul>
+    </div>
+    <p class="cue" aria-hidden="true">Gulir<i></i></p>
+  </section>
+
+  <!-- 01 · latar -->
+  <section id="masalah" class="sec" data-norail="1" data-label="Latar" data-scene="sunrise" data-ash=".12" data-smoke="0" data-fire="0" data-lava=".5" data-ext=".35" data-mud="0" data-sl="Fajar">
+    <div class="wrap">
+      <header class="shead">
+        <div class="mist" aria-hidden="true"></div>
+        <span class="num ink-num" aria-hidden="true" data-speed="-.08">01</span>
+        <p class="eyebrow">Latar</p>
+        <h2 class="split">Peringatan sudah terbit, tetapi belum menjawab pertanyaan <em>di lapangan.</em></h2>
+        <p class="lede">Buletin VONA disusun untuk penerbangan. Titik api FIRMS berupa koordinat. Prakiraan angin berbentuk grid. Ketiganya akurat, tetapi tidak satu pun langsung menjawab pertanyaan kepala sekolah, petugas puskesmas, atau warga yang tinggal 20 km dari kawah.</p>
+      </header>
+      <ul class="ask">
+        <li class="leaf rv" data-speed=".03"><p class="who">Kepala sekolah</p><p class="q">“Perlukah kegiatan belajar besok dialihkan ke daring?”</p></li>
+        <li class="leaf r rv" data-speed=".1"><p class="who">Petugas kesehatan</p><p class="q">“Rumah sakit rujukan mana yang berada di luar sebaran abu?”</p></li>
+        <li class="leaf rv" data-speed=".06"><p class="who">Warga</p><p class="q">“Kapan masker kain tidak lagi cukup dan respirator N95 diperlukan?”</p></li>
+      </ul>
+      <ol class="flow rv" aria-label="Alur dari data ke keputusan">
+        <li>
+          <span class="f-tag">01 · Masukan data</span>
+          <b>Data pemantauan</b>
+          <small>VONA · FIRMS · angin · penduduk</small>
+        </li>
+        <li class="arr" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></li>
+        <li class="mid">
+          <span class="f-tag">02 · Pemrosesan</span>
+          <b>Model dispersi ensemble</b>
+          <small>Integrasi Lagrangian · HelaLoka</small>
+        </li>
+        <li class="arr" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></li>
+        <li>
+          <span class="f-tag">03 · Aksi mitigasi</span>
+          <b>Prioritas tindakan</b>
+          <small>Sekolah · rute rujukan · respirator</small>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <div class="vista" aria-hidden="true" data-scene="noon" data-ash="1" data-smoke="0" data-fire="0" data-lava="1" data-ext="1" data-mud="0" data-sl="Siang">
+    <div class="band"><div class="band-in" data-band>PVMBG <b>·</b> VONA <b>·</b> NASA FIRMS <b>·</b> VIIRS <b>·</b> Open-Meteo <b>·</b> WorldPop <b>·</b> OpenStreetMap <b>·</b> Mastin 2009 <b>·</b> Wooster 2005 <b>·</b></div></div>
+    <p class="vcap"><time>12.00</time><span>Siang</span><em>Kolom abu naik dari kawah</em></p>
+  </div>
+
+  <!-- 02 · abu vulkanik (siang) -->
+  <section id="erupsi" class="sec" data-label="Abu vulkanik" data-scene="noon" data-ash="1" data-smoke="0" data-fire="0" data-lava="1" data-ext="1" data-mud="0" data-sl="Siang">
+    <div class="wrap">
+      <span class="num" aria-hidden="true" data-speed="-.1">02</span>
+      <article class="panel stone dark rv">
+        <p class="eyebrow">Abu vulkanik</p>
+        <h2 class="split">Dari tinggi kolom abu ke <em>laju erupsi massa</em></h2>
+        <p>Tinggi kolom pada buletin VONA dikonversi menjadi laju erupsi massa dengan relasi empiris Mastin dkk. (2009). Massa tersebut kemudian dibagi ke ribuan paket partikel yang diadveksi oleh medan angin.</p>
+        <div class="ctl">
+          <label for="km">Tinggi kolom di atas kawah <output id="kmOut" for="km">5,0 km</output></label>
+          <input id="km" type="range" min="1" max="15" step="0.5" value="5">
+          <div class="row"><button class="btn" id="windBtn" type="button">Angin bertiup ke timur</button></div>
+        </div>
+        <p class="read" id="merOut" aria-live="polite"></p>
+        <p class="note">Skenario hipotetis untuk ilustrasi. Nilai dihitung dari persamaan, bukan dari pengamatan.</p>
+      </article>
+    </div>
+  </section>
+
+  <div class="vista" id="kemarau" data-rail="1" data-label="Kemarau" aria-hidden="true" data-scene="autumn" data-ash=".05" data-smoke="0" data-fire="0" data-lava=".3" data-ext=".3" data-mud="0" data-sl="Kemarau"><p class="vcap"><time>15.12</time><span>Kemarau</span><em>Vegetasi meranggas, lahan gambut mengering</em></p></div>
+  <div class="vista" aria-hidden="true" data-scene="sunset" data-ash=".2" data-smoke="1" data-fire="1" data-lava=".55" data-ext=".55" data-mud="0" data-sl="Senja"><p class="vcap"><time>17.12</time><span>Senja</span><em>Kabut asap menutup lembah</em></p></div>
+
+  <!-- 03 · asap karhutla (senja) -->
+  <section id="karhutla" class="sec" data-label="Asap karhutla" data-scene="sunset" data-ash=".2" data-smoke="1" data-fire="1" data-lava=".55" data-ext=".55" data-mud="0" data-sl="Senja">
+    <div class="wrap">
+      <span class="num" aria-hidden="true" data-speed="-.1">03</span>
+      <div class="duo">
+        <article class="panel ember dark rv">
+          <p class="eyebrow">Asap kebakaran lahan</p>
+          <h2 class="split">Emisi PM2.5 diestimasi dari <em>daya radiasi api</em></h2>
+          <p>Setiap titik panas VIIRS dari NASA FIRMS membawa nilai Fire Radiative Power (FRP). Nilai itu dikonversi menjadi biomassa terbakar dengan koefisien Wooster dkk. (2005), lalu dikalikan faktor 2,34 untuk lahan gambut tropis sebelum asapnya dilepas ke model angin.</p>
+          <p class="note">Contoh ilustratif untuk lanskap gambut Riau, Sumatera Selatan, Kalimantan, dan Papua.</p>
+        </article>
+        <aside class="side leaf r rv" data-speed=".08">
+          <p class="eyebrow">Uji intervensi</p>
+          <button class="btn" id="fireBtn" type="button" aria-pressed="false">Padamkan 5 titik api terbesar</button>
+          <p class="read" id="fireOut" aria-live="polite"></p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <div class="vista" aria-hidden="true" data-scene="night" data-ash=".9" data-smoke=".15" data-fire=".5" data-lava="1" data-ext=".9" data-mud="0" data-sl="Malam"><p class="vcap"><time>23.00</time><span>Malam</span><em>Lontaran material pijar dari kawah</em></p></div>
+
+  <!-- 04 · simulasi (malam) -->
+  <section id="coba" class="sec" data-label="Simulasi" data-scene="night" data-ash=".15" data-smoke=".15" data-fire=".5" data-lava="1" data-ext=".9" data-mud="0" data-sl="Malam">
+    <div class="wrap">
+      <span class="num" aria-hidden="true" data-speed="-.1">04</span>
+      <article class="panel sheet paper wide rv">
+        <span class="fold" aria-hidden="true"></span>
+        <p class="eyebrow">Simulasi · mode titik bebas</p>
+        <h2 class="split">Coba model ensemble <em>secara langsung</em></h2>
+        <p class="lede">Klik peta untuk memindahkan sumber erupsi, atau fokuskan peta lalu gunakan tombol panah. Model menjalankan 24 anggota ensemble dengan gangguan angin acak dan integrasi RK2. Warna pada peta menunjukkan proporsi anggota yang mengendapkan abu di setiap sel: 90%, 50%, dan 5%.</p>
+        <div class="sim">
+          <div class="map"><canvas id="sim" role="img" tabindex="0" aria-label="Peta ilustrasi sebaran abu dengan zona 90%, 50%, dan 5%, sekolah, dan rumah sakit. Tombol panah memindahkan sumber abu." aria-describedby="simRead"></canvas></div>
+          <div>
+            <div class="dayctl">
+              <label for="sDir">Angin bertiup menuju <output id="sDirO" for="sDir">Timur</output></label>
+              <input id="sDir" type="range" min="0" max="359" step="1" value="80">
+              <label for="sSpd">Kecepatan angin <output id="sSpdO" for="sSpd">18 km/jam</output></label>
+              <input id="sSpd" type="range" min="5" max="40" step="1" value="18">
+              <label for="sH">Tinggi kolom abu <output id="sHO" for="sH">5,0 km</output></label>
+              <input id="sH" type="range" min="1" max="15" step="0.5" value="5">
+              <div class="row">
+                <button class="btn ghost" id="sSeed" type="button">Ulangi ensemble</button>
+                <button class="btn ghost" id="sShare" type="button">Salin tautan skenario</button>
+              </div>
+              <p class="share-msg" id="sShareMsg" aria-live="polite"></p>
+            </div>
+            <div class="legend">
+              <span class="chip"><i style="background:#93403A"></i>Zona 90% · inti</span>
+              <span class="chip"><i style="background:#C9584A"></i>Zona 50% · median</span>
+              <span class="chip"><i style="background:#E7B566"></i>Zona 5% · jangkauan terjauh</span>
+            </div>
+            <p class="simread" id="simRead" aria-live="polite"></p>
+          </div>
+        </div>
+        <div class="decide leaf">
+          <h3>Prioritas sekolah</h3>
+          <p class="decide-sub">Tiga sekolah dengan peluang paparan tertinggi pada run ini. Kode huruf mengacu pada label di peta.</p>
+          <div class="dwrap"><table class="dtab" id="simTable">
+            <thead><tr><th scope="col">Sekolah</th><th scope="col">Peluang abu</th><th scope="col">Tiba (median)</th><th scope="col">Tercepat</th><th scope="col">Tindakan</th></tr></thead>
+            <tbody></tbody>
+          </table></div>
+        </div>
+        <p class="note">Ilustrasi konseptual pada peta skematik 240 km. Lokasi sekolah dan rumah sakit adalah contoh, dan hasilnya bukan peringatan resmi.</p>
+      </article>
+    </div>
+  </section>
+
+  <div class="vista" aria-hidden="true" data-scene="rain" data-ash=".05" data-smoke="0" data-fire="0" data-lava=".6" data-ext=".75" data-mud="1" data-sl="Hujan"><p class="vcap"><time>08.30</time><span>Hujan</span><em>Endapan abu di lereng menjadi ancaman lahar</em></p></div>
+
+  <!-- 05 · metode (hujan) -->
+  <section id="cara-kerja" class="sec" data-label="Metode" data-scene="rain" data-ash=".05" data-smoke="0" data-fire="0" data-lava=".6" data-ext=".75" data-mud="1" data-sl="Hujan">
+    <div class="wrap">
+      <span class="num" aria-hidden="true" data-speed="-.1">05</span>
+      <article class="panel leaf paper rv">
+        <p class="eyebrow">Metode</p>
+        <h2 class="split">Empat tahap dari data terbuka <em>ke rekomendasi</em></h2>
+        <p class="lede" style="margin:0">Seluruh tahapan berjalan otomatis, sehingga pengguna di daerah tidak perlu mengolah data mentah sendiri.</p>
+      </article>
+      <div class="vine-wrap">
+      <svg class="stalk" viewBox="0 0 1000 180" preserveAspectRatio="none" aria-hidden="true"><path d="M0 120 C120 40 220 40 300 95 S470 170 560 100 S760 20 850 80 S960 140 1000 90"/></svg>
+      <ol class="vine">
+        <li class="leaf rv" data-speed=".04"><span class="k" aria-hidden="true"></span><h3>Akuisisi data</h3><p>Data PVMBG, NASA FIRMS, Open-Meteo, WorldPop, dan OpenStreetMap diperbarui otomatis tanpa input manual.</p></li>
+        <li class="leaf r rv" data-speed=".1"><span class="k" aria-hidden="true"></span><h3>Simulasi ensemble</h3><p>Aplikasi menjalankan 15 hingga 51 anggota integrasi Lagrangian RK2 dengan perturbasi angin. Demo di halaman ini memakai 24 anggota.</p></li>
+        <li class="leaf rv" data-speed=".06"><span class="k" aria-hidden="true"></span><h3>Analisis paparan</h3><p>Zona 90%, 50%, dan 5% ditumpangkan pada grid penduduk 100 m serta lokasi sekolah dan fasilitas kesehatan.</p></li>
+        <li class="leaf r rv" data-speed=".12"><span class="k" aria-hidden="true"></span><h3>Rekomendasi tindakan</h3><p>Triase sekolah, rute ke rumah sakit di luar sebaran abu, anjuran respirator N95/KN95, dan prioritas pemadaman klaster titik api.</p></li>
+      </ol>
+      </div>
+      <p class="rainnote rv">Hujan lebat mempercepat pencucian abu dari atmosfer, tetapi endapan di lereng dapat memicu lahar hujan. Untuk kondisi ini sistem menerbitkan peringatan sekunder.</p>
+      <ul class="modes">
+        <li class="rv"><b>Otomatis</b><span>Sumber dan parameter diambil dari data resmi terbaru.</span></li>
+        <li class="rv"><b>Skenario</b><span>Ubah tinggi kolom, arah angin, atau curah hujan. Keluaran diberi label hipotetis.</span></li>
+        <li class="rv"><b>Titik bebas</b><span>Jalankan simulasi dari koordinat mana pun di wilayah Indonesia.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="vista" aria-hidden="true" data-scene="storm" data-ash=".25" data-smoke="0" data-fire="0" data-lava=".35" data-ext=".45" data-mud=".6" data-sl="Badai"><p class="vcap"><time>14.00</time><span>Badai</span><em>Petir di bawah awan kumulonimbus</em></p></div>
+
+  <!-- 06 · keluaran (badai) -->
+  <section id="hasil" class="sec" data-label="Keluaran" data-scene="storm" data-ash=".25" data-smoke="0" data-fire="0" data-lava=".35" data-ext=".45" data-mud=".6" data-sl="Badai">
+    <div class="wrap">
+      <span class="num" aria-hidden="true" data-speed="-.1">06</span>
+      <article class="panel leaf r paper wide rv">
+        <p class="badge">Contoh ilustratif · bukan data kejadian</p>
+        <p class="eyebrow">Keluaran</p>
+        <h2 class="split">Estimasi dampak disajikan <em>sebagai rentang</em></h2>
+        <p class="lede">Untuk setiap indikator, aplikasi melaporkan persentil ke-5, ke-50, dan ke-95 dari seluruh anggota ensemble. Rentang ini berbeda dari zona peta, yang menyatakan proporsi anggota yang mengendapkan abu di suatu sel.</p>
+        <div class="res">
+          <div class="e pebble rv" data-speed=".04">
+            <h3>Erupsi · kolom abu 5.000 m</h3>
+            <dl>
+              <dt>Penduduk terpapar</dt><dd>18.500–49.000 <small>jiwa</small></dd>
+              <dt>Sekolah di zona tinggi (≥40%)</dt><dd>6 <small>sekolah · abu tiba paling cepat 3,5 jam</small></dd>
+              <dt>Rumah sakit di luar sebaran</dt><dd>2 <small>rute rujukan terdekat 11,4 km</small></dd>
+            </dl>
+          </div>
+          <div class="k rv" data-speed=".09">
+            <h3>Karhutla gambut · 42 titik api</h3>
+            <dl>
+              <dt>Total FRP</dt><dd>1.340 <small>MW</small></dd>
+              <dt>PM2.5 terlepas</dt><dd>480 <small>ton per hari</small></dd>
+              <dt>Penduduk terpapar</dt><dd>14.000–36.500 <small>jiwa · 11 sekolah</small></dd>
+            </dl>
+          </div>
+        </div>
+        <div class="range rv">
+          <h3>Rentang penduduk terpapar (jiwa)</h3>
+          <div class="rg"><span>Erupsi</span><div class="rtrack"><div class="rbar e" style="left:37%;width:61%"><span>18.500</span><span>49.000</span></div></div></div>
+          <div class="rg"><span>Karhutla</span><div class="rtrack"><div class="rbar k" style="left:28%;width:45%"><span>14.000</span><span>36.500</span></div></div></div>
+          <div class="axis"><span></span><div class="ticks"><span>0</span><span>10.000</span><span>20.000</span><span>30.000</span><span>40.000</span><span>50.000</span></div></div>
+        </div>
+        <p class="note">Pada contoh ini, pemadaman 5 titik api terbesar menurunkan perkiraan paparan penduduk sebesar 41% dan mengeluarkan 6 sekolah dari zona terdampak.</p>
+      </article>
+    </div>
+  </section>
+
+  <div class="vista" aria-hidden="true" data-scene="snow" data-ash="0" data-smoke="0" data-fire="0" data-lava=".05" data-ext=".15" data-mud="0" data-sl="Salju"><p class="vcap"><time>16.30</time><span>Salju</span><em>Kabut dan salju di puncak tinggi, seperti di Puncak Jaya</em></p></div>
+
+  <!-- 07 · rujukan (salju) -->
+  <section id="sumber" class="sec" data-label="Rujukan" data-scene="snow" data-ash="0" data-smoke="0" data-fire="0" data-lava=".05" data-ext=".15" data-mud="0" data-sl="Salju">
+    <div class="wrap">
+      <span class="num ink-num" aria-hidden="true" data-speed="-.1">07</span>
+      <article class="panel stone paper wide rv">
+        <p class="eyebrow">Rujukan</p>
+        <h2 class="split">Data dan metode <em>yang digunakan</em></h2>
+        <ul class="src">
+          <li><span class="tag">Data</span><b>PVMBG, Badan Geologi</b><span class="d">Katalog gunung api Tipe A dan buletin VONA</span></li>
+          <li><span class="tag">Data</span><b>NASA FIRMS</b><span class="d">Titik panas VIIRS dari Suomi-NPP dan NOAA-20</span></li>
+          <li><span class="tag">Data</span><b>Open-Meteo</b><span class="d">Vektor angin dan curah hujan</span></li>
+          <li><span class="tag">Data</span><b>WorldPop dan OpenStreetMap</b><span class="d">Grid penduduk 100 m, sekolah, dan fasilitas kesehatan</span></li>
+          <li class="m"><span class="tag">Metode</span><b>Mastin dkk. (2009)</b><span class="d">M = 140,85 × H<sup>4,15</sup>, dengan M dalam kg/detik dan H dalam km</span></li>
+          <li class="m"><span class="tag">Metode</span><b>Wooster dkk. (2005)</b><span class="d">Estimasi biomassa terbakar dari Fire Radiative Power</span></li>
+        </ul>
+        <div class="notice"><b>Pernyataan.</b> HelaLoka adalah alat estimasi ilmiah untuk pembelajaran, perencanaan kontinjensi, dan kesiapsiagaan. Keluarannya bukan peringatan resmi. Status kedaruratan dan perintah evakuasi mengikuti PVMBG Badan Geologi, BMKG, BNPB, dan BPBD setempat.</div>
+      </article>
+    </div>
+  </section>
+
+  <div class="vista" aria-hidden="true" data-scene="sakura" data-ash="0" data-smoke="0" data-fire="0" data-lava=".05" data-ext=".1" data-mud="0" data-sl="Mekar"><p class="vcap"><time>07.48</time><span>Mekar</span><em>Sakura bermekaran, seperti di Kebun Raya Cibodas</em></p></div>
+
+  <!-- 08 · pengguna (sakura) -->
+  <section id="mulai" class="sec finale" data-label="Pengguna" data-scene="sakura" data-ash="0" data-smoke="0" data-fire="0" data-lava=".05" data-ext=".1" data-mud="0" data-sl="Mekar">
+    <div class="wrap">
+      <span class="num" aria-hidden="true" data-speed="-.1">08</span>
+      <article class="panel petal rv">
+        <p class="eyebrow">Pengguna</p>
+        <h2 class="split">Untuk mereka yang menyiapkan keputusan <em>sebelum status naik</em></h2>
+        <ul class="aud">
+          <li class="leaf sm rv"><b>BPBD dan relawan</b><span>Memetakan wilayah terdampak dan menyusun prioritas sebelum status gunung api berubah.</span></li>
+          <li class="leaf sm r rv"><b>Sekolah dan fasilitas kesehatan</b><span>Memperkirakan waktu kedatangan abu dan memilih rute rujukan yang aman.</span></li>
+          <li class="leaf sm rv"><b>Peneliti dan pelajar</b><span>Menelusuri metode, sumber data, dan ketidakpastian di balik setiap angka.</span></li>
+        </ul>
+        <div class="cta">
+          <a class="btn fill" href="#coba">Jalankan simulasi <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-5-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          <a class="btn ghost" href="#sumber">Baca rujukan</a>
+          <a class="btn ghost" data-link="app" hidden>Buka aplikasi</a>
+          <a class="btn ghost" data-link="repo" hidden>Lihat kode</a>
+          <a class="btn ghost" data-link="email" hidden>Hubungi tim</a>
+        </div>
+      </article>
+    </div>
+  </section>
+</main>
+
+<button class="view-btn" id="viewBtn" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg><span>Lihat lanskap</span></button>
+<footer><p class="foot">HelaLoka Indonesia <span>·</span> JOINTS UGM 2026 <span>·</span> <a href="#beranda">Kembali ke atas</a><small>Estimasi ilmiah, bukan peringatan resmi. Rujuk PVMBG, BMKG, BNPB, dan BPBD.</small></p></footer>
+
+<script src="vendor/lenis.min.js"></script>
+<script src="vendor/three.min.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/page.js"></script>
+<script src="js/folk.js"></script>
+<script src="js/scene.js"></script>
+<script src="js/sim.js"></script>
+</body>
+</html>

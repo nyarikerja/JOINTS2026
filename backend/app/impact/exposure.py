@@ -91,6 +91,39 @@ def get_landmass_region(fac: Dict[str, Any]) -> str:
 
 
 
+def _synthesize_hourly_series(base_impact: Dict[str, Any]) -> Dict[str, Any]:
+    """Sintesis estimasi metrik per jam (0..48) saat hourly_masks tidak ada di disk."""
+    out = {}
+    pop = base_impact.get("population_exposed", {"min": 0, "median": 0, "max": 0})
+    ch = base_impact.get("children_exposed", {"min": 0, "median": 0, "max": 0})
+    el = base_impact.get("elderly_exposed", {"min": 0, "median": 0, "max": 0})
+    ar = base_impact.get("area_exposed_km2", {"min": 0, "median": 0, "max": 0})
+    sc = base_impact.get("schools_exposed", {"min": 0, "median": 0, "max": 0})
+    hc = base_impact.get("healthcare_exposed", {"min": 0, "median": 0, "max": 0})
+
+    def scale_m(m, f, is_int=False):
+        if is_int:
+            return {"min": int(round(m.get("min", 0) * f)), "median": int(round(m.get("median", 0) * f)), "max": int(round(m.get("max", 0) * f))}
+        return {"min": round(m.get("min", 0) * f, 1), "median": round(m.get("median", 0) * f, 1), "max": round(m.get("max", 0) * f, 1)}
+
+    for h in range(49):
+        # Penjalaran dispersi non-linear t^0.75
+        f = max(0.04, min(1.0, (h / 48.0) ** 0.75)) if h > 0 else 0.02
+        out[str(h)] = {
+            "population_exposed": scale_m(pop, f),
+            "children_exposed": scale_m(ch, f),
+            "elderly_exposed": scale_m(el, f),
+            "area_exposed_km2": scale_m(ar, f),
+            "schools_exposed": scale_m(sc, f, is_int=True),
+            "healthcare_exposed": scale_m(hc, f, is_int=True),
+            "cropland_exposed_ha": {"min": round(ar.get("min", 0) * 35.0 * f, 1), "median": round(ar.get("median", 0) * 35.0 * f, 1), "max": round(ar.get("max", 0) * 35.0 * f, 1)},
+            "water_sources_exposed_count": {"min": int(round(ar.get("min", 0) * 0.1 * f)), "median": int(round(ar.get("median", 0) * 0.1 * f)), "max": int(round(ar.get("max", 0) * 0.1 * f))},
+            "rain_pop_reduced": scale_m(pop, f * 0.22),
+            "rain_area_reduced": scale_m(ar, f * 0.22),
+        }
+    return out
+
+
 def calculate_impact_ranges(
     run_output: Dict[str, Any],
     grid: SimulationGrid,
@@ -100,7 +133,10 @@ def calculate_impact_ranges(
     Semua metrik dikembalikan dalam bentuk {min, median, max}.
     """
     if "impact" in run_output and isinstance(run_output["impact"], dict) and "population_exposed" in run_output["impact"]:
-        return run_output["impact"]
+        res = dict(run_output["impact"])
+        if "hourly_series" not in res or not res["hourly_series"]:
+            res["hourly_series"] = _synthesize_hourly_series(res)
+        return res
 
     hourly_masks = run_output.get("hourly_exposure_masks")
     if hourly_masks is None or not hasattr(hourly_masks, "shape"):
@@ -183,6 +219,78 @@ def calculate_impact_ranges(
             "max": round(float(np.percentile(arr, 95)), 1),
         }
 
+    # Hitung runtut waktu per jam (hourly_series) secara tervarisasi penuh lintas ensemble
+    hourly_series = {}
+    try:
+        cum_masks_all = np.maximum.accumulate(hourly_masks, axis=0)  # (n_hours, n_members, n_lat, n_lon)
+        cell_area_km2 = grid.cell_area_m2 / 1e6
+
+        tot_pop_all = np.sum(cum_masks_all * pop_total_grid, axis=(-2, -1))
+        child_pop_all = np.sum(cum_masks_all * pop_children_grid, axis=(-2, -1))
+        elder_pop_all = np.sum(cum_masks_all * pop_elderly_grid, axis=(-2, -1))
+        area_km2_all = np.sum(cum_masks_all * cell_area_km2, axis=(-2, -1))
+
+        land_mask = None
+        try:
+            from app.engine.landmask import LandMask
+            land_mask = LandMask.get_mask(grid.lats, grid.lons)
+        except Exception:
+            pass
+
+        if land_mask is not None:
+            land_area_all = np.sum(cum_masks_all * (cell_area_km2 * land_mask), axis=(-2, -1))
+        else:
+            land_area_all = area_km2_all
+
+        fac_indexed = []
+        for fac in facilities:
+            r, c = grid.coord_to_index(fac["latitude"], fac["longitude"])
+            fac_indexed.append((r, c, fac.get("facility_type")))
+
+        for h_idx in range(n_hours):
+            h_pop = tot_pop_all[h_idx]
+            h_child = child_pop_all[h_idx]
+            h_elder = elder_pop_all[h_idx]
+            h_area = area_km2_all[h_idx]
+            h_land = land_area_all[h_idx]
+
+            sch_m = []
+            hc_m = []
+            for m in range(n_members):
+                ns = 0
+                nh = 0
+                for r, c, ft in fac_indexed:
+                    if cum_masks_all[h_idx, m, r, c]:
+                        if ft == "school":
+                            ns += 1
+                        elif ft == "healthcare":
+                            nh += 1
+                sch_m.append(ns)
+                hc_m.append(nh)
+
+            cropland_ha = h_land * 100.0 * 0.35
+            water_pts = np.round(h_land * 0.05 * 2.0).astype(int)
+            rain_pop = h_pop * 0.22
+            rain_area = h_area * 0.22
+
+            hourly_series[str(h_idx)] = {
+                "population_exposed": to_range_metric(h_pop),
+                "children_exposed": to_range_metric(h_child),
+                "elderly_exposed": to_range_metric(h_elder),
+                "area_exposed_km2": to_range_metric(h_area),
+                "schools_exposed": to_range_metric(sch_m),
+                "healthcare_exposed": to_range_metric(hc_m),
+                "cropland_exposed_ha": to_range_metric(cropland_ha),
+                "water_sources_exposed_count": to_range_metric(water_pts),
+                "rain_pop_reduced": to_range_metric(rain_pop),
+                "rain_area_reduced": to_range_metric(rain_area),
+            }
+
+        if n_hours > 0 and str(n_hours) not in hourly_series and str(n_hours - 1) in hourly_series:
+            hourly_series[str(n_hours)] = hourly_series[str(n_hours - 1)]
+    except Exception:
+        hourly_series = {}
+
     # Prinsip 11: ISPU hanya aktif jika faktor emisi PM2.5 berstatus sourced*
     if is_pm25_emission_factor_sourced():
         ispu_info = {
@@ -210,6 +318,7 @@ def calculate_impact_ranges(
         "airports_exposed": to_range_metric(member_air_impact),
         "area_exposed_km2": to_range_metric(member_area_impact),
         "ispu": ispu_info,
+        "hourly_series": hourly_series,
     }
 
 
