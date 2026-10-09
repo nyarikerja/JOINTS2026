@@ -52,12 +52,10 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
           "Maluku & Papua": []
         };
         features.forEach((f: any) => {
-          // Hanya masukkan gunung yang memiliki skenario simulasi aktif (event_id)
-          if (f.properties?.event_id) {
-            const reg = f.properties?.region || "Lainnya";
-            if (!groups[reg]) groups[reg] = [];
-            groups[reg].push(f);
-          }
+          // Masukkan seluruh 70 katalog gunung api aktif PVMBG nasional
+          const reg = f.properties?.region || "Lainnya";
+          if (!groups[reg]) groups[reg] = [];
+          groups[reg].push(f);
         });
         setVolcanoGroups(groups);
       })
@@ -109,17 +107,31 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
 
     if (hazard === "volcano") {
       const targetRegions = selectedRegion === "ALL" ? Object.keys(currentGroups) : [selectedRegion];
+      const collected: any[] = [];
       targetRegions.forEach((reg) => {
         (currentGroups[reg] || []).forEach((f: any) => {
-          const p = f.properties || f;
-          const id = p.event_id || p.id;
-          if (id) {
-            items.push({
-              id: p.event_id || id,
-              label: p.name
-            });
-          }
+          collected.push(f);
         });
+      });
+
+      // Urutkan: Level tertinggi (Awas/Siaga/Waspada/Normal) terlebih dahulu, lalu nama alfabetis
+      collected.sort((a, b) => {
+        const lvlA = a.properties?.level ?? 1;
+        const lvlB = b.properties?.level ?? 1;
+        if (lvlB !== lvlA) return lvlB - lvlA;
+        return (a.properties?.name || "").localeCompare(b.properties?.name || "");
+      });
+
+      collected.forEach((f: any) => {
+        const p = f.properties || f;
+        const id = p.event_id || p.id;
+        if (id) {
+          const statusSuffix = p.level_name ? ` • ${p.level_name}` : "";
+          items.push({
+            id: p.event_id || id,
+            label: `${p.name}${statusSuffix}`
+          });
+        }
       });
     } else {
       const targetRegions = selectedRegion === "ALL" ? Object.keys(currentGroups) : [selectedRegion];

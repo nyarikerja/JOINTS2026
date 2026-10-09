@@ -12,9 +12,10 @@ interface MapWorkspaceProps {
   eventId: string;
   currentHour: number;
   hourlyTiersCache: Record<string | number, any> | null;
-  evacuationRoute: { origin: [number, number]; dest: [number, number]; label: string } | null;
+  evacuationRoute: { geometry: [number, number][]; label: string; distanceKm?: number; durationMin?: number } | null;
   onSelectEvent: (eventId: string, lat: number, lng: number, radiusKm: number) => void;
   resetViewTrigger: number;
+  flyToTarget?: { lat: number; lng: number; _t: number } | null;
   activeRunId?: string | null;
   isDrawerOpen?: boolean;
   onToggleLegend?: () => void;
@@ -29,6 +30,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
   evacuationRoute,
   onSelectEvent,
   resetViewTrigger,
+  flyToTarget,
   activeRunId,
   isDrawerOpen = false,
   onToggleLegend: _onToggleLegend,
@@ -243,6 +245,17 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
       );
     }
   }, [resetViewTrigger]);
+
+  // FlyTo Handler untuk Fasilitas (Sekolah/RS)
+  useEffect(() => {
+    if (flyToTarget && mapRef.current) {
+      mapRef.current.flyTo(
+        [flyToTarget.lat, flyToTarget.lng],
+        14, // Zoom level 14 untuk melihat detail wilayah fasilitas
+        { duration: 1.2, easeLinearity: 0.25 }
+      );
+    }
+  }, [flyToTarget]);
 
   // Otomatis arahkan kamera peta ke lokasi kejadian terpilih
   const EVENT_COORDS: Record<string, [number, number, number]> = {
@@ -585,15 +598,19 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
 
     if (evacRouteLineRef.current) map.removeLayer(evacRouteLineRef.current);
 
-    if (evacuationRoute) {
-      evacRouteLineRef.current = L.polyline([evacuationRoute.origin, evacuationRoute.dest], {
+    if (evacuationRoute && evacuationRoute.geometry.length > 0) {
+      evacRouteLineRef.current = L.polyline(evacuationRoute.geometry, {
         color: "#8AD6D1",
-        weight: 3,
-        dashArray: "6, 8",
+        weight: 4,
         opacity: 0.95
       }).addTo(map);
 
-      evacRouteLineRef.current.bindTooltip(`Rute Evakuasi: ${evacuationRoute.label}`, { permanent: true, direction: "center" });
+      let tooltipContent = `<strong>Rute Evakuasi:</strong> ${evacuationRoute.label}`;
+      if (evacuationRoute.distanceKm && evacuationRoute.durationMin) {
+        tooltipContent += `<br/>Jarak: ${evacuationRoute.distanceKm} km (Est. ${evacuationRoute.durationMin} mnt)`;
+      }
+
+      evacRouteLineRef.current.bindTooltip(tooltipContent, { permanent: true, direction: "top", sticky: true });
       map.fitBounds(evacRouteLineRef.current.getBounds(), { padding: [60, 60], maxZoom: 13 });
     }
   }, [evacuationRoute]);

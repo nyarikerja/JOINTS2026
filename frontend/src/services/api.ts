@@ -59,6 +59,8 @@ export const api = {
   getTiersAtHour: (runId: string, hour: number) => request<any>(`/runs/${runId}/tiers?t=${hour}`),
   getHealthGuidance: (runId: string) => request<any>(`/runs/${runId}/health-guidance`),
   getEmergencyAdvisory: (runId: string) => request<any>(`/runs/${runId}/emergency-advisory`),
+  getEvacuationRoute: (runId: string, fromLat: number, fromLon: number, toLat: number, toLon: number, fromName: string, toName: string) => 
+    request<any>(`/runs/${runId}/evacuation-route?from_lat=${fromLat}&from_lon=${fromLon}&to_lat=${toLat}&to_lon=${toLon}&from_name=${encodeURIComponent(fromName)}&to_name=${encodeURIComponent(toName)}`),
   getEvents: () => request<any>("/events"),
   getNationalForests: () => request<any>("/layers/forests"),
   playDemo: (eventId: string) => request<any>(`/demo/play/${eventId}`)

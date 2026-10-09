@@ -44,11 +44,14 @@ export const App: React.FC = () => {
   const [progressText, setProgressText] = useState<string>("");
 
   const [evacuationRoute, setEvacuationRoute] = useState<{
-    origin: [number, number];
-    dest: [number, number];
+    geometry: [number, number][];
     label: string;
+    distanceKm?: number;
+    durationMin?: number;
+    facilityId?: string;
   } | null>(null);
 
+  const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; _t: number } | null>(null);
   const [resetViewTrigger, setResetViewTrigger] = useState<number>(0);
   const [isMapReady, setIsMapReady] = useState<boolean>(false);
 
@@ -123,19 +126,19 @@ export const App: React.FC = () => {
 
       setProgressText("Mengekstrak kontur poligon & dampak populasi...");
 
-      // Set pratinjau jam ke 12 agar poligon sebaran langsung terlihat di peta (sesuai fe-dummy)
-      setCurrentHour(12);
+      // Set pratinjau jam ke 48 (akhir) agar pengguna tahu simulasi mencakup 48 jam penuh
+      setCurrentHour(48);
 
-      const [impact, facilities, validation, advisory, tier12] = await Promise.all([
+      const [impact, facilities, validation, advisory, tier48] = await Promise.all([
         api.getImpact(runId).catch(() => null),
         api.getFacilitiesImpacted(runId).catch(() => null),
         api.getValidation(activeEventId).catch(() => null),
         api.getEmergencyAdvisory(runId).catch(() => null),
-        api.getTiersAtHour(runId, 12).catch(() => null)
+        api.getTiersAtHour(runId, 48).catch(() => null)
       ]);
 
-      if (tier12) {
-        setHourlyTiersCache({ 12: tier12 });
+      if (tier48) {
+        setHourlyTiersCache({ 48: tier48 });
       }
 
       setImpactData(impact);
@@ -188,20 +191,53 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleDrawRoute = (s: SchoolItem) => {
+  const handleDrawRoute = async (s: SchoolItem) => {
+    const facilityId = s.id || s.facility_id || s.name;
+    if (evacuationRoute && evacuationRoute.facilityId === facilityId) {
+      setEvacuationRoute(null);
+      return;
+    }
+
     const sLat = s.lat ?? s.latitude;
     const sLng = s.lng ?? s.longitude;
-    if (sLat === undefined || sLng === undefined) return;
+    if (sLat === undefined || sLng === undefined || !activeRunId) return;
 
     const hospital = s.nearest_safe_hospital || s.nearest_hospital;
     const destLat = hospital?.lat ?? hospital?.latitude ?? sLat + 0.035;
     const destLng = hospital?.lng ?? hospital?.longitude ?? sLng + 0.035;
 
-    setEvacuationRoute({
-      origin: [sLat, sLng],
-      dest: [destLat, destLng],
-      label: `Evakuasi Siswa: ${s.name} → ${hospital?.name || "RSUD Terdekat"}`
-    });
+    setProgressText(`Menghitung rute evakuasi dari ${s.name}...`);
+    try {
+      const res = await api.getEvacuationRoute(
+        activeRunId,
+        sLat,
+        sLng,
+        destLat,
+        destLng,
+        s.name,
+        hospital?.name || "RSUD Terdekat"
+      );
+      
+      const geom: [number, number][] = res.geometry.map((coord: [number, number]) => [coord[1], coord[0]]); // Leaflet uses [lat, lng]
+      
+      setEvacuationRoute({
+        geometry: geom.length > 0 ? geom : [[sLat, sLng], [destLat, destLng]],
+        label: `Evakuasi: ${s.name} → ${hospital?.name || "RSUD Terdekat"}`,
+        distanceKm: res.distance_km,
+        durationMin: res.duration_min,
+        facilityId
+      });
+      setProgressText("");
+    } catch (err) {
+      console.error(err);
+      setProgressText("Gagal mengambil rute riil, menampilkan garis lurus.");
+      setEvacuationRoute({
+        geometry: [[sLat, sLng], [destLat, destLng]],
+        label: `Evakuasi: ${s.name} → ${hospital?.name || "RSUD Terdekat"}`,
+        facilityId
+      });
+      setTimeout(() => setProgressText(""), 3000);
+    }
   };
 
   return (
@@ -228,6 +264,7 @@ export const App: React.FC = () => {
             setEventId(newId);
           }}
           resetViewTrigger={resetViewTrigger}
+          flyToTarget={flyToTarget}
           activeRunId={activeRunId}
           isDrawerOpen={isDrawerOpen}
           onToggleLegend={() => setIsLegendOpen((prev) => !prev)}
@@ -294,12 +331,14 @@ export const App: React.FC = () => {
           validation={validationData}
           advisory={advisoryData}
           hazard={hazard}
+          currentHour={currentHour}
           rainMm={mode === "experiment" ? overrides.rain_scavenging_mm_h ?? 0 : 0}
+          onOpenLegend={() => setIsLegendOpen(true)}
           onFlyTo={(lat, lng) => {
-            // Pemusatan peta melalui event / ref jika diperlukan
-            console.log("Fly to:", lat, lng);
+            setFlyToTarget({ lat, lng, _t: Date.now() });
           }}
           onDrawRoute={handleDrawRoute}
+          activeRouteId={evacuationRoute?.facilityId}
         />
 
         {/* Modal Legenda Otoritatif PVMBG & Dispersi */}

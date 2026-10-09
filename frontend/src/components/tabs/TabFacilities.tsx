@@ -1,21 +1,32 @@
 import React, { useState } from "react";
-import { School, Hospital, Navigation, MapPin } from "lucide-react";
+import { School, Hospital, Navigation, MapPin, Search } from "lucide-react";
 import type { SchoolItem, HospitalItem } from "../../types/api";
 
 interface TabFacilitiesProps {
   schools: SchoolItem[];
   hospitals: HospitalItem[];
+  currentHour?: number;
   onFlyTo: (lat: number, lng: number) => void;
   onDrawRoute: (s: SchoolItem) => void;
+  activeRouteId?: string;
 }
 
 export const TabFacilities: React.FC<TabFacilitiesProps> = ({
-  schools,
-  hospitals,
+  schools: rawSchools,
+  hospitals: rawHospitals,
+  currentHour: _currentHour,
   onFlyTo,
   onDrawRoute,
+  activeRouteId,
 }) => {
   const [filterType, setFilterType] = useState<"all" | "schools" | "hospitals">("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const schools = Array.from(new Map(rawSchools.map(s => [s.facility_id || s.id || s.name, s])).values());
+  const hospitals = Array.from(new Map(rawHospitals.map(h => [h.facility_id || h.id || h.name, h])).values());
+
+  const filteredSchools = schools.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredHospitals = hospitals.filter(h => h.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   const safeHospitals = hospitals.filter((h) => {
     const prob = h.exposure_pct ?? h.exposure_prob_pct ?? (h.exposure_probability ? h.exposure_probability * 100 : 0);
@@ -31,14 +42,11 @@ export const TabFacilities: React.FC<TabFacilitiesProps> = ({
     <div className="space-y-3 text-xs text-[#2b211e]">
       {/* Header Ringkasan Fasilitas */}
       <div>
-        <span className="font-sans text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#A14646]/10 text-[#A14646] border border-[#A14646]/20">
+        <h3 className="font-sans text-[11px] font-bold uppercase tracking-wider text-[#A14646]">
           PROTEKSI FASILITAS PUBLIK
-        </span>
-        <h3 className="font-serif text-[15px] font-bold text-[#2b211e] mt-1 mb-0.5">
-          Sekolah &amp; Rumah Sakit Rujukan
         </h3>
-        <p className="text-[11px] text-[#2b211e]/70 leading-relaxed">
-          Triase keselamatan belajar siswa dan rute evakuasi menuju faskes bebas abu.
+        <p className="text-[11px] text-[#2b211e]/70 leading-relaxed mt-1.5 mb-2">
+          Pantau status keamanan fasilitas sekolah serta panduan rute evakuasi menuju rumah sakit terdekat yang diproyeksikan aman dari abu vulkanik.
         </p>
       </div>
 
@@ -89,11 +97,23 @@ export const TabFacilities: React.FC<TabFacilitiesProps> = ({
         </button>
       </div>
 
+      {/* Search Input */}
+      <div className="relative mb-2 mt-2">
+        <input 
+          type="text" 
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Cari nama fasilitas..."
+          className="w-full bg-white border border-[#2b211e]/15 rounded-lg p-2 pl-7 text-[10px] focus:outline-none focus:border-[#EB895B] focus:ring-1 focus:ring-[#EB895B]"
+        />
+        <Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-[#2b211e]/40" />
+      </div>
+
       {/* List Fasilitas */}
-      <div className="space-y-2">
+      <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
         {/* Render Sekolah */}
         {(filterType === "all" || filterType === "schools") &&
-          schools.map((s) => {
+          filteredSchools.map((s) => {
             const prob = s.exposure_pct ?? s.exposure_prob_pct ?? (s.exposure_probability ? Math.round(s.exposure_probability * 100) : 0);
             const isHigh = prob >= 40;
             const hospital = s.nearest_safe_hospital || s.nearest_hospital || { name: "RSUD Rujukan Terdekat", distance_km: 4.5 };
@@ -107,9 +127,9 @@ export const TabFacilities: React.FC<TabFacilitiesProps> = ({
                 className="bg-white border border-[#2b211e]/10 rounded-lg p-2.5 shadow-xs text-[#2b211e]"
               >
                 <div className="flex items-start justify-between gap-1.5 mb-1">
-                  <div className="flex items-center gap-1.5 min-w-0">
+                  <div className="flex items-start gap-1.5 min-w-0 pt-0.5">
                     <School className="w-3.5 h-3.5 text-[#DA6556] shrink-0" />
-                    <h4 className="font-bold text-[11px] truncate">{s.name}</h4>
+                    <h4 className="font-bold text-[11px] leading-tight pr-1">{s.name}</h4>
                   </div>
                   <span
                     className={`px-1.5 py-0.5 rounded text-[9px] font-semibold shrink-0 ${
@@ -128,7 +148,7 @@ export const TabFacilities: React.FC<TabFacilitiesProps> = ({
                 </div>
 
                 <div className="flex items-center justify-between text-[10px] pt-1 border-t border-[#2b211e]/5">
-                  <span className="text-[#2b211e]/60 truncate max-w-[140px]">
+                  <span className="text-[#2b211e]/60 leading-tight pr-2">
                     RS: {hospital.name} ({hospital.distance_km} km)
                   </span>
                   <div className="flex gap-1 shrink-0">
@@ -143,10 +163,15 @@ export const TabFacilities: React.FC<TabFacilitiesProps> = ({
                     <button
                       type="button"
                       onClick={() => onDrawRoute(s)}
-                      className="px-2 py-0.5 bg-[#EB895B] hover:bg-[#DA6556] text-white rounded text-[10px] font-medium flex items-center gap-1 cursor-pointer"
+                      className={`px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1 cursor-pointer border ${
+                        activeRouteId === (s.id || s.facility_id || s.name)
+                          ? "bg-[#DA6556] border-[#DA6556] text-white" 
+                          : "bg-[#EB895B] hover:bg-[#DA6556] border-[#EB895B] hover:border-[#DA6556] text-white"
+                      }`}
+                      title={activeRouteId === (s.id || s.facility_id || s.name) ? "Tutup rute evakuasi" : "Lihat rute evakuasi"}
                     >
                       <Navigation className="w-2.5 h-2.5" />
-                      <span>Rute</span>
+                      <span>{activeRouteId === (s.id || s.facility_id || s.name) ? "Tutup" : "Rute"}</span>
                     </button>
                   </div>
                 </div>
@@ -156,7 +181,7 @@ export const TabFacilities: React.FC<TabFacilitiesProps> = ({
 
         {/* Render Rumah Sakit */}
         {(filterType === "all" || filterType === "hospitals") &&
-          hospitals.map((h) => {
+          filteredHospitals.map((h) => {
             const prob = h.exposure_pct ?? h.exposure_prob_pct ?? (h.exposure_probability ? Math.round(h.exposure_probability * 100) : 0);
             const isSafe = h.is_safe !== undefined ? h.is_safe : prob < 10;
             const hLat = h.lat ?? h.latitude ?? 0;
@@ -168,9 +193,9 @@ export const TabFacilities: React.FC<TabFacilitiesProps> = ({
                 className="bg-white border border-[#2b211e]/10 rounded-lg p-2.5 shadow-xs text-[#2b211e]"
               >
                 <div className="flex items-start justify-between gap-1.5 mb-1">
-                  <div className="flex items-center gap-1.5 min-w-0">
+                  <div className="flex items-start gap-1.5 min-w-0 pt-0.5">
                     <Hospital className="w-3.5 h-3.5 text-[#2a8485] shrink-0" />
-                    <h4 className="font-bold text-[11px] truncate">{h.name}</h4>
+                    <h4 className="font-bold text-[11px] leading-tight pr-1">{h.name}</h4>
                   </div>
                   <span
                     className={`px-1.5 py-0.5 rounded text-[9px] font-semibold shrink-0 ${
@@ -202,9 +227,9 @@ export const TabFacilities: React.FC<TabFacilitiesProps> = ({
             );
           })}
 
-        {schools.length === 0 && hospitals.length === 0 && (
+        {filteredSchools.length === 0 && filteredHospitals.length === 0 && (
           <div className="p-4 text-center text-[#2b211e]/60 bg-white/70 rounded-lg border border-[#2b211e]/10 text-xs">
-            Belum ada fasilitas terdeteksi di dalam zona bahaya simulasi ini.
+            {searchQuery ? "Tidak ada fasilitas yang cocok dengan pencarian Anda." : "Belum ada fasilitas terdeteksi di dalam zona bahaya simulasi ini."}
           </div>
         )}
       </div>
