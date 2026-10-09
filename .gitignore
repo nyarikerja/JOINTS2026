@@ -54,3 +54,7 @@ yarn-error.log*
 
 # Archives
 *.zip
+
+# Temporary screenshots
+image*.png
+image copy*.png

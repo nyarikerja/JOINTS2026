@@ -44,6 +44,25 @@
     });
   }
 
+  /* ---------- peta provinsi: nama muncul saat kursor/sentuhan di atas provinsi ---------- */
+  var nMap=$('#nusaMap'),nTip=$('#nusaTip'),nOn=null;
+  if(nMap&&nTip){
+    var nFig=nMap.parentNode;
+    var nT=0;
+    function nShow(e){
+      clearTimeout(nT);
+      var t=e.target.closest&&e.target.closest('path[data-p]');
+      if(!t){nHide();return;}
+      if(nOn!==t){if(nOn)nOn.classList.remove('on');nOn=t;t.classList.add('on');nTip.textContent=t.getAttribute('data-p');nTip.hidden=false;}
+      var r=nFig.getBoundingClientRect();
+      nTip.style.left=(e.clientX-r.left)+'px';nTip.style.top=(e.clientY-r.top)+'px';
+    }
+    function nHide(){if(nOn)nOn.classList.remove('on');nOn=null;nTip.hidden=true;}
+    nMap.addEventListener('pointermove',nShow);
+    nMap.addEventListener('pointerdown',nShow);
+    nMap.addEventListener('pointerleave',function(e){clearTimeout(nT);if(e.pointerType==='touch')nT=setTimeout(nHide,1800);else nHide();});
+  }
+
   /* ---------- menu HP ---------- */
   var mBtn=$('#menuBtn'),mNav=$('#navLinks');
   function menu(o){mNav.classList.toggle('open',o);mBtn.setAttribute('aria-expanded',o?'true':'false');mBtn.setAttribute('aria-label',o?'Tutup menu':'Buka menu');}
