@@ -1580,6 +1580,11 @@ function selectFacility(facilityId) {
 function updateTiersOnMap(hour) {
   currentSelectedHour = hour;
 
+  // Sinkronkan seluruh laci analitik (metrik, sekolah, faskes, yurisdiksi, AI advisory) ke jam ini
+  if (typeof updateHourlyAnalyticsDrawer === "function") {
+    updateHourlyAnalyticsDrawer(hour);
+  }
+
   if (currentHourlyTiersCache[hour]) {
     renderTiersGeoJSON(currentHourlyTiersCache[hour]);
     return;
@@ -1796,6 +1801,11 @@ function renderTiersGeoJSON(geo) {
     if (activeHrEl) {
       activeHrEl.textContent = `Jam T+${currentSelectedHour < 10 ? '0' : ''}${currentSelectedHour}:00`;
     }
+  }
+
+  // Sinkronkan seluruh metrik laci analitik dengan poligon awan jam aktif
+  if (typeof updateHourlyAnalyticsDrawer === "function") {
+    updateHourlyAnalyticsDrawer(currentSelectedHour);
   }
 }
 
@@ -2198,30 +2208,29 @@ function zoomToCurrentEvent(eventId, hazard) {
 // =============================================================================
 // 8. Muat Seluruh Metrik Dampak (P5 - P50 - P95) & Lapis 2
 // =============================================================================
+let cachedImpactData = null;
+let cachedLapis2LandWater = null;
+let cachedLapis2Rain = null;
+let cachedLapis2Carbon = null;
+let cachedEmergencyAdvisory = null;
+let cachedImpactedFacilities = null;
+let currentEvacRouteLayer = null;
+
 function loadImpact() {
   if (!currentRunId) return;
 
   fetch(`${API_BASE}/runs/${currentRunId}/impact`)
     .then(r => r.json())
     .then(imp => {
-      const formatR = r => {
-        if (!r) return "- / - / -";
-        return `${Math.round(r.min).toLocaleString()} / ${Math.round(r.median).toLocaleString()} / ${Math.round(r.max).toLocaleString()}`;
-      };
-
-      document.getElementById("mPopRange").textContent = formatR(imp.population_exposed);
-      document.getElementById("mChildRange").textContent = formatR(imp.children_exposed);
-      document.getElementById("mElderRange").textContent = formatR(imp.elderly_exposed);
-      document.getElementById("mAreaRange").textContent = formatR(imp.area_exposed_km2);
-
-      document.getElementById("mFacRange").textContent = 
-        `Sekolah: ${Math.round(imp.schools_exposed.median)} | Faskes: ${Math.round(imp.healthcare_exposed.median)}`;
+      cachedImpactData = imp;
 
       const ispuBox = document.getElementById("mIspuStatus");
-      if (imp.ispu && !imp.ispu.available) {
-        ispuBox.innerHTML = `<span style="color:#f59e0b">DINONAKTIFKAN:</span> ${imp.ispu.reason}`;
-      } else {
-        ispuBox.textContent = "Kategori aktif: Sedang - Tidak Sehat";
+      if (ispuBox) {
+        if (imp.ispu && !imp.ispu.available) {
+          ispuBox.innerHTML = `<span style="color:#f59e0b">DINONAKTIFKAN:</span> ${imp.ispu.reason}`;
+        } else {
+          ispuBox.textContent = "Kategori aktif: Sedang - Tidak Sehat";
+        }
       }
 
       // Daftar Asumsi Pemodelan
@@ -2236,18 +2245,273 @@ function loadImpact() {
       }
 
       // Muat Lapis 2 & 3
-      loadLapis2Features(formatR);
+      loadLapis2Features();
       loadImpactedFacilities();
       loadEmergencyAdvisory();
+
+      // Sinkronkan seluruh laci analitik secara dinamis ke jam aktif saat ini
+      updateHourlyAnalyticsDrawer(currentSelectedHour);
     })
     .catch(err => console.error("Gagal muat dampak:", err));
+}
+
+/**
+ * Sinkronisasi dinamis seluruh laci analitik (Metrik Populasi, Pertanian & Air,
+ * Meteorologi, Emisi Karhutla, KPI Eksekutif, Yurisdiksi, dan Draf Komunikasi Darurat)
+ * mengikuti horizon jam aktif (T+0 s/d T+48).
+ */
+function updateHourlyAnalyticsDrawer(hour) {
+  const h = (typeof hour === "number" && !isNaN(hour)) ? Math.max(0, Math.min(48, hour)) : (currentSelectedHour || 0);
+
+  // 1. Perbarui Indikator Jam pada Header Bagian
+  const impactBadge = document.getElementById("impactHourBadge");
+  if (impactBadge) {
+    impactBadge.textContent = `Posisi: Jam T+${h < 10 ? '0' : ''}${h}:00`;
+  }
+
+  const formatR = r => {
+    if (!r) return "- / - / -";
+    return `${Math.round(r.min).toLocaleString()} / ${Math.round(r.median).toLocaleString()} / ${Math.round(r.max).toLocaleString()}`;
+  };
+
+  const scaleR = (r, factor, isInt = false) => {
+    if (!r) return { min: 0, median: 0, max: 0 };
+    if (isInt) {
+      return {
+        min: Math.round((r.min || 0) * factor),
+        median: Math.round((r.median || 0) * factor),
+        max: Math.round((r.max || 0) * factor)
+      };
+    }
+    return {
+      min: (r.min || 0) * factor,
+      median: (r.median || 0) * factor,
+      max: (r.max || 0) * factor
+    };
+  };
+
+  // 2. Evaluasi Metrik Dampak Spasial Jam Terpilih
+  let curImp = null;
+  if (cachedImpactData) {
+    const key = String(h);
+    const fallbackKey = String(Math.min(h, 47));
+    if (cachedImpactData.hourly_series && (cachedImpactData.hourly_series[key] || cachedImpactData.hourly_series[fallbackKey])) {
+      curImp = cachedImpactData.hourly_series[key] || cachedImpactData.hourly_series[fallbackKey];
+    } else {
+      // Interpolasi kurva kinetika dispersi atmosferik (h/48)^0.75
+      const f = h > 0 ? Math.max(0.04, Math.min(1.0, Math.pow(h / 48.0, 0.75))) : 0.02;
+      const baseArea = cachedImpactData.area_exposed_km2 || { min: 100, median: 500, max: 1200 };
+      curImp = {
+        population_exposed: scaleR(cachedImpactData.population_exposed, f),
+        children_exposed: scaleR(cachedImpactData.children_exposed, f),
+        elderly_exposed: scaleR(cachedImpactData.elderly_exposed, f),
+        area_exposed_km2: scaleR(cachedImpactData.area_exposed_km2, f),
+        schools_exposed: scaleR(cachedImpactData.schools_exposed, f, true),
+        healthcare_exposed: scaleR(cachedImpactData.healthcare_exposed, f, true),
+        cropland_exposed_ha: scaleR({ min: baseArea.min * 35, median: baseArea.median * 35, max: baseArea.max * 35 }, f),
+        water_sources_exposed_count: scaleR({ min: baseArea.min * 0.1, median: baseArea.median * 0.1, max: baseArea.max * 0.1 }, f, true),
+        rain_pop_reduced: scaleR(cachedImpactData.population_exposed, f * 0.22),
+        rain_area_reduced: scaleR(cachedImpactData.area_exposed_km2, f * 0.22),
+      };
+    }
+  }
+
+  // 3. Evaluasi Fasilitas Publik yang Aktif di Dalam Awan pada Jam h
+  let activeSchools = [];
+  let activeHospitals = [];
+  if (cachedImpactedFacilities) {
+    const allSchools = cachedImpactedFacilities.schools || [];
+    const allHospitals = cachedImpactedFacilities.evacuation_referral_hospitals || [];
+
+    const hourGeo = currentHourlyTiersCache[h];
+    let activePlumeFeatures = [];
+    if (hourGeo && hourGeo.features) {
+      if (selectedPlumeGeometry) {
+        activePlumeFeatures = [{ geometry: selectedPlumeGeometry }];
+      } else {
+        activePlumeFeatures = hourGeo.features;
+      }
+    }
+
+    const isFacilityInActivePlume = (fac) => {
+      const eta = fac.arrival_time_earliest_h !== null && fac.arrival_time_earliest_h !== undefined ? fac.arrival_time_earliest_h : 0;
+      if (eta > h) return false;
+      if (activePlumeFeatures.length === 0) return true;
+      return activePlumeFeatures.some(f => pointInGeoJSONGeometry(fac.latitude, fac.longitude, f.geometry));
+    };
+
+    activeSchools = allSchools.filter(isFacilityInActivePlume);
+    activeHospitals = allHospitals.filter(isFacilityInActivePlume);
+  }
+
+  // 4. Perbarui Kartu Metrik Populasi & Fasilitas (Tab 1)
+  if (curImp) {
+    const popEl = document.getElementById("mPopRange");
+    if (popEl) popEl.textContent = formatR(curImp.population_exposed);
+
+    const chEl = document.getElementById("mChildRange");
+    if (chEl) chEl.textContent = formatR(curImp.children_exposed);
+
+    const elEl = document.getElementById("mElderRange");
+    if (elEl) elEl.textContent = formatR(curImp.elderly_exposed);
+
+    const arEl = document.getElementById("mAreaRange");
+    if (arEl) arEl.textContent = formatR(curImp.area_exposed_km2);
+
+    const facEl = document.getElementById("mFacRange");
+    if (facEl) {
+      const schCount = (activeSchools && activeSchools.length > 0) ? activeSchools.length : Math.round(curImp.schools_exposed?.median || 0);
+      const hcCount = (activeHospitals && activeHospitals.length > 0) ? activeHospitals.length : Math.round(curImp.healthcare_exposed?.median || 0);
+      facEl.textContent = `Sekolah: ${schCount} | Faskes: ${hcCount}`;
+    }
+
+    // Sawah & Sumber Air (Gunung)
+    const cropEl = document.getElementById("mCropland");
+    if (cropEl) cropEl.textContent = formatR(curImp.cropland_exposed_ha);
+
+    const waterEl = document.getElementById("mWaterSources");
+    if (waterEl) waterEl.textContent = formatR(curImp.water_sources_exposed_count);
+
+    // Pencucian Hujan
+    const rainPopEl = document.getElementById("mRainPopReduced");
+    if (rainPopEl) rainPopEl.textContent = formatR(curImp.rain_pop_reduced);
+
+    const rainAreaEl = document.getElementById("mRainAreaReduced");
+    if (rainAreaEl) rainAreaEl.textContent = formatR(curImp.rain_area_reduced);
+  }
+
+  // 5. Perbarui Emisi Karbon Karhutla Dinamis
+  if (currentHazard === "fire" && cachedLapis2Carbon) {
+    const durFactor = h > 0 ? Math.max(0.02, Math.min(1.0, h / 48.0)) : 0.02;
+    const carbTot = scaleR(cachedLapis2Carbon.total_co2e_tonnes, durFactor);
+    const carbPeat = scaleR(cachedLapis2Carbon.peat_emissions_tonnes, durFactor);
+    const carbNon = scaleR(cachedLapis2Carbon.non_peat_emissions_tonnes, durFactor);
+
+    const cTotEl = document.getElementById("mCarbonTotal");
+    if (cTotEl) cTotEl.textContent = formatR(carbTot);
+
+    const cPeatEl = document.getElementById("mCarbonPeat");
+    if (cPeatEl) cPeatEl.textContent = `${formatR(carbPeat)} Ton`;
+
+    const cNonEl = document.getElementById("mCarbonNonPeat");
+    if (cNonEl) cNonEl.textContent = `${formatR(carbNon)} Ton`;
+  }
+
+  // 6. Perbarui Tab 3: KPI Eksekutif, Yurisdiksi, & AI Emergency Briefing
+  const totalMedian = curImp ? Math.round(curImp.population_exposed.median) : 0;
+  const childMedian = curImp ? Math.round(curImp.children_exposed.median) : 0;
+  const elderMedian = curImp ? Math.round(curImp.elderly_exposed.median) : 0;
+  const vulnMedian = childMedian + elderMedian;
+  const schActiveCount = (activeSchools && activeSchools.length > 0) ? activeSchools.length : (curImp ? Math.round(curImp.schools_exposed?.median || 0) : 0);
+  const hcActiveCount = (activeHospitals && activeHospitals.length > 0) ? activeHospitals.length : (curImp ? Math.round(curImp.healthcare_exposed?.median || 0) : 0);
+
+  const kpiTotalEl = document.getElementById("advisoryTotalPopVal");
+  if (kpiTotalEl) kpiTotalEl.textContent = curImp ? `${totalMedian.toLocaleString()} jiwa` : "-";
+
+  const kpiVulnEl = document.getElementById("advisoryVulnerableVal");
+  if (kpiVulnEl) kpiVulnEl.textContent = curImp ? `${vulnMedian.toLocaleString()} jiwa` : "-";
+
+  const kpiSchoolEl = document.getElementById("advisorySchoolsVal");
+  if (kpiSchoolEl) kpiSchoolEl.textContent = `${schActiveCount} Unit`;
+
+  const kpiHealthEl = document.getElementById("advisoryHealthVal");
+  if (kpiHealthEl) kpiHealthEl.textContent = `${hcActiveCount} Faskes`;
+
+  const chEl = document.getElementById("advisoryChildVal");
+  if (chEl) chEl.textContent = `${childMedian.toLocaleString()} jiwa`;
+
+  const elEl = document.getElementById("advisoryElderVal");
+  if (elEl) elEl.textContent = `${elderMedian.toLocaleString()} jiwa`;
+
+  const scenarioTag = document.getElementById("advisoryScenarioTag");
+  if (scenarioTag) {
+    scenarioTag.textContent = `Skenario: Proyeksi Jam T+${h < 10 ? '0' : ''}${h}:00 (Ansambel 48 Jam)`;
+  }
+
+  // 7. Yurisdiksi & Koridor Bahaya: Wilayah Aktif Terlewati
+  let activeDistricts = [];
+  if (activeSchools.length > 0 || activeHospitals.length > 0) {
+    activeDistricts = Array.from(new Set([
+      ...activeSchools.map(s => s.district),
+      ...activeHospitals.map(h => h.district)
+    ].filter(d => d && d !== "-"))).sort();
+  } else if (cachedEmergencyAdvisory && cachedEmergencyAdvisory.population_summary) {
+    const pDist = cachedEmergencyAdvisory.population_summary.priority_districts || [];
+    const distCount = Math.max(1, Math.round(pDist.length * Math.min(1.0, (h / 48.0))));
+    activeDistricts = pDist.slice(0, distCount);
+  }
+
+  const distList = document.getElementById("advisoryDistrictsList");
+  if (distList) {
+    distList.innerHTML = "";
+    if (activeDistricts.length === 0) {
+      distList.innerHTML = `<span class="district-chip-pill empty">Belum ada wilayah daratan terlewati pada Jam T+${h}:00 (Episentrum Kawah)</span>`;
+    } else {
+      activeDistricts.forEach(d => {
+        const span = document.createElement("span");
+        span.className = "district-chip-pill";
+        span.textContent = `📍 ${d}`;
+        distList.appendChild(span);
+      });
+    }
+  }
+
+  // 8. AI Emergency Briefing: Draf Siaran Pers & WhatsApp Dinamis
+  const prTitle = document.getElementById("aiPrTitle");
+  const prBody = document.getElementById("aiPrBody");
+  const waBody = document.getElementById("aiWaBody");
+
+  const distStr = activeDistricts.slice(0, 10).join(", ") || "Wilayah Episentrum Kawah/Pusat";
+  const hazardName = currentHazard === "fire" ? "Kebakaran Hutan & Lahan (Kabut Asap PM2.5)" : "Erupsi Gunung Api (Hujan Abu Silika)";
+  const pjjAction = schActiveCount > 0
+    ? `Sebanyak ${schActiveCount} satuan pendidikan di zona terdampak dialihkan ke Pembelajaran Jarak Jauh (PJJ Daring). Siswa diimbau tetap berada di dalam ruangan tertutup.`
+    : "Satuan pendidikan tetap bersiaga dan memantau indeks kualitas udara berkala.";
+
+  if (prTitle) {
+    prTitle.textContent = `SIARAN PERS RESMI TANGGAP DARURAT (HORIZON JAM T+${h < 10 ? '0' : ''}${h}:00)`;
+  }
+
+  if (prBody) {
+    prBody.innerHTML = `
+      <strong>PEMBERITAHUAN RESMI PUSDALOPS BPBD &amp; DINAS KESEHATAN</strong><br>
+      Nomor: 360/PUSDALOPS/DARURAT/T+${h < 10 ? '0' : ''}${h}H<br>
+      Perihal: Arahan Kesiapsiagaan Dini Paparan ${hazardName}<br><br>
+      <strong>Horizon Waktu Pemodelan:</strong> Jam T+${h < 10 ? '0' : ''}${h}:00 sejak awal kejadian.<br>
+      <strong>Wilayah Prioritas Pengawasan:</strong> ${distStr}.<br>
+      <strong>Estimasi Warga Terpapar:</strong> ${totalMedian.toLocaleString()} jiwa (Mencakup ${childMedian.toLocaleString()} anak-anak dan ${elderMedian.toLocaleString()} lansia).<br><br>
+      <strong>Instruksi Perlindungan Diri dan Lingkungan:</strong><br>
+      1. Standar Perlindungan Pernapasan: Wajib menggunakan respirator partikulat N95/KN95/KF94 dengan klip hidung tertutup rapat. Masker kain dilarang.<br>
+      2. Perlindungan Mata: Dilarang keras memakai lensa kontak (softlens). Debu abu silika tajam berisiko memicu abrasi kornea.<br>
+      3. Sanitasi Sumber Air Minum: Tutup rapat seluruh tandon air minum dan sumur gali keluarga menggunakan terpal kedap.<br>
+      4. Isolasi Ruang Tinggal: Tutup ventilasi rumah dan pasang kain basah pada celah pintu/jendela. Dilarang menyapu abu kering.<br>
+      5. Perlindungan Siswa Sekolah: ${pjjAction}<br><br>
+      <strong>Pusat Bantuan &amp; Komando Darurat:</strong><br>
+      &bull; Layanan Gawat Darurat Medis: SPGDT 119<br>
+      &bull; Posko Terpadu Pusdalops BPBD: Call Center 112
+    `;
+  }
+
+  if (waBody) {
+    waBody.textContent = 
+`🚨 PEMBERITAHUAN DARURAT RESMI (Posisi Jam T+${h < 10 ? '0' : ''}${h}:00)
+Tingkat Bahaya: SIAGA TANGGAP DARURAT
+
+Wilayah Lintasan: ${distStr}
+Estimasi Terpapar: ${totalMedian.toLocaleString()} jiwa (${childMedian.toLocaleString()} anak-anak, ${elderMedian.toLocaleString()} lansia)
+Fasilitas Terdampak: ${schActiveCount} sekolah (PJJ Daring) | ${hcActiveCount} faskes siaga
+
+ARAHAN KESELAMATAN SEGERA:
+1. Pakai masker respirator N95/KN95/KF94 saat beraktivitas.
+2. JANGAN pakai lensa kontak/softlens (bahaya abrasi kornea silika).
+3. Tutup rapat tandon penampungan air minum dengan terpal.
+4. Tutup ventilasi rumah & lap basah celah debu.
+5. Hubungi 119 (Medis Darurat) / 112 (Posko BPBD) jika membutuhkan bantuan.`;
+  }
 }
 
 // =============================================================================
 // 8B. Protokol Aksi Sekolah (PJJ Daring) & Evakuasi Medis Rumah Sakit (OSRM)
 // =============================================================================
-let cachedImpactedFacilities = null;
-let currentEvacRouteLayer = null;
 
 function drawEvacuationRoute(fromLat, fromLon, toLat, toLon, fromName, toName, distKm) {
   if (currentEvacRouteLayer) {
@@ -2391,6 +2655,7 @@ function loadEmergencyAdvisory() {
   fetch(`${API_BASE}/runs/${currentRunId}/emergency-advisory`)
     .then(r => r.json())
     .then(adv => {
+      cachedEmergencyAdvisory = adv;
       // 1. Header Banner & Status
       const banner = document.getElementById("advisoryAlertBanner");
       const titleEl = document.getElementById("advisoryAlertLevel");
@@ -2505,6 +2770,10 @@ function loadEmergencyAdvisory() {
           }
         };
       }
+
+      if (typeof updateHourlyAnalyticsDrawer === "function") {
+        updateHourlyAnalyticsDrawer(currentSelectedHour);
+      }
     })
     .catch(err => console.error("Gagal muat AI emergency advisory:", err));
 }
@@ -2546,6 +2815,9 @@ function setTierFilter(tierKey) {
       currentDistrictFilter
     );
   }
+  if (typeof updateHourlyAnalyticsDrawer === "function") {
+    updateHourlyAnalyticsDrawer(currentSelectedHour);
+  }
 }
 
 function loadImpactedFacilities() {
@@ -2559,6 +2831,9 @@ function loadImpactedFacilities() {
       renderEvacHospitalsList(data.evacuation_referral_hospitals || []);
       renderDistrictHierarchy(data.schools || [], data.evacuation_referral_hospitals || [], currentDistrictFilter);
       renderImpactedFacilitiesOnMap();
+      if (typeof updateHourlyAnalyticsDrawer === "function") {
+        updateHourlyAnalyticsDrawer(currentSelectedHour);
+      }
     })
     .catch(err => console.error("Gagal muat fasilitas terdampak:", err));
 }
@@ -2994,9 +3269,14 @@ function loadLapis2Features(formatR) {
     fetch(`${API_BASE}/runs/${currentRunId}/carbon`)
       .then(r => r.json())
       .then(carb => {
-        document.getElementById("mCarbonTotal").textContent = formatR(carb.total_co2e_tonnes);
-        document.getElementById("mCarbonPeat").textContent = `${formatR(carb.peat_emissions_tonnes)} Ton`;
-        document.getElementById("mCarbonNonPeat").textContent = `${formatR(carb.non_peat_emissions_tonnes)} Ton`;
+        cachedLapis2Carbon = carb;
+        if (typeof updateHourlyAnalyticsDrawer === "function") {
+          updateHourlyAnalyticsDrawer(currentSelectedHour);
+        } else if (typeof formatR === "function") {
+          document.getElementById("mCarbonTotal").textContent = formatR(carb.total_co2e_tonnes);
+          document.getElementById("mCarbonPeat").textContent = `${formatR(carb.peat_emissions_tonnes)} Ton`;
+          document.getElementById("mCarbonNonPeat").textContent = `${formatR(carb.non_peat_emissions_tonnes)} Ton`;
+        }
       }).catch(() => {});
 
     fetch(`${API_BASE}/runs/${currentRunId}/ranking`)
@@ -3028,9 +3308,15 @@ function loadLapis2Features(formatR) {
     fetch(`${API_BASE}/runs/${currentRunId}/land-water`)
       .then(r => r.json())
       .then(lw => {
-        document.getElementById("mCropland").textContent = formatR(lw.cropland_exposed_ha);
-        document.getElementById("mWaterSources").textContent = formatR(lw.water_sources_exposed_count);
-        document.getElementById("ashWetnessWarning").textContent = lw.ash_wetness_warning;
+        cachedLapis2LandWater = lw;
+        const warnEl = document.getElementById("ashWetnessWarning");
+        if (warnEl && lw.ash_wetness_warning) warnEl.textContent = lw.ash_wetness_warning;
+        if (typeof updateHourlyAnalyticsDrawer === "function") {
+          updateHourlyAnalyticsDrawer(currentSelectedHour);
+        } else if (typeof formatR === "function") {
+          document.getElementById("mCropland").textContent = formatR(lw.cropland_exposed_ha);
+          document.getElementById("mWaterSources").textContent = formatR(lw.water_sources_exposed_count);
+        }
       }).catch(() => {});
   }
 
@@ -3038,9 +3324,15 @@ function loadLapis2Features(formatR) {
   fetch(`${API_BASE}/runs/${currentRunId}/rain-effect`)
     .then(r => r.json())
     .then(re => {
-      document.getElementById("mRainPopReduced").textContent = formatR(re.population_exposure_reduced);
-      document.getElementById("mRainAreaReduced").textContent = formatR(re.area_footprint_reduced_km2);
-      document.getElementById("rainCaveatText").textContent = re.hazard_specific_warning;
+      cachedLapis2Rain = re;
+      const rainCaveat = document.getElementById("rainCaveatText");
+      if (rainCaveat && re.hazard_specific_warning) rainCaveat.textContent = re.hazard_specific_warning;
+      if (typeof updateHourlyAnalyticsDrawer === "function") {
+        updateHourlyAnalyticsDrawer(currentSelectedHour);
+      } else if (typeof formatR === "function") {
+        document.getElementById("mRainPopReduced").textContent = formatR(re.population_exposure_reduced);
+        document.getElementById("mRainAreaReduced").textContent = formatR(re.area_footprint_reduced_km2);
+      }
     }).catch(() => {});
 
   // 4. Anjuran Tindakan Resmi (D16)

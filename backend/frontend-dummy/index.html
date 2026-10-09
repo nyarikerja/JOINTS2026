@@ -416,7 +416,10 @@
         <div id="tabPaneImpact" class="tab-pane active">
           <section class="drawer-section">
             <div class="section-badge badge-green">METRIK POPULASI</div>
-            <h2 class="section-heading">Estimasi Dampak (Rentang P5 &ndash; P50 &ndash; P95)</h2>
+            <h2 class="section-heading" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+              <span>Estimasi Dampak (Rentang P5 &ndash; P50 &ndash; P95)</span>
+              <span id="impactHourBadge" style="font-size:10px; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); padding:2px 8px; border-radius:4px; font-weight:600;">Posisi: Jam T+12:00</span>
+            </h2>
             <div class="section-note">Seluruh metrik dampak disajikan dalam rentang ketidakpastian ansambel.</div>
 
             <div class="kpi-metric-cards">
@@ -812,6 +815,6 @@
   </div>
 
   <script src="vendor/leaflet/leaflet.js"></script>
-  <script src="app.js?v=20261008_22"></script>
+  <script src="app.js?v=20261009_10"></script>
 </body>
 </html>
