@@ -10,6 +10,7 @@ interface ControllerDockProps {
   onHazardChange: (hazard: HazardType) => void;
   eventId: string;
   onEventChange: (eventId: string) => void;
+  onEventNameChange?: (name: string) => void;
   mode: ModelingMode;
   onModeChange: (mode: ModelingMode) => void;
   overrides: SimulationOverrides;
@@ -26,6 +27,7 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
   onHazardChange,
   eventId,
   onEventChange,
+  onEventNameChange,
   mode,
   onModeChange,
   overrides,
@@ -151,6 +153,16 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
 
     return items;
   }, [hazard, selectedRegion, volcanoGroups, forestGroups]);
+
+  React.useEffect(() => {
+    if (onEventNameChange) {
+      const selected = eventItems.find((i) => String(i.id) === eventId);
+      if (selected) {
+        const nameOnly = selected.label.split(" • ")[0];
+        onEventNameChange(nameOnly);
+      }
+    }
+  }, [eventId, eventItems, onEventNameChange]);
 
   return (
     <div
@@ -399,17 +411,6 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
               <span>Cetak Ringkasan</span>
             </button>
 
-            {/* Progress Telemetri */}
-            {isRunning && (
-              <div className="pt-1">
-                <div className="h-1 rounded-full overflow-hidden bg-black/10">
-                  <div className="h-full animate-pulse w-3/4 rounded-full bg-[#EB895B]" />
-                </div>
-                <span className="text-[10px] block text-center mt-1 text-[#EB895B]">
-                  {progressText}
-                </span>
-              </div>
-            )}
           </div>
         </div>
       </div>

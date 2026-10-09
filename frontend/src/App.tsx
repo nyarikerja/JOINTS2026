@@ -42,6 +42,7 @@ export const App: React.FC = () => {
   const [isLegendOpen, setIsLegendOpen] = useState<boolean>(false);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [progressText, setProgressText] = useState<string>("");
+  const [loadingProgress, setLoadingProgress] = useState<number>(0);
 
   const [evacuationRoute, setEvacuationRoute] = useState<{
     geometry: [number, number][];
@@ -54,6 +55,46 @@ export const App: React.FC = () => {
   const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; _t: number } | null>(null);
   const [resetViewTrigger, setResetViewTrigger] = useState<number>(0);
   const [isMapReady, setIsMapReady] = useState<boolean>(false);
+  const [selectedEventName, setSelectedEventName] = useState<string>("G. Anak Krakatau");
+
+  // Pulihkan sesi simulasi terakhir dari localStorage saat pertama kali dimuat
+  React.useEffect(() => {
+    const restoreLastSession = async () => {
+      const savedRunId = localStorage.getItem("lastRunId");
+      const savedEventId = localStorage.getItem("lastEventId");
+      const savedEventName = localStorage.getItem("lastEventName");
+      const savedHazard = localStorage.getItem("lastHazard") as HazardType;
+      
+      if (savedRunId && savedEventId) {
+        setEventId(savedEventId);
+        if (savedHazard) setHazard(savedHazard);
+        if (savedEventName) setSelectedEventName(savedEventName);
+        
+        setActiveRunId(savedRunId);
+        setSimulatedEventName(savedEventName || savedEventId);
+        setCurrentHour(48);
+        
+        try {
+          const [impact, facilities, validation, advisory, tier48] = await Promise.all([
+            api.getImpact(savedRunId).catch(() => null),
+            api.getFacilitiesImpacted(savedRunId).catch(() => null),
+            api.getValidation(savedEventId).catch(() => null),
+            api.getEmergencyAdvisory(savedRunId).catch(() => null),
+            api.getTiersAtHour(savedRunId, 48).catch(() => null)
+          ]);
+          
+          if (tier48) setHourlyTiersCache({ 48: tier48 });
+          if (impact) setImpactData(impact);
+          if (facilities) setFacilitiesData(facilities);
+          if (validation) setValidationData(validation);
+          if (advisory) setAdvisoryData(advisory);
+        } catch (e) {
+          console.error("Gagal memuat sesi sebelumnya", e);
+        }
+      }
+    };
+    restoreLastSession();
+  }, []);
 
   // Ambil poligon sebaran jam tertentu saat activeRunId aktif atau currentHour berubah
   React.useEffect(() => {
@@ -71,8 +112,16 @@ export const App: React.FC = () => {
   }, [activeRunId, currentHour]);
 
   const handleHazardChange = (newHazard: HazardType) => {
-    setHazard(newHazard);
-    setEventId("");
+    if (newHazard !== hazard) {
+      setHazard(newHazard);
+      setEventId("");
+    }
+  };
+
+  const handleEventChange = (newEventId: string) => {
+    if (newEventId !== eventId) {
+      setEventId(newEventId);
+    }
   };
 
   const [simulatedEventName, setSimulatedEventName] = useState<string>("G. Anak Krakatau");
@@ -86,7 +135,17 @@ export const App: React.FC = () => {
     if (targetEventId) setEventId(targetEventId);
 
     setIsRunning(true);
-    setProgressText("Menghitung adveksi atmosferik 15 anggota ensemble (RK2)...");
+    setLoadingProgress(0);
+    setProgressText("Mengkalkulasi parameter vulkanik & mensimulasikan sebaran abu...");
+
+    const loadingInterval = setInterval(() => {
+      setLoadingProgress((prev) => {
+        if (prev < 35) return prev + 2;
+        if (prev < 80) return prev + 1;
+        if (prev < 99) return prev + 0.5;
+        return 99;
+      });
+    }, 100);
 
     // Samakan konstruksi overrides dengan standar backend (hanya mode experiment)
     let backendOverrides: Record<string, any> | null = null;
@@ -122,9 +181,12 @@ export const App: React.FC = () => {
       const simRes = await api.runSimulation(payload);
       const runId = simRes.run_id;
       setActiveRunId(runId);
-      setSimulatedEventName(simRes.scenario_label || activeEventId);
+      
+      // Gunakan selectedEventName karena backend hanya mengembalikan "kejadian observasi" tanpa nama gunung
+      setSimulatedEventName(selectedEventName || simRes.scenario_label || activeEventId);
 
-      setProgressText("Mengekstrak kontur poligon & dampak populasi...");
+      setProgressText("Menganalisis proyeksi dampak populasi & infrastruktur...");
+      setLoadingProgress(85);
 
       // Set pratinjau jam ke 48 (akhir) agar pengguna tahu simulasi mencakup 48 jam penuh
       setCurrentHour(48);
@@ -147,11 +209,22 @@ export const App: React.FC = () => {
       setAdvisoryData(advisory);
       setIsDrawerOpen(true);
       setProgressText(`Selesai: ${simRes.scenario_label || "15 anggota ensemble"}`);
+
+      // Simpan referensi run terakhir ke local storage
+      localStorage.setItem("lastRunId", runId);
+      localStorage.setItem("lastEventId", activeEventId);
+      localStorage.setItem("lastEventName", selectedEventName || simRes.scenario_label || activeEventId);
+      localStorage.setItem("lastHazard", activeHazard);
     } catch (err: any) {
       setProgressText(`Gagal: ${err.message || "Server offline"}`);
     } finally {
-      setIsRunning(false);
-      setTimeout(() => setProgressText(""), 4000);
+      clearInterval(loadingInterval);
+      setLoadingProgress(100);
+      setTimeout(() => {
+        setIsRunning(false);
+        setProgressText("");
+        setLoadingProgress(0);
+      }, 500);
     }
   };
 
@@ -217,8 +290,8 @@ export const App: React.FC = () => {
         s.name,
         hospital?.name || "RSUD Terdekat"
       );
-      
-      const geom: [number, number][] = res.geometry.map((coord: [number, number]) => [coord[1], coord[0]]); // Leaflet uses [lat, lng]
+      // Backend sudah mengembalikan dalam format [lat, lng], tidak perlu di-swap lagi
+      const geom: [number, number][] = res.geometry || [];
       
       setEvacuationRoute({
         geometry: geom.length > 0 ? geom : [[sLat, sLng], [destLat, destLng]],
@@ -261,7 +334,7 @@ export const App: React.FC = () => {
           hourlyTiersCache={hourlyTiersCache}
           evacuationRoute={evacuationRoute}
           onSelectEvent={(newId) => {
-            setEventId(newId);
+            handleEventChange(newId);
           }}
           resetViewTrigger={resetViewTrigger}
           flyToTarget={flyToTarget}
@@ -272,12 +345,53 @@ export const App: React.FC = () => {
         />
 
         {/* Global Loading Overlay (Di bawah Navbar) */}
-        {!isMapReady && (
+        {!isMapReady && !isRunning && (
           <div className="absolute inset-0 z-[1500] bg-[#140f0e] flex flex-col items-center justify-center gap-3 select-none pointer-events-none">
             <Loader2 className="w-6 h-6 text-[#EB895B] animate-spin" />
             <span className="font-mono text-xs uppercase tracking-wider text-[#FFF0C5]/80">
               Memuat Data Spasial
             </span>
+          </div>
+        )}
+
+        {/* Loading Simulasi Center Screen */}
+        {isRunning && (
+          <div className="absolute inset-0 z-[2000] bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center select-none">
+            <div className="bg-[#f7f3ed] p-6 rounded-2xl shadow-2xl flex flex-col items-center max-w-sm w-full border border-[#2b211e]/10 animate-popup text-[#2b211e]">
+              <div className="relative w-20 h-20 mb-4">
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle
+                    cx="40"
+                    cy="40"
+                    r="36"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    fill="none"
+                    className="text-[#2b211e]/10"
+                  />
+                  <circle
+                    cx="40"
+                    cy="40"
+                    r="36"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    fill="none"
+                    strokeDasharray="226"
+                    strokeDashoffset={226 - (226 * Math.min(Math.round(loadingProgress), 100)) / 100}
+                    className="text-[#EB895B] transition-all duration-100 ease-out"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="font-bold text-[#EB895B] text-lg font-mono">
+                    {Math.round(loadingProgress)}%
+                  </span>
+                </div>
+              </div>
+              <h3 className="font-bold text-sm mb-1 text-center">Memproses Pemodelan</h3>
+              <p className="text-[11px] text-[#2b211e]/70 text-center leading-relaxed h-8">
+                {progressText}
+              </p>
+            </div>
           </div>
         )}
 
@@ -303,7 +417,8 @@ export const App: React.FC = () => {
           hazard={hazard}
           onHazardChange={handleHazardChange}
           eventId={eventId}
-          onEventChange={setEventId}
+          onEventChange={handleEventChange}
+          onEventNameChange={setSelectedEventName}
           mode={mode}
           onModeChange={setMode}
           overrides={overrides}
@@ -339,6 +454,7 @@ export const App: React.FC = () => {
           }}
           onDrawRoute={handleDrawRoute}
           activeRouteId={evacuationRoute?.facilityId}
+          simulatedEventName={simulatedEventName}
         />
 
         {/* Modal Legenda Otoritatif PVMBG & Dispersi */}

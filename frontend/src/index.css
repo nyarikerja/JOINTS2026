@@ -290,6 +290,16 @@ header {
   }
 }
 
+@keyframes popup-bounce {
+  0% { transform: scale(0.9); opacity: 0; }
+  50% { transform: scale(1.02); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-popup {
+  animation: popup-bounce 0.4s ease-out forwards;
+}
+
 /* ============================================================
    MAP ACCELERATION & MARKER SMOOTHING
    ============================================================ */

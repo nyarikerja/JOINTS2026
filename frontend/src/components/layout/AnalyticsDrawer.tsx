@@ -25,6 +25,7 @@ interface AnalyticsDrawerProps {
   onFlyTo: (lat: number, lng: number) => void;
   onDrawRoute: (s: SchoolItem) => void;
   activeRouteId?: string;
+  simulatedEventName?: string;
 }
 
 type TabType = "region" | "facilities" | "protocol";
@@ -41,7 +42,8 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
   onOpenLegend,
   onFlyTo,
   onDrawRoute,
-  activeRouteId
+  activeRouteId,
+  simulatedEventName
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>("region");
 
@@ -113,28 +115,43 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
       </div>
 
       {/* Content Body */}
-      <div className="flex-1 overflow-y-auto p-3.5">
-        {activeTab === "region" && (
-          <TabImpact
-            impact={impact}
-            hazard={hazard}
-            rainMm={rainMm}
-            currentHour={currentHour}
-            onOpenLegend={onOpenLegend}
-          />
-        )}
-        {activeTab === "facilities" && (
-          <TabFacilities
-            schools={facilities?.schools || []}
-            hospitals={facilities?.evacuation_referral_hospitals || facilities?.hospitals || facilities?.healthcare || []}
-            currentHour={currentHour}
-            onFlyTo={onFlyTo}
-            onDrawRoute={onDrawRoute}
-            activeRouteId={activeRouteId}
-          />
-        )}
-        {activeTab === "protocol" && (
-          <TabProtocolAI hazard={hazard} advisory={advisory} />
+      <div className="flex-1 overflow-y-auto p-3.5 custom-scrollbar">
+        {!impact ? (
+          <div className="h-full flex flex-col items-center justify-center text-center p-6 opacity-80 mt-12">
+            <div className="w-16 h-16 bg-[#2b211e]/5 rounded-full flex items-center justify-center mb-4">
+              <ShieldAlert className="w-8 h-8 text-[#2b211e]/40" />
+            </div>
+            <h3 className="font-bold text-[#2b211e] mb-1">Simulasi Belum Dijalankan</h3>
+            <p className="text-[11px] text-[#2b211e]/70 leading-relaxed">
+              Silakan pilih kejadian di Pusat Kendali lalu tekan <strong>Mulai Simulasi</strong> untuk melihat proyeksi dampak.
+            </p>
+          </div>
+        ) : (
+          <>
+            {activeTab === "region" && (
+              <TabImpact
+                impact={impact}
+                hazard={hazard}
+                rainMm={rainMm}
+                currentHour={currentHour}
+                onOpenLegend={onOpenLegend}
+                simulatedEventName={simulatedEventName}
+              />
+            )}
+            {activeTab === "facilities" && (
+              <TabFacilities
+                schools={facilities?.schools || []}
+                hospitals={facilities?.evacuation_referral_hospitals || facilities?.hospitals || facilities?.healthcare || []}
+                currentHour={currentHour}
+                onFlyTo={onFlyTo}
+                onDrawRoute={onDrawRoute}
+                activeRouteId={activeRouteId}
+              />
+            )}
+            {activeTab === "protocol" && (
+              <TabProtocolAI hazard={hazard} advisory={advisory} />
+            )}
+          </>
         )}
       </div>
     </aside>
