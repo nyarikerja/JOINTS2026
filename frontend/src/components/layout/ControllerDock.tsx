@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { Zap, Play, Printer, ChevronDown, ChevronUp } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Sliders, Printer, ChevronDown, ChevronUp, Play } from "lucide-react";
 import type { HazardType, ModelingMode, SimulationOverrides } from "../../types/api";
 import { api } from "../../services/api";
 import { CONFIG } from "../../config/constants";
+import BasicDropdown, { type DropdownItem } from "@/components/ui/accordion-2";
 
 interface ControllerDockProps {
   hazard: HazardType;
@@ -14,7 +15,7 @@ interface ControllerDockProps {
   overrides: SimulationOverrides;
   onOverridesChange: (overrides: SimulationOverrides) => void;
   onRunSimulation: () => void;
-  onRunDemo: () => void;
+  onRunDemo?: () => void;
   isRunning: boolean;
   progressText: string;
   activeRunId?: string | null;
@@ -30,17 +31,16 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
   overrides,
   onOverridesChange,
   onRunSimulation,
-  onRunDemo,
   isRunning,
   progressText,
   activeRunId
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState<string>("ALL");
   const [volcanoGroups, setVolcanoGroups] = useState<Record<string, any[]>>({});
   const [forestGroups, setForestGroups] = useState<Record<string, any[]>>({});
 
   useEffect(() => {
-    // 1. Muat 70 Gunungapi Nasional dari Backend (PVMBG)
     api.getNationalVolcanoes()
       .then((geo) => {
         const features = geo?.features || [];
@@ -52,6 +52,7 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
           "Maluku & Papua": []
         };
         features.forEach((f: any) => {
+          // Masukkan seluruh 70 katalog gunung api aktif PVMBG nasional
           const reg = f.properties?.region || "Lainnya";
           if (!groups[reg]) groups[reg] = [];
           groups[reg].push(f);
@@ -60,7 +61,6 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
       })
       .catch((err) => console.error("Gagal memuat katalog gunung:", err));
 
-    // 2. Muat 36 Kawasan Hutan & Gambut dari Backend
     api.getNationalForests()
       .then((forests) => {
         const list = Array.isArray(forests) ? forests : (forests?.forests || []);
@@ -82,293 +82,310 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
       .catch((err) => console.error("Gagal memuat katalog hutan:", err));
   }, []);
 
+  const handleHazardSelect = (newHazard: HazardType) => {
+    onHazardChange(newHazard);
+    setSelectedRegion("ALL");
+  };
+
+  const regionOptions: DropdownItem[] = useMemo(() => {
+    const currentGroups = hazard === "volcano" ? volcanoGroups : forestGroups;
+    const base: DropdownItem[] = [{ id: "ALL", label: "Seluruh Indonesia" }];
+    Object.entries(currentGroups).forEach(([reg, list]) => {
+      if (list.length > 0) {
+        base.push({
+          id: reg,
+          label: `${reg} (${list.length})`
+        });
+      }
+    });
+    return base;
+  }, [hazard, volcanoGroups, forestGroups]);
+
+  const eventItems: DropdownItem[] = useMemo(() => {
+    const items: DropdownItem[] = [];
+    const currentGroups = hazard === "volcano" ? volcanoGroups : forestGroups;
+
+    if (hazard === "volcano") {
+      const targetRegions = selectedRegion === "ALL" ? Object.keys(currentGroups) : [selectedRegion];
+      const collected: any[] = [];
+      targetRegions.forEach((reg) => {
+        (currentGroups[reg] || []).forEach((f: any) => {
+          collected.push(f);
+        });
+      });
+
+      // Urutkan: Level tertinggi (Awas/Siaga/Waspada/Normal) terlebih dahulu, lalu nama alfabetis
+      collected.sort((a, b) => {
+        const lvlA = a.properties?.level ?? 1;
+        const lvlB = b.properties?.level ?? 1;
+        if (lvlB !== lvlA) return lvlB - lvlA;
+        return (a.properties?.name || "").localeCompare(b.properties?.name || "");
+      });
+
+      collected.forEach((f: any) => {
+        const p = f.properties || f;
+        const id = p.event_id || p.id;
+        if (id) {
+          const statusSuffix = p.level_name ? ` • ${p.level_name}` : "";
+          items.push({
+            id: p.event_id || id,
+            label: `${p.name}${statusSuffix}`
+          });
+        }
+      });
+    } else {
+      const targetRegions = selectedRegion === "ALL" ? Object.keys(currentGroups) : [selectedRegion];
+      targetRegions.forEach((reg) => {
+        (currentGroups[reg] || []).forEach((k: any) => {
+          // Bersihkan detail lokasi di dalam kurung, hanya ambil nama kawasan utamanya
+          const cleanName = (k.name || "").replace(/\s*\(.*?\)\s*/g, "").trim();
+          if (k.id) {
+            items.push({
+              id: k.id,
+              label: cleanName || k.name
+            });
+          }
+        });
+      });
+    }
+
+    return items;
+  }, [hazard, selectedRegion, volcanoGroups, forestGroups]);
+
   return (
     <div
-      className="absolute top-3.5 left-3.5 w-80 max-h-[calc(100%-80px)] backdrop-blur-xl rounded-xl shadow-2xl z-[1000] flex flex-col overflow-hidden"
+      className="absolute top-3.5 left-3.5 w-72 backdrop-blur-md rounded-xl shadow-2xl z-[1000] flex flex-col font-sans text-[#140f0e] overflow-visible"
       style={{
         background: "rgba(245, 239, 227, 0.95)",
-        border: "1px solid rgba(0, 0, 0, 0.1)",
-        color: "#140f0e"
+        border: "4px solid #EB895B"
       }}
     >
-      {/* Header Dock */}
+      {/* Header Panel (Sesuai Style Card Lapisan Spasial Aktif) */}
       <div
-        className="px-3.5 py-2.5 flex items-center justify-between shrink-0"
-        style={{ borderBottom: "1px solid rgba(0, 0, 0, 0.08)" }}
+        className="px-3.5 py-2.5 flex items-center justify-between shrink-0 select-none border-b"
+        style={{ borderColor: "rgba(0, 0, 0, 0.1)" }}
       >
-        <div className="flex items-center gap-2">
-          <Zap className="w-4 h-4" style={{ color: "#EB895B" }} />
-          <div>
-            <span className="font-bold text-xs block" style={{ color: "#140f0e" }}>Pusat Kendali Simulasi</span>
-            <span className="text-[10px]" style={{ color: "rgba(20, 15, 14, 0.6)" }}>Model Lagrangian RK2 (15 Ansambel)</span>
-          </div>
-        </div>
+        <span
+          className="font-serif text-[15px] font-bold tracking-tight leading-none"
+          style={{ color: "#EB895B" }}
+        >
+          Pusat Kendali Simulasi
+        </span>
         <button
+          type="button"
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-1 rounded transition cursor-pointer hover:bg-black/5 hover:text-black"
-          style={{ color: "rgba(20, 15, 14, 0.6)" }}
-          title={isCollapsed ? "Buka Panel" : "Ciutkan Panel"}
+          className="p-1 rounded transition cursor-pointer hover:bg-black/5 text-[#EB895B] opacity-80 hover:opacity-100"
+          title={isCollapsed ? "Buka Panel" : "Sembunyikan Panel"}
         >
           {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
         </button>
       </div>
 
-      {/* Body Dock */}
-      {!isCollapsed && (
-        <div className="p-3.5 space-y-3 overflow-y-auto">
-          {/* Pilihan Bahaya */}
-          <div>
-            <label className="block text-[11px] font-semibold mb-1" style={{ color: "rgba(20, 15, 14, 0.85)" }}>
-              Jenis Bahaya Atmosfer:
-            </label>
-            <select
-              value={hazard}
-              onChange={(e) => onHazardChange(e.target.value as HazardType)}
-              className="w-full rounded-md px-2.5 py-1.5 text-xs outline-none transition"
-              style={{
-                background: "#FFFFFF",
-                border: "1px solid rgba(0, 0, 0, 0.15)",
-                color: "#140f0e"
-              }}
-            >
-              <option value="volcano">🌋 Erupsi Gunung Api (Abu Vulkanik)</option>
-              <option value="fire">🔥 Karhutla Gambut (Asap PM2.5)</option>
-            </select>
-          </div>
-
-          {/* Pilihan Kejadian */}
-          <div>
-            <label className="block text-[11px] font-semibold mb-1" style={{ color: "rgba(20, 15, 14, 0.85)" }}>
-              Lokasi Kejadian (Nasional):
-            </label>
-            <select
-              value={eventId}
-              onChange={(e) => onEventChange(e.target.value)}
-              className="w-full rounded-md px-2.5 py-1.5 text-xs outline-none transition"
-              style={{
-                background: "#FFFFFF",
-                border: "1px solid rgba(0, 0, 0, 0.15)",
-                color: "#140f0e"
-              }}
-            >
-              {hazard === "volcano" ? (
-                Object.keys(volcanoGroups).length > 0 ? (
-                  Object.entries(volcanoGroups).map(([reg, list]) => {
-                    if (list.length === 0) return null;
-                    return (
-                      <optgroup key={reg} label={`Gunung Api ${reg} (${list.length})`}>
-                        {list.map((f) => {
-                          const p = f.properties || f;
-                          const id = p.event_id || p.id;
-                          const lvlName = p.level_name ? p.level_name.split(' ')[0] + ' ' + (p.level_name.split(' ')[1] || '') : `Level ${p.level || 1}`;
-                          return (
-                            <option key={id} value={id}>
-                              {`[${lvlName}] ${p.name} (${p.province}) - ${p.elevation_m}m`}
-                            </option>
-                          );
-                        })}
-                      </optgroup>
-                    );
-                  })
-                ) : (
-                  <optgroup label="Gunungapi Aktif PVMBG">
-                    <option value="anak_krakatau_2026_09">[Level III] G. Anak Krakatau (Selat Sunda)</option>
-                    <option value="merapi_yogyakarta">[Level III] G. Merapi (Jawa Tengah / DIY)</option>
-                    <option value="lewotobi_laki_laki">[Level IV] G. Lewotobi Laki-laki (NTT)</option>
-                    <option value="marapi_sumatera">[Level III] G. Marapi (Sumatera Barat)</option>
-                    <option value="semeru">[Level III] G. Semeru (Jawa Timur)</option>
-                    <option value="agung">[Level II] G. Agung (Bali)</option>
-                    <option value="rinjani">[Level II] G. Rinjani (Lombok, NTB)</option>
-                    <option value="sinabung">[Level II] G. Sinabung (Sumatera Utara)</option>
-                  </optgroup>
-                )
-              ) : (
-                Object.keys(forestGroups).length > 0 ? (
-                  Object.entries(forestGroups).map(([reg, list]) => {
-                    if (list.length === 0) return null;
-                    return (
-                      <optgroup key={reg} label={`Kawasan Hutan ${reg} (${list.length})`}>
-                        {list.map((k) => (
-                          <option key={k.id} value={k.id}>
-                            {`[${k.risk_level || 'Rawan'}] ${k.name} - ${k.forest_type}`}
-                          </option>
-                        ))}
-                      </optgroup>
-                    );
-                  })
-                ) : (
-                  <optgroup label="Kebakaran Hutan &amp; Lahan Gambut">
-                    <option value="hutan_sebangau">[Sangat Rawan] TN Sebangau - Hutan Rawa Gambut Tropis</option>
-                    <option value="hutan_eks_plg">[Sangat Rawan] KHG Eks-PLG Sejuta Ha - Gambut Kritis</option>
-                    <option value="live_kalimantan">Karhutla Gambut Kalimantan (NASA FIRMS Live)</option>
-                  </optgroup>
-                )
-              )}
-            </select>
-          </div>
-
-          {/* Switcher Mode */}
-          <div>
-            <label className="block text-[11px] font-semibold mb-1" style={{ color: "rgba(20, 15, 14, 0.85)" }}>
-              Mode Pemodelan:
-            </label>
-            <div
-              className="grid grid-cols-2 rounded-md p-0.5 text-center text-xs"
-              style={{ background: "#FFFFFF", border: "1px solid rgba(0, 0, 0, 0.1)" }}
-            >
-              <button
-                type="button"
-                onClick={() => onModeChange("auto")}
-                className="py-1 rounded font-medium transition cursor-pointer"
-                style={mode === "auto" ? {
-                  background: "#EB895B",
-                  color: "#FFFFFF",
-                  fontWeight: 700
-                } : {
-                  color: "rgba(20, 15, 14, 0.6)"
-                }}
+      {/* Body Container dengan Animasi Expand/Collapse CSS Grid */}
+      <div
+        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
+          isCollapsed ? "grid-rows-[0fr] opacity-0 pointer-events-none" : "grid-rows-[1fr] opacity-100"
+        }`}
+      >
+        <div className={isCollapsed ? "overflow-hidden" : "overflow-visible"}>
+          <div className="p-3.5 space-y-2.5 overflow-visible">
+            {/* 1. Pemilih Bahaya */}
+            <div>
+              <span className="block text-[11px] text-[#140f0e]/75 mb-1 font-medium">
+                Jenis Bencana
+              </span>
+              <div
+                className="grid grid-cols-2 rounded p-0.5 bg-white/70 border border-black/10"
               >
-                Otomatis (Data Nyata)
-              </button>
-              <button
-                type="button"
-                onClick={() => onModeChange("experiment")}
-                className="py-1 rounded font-medium transition cursor-pointer"
-                style={mode === "experiment" ? {
-                  background: "#EB895B",
-                  color: "#FFFFFF",
-                  fontWeight: 700
-                } : {
-                  color: "rgba(20, 15, 14, 0.6)"
-                }}
-              >
-                Coba-coba (What-If)
-              </button>
+                <button
+                  type="button"
+                  onClick={() => handleHazardSelect("volcano")}
+                  className={`py-1.5 px-2 rounded text-[11px] font-medium text-center transition cursor-pointer ${
+                    hazard === "volcano"
+                      ? "bg-[#EB895B] text-white font-semibold shadow-xs"
+                      : "text-[#140f0e]/70 hover:text-[#140f0e]"
+                  }`}
+                >
+                  Gunung Api
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleHazardSelect("fire")}
+                  className={`py-1.5 px-2 rounded text-[11px] font-medium text-center transition cursor-pointer ${
+                    hazard === "fire"
+                      ? "bg-[#EB895B] text-white font-semibold shadow-xs"
+                      : "text-[#140f0e]/70 hover:text-[#140f0e]"
+                  }`}
+                >
+                  Kebakaran Hutan
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Parameter Eksperimen */}
-          {mode === "experiment" && (
-            <div
-              className="rounded-lg p-2.5 space-y-2 text-xs"
-              style={{
-                background: "rgba(255, 255, 255, 0.5)",
-                border: "1px solid rgba(0, 0, 0, 0.05)"
-              }}
-            >
-              <span className="font-bold block text-[11px]" style={{ color: "#EB895B" }}>Parameter What-If Skenario</span>
+            {/* 2. Filter Wilayah */}
+            <div>
+              <label className="block text-[11px] text-[#140f0e]/75 mb-1 font-medium">
+                Pilih Wilayah
+              </label>
+              <BasicDropdown
+                label="Pilih Wilayah"
+                items={regionOptions}
+                value={selectedRegion}
+                onChange={(item) => setSelectedRegion(String(item.id))}
+                className="w-full"
+              />
+            </div>
 
-              {hazard === "volcano" ? (
-                <div>
-                  <label className="text-[10px] block mb-1" style={{ color: "rgba(20, 15, 14, 0.7)" }}>
-                    Tinggi Kolom (km di atas kawah):
-                  </label>
-                  <input
-                    type="number"
-                    value={overrides.column_height_km ?? 12}
-                    min={1}
-                    max={25}
-                    step={0.5}
-                    onChange={(e) =>
-                      onOverridesChange({ ...overrides, column_height_km: parseFloat(e.target.value) })
-                    }
-                    className="w-full rounded px-2 py-1 font-mono text-xs"
-                    style={{
-                      background: "#FFFFFF",
-                      border: "1px solid rgba(0, 0, 0, 0.15)",
-                      color: "#140f0e"
-                    }}
-                  />
+            {/* 3. Titik Kejadian */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-[11px] text-[#140f0e]/75 font-medium">
+                  Titik Lokasi
+                </label>
+                <span className="text-[10px] text-[#140f0e]/50">
+                  {eventItems.length} lokasi
+                </span>
+              </div>
+              <BasicDropdown
+                label={hazard === "volcano" ? "Pilih Gunung Api" : "Pilih Kawasan Hutan"}
+                items={eventItems}
+                value={eventId}
+                searchable={true}
+                searchPlaceholder={hazard === "volcano" ? "Cari nama gunung" : "Cari nama kawasan"}
+                onChange={(item) => onEventChange(String(item.id))}
+                className="w-full"
+              />
+            </div>
+
+            {/* 4. Switcher Mode Pemodelan */}
+            <div>
+              <span className="block text-[11px] text-[#140f0e]/75 mb-1 font-medium">
+                Pilihan Mode
+              </span>
+              <div
+                className="grid grid-cols-2 rounded p-0.5 bg-white/70 border border-black/10"
+              >
+                <button
+                  type="button"
+                  onClick={() => onModeChange("auto")}
+                  className={`py-1 rounded transition cursor-pointer text-[11px] text-center ${
+                    mode === "auto"
+                      ? "bg-[#EB895B] text-white font-semibold shadow-xs"
+                      : "text-[#140f0e]/70 hover:text-[#140f0e]"
+                  }`}
+                >
+                  Kondisi Nyata
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onModeChange("experiment")}
+                  className={`py-1 rounded transition cursor-pointer text-[11px] text-center ${
+                    mode === "experiment"
+                      ? "bg-[#EB895B] text-white font-semibold shadow-xs"
+                      : "text-[#140f0e]/70 hover:text-[#140f0e]"
+                  }`}
+                >
+                  Uji Skenario
+                </button>
+              </div>
+            </div>
+
+            {/* 5. Parameter Uji Skenario */}
+            {mode === "experiment" && (
+              <div
+                className="rounded p-2.5 space-y-2 text-xs border bg-white/60 border-[#EB895B]/40"
+              >
+                <div className="flex items-center gap-1.5 text-[11px] text-[#EB895B] font-semibold">
+                  <Sliders className="w-3 h-3" />
+                  <span>Pengaturan Tambahan</span>
                 </div>
-              ) : (
+
+                {hazard === "volcano" ? (
+                  <div>
+                    <div className="flex justify-between text-[11px] mb-1 text-[#140f0e]/80">
+                      <span>Tinggi Letusan</span>
+                      <strong className="text-[#140f0e] font-semibold">{overrides.column_height_km ?? 12} km</strong>
+                    </div>
+                    <input
+                      type="range"
+                      min={1}
+                      max={25}
+                      step={0.5}
+                      value={overrides.column_height_km ?? 12}
+                      onChange={(e) =>
+                        onOverridesChange({ ...overrides, column_height_km: parseFloat(e.target.value) })
+                      }
+                      className="w-full h-1.5 rounded bg-black/10 cursor-pointer accent-[#EB895B]"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex justify-between text-[11px] mb-1 text-[#140f0e]/80">
+                      <span>Kekuatan Api (FRP)</span>
+                      <strong className="text-[#140f0e] font-semibold">{overrides.frp_scale ? Math.round(overrides.frp_scale * 100) : 100}%</strong>
+                    </div>
+                    <input
+                      type="range"
+                      min={20}
+                      max={200}
+                      value={overrides.frp_scale ? overrides.frp_scale * 100 : 100}
+                      onChange={(e) =>
+                        onOverridesChange({ ...overrides, frp_scale: parseFloat(e.target.value) / 100 })
+                      }
+                      className="w-full h-1.5 rounded bg-black/10 cursor-pointer accent-[#EB895B]"
+                    />
+                  </div>
+                )}
+
                 <div>
-                  <label className="text-[10px] block mb-1" style={{ color: "rgba(20, 15, 14, 0.7)" }}>
-                    Skala Daya Panas Api (FRP %): {overrides.frp_scale ? overrides.frp_scale * 100 : 100}%
-                  </label>
+                  <div className="flex justify-between text-[11px] mb-1 text-[#140f0e]/80">
+                    <span>Hujan di Lokasi</span>
+                    <strong className="text-[#140f0e] font-semibold">{overrides.rain_scavenging_mm_h ?? 0} mm/jam</strong>
+                  </div>
                   <input
                     type="range"
-                    min={20}
-                    max={200}
-                    value={overrides.frp_scale ? overrides.frp_scale * 100 : 100}
+                    min={0}
+                    max={50}
+                    step={5}
+                    value={overrides.rain_scavenging_mm_h ?? 0}
                     onChange={(e) =>
-                      onOverridesChange({ ...overrides, frp_scale: parseFloat(e.target.value) / 100 })
+                      onOverridesChange({ ...overrides, rain_scavenging_mm_h: parseFloat(e.target.value) })
                     }
-                    className="w-full"
-                    style={{ accentColor: "#EB895B" }}
+                    className="w-full h-1.5 rounded bg-black/10 cursor-pointer accent-[#EB895B]"
                   />
                 </div>
-              )}
 
-              <div>
-                <label className="flex items-center gap-2 text-[11px] cursor-pointer pt-1" style={{ color: "rgba(20, 15, 14, 0.85)" }}>
+                <label className="flex items-center gap-2 text-[11px] cursor-pointer pt-0.5 text-[#140f0e]/85">
                   <input
                     type="checkbox"
                     checked={overrides.wind_reverse_troposphere ?? false}
                     onChange={(e) =>
                       onOverridesChange({ ...overrides, wind_reverse_troposphere: e.target.checked })
                     }
-                    className="rounded"
-                    style={{ accentColor: "#EB895B" }}
+                    className="rounded accent-[#EB895B]"
                   />
-                  <span>Balikkan Arah Angin Troposfer (180°)</span>
+                  <span>Balikkan Arah Angin</span>
                 </label>
               </div>
+            )}
 
-              <div>
-                <label className="text-[10px] block mb-1" style={{ color: "rgba(20, 15, 14, 0.7)" }}>
-                  Curah Hujan Pencuci (mm/jam):
-                </label>
-                <input
-                  type="number"
-                  value={overrides.rain_scavenging_mm_h ?? 0}
-                  min={0}
-                  max={50}
-                  step={5}
-                  onChange={(e) =>
-                    onOverridesChange({ ...overrides, rain_scavenging_mm_h: parseFloat(e.target.value) })
-                  }
-                  className="w-full rounded px-2 py-1 font-mono text-xs"
-                  style={{
-                    background: "#FFFFFF",
-                    border: "1px solid rgba(0, 0, 0, 0.15)",
-                    color: "#140f0e"
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Tombol Eksekusi Utama */}
-          <button
-            onClick={onRunSimulation}
-            disabled={isRunning}
-            className="w-full py-2.5 px-3 rounded-lg font-bold text-xs tracking-wide flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-60"
-            style={{
-              background: "linear-gradient(to right, #EB895B, #DA6556)",
-              color: "#FFFFFF",
-              boxShadow: "0 4px 14px rgba(235, 137, 91, 0.3)"
-            }}
-          >
-            <Zap className={`w-4 h-4 ${isRunning ? "animate-spin" : ""}`} />
-            <span>{isRunning ? "MENGHITUNG SEBARAN..." : "JALANKAN SIMULASI SEBARAN"}</span>
-          </button>
-
-          {/* Action Row */}
-          <div className="grid grid-cols-2 gap-2 pt-1">
+            {/* 6. Tombol Tunggal Eksekusi Simulasi */}
             <button
-              onClick={onRunDemo}
-              disabled={isRunning}
-              className="py-1.5 px-2 rounded-md text-xs font-medium flex items-center justify-center gap-1.5 transition cursor-pointer hover:bg-black/5"
-              style={{
-                background: "#FFFFFF",
-                border: "1px solid rgba(0, 0, 0, 0.1)",
-                color: "#140f0e"
+              type="button"
+              onClick={() => {
+                console.log("Tombol Mulai Simulasi diklik! Hazard:", hazard, "EventId:", eventId);
+                onRunSimulation();
               }}
+              disabled={isRunning || !eventId}
+              className="w-full py-2 px-3 rounded font-medium text-xs tracking-wide flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-white bg-[#EB895B] hover:bg-[#d97746] active:scale-[0.99] shadow-xs"
             >
-              <Play className="w-3 h-3 fill-current" style={{ color: "#EB895B" }} />
-              <span>Putar Demo</span>
+              <Play className="w-3.5 h-3.5 fill-current" />
+              <span>{isRunning ? "Menghitung Sebaran..." : "Mulai Simulasi"}</span>
             </button>
+
+            {/* Tombol Ekspor Laporan */}
             <button
+              type="button"
               onClick={() => {
                 if (activeRunId) {
                   window.open(`${CONFIG.API_BASE}/runs/${activeRunId}/export?format=html`, "_blank");
@@ -376,32 +393,26 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
                   window.print();
                 }
               }}
-              className="py-1.5 px-2 rounded-md text-xs font-medium flex items-center justify-center gap-1.5 transition cursor-pointer hover:bg-black/5"
-              style={{
-                background: "#FFFFFF",
-                border: "1px solid rgba(0, 0, 0, 0.1)",
-                color: "#140f0e"
-              }}
+              className="w-full py-1.5 px-2 rounded text-[11px] font-normal flex items-center justify-center gap-1.5 transition cursor-pointer hover:bg-black/5 bg-white/70 border border-black/10 text-[#140f0e]/80 hover:text-[#140f0e]"
             >
-              <Printer className="w-3 h-3" style={{ color: "rgba(20, 15, 14, 0.6)" }} />
-              <span>Ekspor Laporan</span>
+              <Printer className="w-3.5 h-3.5 text-[#140f0e]/60" />
+              <span>Cetak Ringkasan</span>
             </button>
-          </div>
 
-          {/* Progress Indicator */}
-          {isRunning && (
-            <div className="pt-2">
-              <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(235, 137, 91, 0.15)" }}>
-                <div className="h-full animate-pulse w-3/4 rounded-full" style={{ background: "#EB895B" }} />
+            {/* Progress Telemetri */}
+            {isRunning && (
+              <div className="pt-1">
+                <div className="h-1 rounded-full overflow-hidden bg-black/10">
+                  <div className="h-full animate-pulse w-3/4 rounded-full bg-[#EB895B]" />
+                </div>
+                <span className="text-[10px] block text-center mt-1 text-[#EB895B]">
+                  {progressText}
+                </span>
               </div>
-              <span className="text-[10px] block text-center mt-1 font-mono" style={{ color: "#EB895B" }}>
-                {progressText}
-              </span>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
-

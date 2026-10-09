@@ -93,11 +93,11 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
       <div className="flex items-center gap-2.5">
         <img
           src="/gunung.png"
-          alt="Logo Gunung Api UdaraSiaga"
+          alt="Logo hELAlOKA"
           className="w-8 h-8 object-contain shrink-0 drop-shadow-sm select-none pointer-events-none"
         />
         <div className="flex items-center gap-1.5">
-          <span className="font-extrabold text-base tracking-tight" style={{ color: "#140f0e" }}>UdaraSiaga</span>
+          <span className="font-extrabold text-base tracking-tight" style={{ color: "#140f0e" }}>hELAlOKA</span>
           <span className="font-bold text-[10px] px-1.5 py-0.5 rounded tracking-wider text-white shadow-xs" style={{ backgroundColor: "#A14646" }}>
             INDONESIA
           </span>

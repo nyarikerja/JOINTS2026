@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Loader2 } from "lucide-react";
 import { TacticalHeader } from "./components/layout/TacticalHeader";
 import { ControllerDock } from "./components/layout/ControllerDock";
 import { MapWorkspace } from "./components/layout/MapWorkspace";
@@ -19,7 +20,7 @@ import type {
 
 export const App: React.FC = () => {
   const [hazard, setHazard] = useState<HazardType>("volcano");
-  const [eventId, setEventId] = useState<string>("anak_krakatau_2026_09");
+  const [eventId, setEventId] = useState<string>("");
   const [mode, setMode] = useState<ModelingMode>("auto");
   const [overrides, setOverrides] = useState<SimulationOverrides>({
     column_height_km: 12.0,
@@ -35,6 +36,7 @@ export const App: React.FC = () => {
   const [impactData, setImpactData] = useState<ImpactResponse | null>(null);
   const [facilitiesData, setFacilitiesData] = useState<FacilitiesImpactResponse | null>(null);
   const [validationData, setValidationData] = useState<ValidationResponse | null>(null);
+  const [advisoryData, setAdvisoryData] = useState<any>(null);
 
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [isLegendOpen, setIsLegendOpen] = useState<boolean>(false);
@@ -42,23 +44,27 @@ export const App: React.FC = () => {
   const [progressText, setProgressText] = useState<string>("");
 
   const [evacuationRoute, setEvacuationRoute] = useState<{
-    origin: [number, number];
-    dest: [number, number];
+    geometry: [number, number][];
     label: string;
+    distanceKm?: number;
+    durationMin?: number;
+    facilityId?: string;
   } | null>(null);
 
+  const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; _t: number } | null>(null);
   const [resetViewTrigger, setResetViewTrigger] = useState<number>(0);
+  const [isMapReady, setIsMapReady] = useState<boolean>(false);
 
   // Ambil poligon sebaran jam tertentu saat activeRunId aktif atau currentHour berubah
   React.useEffect(() => {
     if (!activeRunId) return;
-    if (hourlyTiersCache && hourlyTiersCache[currentHour]) return;
 
     api.getTiersAtHour(activeRunId, currentHour)
       .then((geo) => {
         setHourlyTiersCache((prev) => ({
           ...(prev || {}),
-          [currentHour]: geo
+          [currentHour]: geo,
+          [`hour_${currentHour}`]: geo
         }));
       })
       .catch((err) => console.error("Gagal memuat poligon jam", currentHour, err));
@@ -66,11 +72,7 @@ export const App: React.FC = () => {
 
   const handleHazardChange = (newHazard: HazardType) => {
     setHazard(newHazard);
-    if (newHazard === "fire" && !eventId.startsWith("hutan_")) {
-      setEventId("hutan_sebangau");
-    } else if (newHazard === "volcano" && (eventId.startsWith("hutan_") || eventId === "live_kalimantan")) {
-      setEventId("anak_krakatau_2026_09");
-    }
+    setEventId("");
   };
 
   const [simulatedEventName, setSimulatedEventName] = useState<string>("G. Anak Krakatau");
@@ -124,23 +126,25 @@ export const App: React.FC = () => {
 
       setProgressText("Mengekstrak kontur poligon & dampak populasi...");
 
-      // Set pratinjau jam ke 12 agar poligon sebaran langsung terlihat di peta (sesuai fe-dummy)
-      setCurrentHour(12);
+      // Set pratinjau jam ke 48 (akhir) agar pengguna tahu simulasi mencakup 48 jam penuh
+      setCurrentHour(48);
 
-      const [impact, facilities, validation, tier12] = await Promise.all([
+      const [impact, facilities, validation, advisory, tier48] = await Promise.all([
         api.getImpact(runId).catch(() => null),
         api.getFacilitiesImpacted(runId).catch(() => null),
         api.getValidation(activeEventId).catch(() => null),
-        api.getTiersAtHour(runId, 12).catch(() => null)
+        api.getEmergencyAdvisory(runId).catch(() => null),
+        api.getTiersAtHour(runId, 48).catch(() => null)
       ]);
 
-      if (tier12) {
-        setHourlyTiersCache({ 12: tier12 });
+      if (tier48) {
+        setHourlyTiersCache({ 48: tier48 });
       }
 
       setImpactData(impact);
       setFacilitiesData(facilities);
       setValidationData(validation);
+      setAdvisoryData(advisory);
       setIsDrawerOpen(true);
       setProgressText(`Selesai: ${simRes.scenario_label || "15 anggota ensemble"}`);
     } catch (err: any) {
@@ -187,20 +191,53 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleDrawRoute = (s: SchoolItem) => {
+  const handleDrawRoute = async (s: SchoolItem) => {
+    const facilityId = s.id || s.facility_id || s.name;
+    if (evacuationRoute && evacuationRoute.facilityId === facilityId) {
+      setEvacuationRoute(null);
+      return;
+    }
+
     const sLat = s.lat ?? s.latitude;
     const sLng = s.lng ?? s.longitude;
-    if (sLat === undefined || sLng === undefined) return;
+    if (sLat === undefined || sLng === undefined || !activeRunId) return;
 
     const hospital = s.nearest_safe_hospital || s.nearest_hospital;
     const destLat = hospital?.lat ?? hospital?.latitude ?? sLat + 0.035;
     const destLng = hospital?.lng ?? hospital?.longitude ?? sLng + 0.035;
 
-    setEvacuationRoute({
-      origin: [sLat, sLng],
-      dest: [destLat, destLng],
-      label: `Evakuasi Siswa: ${s.name} → ${hospital?.name || "RSUD Terdekat"}`
-    });
+    setProgressText(`Menghitung rute evakuasi dari ${s.name}...`);
+    try {
+      const res = await api.getEvacuationRoute(
+        activeRunId,
+        sLat,
+        sLng,
+        destLat,
+        destLng,
+        s.name,
+        hospital?.name || "RSUD Terdekat"
+      );
+      
+      const geom: [number, number][] = res.geometry.map((coord: [number, number]) => [coord[1], coord[0]]); // Leaflet uses [lat, lng]
+      
+      setEvacuationRoute({
+        geometry: geom.length > 0 ? geom : [[sLat, sLng], [destLat, destLng]],
+        label: `Evakuasi: ${s.name} → ${hospital?.name || "RSUD Terdekat"}`,
+        distanceKm: res.distance_km,
+        durationMin: res.duration_min,
+        facilityId
+      });
+      setProgressText("");
+    } catch (err) {
+      console.error(err);
+      setProgressText("Gagal mengambil rute riil, menampilkan garis lurus.");
+      setEvacuationRoute({
+        geometry: [[sLat, sLng], [destLat, destLng]],
+        label: `Evakuasi: ${s.name} → ${hospital?.name || "RSUD Terdekat"}`,
+        facilityId
+      });
+      setTimeout(() => setProgressText(""), 3000);
+    }
   };
 
   return (
@@ -227,16 +264,37 @@ export const App: React.FC = () => {
             setEventId(newId);
           }}
           resetViewTrigger={resetViewTrigger}
+          flyToTarget={flyToTarget}
+          activeRunId={activeRunId}
+          isDrawerOpen={isDrawerOpen}
           onToggleLegend={() => setIsLegendOpen((prev) => !prev)}
+          onLayersLoaded={() => setIsMapReady(true)}
         />
+
+        {/* Global Loading Overlay (Di bawah Navbar) */}
+        {!isMapReady && (
+          <div className="absolute inset-0 z-[1500] bg-[#140f0e] flex flex-col items-center justify-center gap-3 select-none pointer-events-none">
+            <Loader2 className="w-6 h-6 text-[#EB895B] animate-spin" />
+            <span className="font-mono text-xs uppercase tracking-wider text-[#FFF0C5]/80">
+              Memuat Data Spasial
+            </span>
+          </div>
+        )}
 
         {/* Floating Active Simulation Pill */}
         {activeRunId && (
-          <div className="absolute top-3.5 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md border border-slate-700/80 rounded-full px-3.5 py-1 z-[1000] text-xs flex items-center gap-2 shadow-xl pointer-events-none">
+          <div className="absolute top-3.5 left-1/2 -translate-x-1/2 bg-[#1c1513]/90 backdrop-blur-md border border-[#EB895B]/30 rounded-full px-3.5 py-1 z-[1000] text-xs flex items-center gap-2 shadow-xl pointer-events-none">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-slate-300">Simulasi Aktif:</span>
-            <strong className="text-white font-semibold">{simulatedEventName}</strong>
-            <span className="text-sky-400 font-mono text-[11px]">(H+{currentHour}:00)</span>
+            <span className="text-[#FFF0C5]/70">Simulasi Aktif:</span>
+            <strong className="text-[#FFF0C5] font-semibold">{simulatedEventName}</strong>
+            <span className="text-[#EB895B] font-mono text-[11px]">(H+{currentHour}:00)</span>
+          </div>
+        )}
+
+        {/* Watermark Skenario Hipotetis (Mode Coba-Coba / Experiment) */}
+        {mode === "experiment" && activeRunId && (
+          <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-amber-950/80 backdrop-blur-sm border border-amber-500/40 rounded px-2.5 py-0.5 z-[999] text-[10px] font-mono tracking-wider text-amber-200 uppercase pointer-events-none shadow-md">
+            SKENARIO HIPOTETIS &bull; BUKAN DATA RESMI
           </div>
         )}
 
@@ -261,6 +319,7 @@ export const App: React.FC = () => {
         <TimelinePlayer
           currentHour={currentHour}
           onHourChange={setCurrentHour}
+          isDrawerOpen={isDrawerOpen}
         />
 
         {/* Zona D: Tabbed Inspection Dock Melayang di Kanan */}
@@ -270,13 +329,16 @@ export const App: React.FC = () => {
           impact={impactData}
           facilities={facilitiesData}
           validation={validationData}
+          advisory={advisoryData}
           hazard={hazard}
+          currentHour={currentHour}
           rainMm={mode === "experiment" ? overrides.rain_scavenging_mm_h ?? 0 : 0}
+          onOpenLegend={() => setIsLegendOpen(true)}
           onFlyTo={(lat, lng) => {
-            // Pemusatan peta melalui event / ref jika diperlukan
-            console.log("Fly to:", lat, lng);
+            setFlyToTarget({ lat, lng, _t: Date.now() });
           }}
           onDrawRoute={handleDrawRoute}
+          activeRouteId={evacuationRoute?.facilityId}
         />
 
         {/* Modal Legenda Otoritatif PVMBG & Dispersi */}

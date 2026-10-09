@@ -78,14 +78,37 @@ export interface ImpactRange {
 
 export interface ImpactResponse {
   run_id: string;
+  scenario_label?: string;
+  disclaimer?: string;
   population_exposed: ImpactRange;
   children_exposed: ImpactRange;
   elderly_exposed: ImpactRange;
   area_exposed_km2: ImpactRange;
   schools_exposed: ImpactRange;
   healthcare_exposed: ImpactRange;
-  agricultural_impact_ha?: number;
-  water_sources_count?: number;
+  airports_exposed?: ImpactRange;
+  cropland_exposed_ha?: ImpactRange;
+  water_sources_exposed_count?: ImpactRange;
+  rain_pop_reduced?: ImpactRange;
+  rain_area_reduced?: ImpactRange;
+  ispu?: {
+    available?: boolean;
+    reason?: string;
+    category?: string;
+    relative_risk_index?: ImpactRange;
+  };
+  hourly_series?: Record<string, {
+    population_exposed: ImpactRange;
+    children_exposed: ImpactRange;
+    elderly_exposed: ImpactRange;
+    area_exposed_km2: ImpactRange;
+    schools_exposed: ImpactRange;
+    healthcare_exposed: ImpactRange;
+    cropland_exposed_ha?: ImpactRange;
+    water_sources_exposed_count?: ImpactRange;
+    rain_pop_reduced?: ImpactRange;
+    rain_area_reduced?: ImpactRange;
+  }>;
 }
 
 export interface SchoolItem {

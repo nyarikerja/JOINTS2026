@@ -1,10 +1,8 @@
 import React, { useState } from "react";
-import { X, BarChart3, GraduationCap, Ambulance, ShieldAlert, FlaskConical } from "lucide-react";
+import { X, MapPin, Building2, ShieldAlert } from "lucide-react";
 import { TabImpact } from "../tabs/TabImpact";
-import { TabSchools } from "../tabs/TabSchools";
-import { TabEvac } from "../tabs/TabEvac";
-import { TabHealth } from "../tabs/TabHealth";
-import { TabScience } from "../tabs/TabScience";
+import { TabFacilities } from "../tabs/TabFacilities";
+import { TabProtocolAI } from "../tabs/TabProtocolAI";
 import type {
   ImpactResponse,
   FacilitiesImpactResponse,
@@ -19,121 +17,125 @@ interface AnalyticsDrawerProps {
   impact: ImpactResponse | null;
   facilities: FacilitiesImpactResponse | null;
   validation: ValidationResponse | null;
+  advisory?: any;
   hazard: HazardType;
+  currentHour?: number;
   rainMm: number;
+  onOpenLegend?: () => void;
   onFlyTo: (lat: number, lng: number) => void;
   onDrawRoute: (s: SchoolItem) => void;
+  activeRouteId?: string;
 }
 
-type TabType = "impact" | "schools" | "evac" | "health" | "science";
+type TabType = "region" | "facilities" | "protocol";
 
 export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
   isOpen,
   onClose,
   impact,
   facilities,
-  validation,
+  advisory,
   hazard,
+  currentHour = 12,
   rainMm,
+  onOpenLegend,
   onFlyTo,
-  onDrawRoute
+  onDrawRoute,
+  activeRouteId
 }) => {
-  const [activeTab, setActiveTab] = useState<TabType>("impact");
+  const [activeTab, setActiveTab] = useState<TabType>("region");
 
   const tabs = [
-    { id: "impact", label: "Dampak", icon: BarChart3 },
-    { id: "schools", label: "Sekolah", icon: GraduationCap },
-    { id: "evac", label: "Evakuasi", icon: Ambulance },
-    { id: "health", label: "APD", icon: ShieldAlert },
-    { id: "science", label: "Sains", icon: FlaskConical }
+    { id: "region", label: "Wilayah", icon: MapPin },
+    { id: "facilities", label: "Fasilitas", icon: Building2 },
+    { id: "protocol", label: "Protokol & AI", icon: ShieldAlert }
   ] as const;
 
   return (
     <aside
-      className={`absolute top-0 right-0 w-[440px] max-w-full h-full backdrop-blur-2xl z-[1050] flex flex-col shadow-2xl transition-transform duration-300 ease-out ${
+      className={`absolute top-0 right-0 w-[350px] max-w-full h-full backdrop-blur-xl z-[1050] flex flex-col shadow-2xl transition-transform duration-300 ease-out font-sans ${
         isOpen ? "translate-x-0" : "translate-x-full"
       }`}
       style={{
-        background: "rgba(245, 239, 227, 0.96)",
-        borderLeft: "1px solid rgba(0, 0, 0, 0.1)",
-        color: "#140f0e"
+        background: "rgba(247, 243, 237, 0.97)",
+        borderLeft: "2px solid #EB895B",
+        color: "#2b211e"
       }}
     >
-      {/* Header Drawer */}
+      {/* Tab Navigation (Wilayah | Fasilitas | Protokol & AI) + Tombol Tutup */}
       <div
-        className="h-12 px-4 flex items-center justify-between shrink-0"
+        className="flex items-stretch shrink-0 border-b select-none"
         style={{
-          borderBottom: "1px solid rgba(0, 0, 0, 0.08)",
-          background: "#F5EFE3"
+          background: "rgba(236, 229, 219, 0.85)",
+          borderColor: "rgba(43, 33, 30, 0.1)"
         }}
       >
-        <div>
-          <span className="font-bold text-xs block" style={{ color: "#140f0e" }}>Proyeksi Dampak &amp; Aksi Dini</span>
-          <span className="text-[10px]" style={{ color: "rgba(20, 15, 14, 0.6)" }}>Hasil Ansambel Multi-Bahaya 48 Jam</span>
-        </div>
+        <nav className="grid grid-cols-3 flex-1">
+          {tabs.map((t) => {
+            const Icon = t.icon;
+            const isActive = activeTab === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setActiveTab(t.id)}
+                className="py-2.5 px-1 text-[11px] font-medium flex flex-col items-center gap-1 border-b-2 transition cursor-pointer hover:bg-black/5"
+                style={
+                  isActive
+                    ? {
+                        borderColor: "#EB895B",
+                        color: "#A14646",
+                        background: "rgba(235, 137, 91, 0.12)",
+                        fontWeight: 700
+                      }
+                    : {
+                        borderColor: "transparent",
+                        color: "rgba(43, 33, 30, 0.65)"
+                      }
+                }
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{t.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Tombol Tutup Panel Minimalis */}
         <button
+          type="button"
           onClick={onClose}
-          className="p-1.5 rounded-lg transition cursor-pointer hover:bg-black/5"
-          style={{ color: "#140f0e" }}
+          className="w-10 flex items-center justify-center transition cursor-pointer hover:bg-black/10 text-[#2b211e]/70 hover:text-[#2b211e] border-l border-black/10"
           title="Tutup Panel"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      {/* 5 Tab Navigation */}
-      <nav
-        className="grid grid-cols-5 shrink-0"
-        style={{
-          background: "rgba(238, 230, 215, 0.8)",
-          borderBottom: "1px solid rgba(0, 0, 0, 0.08)"
-        }}
-      >
-        {tabs.map((t) => {
-          const Icon = t.icon;
-          const isActive = activeTab === t.id;
-          return (
-            <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id)}
-              className="py-2.5 px-1 text-[10px] font-medium flex flex-col items-center gap-1 border-b-2 transition cursor-pointer hover:bg-black/5"
-              style={isActive ? {
-                borderColor: "#EB895B",
-                color: "#EB895B",
-                background: "rgba(235, 137, 91, 0.12)",
-                fontWeight: 700
-              } : {
-                borderColor: "transparent",
-                color: "rgba(20, 15, 14, 0.6)"
-              }}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              <span>{t.label}</span>
-            </button>
-          );
-        })}
-      </nav>
-
       {/* Content Body */}
-      <div className="flex-1 overflow-y-auto p-4">
-        {activeTab === "impact" && (
-          <TabImpact impact={impact} hazard={hazard} rainMm={rainMm} />
+      <div className="flex-1 overflow-y-auto p-3.5">
+        {activeTab === "region" && (
+          <TabImpact
+            impact={impact}
+            hazard={hazard}
+            rainMm={rainMm}
+            currentHour={currentHour}
+            onOpenLegend={onOpenLegend}
+          />
         )}
-        {activeTab === "schools" && (
-          <TabSchools
+        {activeTab === "facilities" && (
+          <TabFacilities
             schools={facilities?.schools || []}
+            hospitals={facilities?.evacuation_referral_hospitals || facilities?.hospitals || facilities?.healthcare || []}
+            currentHour={currentHour}
             onFlyTo={onFlyTo}
             onDrawRoute={onDrawRoute}
+            activeRouteId={activeRouteId}
           />
         )}
-        {activeTab === "evac" && (
-          <TabEvac
-            healthcare={facilities?.evacuation_referral_hospitals || facilities?.hospitals || facilities?.healthcare || []}
-            onFlyTo={onFlyTo}
-          />
+        {activeTab === "protocol" && (
+          <TabProtocolAI hazard={hazard} advisory={advisory} />
         )}
-        {activeTab === "health" && <TabHealth hazard={hazard} />}
-        {activeTab === "science" && <TabScience validation={validation} hazard={hazard} />}
       </div>
     </aside>
   );
