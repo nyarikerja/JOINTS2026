@@ -42,6 +42,7 @@ export const App: React.FC = () => {
   const [isLegendOpen, setIsLegendOpen] = useState<boolean>(false);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [progressText, setProgressText] = useState<string>("");
+  const [loadingProgress, setLoadingProgress] = useState<number>(0);
 
   const [evacuationRoute, setEvacuationRoute] = useState<{
     geometry: [number, number][];
@@ -71,8 +72,16 @@ export const App: React.FC = () => {
   }, [activeRunId, currentHour]);
 
   const handleHazardChange = (newHazard: HazardType) => {
-    setHazard(newHazard);
-    setEventId("");
+    if (newHazard !== hazard) {
+      setHazard(newHazard);
+      setEventId("");
+    }
+  };
+
+  const handleEventChange = (newEventId: string) => {
+    if (newEventId !== eventId) {
+      setEventId(newEventId);
+    }
   };
 
   const [simulatedEventName, setSimulatedEventName] = useState<string>("G. Anak Krakatau");
@@ -86,7 +95,17 @@ export const App: React.FC = () => {
     if (targetEventId) setEventId(targetEventId);
 
     setIsRunning(true);
+    setLoadingProgress(0);
     setProgressText("Menghitung adveksi atmosferik 15 anggota ensemble (RK2)...");
+
+    const loadingInterval = setInterval(() => {
+      setLoadingProgress((prev) => {
+        if (prev < 35) return prev + 2;
+        if (prev < 80) return prev + 1;
+        if (prev < 99) return prev + 0.5;
+        return 99;
+      });
+    }, 100);
 
     // Samakan konstruksi overrides dengan standar backend (hanya mode experiment)
     let backendOverrides: Record<string, any> | null = null;
@@ -125,6 +144,7 @@ export const App: React.FC = () => {
       setSimulatedEventName(simRes.scenario_label || activeEventId);
 
       setProgressText("Mengekstrak kontur poligon & dampak populasi...");
+      setLoadingProgress(85);
 
       // Set pratinjau jam ke 48 (akhir) agar pengguna tahu simulasi mencakup 48 jam penuh
       setCurrentHour(48);
@@ -150,8 +170,13 @@ export const App: React.FC = () => {
     } catch (err: any) {
       setProgressText(`Gagal: ${err.message || "Server offline"}`);
     } finally {
-      setIsRunning(false);
-      setTimeout(() => setProgressText(""), 4000);
+      clearInterval(loadingInterval);
+      setLoadingProgress(100);
+      setTimeout(() => {
+        setIsRunning(false);
+        setProgressText("");
+        setLoadingProgress(0);
+      }, 500);
     }
   };
 
@@ -261,7 +286,7 @@ export const App: React.FC = () => {
           hourlyTiersCache={hourlyTiersCache}
           evacuationRoute={evacuationRoute}
           onSelectEvent={(newId) => {
-            setEventId(newId);
+            handleEventChange(newId);
           }}
           resetViewTrigger={resetViewTrigger}
           flyToTarget={flyToTarget}
@@ -272,12 +297,53 @@ export const App: React.FC = () => {
         />
 
         {/* Global Loading Overlay (Di bawah Navbar) */}
-        {!isMapReady && (
+        {!isMapReady && !isRunning && (
           <div className="absolute inset-0 z-[1500] bg-[#140f0e] flex flex-col items-center justify-center gap-3 select-none pointer-events-none">
             <Loader2 className="w-6 h-6 text-[#EB895B] animate-spin" />
             <span className="font-mono text-xs uppercase tracking-wider text-[#FFF0C5]/80">
               Memuat Data Spasial
             </span>
+          </div>
+        )}
+
+        {/* Loading Simulasi Center Screen */}
+        {isRunning && (
+          <div className="absolute inset-0 z-[2000] bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center select-none">
+            <div className="bg-[#f7f3ed] p-6 rounded-2xl shadow-2xl flex flex-col items-center max-w-sm w-full border border-[#2b211e]/10 animate-popup text-[#2b211e]">
+              <div className="relative w-20 h-20 mb-4">
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle
+                    cx="40"
+                    cy="40"
+                    r="36"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    fill="none"
+                    className="text-[#2b211e]/10"
+                  />
+                  <circle
+                    cx="40"
+                    cy="40"
+                    r="36"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    fill="none"
+                    strokeDasharray="226"
+                    strokeDashoffset={226 - (226 * Math.min(Math.round(loadingProgress), 100)) / 100}
+                    className="text-[#EB895B] transition-all duration-100 ease-out"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="font-bold text-[#EB895B] text-lg font-mono">
+                    {Math.round(loadingProgress)}%
+                  </span>
+                </div>
+              </div>
+              <h3 className="font-bold text-sm mb-1 text-center">Memproses Pemodelan</h3>
+              <p className="text-[11px] text-[#2b211e]/70 text-center leading-relaxed h-8">
+                {progressText}
+              </p>
+            </div>
           </div>
         )}
 
@@ -303,7 +369,7 @@ export const App: React.FC = () => {
           hazard={hazard}
           onHazardChange={handleHazardChange}
           eventId={eventId}
-          onEventChange={setEventId}
+          onEventChange={handleEventChange}
           mode={mode}
           onModeChange={setMode}
           overrides={overrides}
@@ -339,6 +405,7 @@ export const App: React.FC = () => {
           }}
           onDrawRoute={handleDrawRoute}
           activeRouteId={evacuationRoute?.facilityId}
+          simulatedEventName={simulatedEventName}
         />
 
         {/* Modal Legenda Otoritatif PVMBG & Dispersi */}

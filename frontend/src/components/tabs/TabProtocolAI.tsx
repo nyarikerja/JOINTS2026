@@ -36,18 +36,13 @@ export const TabProtocolAI: React.FC<TabProtocolAIProps> = ({ hazard, advisory }
     <div className="space-y-3.5 text-xs text-[#2b211e]">
       {/* 1. Incident Command Header */}
       <div>
-        <div className="flex items-center justify-between mb-1">
-          <span className="font-sans text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#A14646]/10 text-[#A14646] border border-[#A14646]/20">
-            TANGGAP DARURAT &amp; EDUKASI
-          </span>
-          <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-900 border border-amber-400/30 font-bold uppercase">
-            {alertLevel}
-          </span>
-        </div>
-        <h3 className="font-serif text-[15px] font-bold text-[#2b211e] mt-1 mb-0.5">
-          Protokol Medis &amp; Draf Siaran AI
+        <h3 className="font-sans text-[11px] font-bold uppercase tracking-wider text-[#A14646] mb-0.5">
+          TANGGAP DARURAT &amp; EDUKASI
         </h3>
-        <p className="text-[11px] text-[#2b211e]/70 leading-relaxed">
+        <span className="text-[10px] text-[#d97706] font-bold uppercase block mb-1.5">
+          {alertLevel}
+        </span>
+        <p className="text-[11px] text-[#2b211e]/70 leading-relaxed mb-2">
           Instruksi keselamatan warga dan diseminasi komunikasi darurat multi-kanal.
         </p>
       </div>
@@ -72,12 +67,12 @@ export const TabProtocolAI: React.FC<TabProtocolAIProps> = ({ hazard, advisory }
       )}
 
       {/* 3. Box Peringatan Kritis Kemenkes (Anti-Softlens / PM2.5) */}
-      <div className="bg-[#DA6556]/10 border border-[#DA6556]/30 rounded-lg p-3 text-[#2b211e]">
-        <div className="flex items-center gap-1.5 text-[#A14646] font-bold text-xs mb-1">
-          <ShieldAlert className="w-4 h-4 text-[#A14646] shrink-0" />
+      <div className="bg-white border border-[#2b211e]/10 rounded-lg p-2.5 shadow-xs text-[#2b211e]">
+        <div className="flex items-center gap-1.5 text-[#A14646] font-bold text-[11px] mb-1.5">
+          <ShieldAlert className="w-3.5 h-3.5 text-[#A14646] shrink-0" />
           <span>{isVolcano ? "Peringatan Bahaya Lensa Kontak (Softlens)" : "Peringatan Bahaya Partikel PM2.5"}</span>
         </div>
-        <p className="text-[11px] leading-relaxed text-[#2b211e]/85">
+        <p className="text-[10px] leading-relaxed text-[#2b211e]/75">
           {isVolcano ? (
             <>
               Abu vulkanik mengandung pecahan kaca silika mikroskopis tajam. Penggunaan <strong>lensa kontak (softlens)</strong> dapat menjebak kristal silika dan mengikis kornea saat berkedip, memicu abrasi kornea permanen.
@@ -88,13 +83,13 @@ export const TabProtocolAI: React.FC<TabProtocolAIProps> = ({ hazard, advisory }
             </>
           )}
         </p>
-        <div className="mt-2 text-[10px] font-semibold text-[#A14646] bg-white/70 py-1 px-2 rounded border border-[#DA6556]/20">
+        <div className="mt-2 text-[10px] font-semibold text-[#A14646] bg-[#DA6556]/10 py-1 px-1.5 rounded border border-[#DA6556]/20">
           Mandat: {isVolcano ? "Lepas softlens, gunakan kacamata pelindung & masker N95." : "Tutup ventilasi, nyalakan air purifier & pakai masker N95."}
         </div>
       </div>
 
       {/* 4. Draf Siaran Darurat AI (Switcher: Siaran Pers vs WhatsApp Warga) */}
-      <div className="bg-white border border-[#2b211e]/15 rounded-lg p-3 shadow-xs">
+      <div className="bg-white border border-[#2b211e]/10 rounded-lg p-2.5 shadow-xs">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5">
             <Bot className="w-3.5 h-3.5 text-[#EB895B]" />
@@ -138,7 +133,7 @@ export const TabProtocolAI: React.FC<TabProtocolAIProps> = ({ hazard, advisory }
           </button>
         </div>
 
-        <pre className="text-[10px] leading-relaxed text-[#2b211e]/80 whitespace-pre-wrap font-sans bg-[#f7f3ed] p-2.5 rounded border border-[#2b211e]/8 max-h-48 overflow-y-auto">
+        <pre className="text-[10px] leading-relaxed text-[#2b211e]/80 whitespace-pre-wrap font-sans bg-[#f7f3ed] p-2 rounded border border-[#2b211e]/10 max-h-48 overflow-y-auto custom-scrollbar">
           {currentText}
         </pre>
       </div>

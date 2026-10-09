@@ -8,6 +8,7 @@ interface TabImpactProps {
   rainMm: number;
   currentHour?: number;
   onOpenLegend?: () => void;
+  simulatedEventName?: string;
 }
 
 export const TabImpact: React.FC<TabImpactProps> = ({
@@ -15,7 +16,8 @@ export const TabImpact: React.FC<TabImpactProps> = ({
   hazard,
   rainMm,
   currentHour = 12,
-  onOpenLegend
+  onOpenLegend,
+  simulatedEventName
 }) => {
   // Ambil metrik dinamis jam aktif dari backend (hourly_series) atau fallback ke akumulasi
   const cur: any = (impact?.hourly_series && (impact.hourly_series[String(currentHour)] || impact.hourly_series[currentHour])) || impact;
@@ -39,8 +41,10 @@ export const TabImpact: React.FC<TabImpactProps> = ({
       {/* 1. Metrik Populasi & Wilayah */}
       <div>
         <div className="flex items-center justify-between mb-1">
-          <h3 className="font-sans text-[11px] font-bold uppercase tracking-wider text-[#A14646]">
-            METRIK POPULASI
+          <h3 className="font-sans text-[11px] font-bold uppercase tracking-wider text-[#A14646] truncate max-w-[200px]" title={simulatedEventName || "METRIK POPULASI"}>
+            {simulatedEventName 
+              ? simulatedEventName.replace(/^(Kejadian Observasi|Skenario Hipotetis|Simulasi)(\s*[:-]\s*)?/i, "") 
+              : "METRIK POPULASI"}
           </h3>
           <span className="font-mono text-[9px] px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-800 border border-sky-400/30 font-semibold">
             Jam T+{currentHour < 10 ? `0${currentHour}` : currentHour}:00

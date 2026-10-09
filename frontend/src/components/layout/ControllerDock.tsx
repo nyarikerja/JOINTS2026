@@ -399,17 +399,6 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
               <span>Cetak Ringkasan</span>
             </button>
 
-            {/* Progress Telemetri */}
-            {isRunning && (
-              <div className="pt-1">
-                <div className="h-1 rounded-full overflow-hidden bg-black/10">
-                  <div className="h-full animate-pulse w-3/4 rounded-full bg-[#EB895B]" />
-                </div>
-                <span className="text-[10px] block text-center mt-1 text-[#EB895B]">
-                  {progressText}
-                </span>
-              </div>
-            )}
           </div>
         </div>
       </div>
