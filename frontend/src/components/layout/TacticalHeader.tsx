@@ -25,14 +25,18 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsHelpOpen(true);
-    }, 2000);
-    return () => clearTimeout(timer);
+    const hasSeenManual = localStorage.getItem("hasSeenManual");
+    if (!hasSeenManual) {
+      const timer = setTimeout(() => {
+        setIsHelpOpen(true);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   const closeHelp = () => {
     setIsHelpOpen(false);
+    localStorage.setItem("hasSeenManual", "true");
   };
 
   const volcanoAlertCount = kpi?.volcanoes

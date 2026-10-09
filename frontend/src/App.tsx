@@ -57,6 +57,45 @@ export const App: React.FC = () => {
   const [isMapReady, setIsMapReady] = useState<boolean>(false);
   const [selectedEventName, setSelectedEventName] = useState<string>("G. Anak Krakatau");
 
+  // Pulihkan sesi simulasi terakhir dari localStorage saat pertama kali dimuat
+  React.useEffect(() => {
+    const restoreLastSession = async () => {
+      const savedRunId = localStorage.getItem("lastRunId");
+      const savedEventId = localStorage.getItem("lastEventId");
+      const savedEventName = localStorage.getItem("lastEventName");
+      const savedHazard = localStorage.getItem("lastHazard") as HazardType;
+      
+      if (savedRunId && savedEventId) {
+        setEventId(savedEventId);
+        if (savedHazard) setHazard(savedHazard);
+        if (savedEventName) setSelectedEventName(savedEventName);
+        
+        setActiveRunId(savedRunId);
+        setSimulatedEventName(savedEventName || savedEventId);
+        setCurrentHour(48);
+        
+        try {
+          const [impact, facilities, validation, advisory, tier48] = await Promise.all([
+            api.getImpact(savedRunId).catch(() => null),
+            api.getFacilitiesImpacted(savedRunId).catch(() => null),
+            api.getValidation(savedEventId).catch(() => null),
+            api.getEmergencyAdvisory(savedRunId).catch(() => null),
+            api.getTiersAtHour(savedRunId, 48).catch(() => null)
+          ]);
+          
+          if (tier48) setHourlyTiersCache({ 48: tier48 });
+          if (impact) setImpactData(impact);
+          if (facilities) setFacilitiesData(facilities);
+          if (validation) setValidationData(validation);
+          if (advisory) setAdvisoryData(advisory);
+        } catch (e) {
+          console.error("Gagal memuat sesi sebelumnya", e);
+        }
+      }
+    };
+    restoreLastSession();
+  }, []);
+
   // Ambil poligon sebaran jam tertentu saat activeRunId aktif atau currentHour berubah
   React.useEffect(() => {
     if (!activeRunId) return;
@@ -97,7 +136,7 @@ export const App: React.FC = () => {
 
     setIsRunning(true);
     setLoadingProgress(0);
-    setProgressText("Menghitung adveksi atmosferik 15 anggota ensemble (RK2)...");
+    setProgressText("Mengkalkulasi parameter vulkanik & mensimulasikan sebaran abu...");
 
     const loadingInterval = setInterval(() => {
       setLoadingProgress((prev) => {
@@ -146,7 +185,7 @@ export const App: React.FC = () => {
       // Gunakan selectedEventName karena backend hanya mengembalikan "kejadian observasi" tanpa nama gunung
       setSimulatedEventName(selectedEventName || simRes.scenario_label || activeEventId);
 
-      setProgressText("Mengekstrak kontur poligon & dampak populasi...");
+      setProgressText("Menganalisis proyeksi dampak populasi & infrastruktur...");
       setLoadingProgress(85);
 
       // Set pratinjau jam ke 48 (akhir) agar pengguna tahu simulasi mencakup 48 jam penuh
@@ -170,6 +209,12 @@ export const App: React.FC = () => {
       setAdvisoryData(advisory);
       setIsDrawerOpen(true);
       setProgressText(`Selesai: ${simRes.scenario_label || "15 anggota ensemble"}`);
+
+      // Simpan referensi run terakhir ke local storage
+      localStorage.setItem("lastRunId", runId);
+      localStorage.setItem("lastEventId", activeEventId);
+      localStorage.setItem("lastEventName", selectedEventName || simRes.scenario_label || activeEventId);
+      localStorage.setItem("lastHazard", activeHazard);
     } catch (err: any) {
       setProgressText(`Gagal: ${err.message || "Server offline"}`);
     } finally {
@@ -245,8 +290,8 @@ export const App: React.FC = () => {
         s.name,
         hospital?.name || "RSUD Terdekat"
       );
-      
-      const geom: [number, number][] = res.geometry.map((coord: [number, number]) => [coord[1], coord[0]]); // Leaflet uses [lat, lng]
+      // Backend sudah mengembalikan dalam format [lat, lng], tidak perlu di-swap lagi
+      const geom: [number, number][] = res.geometry || [];
       
       setEvacuationRoute({
         geometry: geom.length > 0 ? geom : [[sLat, sLng], [destLat, destLng]],
