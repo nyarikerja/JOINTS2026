@@ -309,7 +309,16 @@
     burst(t,.012,'bandpass',2600,3,.04,0,false);
   }
 
+  /* kecilkan suasana alam saat narasi tur otomatis berbicara (js/autoscroll.js) */
+  var ducked=false;
+  function duck(on){
+    ducked=!!on;
+    if(!ctx||!isPlaying||!master)return;
+    master.gain.cancelScheduledValues(ctx.currentTime);
+    master.gain.setTargetAtTime(ducked?.22:.85,ctx.currentTime,.3);
+  }
+
   function isLive(){return isPlaying&&!!ctx&&ctx.state==='running';}
   function getState(){return ctx?ctx.state:'uninitialized';}
-  window.HLAudio={init:init,start:start,resume:resume,stop:stop,toggle:toggle,update:update,playClick:playClick,thunder:strike,isPlaying:function(){return isPlaying;},isLive:isLive,getState:getState};
+  window.HLAudio={init:init,start:start,resume:resume,stop:stop,toggle:toggle,update:update,playClick:playClick,thunder:strike,duck:duck,isPlaying:function(){return isPlaying;},isLive:isLive,getState:getState};
 })();

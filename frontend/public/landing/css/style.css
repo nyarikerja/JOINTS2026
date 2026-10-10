@@ -2833,6 +2833,104 @@ input[type=range]::-moz-range-thumb {
   }
 }
 
+/* tombol gulir otomatis (js/autoscroll.js), di atas tombol "Lihat lanskap" */
+.auto-btn {
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px))
+}
+
+.auto-btn[aria-pressed="true"] {
+  background: var(--gold);
+  color: var(--ink)
+}
+
+/* tombol narasi tur (muncul selama tur, di kiri tombol tur) */
+.nar-btn {
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  padding: 11px
+}
+
+.nar-btn[aria-pressed="false"] {
+  opacity: .75
+}
+
+/* teks keterangan narasi tur */
+.tour-cap {
+  position: fixed;
+  left: 50%;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  z-index: 22;
+  width: min(680px, calc(100vw - 32px));
+  margin: 0;
+  padding: 14px 20px 15px;
+  translate: -50% 12px;
+  font: 400 clamp(15px, 1.25vw, 17px)/1.5 var(--serif);
+  color: var(--cream);
+  background: rgba(22, 48, 42, .84);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(251, 244, 228, .16);
+  border-radius: 8px 26px 8px 26px;
+  box-shadow: 0 20px 44px -22px rgba(0, 0, 0, .6);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .5s var(--ease), translate .5s var(--ease)
+}
+
+.tour-cap.on {
+  opacity: 1;
+  translate: -50% 0
+}
+
+/* animasi ketik: sisa teks transparan agar ukuran kotak tetap, kursor berkedip selama mengetik */
+.tour-cap .tr {
+  color: transparent
+}
+
+.tour-cap.typing .ty::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 1.05em;
+  margin-left: 2px;
+  vertical-align: -.15em;
+  background: var(--gold);
+  animation: tyBlink .8s steps(2) infinite
+}
+
+@keyframes tyBlink {
+  50% {
+    opacity: 0
+  }
+}
+
+/* tur sedang dijeda karena pengguna menggeser layar: lanjut otomatis sebentar lagi */
+.auto-btn.wait {
+  animation: autoWait 1.1s ease-in-out infinite
+}
+
+@keyframes autoWait {
+  50% {
+    opacity: .55
+  }
+}
+
+@media (max-width:1100px) {
+  .tour-cap {
+    bottom: calc(124px + env(safe-area-inset-bottom, 0px));
+    font-size: 14.5px
+  }
+}
+
+body.focus .auto-btn,
+body.focus .nar-btn,
+body.focus .tour-cap,
+html.portaling .nar-btn,
+html.portaling .tour-cap,
+html.portaling .auto-btn {
+  opacity: 0;
+  pointer-events: none
+}
+
 body.focus main,
 body.focus footer,
 body.focus .annot,
@@ -2966,7 +3064,8 @@ footer {
 .wclock {
   position: fixed;
   right: 18px;
-  bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  /* di atas tombol "Putar otomatis" dan "Lihat lanskap" supaya tidak tertutup */
+  bottom: calc(128px + env(safe-area-inset-bottom, 0px));
   z-index: 20;
   width: 86px;
   pointer-events: none;
@@ -3184,7 +3283,7 @@ footer {
   .wclock {
     width: 58px;
     right: 12px;
-    bottom: calc(66px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(124px + env(safe-area-inset-bottom, 0px));
     transition: opacity .35s var(--ease), transform .35s var(--ease)
   }
 
@@ -3391,68 +3490,12 @@ html.gltitle .hero-copy::before {
   navigation: auto
 }
 
-@property --r {
-  syntax: '<length>';
-  inherits: true;
-  initial-value: 0px
-}
-
 .portal-ov {
-  --r: 0px;
-  --rot: 0deg;
   position: fixed;
   inset: 0;
   z-index: 10000;
   pointer-events: all;
   cursor: progress
-}
-
-/* isi portal = latar loader sungai di /app/ (lihat loader/src/loader.css .ld-scene) */
-.portal-disc {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, #bdb6b2 0%, #d7c4ae 42%, #a19a85 60%, #5d6556 100%);
-  clip-path: circle(var(--r) at var(--x) var(--y))
-}
-
-.portal-swirl {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at var(--x) var(--y), rgba(255, 246, 228, .85), rgba(255, 238, 214, 0) 34%),
-    repeating-conic-gradient(from var(--rot) at var(--x) var(--y), rgba(255, 255, 255, .0) 0deg 9deg, rgba(255, 240, 220, .08) 12deg 14deg);
-  mix-blend-mode: screen
-}
-
-.portal-ov.full .portal-swirl {
-  opacity: 0;
-  transition: opacity .3s
-}
-
-.portal-rim {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: conic-gradient(from var(--rot) at var(--x) var(--y), #ffd27a, #ff8fb8, #8fd8ff, #c4a2ff, #ffd27a);
-  -webkit-mask-image: radial-gradient(circle at var(--x) var(--y), transparent calc(var(--r) - 22px), #000 calc(var(--r) - 8px), #000 calc(var(--r) - 2px), transparent calc(var(--r) + 14px));
-  mask-image: radial-gradient(circle at var(--x) var(--y), transparent calc(var(--r) - 22px), #000 calc(var(--r) - 8px), #000 calc(var(--r) - 2px), transparent calc(var(--r) + 14px));
-  filter: blur(4px) saturate(1.3);
-  box-shadow: none
-}
-
-.portal-ov.full .portal-rim,
-.portal-ov.full .portal-sparks {
-  opacity: 0;
-  transition: opacity .25s
-}
-
-.portal-sparks {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  mix-blend-mode: screen
 }
 
 .portal-cap {
@@ -3468,7 +3511,9 @@ html.gltitle .hero-copy::before {
   text-shadow: 0 1px 10px rgba(0, 0, 0, .4);
   opacity: 0;
   animation: portalCap .6s ease .5s forwards;
-  white-space: nowrap
+  white-space: nowrap;
+  color: #33404a;
+  text-shadow: none
 }
 
 @keyframes portalCap {
@@ -3477,7 +3522,7 @@ html.gltitle .hero-copy::before {
   }
 }
 
-/* lanskap dan konten tersedot ke arah portal */
+/* lanskap dan konten menjauh ke dalam kabut */
 html.portaling #gl,
 html.portaling main,
 html.portaling .nav,
@@ -3485,19 +3530,18 @@ html.portaling .rail,
 html.portaling .wclock,
 html.portaling .scene-chip,
 html.portaling .view-btn {
-  transform-origin: var(--px) var(--py);
-  transition: transform 1.25s cubic-bezier(.55, 0, .7, .2), filter 1.25s ease, opacity 1.1s ease;
-  transform: scale(1.12);
-  filter: blur(5px) saturate(1.2)
+  transition: transform 1.4s cubic-bezier(.4, 0, .6, 1), filter 1.4s ease, opacity 1.2s ease;
+  transform: scale(1.04);
+  filter: blur(3px) saturate(.8)
 }
 
 html.portaling main,
 html.portaling .nav {
-  opacity: .25
+  opacity: .35
 }
 
 .portal-fade {
-  background: linear-gradient(180deg, #bdb6b2 0%, #d7c4ae 42%, #a19a85 60%, #5d6556 100%);
+  background: #d4dbe1;
   opacity: 0;
   transition: opacity .3s ease
 }
@@ -3665,7 +3709,7 @@ html.portaling .nav {
   rotate: -.6deg
 }
 
-.ask .tape {
+.tape {
   position: absolute;
   top: -13px;
   left: 50%;
@@ -3718,4 +3762,147 @@ html.portaling .nav {
 
 .trail .trail-mk path {
   stroke-dasharray: none
+}
+
+
+/* ---------- kartu scrapbook di seluruh halaman, mengikuti gaya kartu pertanyaan (js/trail.js menempel selotip) ---------- */
+.scrap {
+  rotate: var(--rot, 0deg);
+  transition: rotate .45s var(--ease), box-shadow .3s
+}
+
+.scrap:hover {
+  rotate: 0deg
+}
+
+.tape.t-teal {
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .0) 0 7px, rgba(255, 255, 255, .22) 7px 9px),
+    linear-gradient(rgba(161, 214, 205, .82), rgba(138, 198, 190, .76))
+}
+
+.tape.t-pink {
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .0) 0 7px, rgba(255, 255, 255, .24) 7px 9px),
+    linear-gradient(rgba(244, 184, 196, .82), rgba(232, 160, 178, .76))
+}
+
+.tape.t-sage {
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .0) 0 7px, rgba(255, 255, 255, .22) 7px 9px),
+    linear-gradient(rgba(196, 214, 160, .84), rgba(176, 198, 140, .78))
+}
+
+/* alur data -> keputusan */
+.flow li:not(.arr) {
+  position: relative;
+  isolation: isolate;
+  --R: clamp(28px, 4vw, 58px);
+  border: 0;
+  border-radius: calc(var(--R)*.2) var(--R) calc(var(--R)*.2) var(--R);
+  background: rgba(214, 226, 196, .94);
+  box-shadow: 0 28px 52px -30px rgba(22, 48, 42, .7);
+  padding: 26px 26px 22px
+}
+
+.flow li:nth-child(5) {
+  background: rgba(196, 222, 214, .94);
+  border-radius: var(--R) calc(var(--R)*.2) var(--R) calc(var(--R)*.2)
+}
+
+.flow li.mid {
+  /* kartu tengah tetap gelap supaya teks emas dan krem terbaca */
+  background: rgba(22, 48, 42, .94);
+  color: var(--cream);
+  border: 0;
+  border-radius: var(--R) calc(var(--R)*.25) var(--R) calc(var(--R)*.25);
+  box-shadow: 0 30px 56px -26px rgba(0, 0, 0, .7)
+}
+
+.flow b {
+  font: 400 clamp(18px, 1.5vw, 21px)/1.25 var(--serif)
+}
+
+.flow li:not(.arr):hover {
+  transform: none
+}
+
+/* tahapan metode: warna pastel bergantian */
+.vine li:nth-child(4n+1) {
+  background: rgba(214, 226, 196, .93)
+}
+
+.vine li:nth-child(4n+2) {
+  background: rgba(246, 240, 226, .93)
+}
+
+.vine li:nth-child(4n+3) {
+  background: rgba(196, 222, 214, .93)
+}
+
+.vine li:nth-child(4n+4) {
+  background: rgba(248, 224, 206, .93)
+}
+
+.vine h3 {
+  font-family: var(--serif);
+  font-weight: 400
+}
+
+/* mode penggunaan: dari kotak gelap menjadi kartu daun pastel */
+.modes li {
+  --R: clamp(28px, 3.6vw, 52px);
+  border: 0;
+  color: var(--ink);
+  background: rgba(246, 240, 226, .93);
+  border-radius: calc(var(--R)*.2) var(--R) calc(var(--R)*.2) var(--R);
+  box-shadow: 0 26px 50px -30px rgba(22, 48, 42, .7);
+  padding: 26px 26px 22px
+}
+
+.modes li:nth-child(1) {
+  background: rgba(214, 226, 196, .93)
+}
+
+.modes li:nth-child(3) {
+  background: rgba(196, 222, 214, .93);
+  border-radius: var(--R) calc(var(--R)*.2) var(--R) calc(var(--R)*.2)
+}
+
+.modes li:hover {
+  transform: none;
+  box-shadow: 0 30px 56px -28px rgba(22, 48, 42, .8)
+}
+
+.modes b {
+  color: var(--ink);
+  font: 400 clamp(19px, 1.6vw, 22px)/1.25 var(--serif)
+}
+
+.modes span {
+  color: var(--ink-2);
+  opacity: 1
+}
+
+/* pengguna */
+.aud li {
+  box-shadow: 0 24px 46px -30px rgba(22, 48, 42, .65)
+}
+
+.aud li:nth-child(1) {
+  background: rgba(250, 224, 230, .92)
+}
+
+.aud li:nth-child(2) {
+  background: rgba(246, 240, 226, .92)
+}
+
+.aud li:nth-child(3) {
+  background: rgba(214, 226, 196, .92)
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .scrap {
+    transition: none
+  }
 }

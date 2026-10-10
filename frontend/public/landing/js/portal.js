@@ -1,8 +1,6 @@
-/* HelaLoka: gerbang dimensi dari landing page ke aplikasi.
-   Klik "Jalankan simulasi" -> lingkaran portal terbuka dari titik klik (tepi pelangi berputar, percik cahaya tersedot ke pusat),
-   lanskap di belakang memudar dan sedikit membesar, lalu halaman berpindah ke /app/. Isi portal memakai warna yang sama dengan
-   latar loader sungai di aplikasi, jadi perpindahan halaman tidak berkedip. Browser yang mendukung View Transitions
-   (Chrome/Edge 126+, Safari 18.2+) juga mendapat cross-fade antar dokumen. */
+/* HelaLoka: perpindahan dari landing page ke aplikasi lewat kabut.
+   Klik "Jalankan simulasi" -> kabut bergulung masuk (js/fog.js) sampai layar tertutup, lalu halaman berpindah ke /app/.
+   Loader sungai dimulai dari kabut yang sama lalu menipis, jadi perpindahan halaman terasa satu gerakan. */
 (function () {
   var APP = '/app/';
   var root = document.documentElement, busy = false;
@@ -12,7 +10,7 @@
   var warmed = false;
   function warm() {
     if (warmed) return; warmed = true;
-    [[APP, 'document'], ['/loader/river-loader.css', 'style'], ['/loader/river-loader.js', 'script']].forEach(function (r) {
+    [[APP, 'document'], ['/loader/river-loader.css', 'style'], ['/loader/river-loader.js', 'script'], ['/landing/vendor/three.min.js', 'script']].forEach(function (r) {
       var l = document.createElement('link'); l.rel = 'prefetch'; l.href = r[0]; l.as = r[1]; document.head.appendChild(l);
     });
   }
@@ -53,31 +51,17 @@
       var f = document.createElement('div'); f.className = 'portal-ov portal-fade'; document.body.appendChild(f);
       requestAnimationFrame(function () { f.classList.add('on'); }); setTimeout(go, 320); return;
     }
-    var W = innerWidth, H = innerHeight, maxR = Math.hypot(Math.max(x, W - x), Math.max(y, H - y)) + 40;
-    var ov = document.createElement('div'); ov.className = 'portal-ov'; ov.setAttribute('aria-hidden', 'true');
-    ov.innerHTML = '<div class="portal-disc"><div class="portal-swirl"></div></div><div class="portal-rim"></div><canvas class="portal-sparks"></canvas>' +
-      '<p class="portal-cap">Membuka gerbang ke ruang simulasi</p>';
-    ov.style.setProperty('--x', x + 'px'); ov.style.setProperty('--y', y + 'px');
-    document.body.appendChild(ov);
+    /* kabut bergulung masuk: lanskap memudar ke dalam kabut berwarna sama dengan awal loader sungai di /app/ */
     root.style.setProperty('--px', x + 'px'); root.style.setProperty('--py', y + 'px');
     root.classList.add('portaling');
-    var cv = ov.querySelector('canvas'), g = cv.getContext('2d'), dpr = Math.min(2, devicePixelRatio || 1);
-    cv.width = W * dpr; cv.height = H * dpr; g.scale(dpr, dpr);
-    var P = [], N = W < 700 ? 70 : 150;
-    for (var i = 0; i < N; i++) { var a = Math.random() * 6.283, r = 80 + Math.random() * Math.max(W, H) * .7; P.push({ a: a, r: r, s: .6 + Math.random() * 1.8, h: Math.random() }); }
-    var t0 = performance.now(), DUR = 1250;
+    if (!window.HLFog) { setTimeout(go, 300); return; }
+    var fog = HLFog.mount(document.body, HLFog.START);
+    var cap = document.createElement('p'); cap.className = 'portal-cap'; cap.textContent = 'Menembus kabut menuju ruang simulasi'; fog.el.appendChild(cap);
+    var t0 = performance.now(), DUR = 1300;
     function frame(now) {
-      var k = Math.min(1, (now - t0) / DUR), e = k * k * k * (k * (k * 6 - 15) + 10);          // smootherstep
-      var R = 6 + e * maxR;
-      ov.style.setProperty('--r', R.toFixed(1) + 'px'); ov.style.setProperty('--rot', (now * .18 % 360).toFixed(1) + 'deg');
-      g.clearRect(0, 0, W, H);
-      for (var j = 0; j < P.length; j++) {
-        var p = P[j]; p.a += .035 + .02 / (p.r / 200 + .3); p.r *= 1 - .022 * (1 + k * 2);
-        var rr = Math.max(p.r, R * .96), px = x + Math.cos(p.a) * rr, py = y + Math.sin(p.a) * rr * .92;
-        g.fillStyle = 'hsla(' + (30 + p.h * 300) + ',95%,82%,' + (.9 - k * .5) + ')';
-        g.beginPath(); g.arc(px, py, p.s, 0, 6.283); g.fill();
-      }
-      if (k < 1) requestAnimationFrame(frame); else { ov.classList.add('full'); setTimeout(go, 60); }
+      var k = Math.min(1, (now - t0) / DUR);
+      fog.set(k * k * (3 - 2 * k));
+      if (k < 1) requestAnimationFrame(frame); else setTimeout(go, 90);
     }
     requestAnimationFrame(frame);
   }
@@ -97,7 +81,7 @@
   /* kembali dengan tombol Back (bfcache): bersihkan portal dan pulihkan audio */
   addEventListener('pageshow', function (e) {
     busy = false; root.classList.remove('portaling');
-    [].slice.call(document.querySelectorAll('.portal-ov')).forEach(function (n) { n.remove(); });
+    [].slice.call(document.querySelectorAll('.portal-ov,.hlfog')).forEach(function (n) { n.remove(); });
     var sp = null;
     try { sp = localStorage.getItem('hl-sound'); } catch (err) { }
     if (sp !== 'off' && window.HLAudio) {

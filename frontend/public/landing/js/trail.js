@@ -1,7 +1,7 @@
 /* HelaLoka: tata letak yang lebih hidup.
    1) Jalur pendakian bertitik yang berkelok menghubungkan tiap bagian (seperti peta rute), tergambar mengikuti gulir,
       dengan penanda kecil di posisi pembaca dan titik singgah di tiap bagian.
-   2) Kartu pertanyaan bergaya scrapbook: sedikit miring dan ditempel selotip.
+   2) Kartu kecil bergaya scrapbook (pertanyaan, alur, tahapan, mode, keluaran, pengguna): sedikit miring dan ditempel selotip.
    3) Kartu kecil miring halus mengikuti kursor (hanya perangkat dengan pointer presisi). */
 (function () {
   var reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -9,10 +9,12 @@
   var main = document.querySelector('main'); if (!main) return;
   var NS = 'http://www.w3.org/2000/svg';
 
-  /* ---------- 2) selotip pada kartu pertanyaan ---------- */
-  [].slice.call(document.querySelectorAll('.ask li')).forEach(function (li, i) {
-    var t = document.createElement('i'); t.className = 'tape'; t.setAttribute('aria-hidden', 'true');
+  /* ---------- 2) selotip dan sedikit miring pada kartu kecil (gaya scrapbook seperti kartu pertanyaan) ---------- */
+  var TAPE = ['', 't-teal', 't-pink', 't-sage'], ROT = [-1.4, 1.1, -.6, .9, -1, .5];
+  [].slice.call(document.querySelectorAll('.ask li, .flow li:not(.arr), .vine li, .modes li, .aud li, .res > div, .duo .side')).forEach(function (li, i) {
+    var t = document.createElement('i'); t.className = 'tape ' + TAPE[(i * 3 + 1) % 4]; t.setAttribute('aria-hidden', 'true');
     t.style.setProperty('--tr', (i % 2 ? 4 : -5) + 'deg'); li.appendChild(t); li.classList.add('scrap');
+    if (!li.closest('.ask')) li.style.setProperty('--rot', ROT[i % ROT.length] + 'deg');
   });
 
   /* ---------- 1) jalur pendakian ---------- */
