@@ -135,9 +135,9 @@ function blossomTexture() {
 function leafTexture() {
   return canvasTex(256, 256, (c, w, h) => {
     c.clearRect(0, 0, w, h); const r = mulberry32(19);
-    for (let i = 0; i < 52; i++) {
-      const a = r() * 6.283, d = Math.sqrt(r()) * 106, x = 128 + Math.cos(a) * d, y = 128 + Math.sin(a) * d;
-      const L = 18 + r() * 20, Wd = 7 + r() * 6, l = 130 + r() * 110 | 0;
+    for (let i = 0; i < 78; i++) {
+      const a = r() * 6.283, d = Math.sqrt(r()) * 108, x = 128 + Math.cos(a) * d, y = 128 + Math.sin(a) * d;
+      const L = 14 + r() * 16, Wd = 6 + r() * 5, l = (110 + r() * 130) * (0.75 + 0.25 * d / 108) | 0;
       c.save(); c.translate(x, y); c.rotate(r() * 6.283);
       c.fillStyle = `rgb(${l},${l},${l})`; c.beginPath(); c.moveTo(0, -L); c.quadraticCurveTo(Wd * 1.6, 0, 0, L); c.quadraticCurveTo(-Wd * 1.6, 0, 0, -L); c.fill();
       c.strokeStyle = `rgba(30,30,30,0.45)`; c.lineWidth = 1; c.beginPath(); c.moveTo(0, -L); c.lineTo(0, L); c.stroke();
@@ -247,17 +247,24 @@ function buildTrees() {
     if (!list[vi].length) return;
     const im = inst(v.geo, trunkMat, list[vi]); im.castShadow = true; im.receiveShadow = true; out.add(im);
     const K = KINDS[v.kind];
+    /* pusat dan jari-jari tajuk: kartu daun didorong keluar dari pusat, kartu di dalam tajuk digelapkan (oklusi ambien) */
+    const ctr = V3(0, 0, 0); v.tips.forEach(t => ctr.add(t)); ctr.multiplyScalar(1 / Math.max(1, v.tips.length));
+    let rad = 0.1; v.tips.forEach(t => { rad = Math.max(rad, t.distanceTo(ctr)); });
+    const lo = Math.min(...v.tips.map(t => t.y)), hi = Math.max(...v.tips.map(t => t.y));
     list[vi].forEach(o => {
       cm.compose(o.p, o.q, o.s);
       v.tips.forEach(t => {
         const mk = (arr, n, sMin, sMax) => {
           for (let k = 0; k < n; k++) {
-            const p = t.clone().add(V3((r() - 0.5) * 1.2, (r() - 0.35) * 0.9, (r() - 0.5) * 1.2)).applyMatrix4(cm);
+            const lp = t.clone().add(V3((r() - 0.5) * 1.1, (r() - 0.3) * 0.8, (r() - 0.5) * 1.1));
+            const outv = lp.clone().sub(ctr); const od = outv.length(); lp.addScaledVector(outv.normalize(), 0.25);
+            const ao = clamp(0.5 + 0.55 * (od / rad) + 0.18 * (lp.y - lo) / Math.max(0.5, hi - lo), 0.45, 1.08) * (0.88 + 0.2 * r());
+            const p = lp.applyMatrix4(cm);
             const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(r() * 6.28, r() * 6.28, r() * 6.28));
-            const s = (sMin + r() * (sMax - sMin)) * o.s.x; arr.push({ p, q, s: V3(s, s, s), c: [1, 1, 1] });
+            const s = (sMin + r() * (sMax - sMin)) * o.s.x; arr.push({ p, q, s: V3(s, s, s), c: [ao, ao, ao * (0.95 + 0.1 * r())] });
           }
         };
-        mk(leafCards, K.leaf, 1.0, 1.7); if (K.blos) mk(blosCards, K.blos, 1.2, 2.0);
+        mk(leafCards, Math.round(K.leaf * (LITE ? 1 : 1.3)), 0.7, 1.25); if (K.blos) mk(blosCards, Math.round(K.blos * 1.2), 0.9, 1.5);
       });
     });
   });
@@ -378,7 +385,7 @@ function buildMist() {
   const tex = canvasTex(256, 64, (c, w, h) => {
     const r = mulberry32(3);
     for (let i = 0; i < 40; i++) {
-      const x = r() * w, y = h * (0.3 + r() * 0.4), rad = 16 + r() * 30;
+      const rad = 10 + r() * 18, x = rad + r() * (w - 2 * rad), y = h * 0.5 + (r() - 0.5) * (h - 2 * rad - 4);
       const g = c.createRadialGradient(x, y, 0, x, y, rad);
       g.addColorStop(0, 'rgba(255,255,255,0.22)'); g.addColorStop(1, 'rgba(255,255,255,0)');
       c.fillStyle = g; c.fillRect(0, 0, w, h);

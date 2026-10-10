@@ -27,9 +27,9 @@ function weatherMat(mat, key, o) {
   return mat;
 }
 
-/* ---------- Gerbang candi bentar + portal dimensi ----------
+/* ---------- Gerbang candi bentar + kabut ----------
    Bangunan gerbang terbelah khas Bali/Majapahit dari bata merah dan batu andesit, berdiri di kedua tepi sungai.
-   Di celahnya menggantung portal cahaya: redup selama memuat, menyala saat siap, membuka saat pengguna masuk. */
+   Di celah dan di baliknya menggantung kabut tebal; perahu yang lewat lenyap di dalamnya saat aplikasi dibuka. */
 function buildGate() {
   const GZ = GATE.z, ox = cx(GZ), th = Math.atan(cxd(GZ));
   const root = new THREE.Group(); root.position.set(ox, 0, GZ); root.rotation.y = th;
@@ -118,53 +118,41 @@ function buildGate() {
     fl.position.set(x, 3.15, z); fl.scale.set(1.6, 2.1, 1); root.add(fl); flames.push(fl);
   });
 
-  /* portal: bidang di celah gerbang. Pusaran derau + cincin pelangi lembut di tepi elips. */
-  const PW = GATE.gap * 2 - 0.3, PH = 8.6;
-  const portalU = { uTime: U.time, uK: { value: 0.0 }, uFlash: { value: 0 }, uAsp: { value: PW / PH } };
-  const portal = new THREE.Mesh(new THREE.PlaneGeometry(PW, PH), new THREE.ShaderMaterial({
-    uniforms: portalU, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
-    vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
-    fragmentShader: `uniform float uTime;uniform float uK;uniform float uFlash;uniform float uAsp;varying vec2 vUv;
-${GLSL_NOISE}
-vec3 irid(float t){return 0.5+0.5*cos(6.2832*(t+vec3(0.0,0.33,0.67)));}
-void main(){
-  vec2 p=(vUv-vec2(0.5,0.47))*2.0;p.x*=uAsp*0.62;
-  float r=length(p*vec2(0.86,1.0));
-  float a=atan(p.y,p.x);
-  float sw=fbm(vec2(a*1.6+r*2.2-uTime*0.35,r*3.0-uTime*0.5));
-  float sw2=fbm(vec2(a*3.0-r*4.0+uTime*0.6,r*6.0+uTime*0.2));
-  float edge=exp(-pow((r-0.9+0.04*sw)*9.0,2.0));
-  float halo=exp(-pow((r-0.9)*3.2,2.0))*0.25;
-  float inner=smoothstep(0.92,0.2,r)*smoothstep(0.35,0.75,sw*sw2*1.6)*0.35;
-  float lines=pow(0.5+0.5*sin(a*6.0+r*12.0-uTime*1.4+sw*6.0),10.0)*smoothstep(0.92,0.3,r)*0.45;
-  vec3 col=irid(a*0.16+uTime*0.05+r*0.4)*vec3(1.0,0.92,1.05);
-  vec3 c=col*(edge*1.3+halo)+mix(vec3(0.75,0.85,1.0),vec3(1.0,0.85,0.7),sw)*inner+col*lines;
-  c+=vec3(1.0,0.95,0.88)*uFlash*smoothstep(0.95,0.1,r)*1.1;
-  float m=smoothstep(1.12,0.95,r);
-  gl_FragColor=vec4(c*uK*m,1.0);
-}`
-  }));
-  portal.position.set(0, 0.66 + PH / 2, 0); portal.renderOrder = 5;
-  root.add(portal);
-
-  /* pantulan cahaya portal di permukaan air (sprite datar) */
-  const pool = new THREE.Mesh(new THREE.PlaneGeometry(PW * 1.1, 9).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({
-    map: glowTex, color: new THREE.Color(1, 0.85, 0.7), blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, opacity: 0
-  }));
-  pool.material.fog = false; pool.position.set(0, 0.03, -3.5); root.add(pool);
-
-  const center = new THREE.Vector3();
-  /* benda aditif tidak ikut kabut bawaan three.js: redam manual menurut jarak kamera (kabut eksponensial kuadrat) */
-  let kk = 0;
-  function update(t, dt, k, flash, camP) {
-    kk += (k - kk) * (1 - Math.exp(-dt * 1.6));
-    const d = camP ? camP.distanceTo(root.position) : 0, fd = U.fogD.value * d, fogK = Math.exp(-fd * fd) * sstep(70, 32, d);
-    portalU.uK.value = kk * fogK;
-    portalU.uFlash.value = flash;
-    pool.material.opacity = Math.min(1, kk * 0.45 + flash * 0.4) * fogK;
-    flames.forEach((f, i) => { const fl = 0.85 + 0.15 * Math.sin(t * 13 + i * 2) * Math.sin(t * 7.3 + i); f.scale.set(1.5 * fl, 2.1 * fl, 1); f.material.opacity = 0.9 * fl * fogK; });
+  /* kabut gerbang (pengganti portal): lapisan kabut lembut memenuhi celah dan ruang di balik gerbang.
+     Perahu yang melewati celah perlahan lenyap ditelan kabut. Sprite biasa, ikut kabut adegan, murah digambar. */
+  const fogTex = canvasTex(128, 128, (c, w, h) => {
+    const rr = mulberry32(19);
+    for (let i = 0; i < 26; i++) {
+      const rad = 14 + rr() * 24, x = rad + 4 + rr() * (w - 2 * rad - 8), y = rad + 4 + rr() * (h - 2 * rad - 8), g = c.createRadialGradient(x, y, 0, x, y, rad);
+      g.addColorStop(0, 'rgba(255,255,255,0.32)'); g.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = g; c.fillRect(0, 0, w, h);
+    }
+    /* pudarkan ke tepi tekstur supaya sprite tidak punya garis tepi yang tegas */
+    c.globalCompositeOperation = 'destination-in';
+    const v = c.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); v.addColorStop(0.6, '#000'); v.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = v; c.fillRect(0, 0, w, h); c.globalCompositeOperation = 'source-over';
+  });
+  const veil = [], fogCol = new THREE.Color();
+  for (let i = 0; i < 14; i++) {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: fogTex, transparent: true, depthWrite: false, opacity: 0.6, fog: false }));
+    const z = 0.8 + i * 1.6 + r() * 0.8, sc = 10 + i * 1.4 + r() * 4;
+    sp.position.set((r() - 0.5) * 3, 1.6 + r() * 2.6, z); sp.scale.set(sc, sc * 0.62, 1);
+    sp.userData = { x: sp.position.x, ph: r() * 6.28, base: 0.5 + 0.35 * (i / 13) };
+    root.add(sp); veil.push(sp);
   }
-  function portalCenter() { portal.updateMatrixWorld(); return center.setFromMatrixPosition(portal.matrixWorld); }
-  root.traverse(o => { if (o.isMesh && o !== portal && o !== pool) o.castShadow = true; });
-  return { group: root, update, portalCenter, portal, height: topY };
+  const center = new THREE.Vector3(0, 0.66 + 4.3, 0);
+  /* k: kepekatan kabut gerbang (0..1); dibuat lebih pekat saat perahu masuk */
+  function update(t, dt, k, camP) {
+    fogCol.copy(U.fogCol.value).multiplyScalar(1.04);
+    const d = camP ? camP.distanceTo(root.position) : 0, vis = sstep(90, 30, d);
+    veil.forEach((s, i) => {
+      s.position.x = s.userData.x + Math.sin(t * 0.12 + s.userData.ph) * 1.4;
+      s.material.color.copy(fogCol); s.material.opacity = Math.min(1, s.userData.base * (0.55 + 0.6 * k)) * vis;
+    });
+    flames.forEach((f, i) => { const fl = 0.85 + 0.15 * Math.sin(t * 13 + i * 2) * Math.sin(t * 7.3 + i); f.scale.set(1.5 * fl, 2.1 * fl, 1); f.material.opacity = 0.9 * fl * vis; });
+  }
+  function gateCenter() { root.updateMatrixWorld(); return gc.copy(center).applyMatrix4(root.matrixWorld); }
+  const gc = new THREE.Vector3();
+  root.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  bakeStatic(root);
+  return { group: root, update, gateCenter, height: topY };
 }

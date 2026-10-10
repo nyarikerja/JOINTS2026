@@ -7,7 +7,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url)), src = f => readFileSync(join(here, 'src', f), 'utf8');
-const CORE = ['p1_core.js', 'p2_world.js', 'p3_boat.js', 'p3b_bridge.js', 'p3c_gate.js', 'p3d_koi.js', 'p4_view.js', 'p5_app.js', 'p5b_audio.js'];
+const CORE = ['p1_core.js', 'p2_world.js', 'p3_boat.js', 'p3b_bridge.js', 'p3c_gate.js', 'p3d_koi.js', 'p3e_life.js', 'p4_view.js', 'p5_app.js', 'p5b_audio.js'];
 const banner = `/* HelaLoka river loader (dibangun oleh loader/build.mjs dari loader/src, jangan diedit langsung).
    Sebagian teknik diadaptasi dari sakura-fantasy, utsuroi, dan halcyon (MIT, (c) 2026 Bill Chan); lihat CREDITS.md. */\n`;
 const pub = join(here, '..', 'public', 'loader');
@@ -20,6 +20,7 @@ const block = (boot) => `<!--LOADER:BEGIN (disisipkan oleh loader/build.mjs)-->
 <script>document.documentElement.classList.add('hl-loading');</script>
 ${markup}
 <script src="/landing/vendor/three.min.js"></script>
+<script src="/landing/js/fog.js"></script>
 <script src="/loader/river-loader.js"></script>
 <script>${boot}</script>
 <!--LOADER:END-->`;

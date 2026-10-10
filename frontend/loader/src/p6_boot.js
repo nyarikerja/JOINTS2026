@@ -25,7 +25,7 @@ function simulateLoading(Progress, speedRef) {
   const qs = new URLSearchParams(location.search);
   CFG.nextUrl = qs.get('next');
   const app = createApp({ quick: qs.has('quick') ? true : false });
-  window.RiverLoader = app.loader;
+  window.RiverLoader = app.loader; window.__riverApp = app;   /* demo: akses view untuk uji visual */
   if (typeof __TEST__ !== 'undefined') { __TEST__({ app }); return; }
   app.boot();
   simulateLoading(app.Progress, { v: +(qs.get('speed') || 1) });

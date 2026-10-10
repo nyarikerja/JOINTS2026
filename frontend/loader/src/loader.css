@@ -1,19 +1,18 @@
 /* HelaLoka river loader. Pola tampilan loader dari sakura-fantasy src/ui/ui.css (MIT, (c) 2026 Bill Chan):
-   judul muncul bertahap (blur ke fokus), reveal dengan mask radial-gradient yang melebar (@property). */
-@property --hole { syntax: '<percentage>'; inherits: true; initial-value: -8%; }
+   judul muncul bertahap (blur ke fokus), reveal lewat kabut. */
 @property --rot { syntax: '<angle>'; inherits: true; initial-value: 0deg; }
 .hl-loader{
   --paper:#fff7ec;--paper-dim:rgba(255,247,236,.8);--gold:#f4c27a;--red:#dc2626;
   --font-d:'Fraunces','Iowan Old Style','Palatino Linotype',Georgia,serif;
   --font-b:'Manrope','Poppins','Segoe UI',system-ui,sans-serif;--font-m:'DM Mono',ui-monospace,'Cascadia Mono',Consolas,monospace;
-  --cx:50%;--cy:50%;--hole:-8%;--rot:0deg;
+  --rot:0deg;
   position:fixed;inset:0;z-index:100000;color:var(--paper);font-family:var(--font-b);
   -webkit-font-smoothing:antialiased;
 }
 html.hl-loading,html.hl-loading body{overflow:hidden}
 .ld-scene{position:absolute;inset:0;overflow:hidden;
-  /* sama dengan isi portal di landing page, jadi perpindahan halaman tidak berkedip */
-  background:linear-gradient(180deg,#bdb6b2 0%,#d7c4ae 42%,#a19a85 60%,#5d6556 100%)}
+  /* warna kabut, sama dengan akhir transisi landing page, jadi perpindahan halaman tidak berkedip */
+  background:#d4dbe1}
 .ld-scene canvas{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;transition:opacity 1.1s ease}
 .hl-loader.live .ld-scene canvas{opacity:1}
 .ld-fb{position:absolute;inset:0;background:#140e1e;overflow:hidden}
@@ -83,18 +82,19 @@ html.hl-loading,html.hl-loading body{overflow:hidden}
 .ld-lbl i{font:italic 400 13px/1.2 var(--font-d);color:var(--paper-dim)}
 .ld-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
-/* reveal: lubang portal melebar dari pusat gerbang, tepinya berkilau pelangi */
+/* kartu "Tahukah kamu?" selama memuat */
+.ld-tip{position:absolute;left:50%;bottom:max(78px,calc(env(safe-area-inset-bottom,0px) + 70px));transform:translateX(-50%);width:min(88vw,460px);margin:0;
+  display:flex;flex-direction:column;gap:5px;padding:12px 18px 13px;background:rgba(28,20,30,.36);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:1px solid rgba(255,236,226,.22);border-radius:6px 22px 6px 22px;text-align:left;opacity:0;transition:opacity .8s ease,transform .8s ease;pointer-events:none}
+.ld-tip.on{opacity:1}
+.ld-tip b{font:600 10px/1 var(--font-m);letter-spacing:.22em;text-transform:uppercase;color:var(--gold)}
+.ld-tip span{font:400 14px/1.45 var(--font-b);color:var(--paper);text-shadow:0 1px 8px rgba(0,0,0,.35)}
+@media (max-height:560px){.ld-tip{display:none}}
+
+/* reveal: perahu lenyap di kabut gerbang; lapisan kabut (js/fog.js) menutup layar lalu menipis memperlihatkan aplikasi */
 .hl-loader.revealing{pointer-events:none}
-.hl-loader.revealing .ld-scene{
-  -webkit-mask-image:radial-gradient(circle at var(--cx) var(--cy),transparent calc(var(--hole) - 6%),#000 var(--hole));
-  mask-image:radial-gradient(circle at var(--cx) var(--cy),transparent calc(var(--hole) - 6%),#000 var(--hole))}
-.ld-ring{position:absolute;inset:0;pointer-events:none;opacity:0;mix-blend-mode:screen;
-  background:conic-gradient(from var(--rot) at var(--cx) var(--cy),#ffd27a,#ff8fb8,#8fd8ff,#c4a2ff,#ffd27a);
-  -webkit-mask-image:radial-gradient(circle at var(--cx) var(--cy),transparent calc(var(--hole) - 7.5%),#000 calc(var(--hole) - 4%),#000 calc(var(--hole) - 2.6%),transparent calc(var(--hole) + 1.5%));
-  mask-image:radial-gradient(circle at var(--cx) var(--cy),transparent calc(var(--hole) - 7.5%),#000 calc(var(--hole) - 4%),#000 calc(var(--hole) - 2.6%),transparent calc(var(--hole) + 1.5%));
-  filter:blur(5px) saturate(1.25)}
-.hl-loader.revealing .ld-ring{opacity:.95;transition:opacity .5s ease}
-.hl-loader.revealing .ld-foot,.hl-loader.revealing .ld-tools,.hl-loader.revealing .ld-brand{opacity:0;transition:opacity .7s ease}
+.hl-loader.through .ld-scene{visibility:hidden}
+.hl-loader.revealing .ld-foot,.hl-loader.revealing .ld-tools,.hl-loader.revealing .ld-brand,.hl-loader.revealing .ld-tip{opacity:0;transition:opacity .7s ease}
 .hl-loader.revealing .ld-head{opacity:0;transform:translateX(-50%) scale(1.12);filter:blur(6px);transition:opacity .9s ease,transform 1.4s ease,filter 1.2s ease}
 
 @media (max-width:640px){

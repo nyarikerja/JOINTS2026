@@ -1,8 +1,9 @@
 HelaLoka river loader (layar pemuatan aplikasi /app/)
 
-Alur: landing (/) -> klik "Jalankan simulasi" -> gerbang portal (public/landing/js/portal.js) -> /app/
+Alur: landing (/) -> klik "Jalankan simulasi" -> kabut bergulung masuk (public/landing/js/portal.js + fog.js) -> /app/
 -> loader sungai tampil di atas aplikasi React, perahu bergerak mengikuti progres muat ASLI
--> tiba di gerbang candi bentar -> tombol "Masuk" (Enter/Spasi) -> kamera menembus portal, lubang mask membuka ke aplikasi.
+-> perahu selalu mulai sebelum jembatan dan lewat di bawahnya -> tiba di gerbang candi bentar -> otomatis masuk:
+   kamera berhenti di depan gerbang, perahu berlayar masuk dan lenyap di kabut; kabut (fog.js) menutup layar lalu menipis memperlihatkan aplikasi.
 Loader ini menggantikan overlay "Memuat Data Spasial" (overlay lama hanya muncul jika loader dilewati sebelum peta siap).
 
 Build: edit file di src/, lalu jalankan  node build.mjs  (atau bash build.sh). Hasil:
@@ -14,10 +15,11 @@ Build: edit file di src/, lalu jalankan  node build.mjs  (atau bash build.sh). H
 Modul src/:
   p1_core.js     CFG (jumlah objek, kecepatan, durasi minimum), kualitas (localStorage 'hl-quality'), GATE, POND, BRIDGE
   p2_world.js    langit, terrain, pohon, cemara, tepian, kabut, kelopak
-  p3_boat.js     perahu dan tokoh
-  p3b_bridge.js  jembatan taiko (z = BRIDGE.z) dengan batu/kayu basah berlumut
+  p3_boat.js     kit tokoh (PK: batik, kebaya, caping, tubuh ber-IK) + jukung bercadik dengan haluan gajah mina, juru galah, penumpang, anak
+  p3b_bridge.js  jembatan lengkung batu andesit + bata merah (z = BRIDGE.z), pilar candi, tanaman rambat, warga
   p3c_gate.js    gerbang candi bentar + portal dimensi + weatherMat (basah/lumut dekat air)
   p3d_koi.js     koi (koi_lo.glb CC0 dari landing/assets) berenang di kolam depan gerbang, cincin riak di air
+  p3e_life.js    kelapa, pisang, bambu, rumah panggung, sampan tertambat, penjor, teratai, bebek, kuntul, kupu-kupu, warga tepian
   p4_view.js     air (pantulan setengah resolusi, riak, wake, cincin koi), post (bloom, god rays), kamera, gubernur resolusi
   p5_app.js      versi 2D cadangan + pengendali progres/UI/reveal
   p5b_audio.js   suara prosedural (sungai, angin, burung, metalofon slendro, cebur galah, desir portal); pilihan disimpan di 'hl-sound'

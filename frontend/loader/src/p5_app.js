@@ -31,7 +31,6 @@ ${Array.from({ length: 14 }, (_, i) => `<i style="--x:${(i * 7.1 + 3) % 100}%;--
 ${Array.from({ length: 8 }, (_, i) => `<i class="firefly" style="top:${35 + (i * 6)}%;left:${(i * 12 + 5) % 100}%;--d:${3.5 + (i % 3)}s;--l:${-(i * 0.8)}s"></i>`).join('')}
 </div>`;
   const q = id => root.querySelector('#' + id);
-  let pos = [32.8, 61.3];
   return {
     kind: 'fallback', stages: [], B: { speed: 0 },
     update(dt, ctl) {
@@ -43,10 +42,8 @@ ${Array.from({ length: 8 }, (_, i) => `<i class="firefly" style="top:${35 + (i *
       if (q('fs-s1')) q('fs-s1').setAttribute('stop-color', hx(hor));
       if (q('fs-sunc')) q('fs-sunc').setAttribute('cy', (220 - 70 * p).toFixed(1));
       if (q('fs-portal')) q('fs-portal').setAttribute('opacity', (ctl.mode === 'reveal' ? 1 : ctl.ready ? 0.95 : 0.4 + 0.5 * p).toString());
-      pos = [32.8, 61.3];
     },
     render() { }, governor() { }, setSize() { },
-    screenPos() { return pos; },
     dispose() { root.innerHTML = ''; root.hidden = true; },
     get arrived() { return true; }
   };
@@ -56,6 +53,17 @@ ${Array.from({ length: 8 }, (_, i) => `<i class="firefly" style="top:${35 + (i *
    Pola dari sakura-fantasy (MIT, (c) 2026 Bill Chan): src/main.js report() (progres gabungan berbobot dari
    banyak pemuat paralel) dan src/ui/ui.js progress()/ready()/open() (nilai target dikejar perlahan, tombol masuk,
    lalu reveal dengan mask radial yang melebar). */
+/* fakta singkat yang bergantian selama memuat */
+const TIPS = [
+  'Abu vulkanik bukan abu sisa pembakaran: isinya pecahan batuan dan kaca yang tajam dan tidak larut dalam air.',
+  'Partikel PM2.5 kira-kira 30 kali lebih kecil dari lebar rambut, sehingga bisa masuk jauh ke dalam paru-paru.',
+  'Respirator N95 menyaring setidaknya 95% partikel halus; masker kain jauh kurang efektif untuk abu dan asap.',
+  'Hujan lebat dapat mengubah endapan abu di lereng menjadi lahar yang mengalir jauh ke hilir.',
+  'Abu yang basah jauh lebih berat daripada abu kering dan bisa membuat atap runtuh. Bersihkan atap secara berkala.',
+  'Api di lahan gambut dapat membara di bawah permukaan selama berminggu-minggu, sehingga asapnya sulit padam.',
+  'Saat hujan abu, tutup bak penampungan air dan lindungi mata dengan kacamata.',
+  'Arah angin menentukan ke mana abu pergi; karena itu HelaLoka menjalankan banyak skenario angin sekaligus.'
+];
 const PHASES = [
   [0, 'Menyiapkan ruang kendali'], [0.15, 'Memuat katalog gunung api dan kawasan hutan'], [0.35, 'Mengambil titik panas dan data angin'],
   [0.55, 'Menyusun lapisan peta'], [0.75, 'Memetakan fasilitas dan penduduk'], [0.9, 'Mengalibrasi zona bahaya'], [1, 'Ruang simulasi siap']
@@ -64,7 +72,7 @@ function createApp(opts) {
   opts = opts || {};
   const $ = id => document.getElementById(id);
   const els = {
-    root: $('hlLoader'), loader: $('ldScene'), canvas: $('ldGl'), fb: $('ldFb'), skip: $('ldSkip'), sr: $('ldSr'), ring: $('ldRing'),
+    root: $('hlLoader'), loader: $('ldScene'), canvas: $('ldGl'), fb: $('ldFb'), skip: $('ldSkip'), sr: $('ldSr'),
     pct: $('ldPct'), msg: $('ldMsg'), dot: $('ldDot'), path: $('ldPath'), enter: $('ldEnter'), sound: $('ldSound'), title: $('ldTitle'), hint: $('ldHint')
   };
   const ctl = { target: 0, smooth: 0, mode: 'loading', revealE: 0, ready: false, readyCbs: [], revealStart: 0, revealDur: 2600, lastPct: -1, lastSr: -1, lastMsg: '', t0: performance.now(), frames: 0 };
@@ -73,6 +81,9 @@ function createApp(opts) {
   try { quick = sessionStorage.getItem('hl-loader-seen') === '1'; sessionStorage.setItem('hl-loader-seen', '1'); } catch (e) { }
   if (opts.quick != null) quick = opts.quick;
   const sound = createRiverSound(); window.__riverSound = sound;
+  /* kabut (public/landing/js/fog.js): sambungan dari landing (menipis) dan tirai saat perahu lenyap di gerbang */
+  let fog = null, fogA = 0, introT = 0;
+  const fogUp = () => { if (!fog && window.HLFog && els.root) fog = window.HLFog.mount(els.root, window.HLFog.START); return fog; };
 
   /* progres gabungan berbobot */
   const tasks = {}, order = [];
@@ -119,20 +130,17 @@ function createApp(opts) {
   }
 
   const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-  function placeHole() {
-    const sp = view ? view.screenPos() : [50, 50];
-    const r = els.root.style; r.setProperty('--cx', sp[0].toFixed(1) + '%'); r.setProperty('--cy', sp[1].toFixed(1) + '%');
-  }
   function beginReveal(fast) {
     if (ctl.mode !== 'loading' || destroyed) return;
     clearTimeout(autoT);
     ctl.mode = 'reveal'; ctl.revealStart = performance.now();
     const isStatic = view && view.kind === 'fallback';
-    ctl.revealDur = RM || isStatic ? 450 : fast ? 1200 : 2700;
-    placeHole(); els.root.style.setProperty('--hole', '-8%');
+    ctl.revealDur = RM || isStatic ? 450 : fast ? 1700 : 4000;
     els.root.classList.add('revealing');
+    fogUp(); introT = 0; if (fog && view && view.fogCss) fog.color(view.fogCss());   // warna kabut = warna kabut adegan di gerbang
     if (els.enter) els.enter.disabled = true;
-    if (sound) { sound.portal(); sound.close(ctl.revealDur / 1000 + 0.6); }
+    /* suara memudar bersama kabut dan benar-benar berhenti sebelum aplikasi tampil */
+    if (sound) { sound.portal(); sound.close(ctl.revealDur / 1000 * 0.7); }
     window.dispatchEvent(new CustomEvent('loader:reveal'));
   }
   function finish() { loader.destroy(); }
@@ -150,11 +158,18 @@ function createApp(opts) {
     if (ctl.mode === 'reveal') {
       const k = clamp((now - ctl.revealStart) / ctl.revealDur, 0, 1);
       ctl.revealE = RM ? 0 : ease(k);
-      const h = ease(clamp((k - 0.16) / 0.84, 0, 1));
-      placeHole();
-      els.root.style.setProperty('--hole', (-8 + h * 135).toFixed(2) + '%');
-      els.root.style.setProperty('--rot', (now * 0.12 % 360).toFixed(1) + 'deg');
+      /* perahu berlayar ke dalam kabut gerbang; kabut menebal, menutup layar, lalu menipis memperlihatkan aplikasi */
+      ctl.fogMul = 1 + 7 * Math.pow(sstep(0.05, 0.62, k), 2);
+      fogA = RM ? 1 - k : sstep(0.3, 0.6, k) * (1 - sstep(0.7, 1, k));
+      if (fog) fog.set(fogA);
+      if (k > 0.62 && !els.root.classList.contains('through')) els.root.classList.add('through');
       if (k >= 1) { finish(); return; }
+    } else if (introT || fog) {
+      /* datang dari landing: mulai di dalam kabut, lalu kabut menipis setelah adegan pertama tergambar */
+      const ki = introT ? clamp((now - introT) / (RM ? 300 : 2600), 0, 1) : 0;
+      fogA = 1 - sstep(0, 1, ki); ctl.fogMul = 1 + 5 * fogA;
+      if (fog) fog.set(fogA);
+      if (ki >= 1) { if (fog) { fog.remove(); fog = null; } introT = 0; ctl.fogMul = 1; }
     }
     updateUI();
     const elapsed = (now - ctl.t0) / 1000;
@@ -162,14 +177,14 @@ function createApp(opts) {
     /* pengaman: jangan pernah mengurung pengguna jika ada data yang macet */
     if (!ctl.ready && elapsed > (opts.watchdog || 22) && ctl.target < 1) { ctl.target = 1; els.sr.textContent = 'Sebagian data masih dimuat di latar.'; }
     view.update(dt, ctl);
-    view.render();
+    if (!els.root.classList.contains('through')) view.render();    // adegan sudah tertutup kabut: berhenti menggambar
     view.governor(dt);
     if (nextStageIdx < view.stages.length && ctl.frames > 1) {
       view.stages[nextStageIdx++]();
       Progress.report('dunia', nextStageIdx / view.stages.length);
     }
     ctl.frames++;
-    if (ctl.frames === 2) els.root.classList.add('live');
+    if (ctl.frames === 2) { els.root.classList.add('live'); if (fog && !introT && ctl.mode === 'loading') introT = now + 300; }
   }
 
   function switchToFallback() {
@@ -207,7 +222,7 @@ function createApp(opts) {
     destroy() {
       if (destroyed) return; destroyed = true; cancelAnimationFrame(raf); clearTimeout(autoT);
       try { view && view.dispose(); } catch (e) { console.error(e); }
-      if (sound) sound.close(0.3);
+      if (sound) sound.kill();
       window.__riverSound = null;
       removeEventListener('resize', onResize); removeEventListener('keydown', onKey);
       removeEventListener('pointerdown', firstGesture, true); removeEventListener('keydown', firstGesture, true);
@@ -227,8 +242,13 @@ function createApp(opts) {
   function boot() {
     if (RM) els.root.classList.add('rm');
     Progress.register('dunia', 0.05, 'Membangun lanskap sungai');
-    /* kunjungan ulang: perjalanan dipersingkat, perahu mulai dekat jembatan */
-    if (quick) { CFG.zStart += CFG.journey * 0.4; CFG.journey *= 0.6; }
+    /* kunjungan ulang: perjalanan dipersingkat, tetapi perahu tetap mulai SEBELUM jembatan supaya selalu lewat di bawahnya
+       (dulu titik mulai dimajukan 40% sehingga perahu langsung muncul di bawah jembatan) */
+    if (quick) { const end = CFG.zStart + CFG.journey; CFG.zStart = Math.max(CFG.zStart, BRIDGE.z - 13); CFG.journey = end - CFG.zStart; }
+    /* datang dari landing: mulai di dalam kabut yang sama dengan akhir transisi landing */
+    let fromPortal = false;
+    try { fromPortal = sessionStorage.getItem('hl-portal') === '1'; sessionStorage.removeItem('hl-portal'); } catch (e) { }
+    if (fromPortal && fogUp()) { fog.set(1); ctl.fogMul = 6; }
     try {
       if (QUALITY === 'static') throw new Error('mode statis');
       /* cek dukungan WebGL2 lebih dulu supaya three.js tidak menulis galat ke konsol */
@@ -254,7 +274,19 @@ function createApp(opts) {
     if (sound) sound.autostart().then(syncSoundBtn); else syncSoundBtn();
     setTimeout(syncSoundBtn, 600);
     requestAnimationFrame(() => els.title && els.title.classList.add('in'));
+    /* fakta bergantian tiap 7 detik */
+    const tip = $('ldTip'), tipT = $('ldTipT');
+    if (tip && tipT) {
+      let ti = Math.floor(Math.random() * TIPS.length);
+      const show = () => { if (destroyed || ctl.mode !== 'loading') return; tip.classList.remove('on');
+        setTimeout(() => { tipT.textContent = TIPS[ti++ % TIPS.length]; tip.classList.add('on'); }, 450); setTimeout(show, 7000); };
+      setTimeout(show, 1400);
+    }
+    /* mode hemat otomatis: laptop tidak sedang diisi daya -> kualitas lite (hanya untuk pilihan kualitas 'auto') */
+    if (QUALITY === 'auto' && navigator.getBattery) navigator.getBattery().then(b => {
+      if (!b.charging && applyLite() && view && view.setSize) { view.setSize(); console.info('Loader: mode hemat baterai aktif'); }
+    }).catch(() => { });
     last = performance.now(); raf = requestAnimationFrame(frame);
   }
-  return { loader, boot, ctl, Progress };
+  return { loader, boot, ctl, Progress, get view() { return view; } };
 }

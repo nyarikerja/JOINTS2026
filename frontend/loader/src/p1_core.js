@@ -10,19 +10,27 @@ const WEAK = (() => {
   try { if (navigator.connection && navigator.connection.saveData) return true; } catch (e) { }
   return (navigator.hardwareConcurrency || 8) <= 4;
 })();
-const LITE = QUALITY === 'lite' || (QUALITY === 'auto' && (MOBILE || WEAK));
+let LITE = QUALITY === 'lite' || (QUALITY === 'auto' && (MOBILE || WEAK));
 const CFG = {
   journey: 52, zStart: 76, maxSpeed: 4.2, nextUrl: null,
   sakura: LITE ? 46 : 86, conifer: LITE ? 260 : 520, far: LITE ? 260 : 620,
   reeds: LITE ? 2200 : 5200, grass: LITE ? 3500 : 9000, rocks: LITE ? 70 : 150,
   petals: LITE ? 260 : 700, floating: LITE ? 120 : 320, mist: 12, koi: LITE ? 7 : 11,
-  reflScale: LITE ? 0.35 : 0.5, bloomLevels: LITE ? 2 : 3, shadow: LITE ? 1024 : 2048,
-  dpr: Math.min(window.devicePixelRatio || 1, QUALITY === 'high' ? 2 : (LITE ? 1.25 : 1.75)),
+  reflScale: LITE ? 0.28 : 0.4, bloomLevels: LITE ? 2 : 3, shadow: LITE ? 1024 : 2048,
+  dpr: Math.min(window.devicePixelRatio || 1, QUALITY === 'high' ? 2 : (LITE ? 1 : 1.4)),
   /* durasi minimum adegan (detik) agar perahu tidak "melompat" saat data dimuat sangat cepat */
   minShow: RM ? 0.6 : 3.2,
   /* aset bersama dengan landing page (sudah ada di cache jika pengguna datang dari landing) */
   vendor: '/landing/vendor/', koiUrl: '/landing/assets/glb/koi_lo.glb'
 };
+
+/* mode hemat: dipanggil saat laptop tidak sedang diisi daya (kualitas 'auto'). Objek yang dibangun setelahnya ikut ringan. */
+function applyLite() {
+  if (LITE) return false; LITE = true;
+  Object.assign(CFG, { sakura: 46, conifer: 260, far: 260, reeds: 2200, grass: 3500, rocks: 70, petals: 260, floating: 120, koi: 7, reflScale: 0.28, bloomLevels: 2, shadow: 1024,
+    dpr: Math.min(window.devicePixelRatio || 1, 1) });
+  return true;
+}
 
 const BRIDGE = { z: 94, half: 15.5, hw: 7, hws: 2.8 };  /* jembatan di tengah perjalanan; hw/hws: zona bebas pohon/rumput */
 /* Gerbang candi bentar di ujung perjalanan: perahu berhenti di depannya, portal di celahnya membuka ke aplikasi. */
@@ -167,12 +175,57 @@ function ik(S, H, l1, l2, hint) {
   const elbow = S.clone().addScaledVector(dir, a).addScaledVector(hn, h);
   return { elbow, hand: S.clone().add(d) };
 }
+/* Optimasi draw call: gabungkan semua mesh statis di bawah root (kecuali yang ada di `keep` beserta turunannya)
+   menjadi satu mesh per material. Mesh beranimasi, sprite, lampu, dan instanced mesh dibiarkan. */
+function bakeStatic(root, keep) {
+  keep = new Set(keep || []);
+  root.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), groups = new Map();
+  const walk = o => {
+    if (keep.has(o)) return;
+    if (o !== root && o.isMesh && !o.isInstancedMesh && !Array.isArray(o.material) && o.geometry.attributes.position && o.geometry.attributes.normal) {
+      const m = o.material; if (!groups.has(m)) groups.set(m, []);
+      groups.get(m).push({ o, mat: new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld) });
+    }
+    o.children.slice().forEach(walk);
+  };
+  walk(root);
+  const nm = new THREE.Matrix3(), v = new THREE.Vector3();
+  groups.forEach((list, mat) => {
+    if (list.length < 2) return;
+    let nv = 0, ni = 0; const useC = !!mat.vertexColors;
+    list.forEach(it => { const g = it.o.geometry; nv += g.attributes.position.count; ni += g.index ? g.index.count : g.attributes.position.count; });
+    const P = new Float32Array(nv * 3), N = new Float32Array(nv * 3), UV = new Float32Array(nv * 2), C = useC ? new Float32Array(nv * 3) : null;
+    const I = nv > 65535 ? new Uint32Array(ni) : new Uint16Array(ni);
+    let vo = 0, io = 0, cast = false, recv = false;
+    list.forEach(it => {
+      const g = it.o.geometry, pa = g.attributes.position, na = g.attributes.normal, ua = g.attributes.uv, ca = g.attributes.color;
+      nm.getNormalMatrix(it.mat);
+      for (let i = 0; i < pa.count; i++) {
+        v.fromBufferAttribute(pa, i).applyMatrix4(it.mat); P.set([v.x, v.y, v.z], (vo + i) * 3);
+        v.fromBufferAttribute(na, i).applyMatrix3(nm).normalize(); N.set([v.x, v.y, v.z], (vo + i) * 3);
+        if (ua) { UV[(vo + i) * 2] = ua.getX(i); UV[(vo + i) * 2 + 1] = ua.getY(i); }
+        if (C) { if (ca) C.set([ca.getX(i), ca.getY(i), ca.getZ(i)], (vo + i) * 3); else C.set([1, 1, 1], (vo + i) * 3); }
+      }
+      if (g.index) for (let k = 0; k < g.index.count; k++) I[io++] = g.index.getX(k) + vo;
+      else for (let k = 0; k < pa.count; k++) I[io++] = k + vo;
+      vo += pa.count; cast = cast || it.o.castShadow; recv = recv || it.o.receiveShadow;
+    });
+    const bg = new THREE.BufferGeometry();
+    bg.setAttribute('position', new THREE.BufferAttribute(P, 3)); bg.setAttribute('normal', new THREE.BufferAttribute(N, 3)); bg.setAttribute('uv', new THREE.BufferAttribute(UV, 2));
+    if (C) bg.setAttribute('color', new THREE.BufferAttribute(C, 3));
+    bg.setIndex(new THREE.BufferAttribute(I, 1)); bg.computeBoundingSphere();
+    const mesh = new THREE.Mesh(bg, mat); mesh.castShadow = cast; mesh.receiveShadow = recv; mesh.renderOrder = list[0].o.renderOrder; root.add(mesh);
+    list.forEach(it => { it.o.parent.remove(it.o); it.o.geometry.dispose(); });
+  });
+  return root;
+}
 function tint(mat, col) { mat.color = new THREE.Color(col[0], col[1], col[2]); return mat; }
 
 /* ---------- Musim: lima, bergantian dengan memudar (crossfade) bersama seluruh pemandangan ---------- */
-/* urutan: dingin, panas (kemarau), summer (hijau lebat), gugur, sakura */
+/* urutan: fajar berkabut (tropis, tanpa salju), kemarau, hijau lebat, gugur keemasan, mekar */
 const SEAS = {
-  top: [[0.46, 0.53, 0.66], [0.52, 0.60, 0.74], [0.20, 0.46, 0.92], [0.36, 0.44, 0.64], [0.40, 0.56, 0.86]],
+  top: [[0.50, 0.58, 0.66], [0.52, 0.60, 0.74], [0.20, 0.46, 0.92], [0.36, 0.44, 0.64], [0.40, 0.56, 0.86]],
   hor: [[0.86, 0.89, 0.93], [0.97, 0.92, 0.80], [0.78, 0.88, 0.97], [0.98, 0.74, 0.52], [0.97, 0.80, 0.78]],
   sun: [[0.90, 0.93, 1.0], [1.0, 0.97, 0.86], [1.0, 0.94, 0.80], [1.0, 0.62, 0.30], [1.0, 0.80, 0.62]],
   mtn: [[0.62, 0.68, 0.78], [0.60, 0.58, 0.55], [0.40, 0.55, 0.72], [0.50, 0.42, 0.42], [0.46, 0.54, 0.68]],
@@ -182,18 +235,18 @@ const SEAS = {
   hemi: [1.15, 1.0, 1.0, 0.95, 1.05], sunI: [1.3, 2.1, 1.9, 1.9, 1.9], warm: [0, 0.5, 0.4, 1, 0.6], expo: [1.6, 1.3, 1.35, 1.5, 1.5]
 };
 const SP = {
-  tt: [[0.82, 0.88, 0.98], [1, 1, 1], [0.82, 1.12, 0.62], [1, 1, 1], [1.08, 1.2, 0.9]],
-  tl: [0, 0.7, 0, 0.75, 0], tlc: [[1, 1, 1], [1.85, 1.5, 0.78], [1, 1, 1], [1.95, 1.15, 0.5], [1, 1, 1]], snow: [1, 0, 0, 0, 0],
+  tt: [[0.9, 1.0, 0.92], [1, 1, 1], [0.82, 1.12, 0.62], [1, 1, 1], [1.08, 1.2, 0.9]],
+  tl: [0, 0.7, 0, 0.75, 0], tlc: [[1, 1, 1], [1.85, 1.5, 0.78], [1, 1, 1], [1.95, 1.15, 0.5], [1, 1, 1]], snow: [0, 0, 0, 0, 0],
   spk: [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0.5, 0.18, 0.07], [0.96, 0.66, 0.78]], spkA: [0, 0, 0, 0.45, 0.6],
-  ct: [[0.9, 0.92, 0.95], [1.1, 1.0, 0.65], [0.75, 1.15, 0.7], [1.2, 1.05, 0.65], [1.1, 1.3, 0.9]], csnow: [0.9, 0, 0, 0, 0],
-  gt: [[1, 1, 1], [1, 1, 1], [0.8, 1.1, 0.65], [1.75, 1.1, 0.4], [1.1, 1.2, 0.9]],
-  gb: [[0.62, 0.58, 0.46], [0.74, 0.62, 0.34], [0, 0, 0], [0, 0, 0], [0, 0, 0]], gbm: [1, 0.8, 0, 0, 0],
-  leaf: [[0.93, 0.96, 1.0], [0.46, 0.46, 0.14], [0.17, 0.42, 0.10], [0.92, 0.58, 0.10], [0.35, 0.50, 0.14]],
-  leaf2: [[0.93, 0.96, 1.0], [0.62, 0.50, 0.14], [0.10, 0.34, 0.12], [0.75, 0.15, 0.06], [0.55, 0.50, 0.15]],
-  leafD: [0.12, 0.8, 1, 0.75, 0.5], blosD: [0, 0, 0, 0, 1],
-  pa: [[1, 1, 1], [1, 0.92, 0.62], [1, 0.96, 0.78], [0.88, 0.42, 0.10], [0.95, 0.60, 0.72]],
-  pb: [[1, 1, 1], [1, 0.92, 0.62], [0.9, 1, 0.8], [0.72, 0.20, 0.07], [1, 0.86, 0.90]],
-  pRound: [1, 1, 1, 0, 0], pAmt: [1, 0.25, 0.3, 0.9, 1], pSize: [0.5, 0.4, 0.45, 1, 1], pAlpha: [0.95, 0.3, 0.35, 0.9, 0.85]
+  ct: [[0.85, 1.0, 0.85], [1.1, 1.0, 0.65], [0.75, 1.15, 0.7], [1.2, 1.05, 0.65], [1.1, 1.3, 0.9]], csnow: [0, 0, 0, 0, 0],
+  gt: [[0.85, 1.05, 0.8], [1, 1, 1], [0.8, 1.1, 0.65], [1.75, 1.1, 0.4], [1.1, 1.2, 0.9]],
+  gb: [[0.62, 0.58, 0.46], [0.74, 0.62, 0.34], [0, 0, 0], [0, 0, 0], [0, 0, 0]], gbm: [0, 0.8, 0, 0, 0],
+  leaf: [[0.26, 0.48, 0.2], [0.46, 0.46, 0.14], [0.17, 0.42, 0.10], [0.92, 0.58, 0.10], [0.35, 0.50, 0.14]],
+  leaf2: [[0.16, 0.38, 0.16], [0.62, 0.50, 0.14], [0.10, 0.34, 0.12], [0.75, 0.15, 0.06], [0.55, 0.50, 0.15]],
+  leafD: [1, 0.8, 1, 0.75, 0.5], blosD: [0, 0, 0, 0, 1],
+  pa: [[1, 0.97, 0.9], [1, 0.92, 0.62], [1, 0.96, 0.78], [0.88, 0.42, 0.10], [0.95, 0.60, 0.72]],
+  pb: [[1, 0.9, 0.72], [1, 0.92, 0.62], [0.9, 1, 0.8], [0.72, 0.20, 0.07], [1, 0.86, 0.90]],
+  pRound: [0, 1, 1, 0, 0], pAmt: [0.35, 0.25, 0.3, 0.9, 1], pSize: [0.8, 0.4, 0.45, 1, 1], pAlpha: [0.8, 0.3, 0.35, 0.9, 0.85]
 };
 const mkV = () => ({ value: new THREE.Vector3() }), mkF = () => ({ value: 0 });
 const SU = {

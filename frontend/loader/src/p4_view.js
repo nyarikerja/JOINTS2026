@@ -126,9 +126,11 @@ void main(){
   vec3 c=texture2D(tScene,vUv).rgb;
   vec3 b=texture2D(tB1,vUv).rgb*uBW.x+texture2D(tB2,vUv).rgb*uBW.y+texture2D(tB3,vUv).rgb*uBW.z;
   c+=b*uBloom;
-  vec2 dir=(uSunUV-vUv)/28.0*0.92;vec2 uv=vUv;float wt=1.0;vec3 ray=vec3(0.0);
-  for(int i=0;i<28;i++){uv+=dir;ray+=texture2D(tBright,uv).rgb*wt;wt*=0.955;}
-  c+=ray/28.0*uRay*uSunVis*vec3(1.0,0.82,0.62)*3.0;
+  if(uSunVis>0.01){
+    vec2 dir=(uSunUV-vUv)/16.0*0.92;vec2 uv=vUv+dir*hh(vUv*uRes)*0.9;float wt=1.0;vec3 ray=vec3(0.0);
+    for(int i=0;i<16;i++){uv+=dir;ray+=texture2D(tBright,uv).rgb*wt;wt*=0.93;}
+    c+=ray/16.0*uRay*uSunVis*vec3(1.0,0.82,0.62)*2.6;
+  }
   c*=uExposure;c=aces(c);
   float l=dot(c,vec3(0.299,0.587,0.114));c=mix(vec3(l),c,1.1);
   c*=mix(vec3(0.97,1.0,1.04),vec3(1.04,1.0,0.95),uWarm);
@@ -148,7 +150,7 @@ function createView3D(canvas) {
   const hdr = !!(renderer.extensions.get('EXT_color_buffer_float') || renderer.extensions.get('EXT_color_buffer_half_float'));
   const TYPE = hdr ? THREE.HalfFloatType : THREE.UnsignedByteType;
   const ropt = (depth) => ({ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat, type: TYPE, depthBuffer: depth });
-  const sceneRT = new THREE.WebGLRenderTarget(4, 4, Object.assign(ropt(true), { samples: LITE ? 2 : 4 }));
+  const sceneRT = new THREE.WebGLRenderTarget(4, 4, Object.assign(ropt(true), { samples: LITE ? 0 : 2 }));
   const reflRT = new THREE.WebGLRenderTarget(4, 4, ropt(true));
   const NB = CFG.bloomLevels;
   const brightRT = new THREE.WebGLRenderTarget(4, 4, ropt(false));
@@ -174,20 +176,25 @@ function createView3D(canvas) {
   scene.add(sun, sun.target);
   const petals = petalSystem(CFG.petals, false), floating = petalSystem(CFG.floating, true);
   scene.add(petals, floating);
-  const extras = []; let mist = null, bridge = null, gate = null, koi = null;
+  const extras = [], noRefl = [petals, floating]; let mist = null, bridge = null, gate = null, koi = null, village = null, life = null;
 
   /* sisa dunia dibangun bertahap supaya frame pertama cepat */
   const stages = [
     () => { const g = buildTrees(); scene.add(g); extras.push(g); },
     () => { const g = buildConifers(); scene.add(g); extras.push(g); },
-    () => { const g = buildBank(); scene.add(g); extras.push(g); },
+    () => { const g = buildBank(); scene.add(g); extras.push(g); noRefl.push(g); },
+    () => { const g = buildTropics(); scene.add(g); extras.push(g); },
+    () => { village = buildVillage(); scene.add(village.group); extras.push(village.group); },
+    () => { life = buildLife(); scene.add(life.group); extras.push(life.group); noRefl.push(life.group); },
     () => { bridge = buildBridge(); scene.add(bridge.group); extras.push(bridge.group); },
     () => { mist = buildMist(); scene.add(mist); extras.push(mist); },
     () => { gate = buildGate(); scene.add(gate.group); extras.push(gate.group); },
     () => {
       loadKoi(water.material.uniforms).then(k => { if (disposed) { k.mesh.geometry.dispose(); k.mesh.material.dispose(); return; } koi = k; scene.add(k.mesh); })
         .catch(err => console.warn('Koi tidak dimuat:', err && err.message));
-    }
+    },
+    /* kompilasi semua shader sekarang (saat masih memuat), bukan tersendat ketika objek pertama kali terlihat */
+    () => { try { renderer.compile(scene, camera); } catch (e) { } }
   ];
 
   const B = { z: CFG.zStart, speed: 0, yaw: 0, x: 0 };
@@ -244,7 +251,7 @@ function createView3D(canvas) {
     const t = U.time.value;
     const goal = CFG.zStart + ctl.smooth * CFG.journey;
     let v;
-    if (ctl.mode === 'reveal') v = 1.1;                     // perahu meluncur pelan ke arah gerbang
+    if (ctl.mode === 'reveal') v = 4.4;                     // perahu terus berlayar menembus gerbang ke dalam kabut
     else {
       const rem = Math.max(goal - B.z, 0);
       /* setelah data selesai, perahu menyusul secepatnya tetapi tetap melambat mulus sebelum berhenti */
@@ -271,16 +278,19 @@ function createView3D(canvas) {
     if (window.__riverSound) window.__riverSound.speed(clamp(speed01, 0, 1));
     if (bridge) bridge.update(t, dt, B.x, B.z);
     if (koi) koi.update(dt, t, B.x, B.z);
+    if (village) village.update(t);
+    if (life) life.update(t, dt, B.x, B.z);
     applyEnv(clamp((B.z - CFG.zStart) / CFG.journey, 0, 1));
+    /* kabut tambahan: tebal saat datang dari landing (menipis), menebal lagi saat perahu masuk gerbang */
+    const fm = ctl.fogMul || 1;
+    if (fm !== 1) { U.fogD.value *= fm; scene.fog.density = U.fogD.value; }
 
-    const e = ctl.revealE;
+    const e = ctl.mode === 'reveal' ? ctl.revealE : 0;
     const atEnd = ctl.ready || (ctl.target >= 1 && B.speed < 0.6 && B.z > CFG.zStart + CFG.journey - 3);
     arrive.k += ((atEnd ? 1 : 0) - arrive.k) * (1 - Math.exp(-dt * 0.9));
     const A = sstep(0, 1, arrive.k);
-    if (gate) {
-      gate.update(t, dt, ctl.mode === 'reveal' ? 1.5 : (0.16 + 0.5 * A), e > 0 ? sstep(0.2, 0.6, e) * (1 - sstep(0.7, 1, e)) * 0.35 : 0, camera.position);
-      gate.portalCenter(); portalP.copy(gate.portalCenter());
-    } else portalP.set(cx(GATE.z), 5.9, GATE.z);
+    if (gate) { gate.update(t, dt, ctl.mode === 'reveal' ? 1 : 0.35 + 0.4 * A, camera.position); portalP.copy(gate.gateCenter()); }
+    else portalP.set(cx(GATE.z), 4.9, GATE.z);
 
     const wu = water.material.uniforms;
     wu.uBoat.value.set(B.x, B.z); wu.uFwd.value.set(Math.sin(B.yaw), Math.cos(B.yaw)); wu.uSpeed.value = clamp(speed01, 0, 1);
@@ -290,7 +300,7 @@ function createView3D(canvas) {
     if (mist) mist.children.forEach(s => { s.position.x = cx(s.userData.z) + Math.sin(t * 0.05 + s.userData.ph) * 4; s.material.opacity = 0.4; });
 
     /* kamera: mengikuti dari belakang-samping; saat tiba naik sedikit (kolam koi dan gerbang terlihat);
-       saat masuk, terbang menembus portal */
+       saat masuk, kamera tertahan di depan gerbang sementara perahu terus berlayar dan lenyap di kabut */
     const back = lerp(8.2, 9.8, A), side = lerp(3.8, 1.4, A), up = lerp(2.3, 4.2, A);
     const fwd = tv.a.set(Math.sin(B.yaw), 0, Math.cos(B.yaw)), right = tv.c.set(fwd.z, 0, -fwd.x);
     const des = tv.d.set(B.x, 0, B.z).addScaledVector(fwd, -back).addScaledVector(right, side); des.y = up;
@@ -299,16 +309,14 @@ function createView3D(canvas) {
     if (!RM) { des.x += Math.sin(t * 0.31) * 0.12; des.y += Math.sin(t * 0.23) * 0.06; }
     des.y = Math.max(des.y, 1.35);
     if (e > 0) {
-      const k = Math.pow(e, 1.5);
-      tmpL.copy(portalP).addScaledVector(fwd, 3.5); tmpL.y = portalP.y - 1.2;
-      des.lerp(tmpL, k); des.y += Math.sin(Math.PI * Math.min(1, k * 1.4)) * 1.6;
-      look.lerp(tmpL.copy(portalP).addScaledVector(fwd, 40), Math.min(1, e * 1.6));
+      const lim = GATE.z - 9.5;                              // kamera berhenti sebelum gerbang
+      if (des.z > lim) { des.z = lim; des.x = lerp(des.x, cx(lim) + 1.2, 0.6); }
+      des.y = lerp(des.y, 2.6, e);
+      look.copy(tmpL.set(B.x, 1.2, B.z)).lerp(tmpL.copy(portalP).setY(2.2), 0.4);
     }
     if (!camInit) { camPos.copy(des); camLook.copy(look); camInit = true; }
-    else { const kk = e > 0 ? 1 - Math.exp(-dt * 7) : 1 - Math.exp(-dt * 2.6); camPos.lerp(des, kk); camLook.lerp(look, e > 0 ? kk : 1 - Math.exp(-dt * 3)); }
+    else { camPos.lerp(des, 1 - Math.exp(-dt * 2.6)); camLook.lerp(look, 1 - Math.exp(-dt * 3)); }
     camera.position.copy(camPos); camera.lookAt(camLook);
-    const baseFov = camera.aspect < 0.9 ? 64 : 52, nf = baseFov + 16 * e * e;
-    if (Math.abs(camera.fov - nf) > 0.01) { camera.fov = nf; camera.updateProjectionMatrix(); }
   }
 
   function renderReflection() {
@@ -325,13 +333,16 @@ function createView3D(canvas) {
     vc.far = camera.far; vc.updateMatrixWorld(); vc.projectionMatrix.copy(camera.projectionMatrix);
     refl.tm.set(0.5, 0, 0, 0.5, 0, 0.5, 0, 0.5, 0, 0, 0.5, 0.5, 0, 0, 0, 1).multiply(vc.projectionMatrix).multiply(vc.matrixWorldInverse);
     water.material.uniforms.uTexMat.value.copy(refl.tm);
-    water.visible = false; if (koi) koi.mesh.visible = false; renderer.clippingPlanes = [refl.clip];
+    /* benda kecil (rumput, makhluk hidup, kelopak) tidak perlu ikut dipantulkan: hemat satu render penuh */
+    water.visible = false; if (koi) koi.mesh.visible = false; noRefl.forEach(o => { o.visible = false; }); renderer.clippingPlanes = [refl.clip];
     renderer.setRenderTarget(reflRT); renderer.render(scene, vc);
-    renderer.clippingPlanes = []; water.visible = true; if (koi) koi.mesh.visible = true;
+    renderer.clippingPlanes = []; water.visible = true; if (koi) koi.mesh.visible = true; noRefl.forEach(o => { o.visible = true; });
   }
 
+  let frameN = 0;
   function render() {
-    renderer.shadowMap.needsUpdate = true;
+    /* peta bayangan diperbarui tiap dua frame (matahari mengikuti perahu yang bergerak pelan) */
+    renderer.shadowMap.needsUpdate = (frameN++ & 1) === 0;
     renderReflection();
     renderer.setRenderTarget(sceneRT); renderer.render(scene, camera);
     P.bright.uniforms.tSrc.value = sceneRT.texture; pass(P.bright, brightRT);
@@ -359,17 +370,11 @@ function createView3D(canvas) {
     acc += dt; n++;
     if (acc < 1) return;
     const avg = acc / n; acc = 0; n = 0;
-    if (avg > 0.024) { slow++; fast = 0; } else if (avg < 0.0155) { fast++; slow = 0; } else { slow = 0; fast = 0; }
-    if (slow >= 1 && scale > 0.55) { scale = Math.max(0.55, scale - 0.1); setSize(); slow = 0; }
+    if (avg > 0.021) { slow++; fast = 0; } else if (avg < 0.0145) { fast++; slow = 0; } else { slow = 0; fast = 0; }
+    if (slow >= 1 && scale > 0.5) { scale = Math.max(0.5, scale - (avg > 0.033 ? 0.15 : 0.08)); setSize(); slow = 0; }
     else if (fast >= 4 && scale < 1) { scale = Math.min(1, scale + 0.05); setSize(); fast = 0; }
   }
 
-  /* posisi layar (persen) tempat lubang reveal dibuka: pusat portal jika terlihat, kalau tidak perahu */
-  function screenPos() {
-    const v = (gate ? gate.portalCenter() : new THREE.Vector3(B.x, 0.9, B.z)).clone().project(camera);
-    if (v.z > 1 || Math.abs(v.x) > 1.2 || Math.abs(v.y) > 1.2) v.set(0, 0, 0);
-    return [(v.x * 0.5 + 0.5) * 100, (1 - (v.y * 0.5 + 0.5)) * 100];
-  }
   function dispose() {
     if (disposed) return; disposed = true;
     scene.traverse(o => {
@@ -389,7 +394,8 @@ function createView3D(canvas) {
 
   setSize(); applyEnv(0);
   return {
-    kind: '3d', renderer, scene, camera, boat, B, stages, update, render, governor, setSize, screenPos, dispose,
+    kind: '3d', renderer, scene, camera, boat, B, stages, update, render, governor, setSize, dispose,
+    fogCss() { const c = U.fogCol.value; return `rgb(${c.r * 255 | 0},${c.g * 255 | 0},${c.b * 255 | 0})`; },
     get arrived() { return B.speed < 0.6 && B.z > CFG.zStart + CFG.journey * 0.995 - 0.8; }, get koiReady() { return !!koi; }, get scale() { return scale; }
   };
 }

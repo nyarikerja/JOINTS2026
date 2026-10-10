@@ -110,11 +110,12 @@ function createRiverSound() {
   }
 
   function ensure() {
+    if (closing) return false;                                  // sudah ditutup: jangan pernah hidup lagi di aplikasi
     if (!ctx) {
       try {
         ctx = new AC();
         ctx.onstatechange = () => {
-          if (ctx.state === 'running' && on) {
+          if (ctx && ctx.state === 'running' && on && !closing) {
             fadeTo(0.8, 1.2);
           }
         };
@@ -123,7 +124,7 @@ function createRiverSound() {
     if (!built) build();
     return true;
   }
-  function fadeTo(v, sec) { if (!master) return; const t = ctx.currentTime; master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(master.gain.value, t); master.gain.linearRampToValueAtTime(v, t + sec); }
+  function fadeTo(v, sec) { if (!master || !ctx) return; const t = ctx.currentTime; master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(master.gain.value, t); master.gain.linearRampToValueAtTime(v, t + sec); }
 
   const api = {
     /* coba mulai otomatis; berhasil jika browser mengizinkan (mis. setelah klik di landing page) */
@@ -135,7 +136,7 @@ function createRiverSound() {
       if (ctx.state !== 'running') {
         ctx.resume().catch(() => { });
       }
-      return ctx.resume().catch(() => { }).then(() => { if (ctx.state === 'running') { fadeTo(0.8, 2.5); return true; } return false; });
+      return ctx.resume().catch(() => { }).then(() => { if (!closing && ctx.state === 'running') { fadeTo(0.8, 2.5); return true; } return false; });
     },
     resume() {
       if (pref() === 'off') return;
@@ -166,13 +167,22 @@ function createRiverSound() {
       [0, 240, 720, 960, 1440].forEach((c, i) => bell(523 * Math.pow(2, c / 1200), t + 0.3 + i * 0.09, 0.04, 3.5));
       gong(t + 0.2, 0.16);
     },
-    /* memudar lalu menutup konteks audio */
+    /* memudar lalu menutup konteks audio; setelah ini tidak ada yang bisa menyalakannya lagi */
     close(sec) {
-      if (!ctx || closing) return; closing = true; fadeTo(0, sec || 1.6);
-      timers.forEach(clearTimeout); const c = ctx;
-      setTimeout(() => { try { c.close(); } catch (e) { } }, (sec || 1.6) * 1000 + 200);
+      if (closing) return; closing = true; on = false; timers.forEach(clearTimeout); timers = [];
+      if (!ctx) return;
+      fadeTo(0, sec || 1.6);
+      setTimeout(() => { api.kill(); }, (sec || 1.6) * 1000 + 120);
+    },
+    /* berhenti seketika (dipanggil saat loader dihancurkan dan saat halaman ditinggalkan) */
+    kill() {
+      closing = true; on = false; timers.forEach(clearTimeout); timers = [];
+      if (!ctx) return; const c = ctx; ctx = null;
+      try { if (master) master.disconnect(); } catch (e) { }
+      try { c.onstatechange = null; if (c.state !== 'closed') c.close(); } catch (e) { }
     },
     get prefOff() { return pref() === 'off'; }
   };
+  addEventListener('pagehide', () => api.kill());
   return api;
 }
