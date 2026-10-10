@@ -190,19 +190,16 @@
   }
 
   /* ---------- gulir ---------- */
-  var on = false, mode = 'tour', raf = 0, last = 0, pos = 0, v = 0, hold = 0, waiting = false, seen = {}, paused = false, userT = 0, stepT = 0, stuck = 0;
+  var on = false, mode = 'tour', raf = 0, last = 0, pos = 0, v = 0, hold = 0, waiting = false, seen = {}, paused = false, userT = 0, stepT = 0, stuck = 0, lastY = 0;
   var secs = function () { return [].slice.call(document.querySelectorAll('main .sec')); };
-  var maxY = function () { return Math.max(0, document.documentElement.scrollHeight - innerHeight); };
+  var maxY = function () { var e = document.scrollingElement || document.documentElement; return Math.max(0, e.scrollHeight - e.clientHeight); };
   var lenis = function () { return window.US && window.US.lenis; };
-  /* Lenis menyimpan tinggi halaman; jika halaman memanjang setelah dimuat (gambar, font) batas lamanya menahan gulir
-     sebelum dasar halaman. Ukur ulang bila perlu, dan pakai gulir bawaan sebagai cadangan. */
+  /* gulir dengan scroll bawaan secara instan. Lenis (page.js) otomatis menyesuaikan diri lewat peristiwa scroll-nya
+     selama ia tidak sedang beranimasi, jadi tidak ada tarik-menarik posisi. */
   function go(y) {
-    var l = lenis();
-    if (l) {
-      if (typeof l.limit === 'number' && y > l.limit - 1 && l.resize) l.resize();
-      l.scrollTo(y, { immediate: true, force: true });
-      if (Math.abs(scrollY - y) > 2 && y <= maxY()) scrollTo(0, y);
-    } else scrollTo(0, y);
+    y = Math.max(0, Math.min(maxY(), Math.round(y)));
+    var l = lenis(); if (l && l.isScrolling === 'smooth') l.stop && l.start && (l.stop(), l.start());
+    window.scrollTo({ top: y, left: 0, behavior: 'instant' });
   }
   function speed() { return Math.max(70, Math.min(150, innerHeight * 0.13)); }
   function topOf(s) { return s.getBoundingClientRect().top + scrollY - (s.id === 'beranda' ? 0 : 72); }
@@ -261,7 +258,10 @@
     var m = maxY();
     /* batas gulir sebenarnya bisa lebih pendek dari scrollHeight (elemen dekoratif di luar alur): jika gulir tidak lagi
        bergerak padahal target terus maju, anggap sudah di akhir halaman */
-    if (pos > scrollY + 40) { if (++stuck > 12) { pos = m; } } else stuck = 0;
+    if (pos > m) pos = m;
+    /* jika posisi tidak lagi bergerak selama ~1,5 detik padahal target maju, anggap sudah di akhir halaman */
+    if (pos > scrollY + 40 && Math.abs(scrollY - lastY) < 1) { stuck += dt; if (stuck > 1.5) pos = m; } else stuck = 0;
+    lastY = scrollY;
     if (pos >= m) {
       go(m);
       /* tur bernarasi selesai: hitung mundur lalu masuk ke aplikasi (kabut -> loader sungai -> aplikasi) */
