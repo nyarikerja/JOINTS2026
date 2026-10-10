@@ -72,10 +72,13 @@
         if(ctx.state==='running'&&isPlaying){
           var t=ctx.currentTime;
           master.gain.cancelScheduledValues(t);
+          master.gain.setValueAtTime(master.gain.value, t);
           master.gain.setTargetAtTime(.85,t,.35);
+          sent={};
           if(window.US&&window.US.T)update(window.US.T);
           if(!timer)timer=setInterval(tick,50);
         }
+        window.dispatchEvent(new CustomEvent('hlaudio:state', { detail: { state: ctx.state } }));
       };
     }catch(e){return;}
 
@@ -223,15 +226,22 @@
     if(!ctx)return false;
     isPlaying=true;
     clearTimeout(sleepT);
-    var now=ctx.currentTime;
-    master.gain.cancelScheduledValues(now);
-    master.gain.setValueAtTime(master.gain.value, now);
-    master.gain.setTargetAtTime(.85,now,.5);
     sent={};
-    if(window.US&&window.US.T)update(window.US.T);
-    if(!timer)timer=setInterval(tick,50);
+    function onStart(){
+      if(ctx.state==='running'){
+        var t=ctx.currentTime;
+        master.gain.cancelScheduledValues(t);
+        master.gain.setValueAtTime(master.gain.value, t);
+        master.gain.setTargetAtTime(.85,t,.35);
+        sent={};
+        if(window.US&&window.US.T)update(window.US.T);
+        if(!timer)timer=setInterval(tick,50);
+      }
+    }
     if(ctx.state!=='running'){
-      ctx.resume().catch(function(){});
+      ctx.resume().then(onStart).catch(function(){});
+    }else{
+      onStart();
     }
     return isPlaying;
   }
@@ -241,22 +251,22 @@
     if(!ctx)return;
     isPlaying=true;
     clearTimeout(sleepT);
+    sent={};
+    function onResume(){
+      if(ctx.state==='running'){
+        var t=ctx.currentTime;
+        master.gain.cancelScheduledValues(t);
+        master.gain.setValueAtTime(master.gain.value, t);
+        master.gain.setTargetAtTime(.85,t,.35);
+        sent={};
+        if(window.US&&window.US.T)update(window.US.T);
+        if(!timer)timer=setInterval(tick,50);
+      }
+    }
     if(ctx.state!=='running'){
-      ctx.resume().then(function(){
-        if(ctx.state==='running'){
-          var t=ctx.currentTime;
-          master.gain.cancelScheduledValues(t);
-          master.gain.setTargetAtTime(.85,t,.35);
-          if(window.US&&window.US.T)update(window.US.T);
-          if(!timer)timer=setInterval(tick,50);
-        }
-      }).catch(function(){});
+      ctx.resume().then(onResume).catch(function(){});
     }else{
-      var t=ctx.currentTime;
-      master.gain.cancelScheduledValues(t);
-      master.gain.setTargetAtTime(.85,t,.35);
-      if(window.US&&window.US.T)update(window.US.T);
-      if(!timer)timer=setInterval(tick,50);
+      onResume();
     }
   }
 
@@ -268,12 +278,15 @@
     master.gain.cancelScheduledValues(now);
     master.gain.setTargetAtTime(0,now,.25);
     clearInterval(timer);timer=0;
-    sleepT=setTimeout(function(){if(!isPlaying)ctx.suspend();},1200);
+    sleepT=setTimeout(function(){if(!isPlaying&&ctx)ctx.suspend().catch(function(){});},1200);
     return false;
   }
 
   function toggle(){
-    return isPlaying ? stop() : start();
+    if(!isPlaying||!ctx||ctx.state!=='running'){
+      return start();
+    }
+    return stop();
   }
 
   /* dipanggil js/scene.js tiap kali petir menyambar: guntur menyusul kilatan sesuai jarak.
@@ -297,5 +310,6 @@
   }
 
   function isLive(){return isPlaying&&!!ctx&&ctx.state==='running';}
-  window.HLAudio={init:init,start:start,resume:resume,stop:stop,toggle:toggle,update:update,playClick:playClick,thunder:strike,isPlaying:function(){return isPlaying;},isLive:isLive};
+  function getState(){return ctx?ctx.state:'uninitialized';}
+  window.HLAudio={init:init,start:start,resume:resume,stop:stop,toggle:toggle,update:update,playClick:playClick,thunder:strike,isPlaying:function(){return isPlaying;},isLive:isLive,getState:getState};
 })();

@@ -39,10 +39,12 @@
 
   function syncAudioBtn(on){
     if(!aBtn)return;
+    var live = !!(window.HLAudio && window.HLAudio.isLive && window.HLAudio.isLive());
     aBtn.setAttribute('aria-pressed',on?'true':'false');
-    aBtn.classList.toggle('playing',on);
+    aBtn.classList.toggle('playing',on && live);
+    aBtn.classList.toggle('waiting',on && !live);
     aBtn.setAttribute('aria-label',on?'Matikan suara suasana alam':'Nyalakan suara suasana alam');
-    aBtn.title=on?'Matikan suara alam':'Nyalakan suara alam';
+    aBtn.title=on?(live?'Matikan suara alam':'Klik untuk mengaktifkan suara alam'):'Nyalakan suara alam';
   }
 
   if(aBtn){
@@ -53,29 +55,61 @@
       syncAudioBtn(false);
     }
 
-    /* Auto-unlock audio saat interaksi pengguna */
-    function unlockSound(){
+    /* Dengarkan perubahan status AudioContext (mis. running setelah user gesture) */
+    window.addEventListener('hlaudio:state', function(){
+      var sp=null;
+      try{sp=localStorage.getItem('hl-sound');}catch(e){}
+      syncAudioBtn(sp!=='off');
+    });
+
+    /* Auto-unlock audio saat interaksi pengguna pertama kali */
+    function unlockSound(e){
+      if(e && e.target && e.target.closest && e.target.closest('#audioBtn')) return;
       var sp=null;
       try{sp=localStorage.getItem('hl-sound');}catch(e){}
       if(sp!=='off'){
         if(window.HLAudio) window.HLAudio.resume();
         syncAudioBtn(true);
       }
-      if(window.HLAudio && window.HLAudio.isLive && window.HLAudio.isLive()){
-        ['pointerdown','click','keydown','touchstart','wheel','scroll'].forEach(function(ev){
-          removeEventListener(ev,unlockSound,true);
-        });
-      }
     }
-    ['pointerdown','click','keydown','touchstart','wheel','scroll'].forEach(function(ev){
+    ['pointerdown','click','keydown','touchstart','touchend','wheel'].forEach(function(ev){
       addEventListener(ev,unlockSound,{capture:true,passive:true});
+    });
+
+    /* Pulihkan audio saat kembali dari app via tombol Back (BFCache) atau reload */
+    addEventListener('pageshow',function(){
+      var sp=null;
+      try{sp=localStorage.getItem('hl-sound');}catch(e){}
+      if(sp!=='off'){
+        syncAudioBtn(true);
+        if(window.HLAudio) window.HLAudio.resume();
+      }
+    });
+
+    /* Pulihkan saat tab aktif kembali */
+    document.addEventListener('visibilitychange',function(){
+      if(!document.hidden){
+        var sp=null;
+        try{sp=localStorage.getItem('hl-sound');}catch(e){}
+        if(sp!=='off'&&window.HLAudio){
+          window.HLAudio.resume();
+        }
+      }
     });
 
     aBtn.addEventListener('click',function(){
       if(!window.HLAudio)return;
-      var on=window.HLAudio.toggle();
-      try{localStorage.setItem('hl-sound',on?'on':'off');}catch(e){}
-      syncAudioBtn(on);
+      var live = !!(window.HLAudio.isLive && window.HLAudio.isLive());
+      if(!live){
+        window.HLAudio.start();
+        if(window.HLAudio.resume) window.HLAudio.resume();
+        try{localStorage.setItem('hl-sound','on');}catch(e){}
+        syncAudioBtn(true);
+      }else{
+        window.HLAudio.stop();
+        try{localStorage.setItem('hl-sound','off');}catch(e){}
+        syncAudioBtn(false);
+      }
     });
   }
 

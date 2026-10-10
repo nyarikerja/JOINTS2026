@@ -94,11 +94,17 @@
     open(APP, x, y);
   }, true);
 
-  /* kembali dengan tombol Back (bfcache): bersihkan portal */
+  /* kembali dengan tombol Back (bfcache): bersihkan portal dan pulihkan audio */
   addEventListener('pageshow', function (e) {
-    if (!e.persisted) return;
     busy = false; root.classList.remove('portaling');
     [].slice.call(document.querySelectorAll('.portal-ov')).forEach(function (n) { n.remove(); });
+    var sp = null;
+    try { sp = localStorage.getItem('hl-sound'); } catch (err) { }
+    if (sp !== 'off' && window.HLAudio) {
+      window.HLAudio.resume();
+      var ab = document.getElementById('audioBtn');
+      if (ab) { ab.classList.add('playing'); ab.setAttribute('aria-pressed', 'true'); }
+    }
   });
 
   window.HLPortal = { open: open };

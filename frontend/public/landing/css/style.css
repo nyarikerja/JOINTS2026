@@ -604,6 +604,25 @@ p {
   animation: ring 2.4s var(--ease) infinite
 }
 
+.audio-btn.waiting {
+  background: rgba(253, 183, 115, .2);
+  color: var(--gold);
+  box-shadow: 0 0 0 1.5px rgba(253, 183, 115, .55);
+}
+
+.audio-btn.waiting .spk {
+  fill-opacity: .25;
+}
+
+.audio-btn.waiting .mute {
+  opacity: .5;
+}
+
+.audio-btn.waiting::after {
+  animation: ring 1.8s var(--ease) infinite;
+  opacity: .7;
+}
+
 @keyframes wv {
 
   0%,
