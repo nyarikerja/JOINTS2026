@@ -52,3 +52,9 @@ Semua visual lain (sungai, perahu, gerbang candi bentar, jembatan, teratai, judu
 - [three.js](https://threejs.org) r149, MIT (`frontend/public/landing/vendor/THREE-LICENSE.txt`), termasuk `GLTFLoader.js`.
 - [meshoptimizer](https://github.com/zeux/meshoptimizer) `meshopt_decoder.js`, MIT, (c) Arseny Kapoulkine.
 - [Lenis](https://github.com/darkroomengineering/lenis) 1.1.13, MIT (`frontend/public/landing/vendor/LENIS-LICENSE.txt`).
+
+## Lisensi Proyek
+
+Kode sumber proyek HelaLoka / UdaraSiaga Indonesia dilisensikan di bawah [MIT License](LICENSE).  
+Hak Cipta (c) 2026 Arya Refman & Tim HelaLoka / UdaraSiaga Indonesia (JOINTS UGM 2026).
+

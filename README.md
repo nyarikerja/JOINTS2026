@@ -277,4 +277,12 @@ flowchart TB
 
 ---
 
+## Lisensi & Atribusi
+
+Proyek ini dilisensikan di bawah [MIT License](LICENSE).  
+Lihat berkas [CREDITS.md](CREDITS.md) untuk detail atribusi aset, model 3D, audio prosedural, dan pustaka pihak ketiga.
+
+---
+
 *UdaraSiaga Indonesia — Mengubah Estimasi Sains Dispersi Atmosferik Menjadi Aksi Perlindungan Nyata Bagi Warga, Sekolah, dan Tenaga Kesehatan.*
+
