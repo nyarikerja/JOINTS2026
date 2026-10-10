@@ -111,6 +111,13 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
         href="/"
         className="flex items-center gap-2.5 group cursor-pointer transition hover:opacity-90 no-underline"
         title="Kembali ke Landing Page HelaLoka"
+        onClick={() => {
+          try {
+            if (localStorage.getItem('hl-sound') !== 'off') {
+              localStorage.setItem('hl-sound', 'on');
+            }
+          } catch (e) {}
+        }}
       >
         <img
           src="/gunung_black.png"
