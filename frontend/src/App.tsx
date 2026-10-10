@@ -7,6 +7,7 @@ import { TimelinePlayer } from "./components/layout/TimelinePlayer";
 import { AnalyticsDrawer } from "./components/layout/AnalyticsDrawer";
 import { LegendModal } from "./components/layout/LegendModal";
 import { api } from "./services/api";
+import { isLoaderActive } from "./utils/bootProgress";
 import type {
   HazardType,
   ModelingMode,
@@ -55,6 +56,14 @@ export const App: React.FC = () => {
   const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; _t: number } | null>(null);
   const [resetViewTrigger, setResetViewTrigger] = useState<number>(0);
   const [isMapReady, setIsMapReady] = useState<boolean>(false);
+  // Loader sungai (public/loader) menggantikan overlay "Memuat Data Spasial" selama masih tampil
+  const [riverLoaderOn, setRiverLoaderOn] = useState<boolean>(() => isLoaderActive());
+  React.useEffect(() => {
+    if (!riverLoaderOn) return;
+    const off = () => setRiverLoaderOn(false);
+    window.addEventListener("loader:done", off);
+    return () => window.removeEventListener("loader:done", off);
+  }, [riverLoaderOn]);
   const [selectedEventName, setSelectedEventName] = useState<string>("G. Anak Krakatau");
 
   // Pulihkan sesi simulasi terakhir dari localStorage saat pertama kali dimuat
@@ -344,8 +353,8 @@ export const App: React.FC = () => {
           onLayersLoaded={() => setIsMapReady(true)}
         />
 
-        {/* Global Loading Overlay (Di bawah Navbar) */}
-        {!isMapReady && !isRunning && (
+        {/* Global Loading Overlay (Di bawah Navbar): cadangan jika loader sungai dilewati sebelum peta siap */}
+        {!isMapReady && !isRunning && !riverLoaderOn && (
           <div className="absolute inset-0 z-[1500] bg-[#140f0e] flex flex-col items-center justify-center gap-3 select-none pointer-events-none">
             <Loader2 className="w-6 h-6 text-[#EB895B] animate-spin" />
             <span className="font-mono text-xs uppercase tracking-wider text-[#FFF0C5]/80">

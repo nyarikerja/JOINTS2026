@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>hELAlOKA | Menyiapkan Ruang Simulasi</title>
+<link rel="icon" type="image/png" href="/gunung.png?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,300..600&family=Manrope:wght@500;600;700;800&display=swap">
+<link rel="stylesheet" href="/loader/river-loader.css">
+<style>@view-transition{navigation:auto}html,body{margin:0;height:100%;background:#16131c}.demo{min-height:100%;display:grid;place-items:center;color:#f8ebe5;font:500 15px system-ui}</style>
+</head>
+<body>
+<main class="demo" aria-live="polite">Demo loader selesai. Muat ulang untuk melihat lagi.</main>
+<!--LOADER:BEGIN (disisipkan oleh loader/build.mjs)-->
+<script>document.documentElement.classList.add('hl-loading');</script>
+<div id="hlLoader" class="hl-loader" aria-busy="true" role="dialog" aria-label="Menyiapkan ruang simulasi HelaLoka">
+  <div id="ldScene" class="ld-scene">
+    <canvas id="ldGl" aria-hidden="true"></canvas>
+    <div id="ldFb" class="ld-fb" hidden></div>
+    <div class="ld-shade" aria-hidden="true"></div>
+    <div class="ld-brand" aria-hidden="true"><span class="ld-brand-icon"></span><span class="ld-brand-name">hELAlOKA</span><span class="ld-brand-badge">INDONESIA</span></div>
+    <div class="ld-tools">
+      <span class="ld-hint" id="ldHint" aria-hidden="true">Ketuk di mana saja untuk suara</span>
+      <button type="button" id="ldSound" class="ld-ic" aria-pressed="false" aria-label="Nyalakan suara" title="Suara"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="spk" d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path class="wv" d="M15.5 9.2a4 4 0 0 1 0 5.6M18.2 6.6a7.6 7.6 0 0 1 0 10.8"/><path class="mute" d="M15.5 9.5l5 5M20.5 9.5l-5 5"/></svg></button>
+      <button type="button" id="ldSkip" class="ld-skip" title="Lewati animasi (Esc)">Lewati<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l6 6-6 6M13 6l6 6-6 6"/></svg></button>
+    </div>
+    <div class="ld-head">
+      <p class="ld-kicker">Peringatan aksi dini multi-bahaya</p>
+      <div class="ld-title" id="ldTitle" role="heading" aria-level="1" aria-label="hELAlOKA Indonesia"><span style="--i:0">h</span><span style="--i:1">E</span><span style="--i:2">L</span><span style="--i:3">A</span><span style="--i:4">l</span><span style="--i:5">O</span><span style="--i:6">K</span><span style="--i:7">A</span><b style="--i:8">INDONESIA</b></div>
+      <p class="ld-sub">menyusuri sungai menuju ruang simulasi</p>
+    </div>
+    <div class="ld-foot">
+      <div class="ld-status" aria-hidden="true">
+        <svg class="ld-river" viewBox="0 0 168 26"><path id="ldPath" d="M4 17C24 4 40 24 62 13S100 4 118 15 150 20 164 9"/><path class="ld-river-done" pathLength="1" d="M4 17C24 4 40 24 62 13S100 4 118 15 150 20 164 9"/><circle id="ldDot" cx="4" cy="17" r="3.4"/></svg>
+        <span class="ld-pct" id="ldPct">0%</span>
+        <span class="ld-msg" id="ldMsg">Menyiapkan ruang kendali</span>
+      </div>
+    </div>
+    <p class="ld-sr" id="ldSr" aria-live="polite"></p>
+  </div>
+  <div class="ld-ring" id="ldRing" aria-hidden="true"></div>
+</div>
+<script src="/landing/vendor/three.min.js"></script>
+<script src="/loader/river-loader.js"></script>
+<script>/* ---------- Demo mandiri: simulasi unduhan (aplikasi memakai p6_embed.js dengan progres asli) ---------- */
+function simulateLoading(Progress, speedRef) {
+  const defs = [['font', 0.08, 0.2], ['shader', 0.17, 0.5], ['model', 0.35, 1.8], ['tekstur', 0.25, 1.2], ['halaman', 0.15, 0.8]];
+  const st = defs.map(d => ({ name: d[0], dur: d[2] * 8, start: Math.random() * 2.5 + d[2], p: 0, stall: 0 }));
+  defs.forEach(d => Progress.register(d[0], d[1], 'Memuat ' + d[0]));
+  let t = 0, prev = performance.now();
+  const id = setInterval(() => {
+    const now = performance.now(), dt = (now - prev) / 1000; prev = now; t += dt * speedRef.v;
+    let done = true;
+    st.forEach(s => {
+      if (t < s.start) { done = false; return; }
+      if (s.p >= 1) return;
+      if (s.stall > 0) { s.stall -= dt * speedRef.v; done = false; return; }
+      s.p = Math.min(1, s.p + dt * speedRef.v / s.dur * (0.4 + Math.random() * 1.4));
+      if (Math.random() < 0.01) s.stall = 0.3 + Math.random() * 0.9;
+      Progress.report(s.name, s.p); if (s.p < 1) done = false;
+    });
+    if (done) clearInterval(id);
+  }, 50);
+  return id;
+}
+
+/* ---------- Mulai (demo) : ?speed=0.3 untuk unduhan lambat, ?speed=4 untuk cepat, ?next=/app/ untuk pindah ---------- */
+(function () {
+  const qs = new URLSearchParams(location.search);
+  CFG.nextUrl = qs.get('next');
+  const app = createApp({ quick: qs.has('quick') ? true : false });
+  window.RiverLoader = app.loader;
+  if (typeof __TEST__ !== 'undefined') { __TEST__({ app }); return; }
+  app.boot();
+  simulateLoading(app.Progress, { v: +(qs.get('speed') || 1) });
+})();
+</script>
+<!--LOADER:END-->
+</body>
+</html>

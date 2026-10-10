@@ -3,6 +3,7 @@
  */
 
 import { CONFIG } from "../config/constants";
+import { trackBootRequest } from "../utils/bootProgress";
 import type {
   HealthResponse,
   SummaryKpiResponse,
@@ -14,7 +15,11 @@ import type {
   ValidationResponse
 } from "../types/api";
 
-async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  return trackBootRequest(requestRaw<T>(endpoint, options));
+}
+
+async function requestRaw<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${CONFIG.API_BASE}${endpoint}`;
   try {
     const res = await fetch(url, {

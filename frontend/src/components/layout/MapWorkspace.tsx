@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 import { Compass, Plus, Minus, Layers, X } from "lucide-react";
 import { CONFIG } from "../../config/constants";
 import { api } from "../../services/api";
+import { reportBoot, trackTileLayer } from "../../utils/bootProgress";
 import { formatHour } from "../../utils/formatters";
 import type { HazardType } from "../../types/api";
 
@@ -32,7 +33,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
   resetViewTrigger,
   flyToTarget,
   activeRunId,
-  isDrawerOpen = false,
+  isDrawerOpen: _isDrawerOpen = false,
   onToggleLegend: _onToggleLegend,
   onLayersLoaded
 }) => {
@@ -195,6 +196,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
 
     // Pasang Basemap Default (Satelit Esri + Labels)
     applyBasemap(map, "satellite");
+    if (baseTileLayerRef.current) trackTileLayer(baseTileLayerRef.current);
 
     mapRef.current = map;
 
@@ -217,13 +219,13 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
     };
     map.on("moveend", onMoveEnd);
 
-    // Load semua layer secara paralel
-    Promise.allSettled([
-      loadVolcanoes(map),
-      loadForests(),
-      loadHotspots(map),
-      loadFacilities(map)
-    ]).finally(() => {
+    // Load semua layer secara paralel (progres tiap layer dilaporkan ke loader sungai)
+    let layersDone = 0;
+    const layerJobs = [loadVolcanoes(map), loadForests(), loadHotspots(map), loadFacilities(map)];
+    const tickLayer = () => reportBoot("peta", ++layersDone / layerJobs.length);
+    layerJobs.forEach((job) => job.then(tickLayer, tickLayer));
+    Promise.allSettled(layerJobs).finally(() => {
+      reportBoot("peta", 1);
       onLayersLoaded?.();
     });
 

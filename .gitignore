@@ -56,6 +56,12 @@ yarn-error.log*
 .playwright-mcp
 *.zip
 
-# Temporary screenshots
+# Temporary screenshots & root assets
 image*.png
 image copy*.png
+/*.jpg
+reference_repos/
+**/_backup_*
+frontend/public/loading/
+
+
