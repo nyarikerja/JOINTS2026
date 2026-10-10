@@ -66,7 +66,18 @@
     if(ctx)return;
     var AC=window.AudioContext||window.webkitAudioContext;
     if(!AC)return;
-    try{ctx=new AC();}catch(e){return;}
+    try{
+      ctx=new AC();
+      ctx.onstatechange=function(){
+        if(ctx.state==='running'&&isPlaying){
+          var t=ctx.currentTime;
+          master.gain.cancelScheduledValues(t);
+          master.gain.setTargetAtTime(.85,t,.35);
+          if(window.US&&window.US.T)update(window.US.T);
+          if(!timer)timer=setInterval(tick,50);
+        }
+      };
+    }catch(e){return;}
 
     var comp=ctx.createDynamicsCompressor();
     comp.threshold.value=-18;comp.knee.value=12;comp.ratio.value=4;comp.attack.value=.01;comp.release.value=.3;
@@ -207,27 +218,62 @@
     setLevel('roar',MIX.roar*lv.fire,1);
   }
 
-  function toggle(){
+  function start(){
     init();
     if(!ctx)return false;
-    isPlaying=!isPlaying;
+    isPlaying=true;
     clearTimeout(sleepT);
     var now=ctx.currentTime;
-    if(isPlaying){
-      ctx.resume();
-      master.gain.cancelScheduledValues(now);
-      master.gain.setTargetAtTime(.85,now,.5);
-      sent={};
-      if(window.US&&window.US.T)update(window.US.T);
-      if(!timer)timer=setInterval(tick,50);
-    }else{
-      master.gain.cancelScheduledValues(now);
-      master.gain.setTargetAtTime(0,now,.25);
-      clearInterval(timer);timer=0;
-      /* hentikan mesin audio setelah fade agar tidak membebani CPU */
-      sleepT=setTimeout(function(){if(!isPlaying)ctx.suspend();},1200);
+    master.gain.cancelScheduledValues(now);
+    master.gain.setValueAtTime(master.gain.value, now);
+    master.gain.setTargetAtTime(.85,now,.5);
+    sent={};
+    if(window.US&&window.US.T)update(window.US.T);
+    if(!timer)timer=setInterval(tick,50);
+    if(ctx.state!=='running'){
+      ctx.resume().catch(function(){});
     }
     return isPlaying;
+  }
+
+  function resume(){
+    if(!ctx)init();
+    if(!ctx)return;
+    isPlaying=true;
+    clearTimeout(sleepT);
+    if(ctx.state!=='running'){
+      ctx.resume().then(function(){
+        if(ctx.state==='running'){
+          var t=ctx.currentTime;
+          master.gain.cancelScheduledValues(t);
+          master.gain.setTargetAtTime(.85,t,.35);
+          if(window.US&&window.US.T)update(window.US.T);
+          if(!timer)timer=setInterval(tick,50);
+        }
+      }).catch(function(){});
+    }else{
+      var t=ctx.currentTime;
+      master.gain.cancelScheduledValues(t);
+      master.gain.setTargetAtTime(.85,t,.35);
+      if(window.US&&window.US.T)update(window.US.T);
+      if(!timer)timer=setInterval(tick,50);
+    }
+  }
+
+  function stop(){
+    if(!ctx||!isPlaying)return false;
+    isPlaying=false;
+    clearTimeout(sleepT);
+    var now=ctx.currentTime;
+    master.gain.cancelScheduledValues(now);
+    master.gain.setTargetAtTime(0,now,.25);
+    clearInterval(timer);timer=0;
+    sleepT=setTimeout(function(){if(!isPlaying)ctx.suspend();},1200);
+    return false;
+  }
+
+  function toggle(){
+    return isPlaying ? stop() : start();
   }
 
   /* dipanggil js/scene.js tiap kali petir menyambar: guntur menyusul kilatan sesuai jarak.
@@ -250,5 +296,6 @@
     burst(t,.012,'bandpass',2600,3,.04,0,false);
   }
 
-  window.HLAudio={init:init,toggle:toggle,update:update,playClick:playClick,thunder:strike,isPlaying:function(){return isPlaying;}};
+  function isLive(){return isPlaying&&!!ctx&&ctx.state==='running';}
+  window.HLAudio={init:init,start:start,resume:resume,stop:stop,toggle:toggle,update:update,playClick:playClick,thunder:strike,isPlaying:function(){return isPlaying;},isLive:isLive};
 })();

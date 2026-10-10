@@ -110,7 +110,16 @@ function createRiverSound() {
   }
 
   function ensure() {
-    if (!ctx) { try { ctx = new AC(); } catch (e) { return false; } }
+    if (!ctx) {
+      try {
+        ctx = new AC();
+        ctx.onstatechange = () => {
+          if (ctx.state === 'running' && on) {
+            fadeTo(0.8, 1.2);
+          }
+        };
+      } catch (e) { return false; }
+    }
     if (!built) build();
     return true;
   }
@@ -121,14 +130,28 @@ function createRiverSound() {
     autostart() {
       if (pref() === 'off') return Promise.resolve(false);
       if (!ensure()) return Promise.resolve(false);
-      return ctx.resume().catch(() => { }).then(() => { if (ctx.state === 'running') { on = true; fadeTo(0.8, 2.5); return true; } return false; });
+      on = true;
+      fadeTo(0.8, 2.5);
+      if (ctx.state !== 'running') {
+        ctx.resume().catch(() => { });
+      }
+      return ctx.resume().catch(() => { }).then(() => { if (ctx.state === 'running') { fadeTo(0.8, 2.5); return true; } return false; });
+    },
+    resume() {
+      if (pref() === 'off') return;
+      if (!ensure()) return;
+      on = true;
+      fadeTo(0.8, 1.2);
+      if (ctx.state !== 'running') {
+        ctx.resume().catch(() => { });
+      }
     },
     set(v) {
-      if (v) { if (!ensure()) return false; on = true; ctx.resume(); fadeTo(0.8, 1.2); save('on'); }
+      if (v) { if (!ensure()) return false; on = true; ctx.resume().catch(() => { }); fadeTo(0.8, 1.2); save('on'); }
       else { on = false; fadeTo(0, 0.5); save('off'); }
       return on;
     },
-    get on() { return on && !!ctx && ctx.state === 'running'; },
+    get on() { return on && pref() !== 'off'; },
     progress(p) { progress = p; },
     speed(k) { if (L.river && ctx) L.river.g.gain.setTargetAtTime(0.42 + k * 0.25, ctx.currentTime, 0.4); },
     stroke(k) { if (on && ctx && k > 0.08) splash(ctx.currentTime + 0.02, Math.min(1, k)); },

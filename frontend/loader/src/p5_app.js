@@ -180,16 +180,16 @@ function createApp(opts) {
 
   function syncSoundBtn() {
     if (!els.sound) return;
-    const on = !!(sound && sound.on);
+    const isMuted = sound ? sound.prefOff : false;
+    const on = !isMuted;
     els.sound.setAttribute('aria-pressed', on ? 'true' : 'false');
     els.sound.setAttribute('aria-label', on ? 'Matikan suara' : 'Nyalakan suara');
     els.sound.classList.toggle('on', on);
-    if (els.hint) els.hint.classList.toggle('on', !on && !!sound && !sound.prefOff && ctl.mode === 'loading');
+    if (els.hint) els.hint.classList.toggle('on', !on && !isMuted && ctl.mode === 'loading');
   }
   function firstGesture(e) {
     if (e.target && e.target.closest && e.target.closest('#ldSound')) return;
-    removeEventListener('pointerdown', firstGesture, true); removeEventListener('keydown', firstGesture, true);
-    if (sound && !sound.on && !sound.prefOff && ctl.mode === 'loading') { sound.set(true); syncSoundBtn(); }
+    if (sound && !sound.prefOff && ctl.mode === 'loading') { sound.resume(); syncSoundBtn(); }
   }
   function onKey(e) {
     if (destroyed || ctl.mode !== 'loading') return;
@@ -248,7 +248,9 @@ function createApp(opts) {
     if (!sound && els.sound) els.sound.hidden = true;
     addEventListener('resize', onResize); document.addEventListener('visibilitychange', onVis);
     addEventListener('keydown', onKey);
-    addEventListener('pointerdown', firstGesture, true); addEventListener('keydown', firstGesture, true);
+    ['pointerdown', 'click', 'keydown', 'touchstart', 'wheel'].forEach(ev => {
+      addEventListener(ev, firstGesture, { capture: true, passive: true });
+    });
     if (sound) sound.autostart().then(syncSoundBtn); else syncSoundBtn();
     setTimeout(syncSoundBtn, 600);
     requestAnimationFrame(() => els.title && els.title.classList.add('in'));

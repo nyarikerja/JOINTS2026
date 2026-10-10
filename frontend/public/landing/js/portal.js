@@ -23,10 +23,10 @@
     return h === APP || h.indexOf('/app/') === 0 || h.indexOf('/loader') === 0 || a.hasAttribute('data-portal');
   }
 
-  /* desir portal (Web Audio): hanya jika pengguna menyalakan suara */
+  /* desir portal (Web Audio): hanya jika pengguna menyalakan suara (default aktif) */
   function whoosh() {
     var on = false;
-    try { on = (window.HLAudio && window.HLAudio.isPlaying()) || localStorage.getItem('hl-sound') === 'on'; } catch (e) { }
+    try { on = (window.HLAudio && window.HLAudio.isPlaying()) || localStorage.getItem('hl-sound') !== 'off'; } catch (e) { }
     if (!on) return;
     try {
       var AC = window.AudioContext || window.webkitAudioContext, c = new AC(), t = c.currentTime, n = c.sampleRate * 1.6;
@@ -46,7 +46,7 @@
   function open(href, x, y) {
     if (busy) return; busy = true;
     try { sessionStorage.setItem('hl-portal', '1'); } catch (e) { }
-    try { if (window.HLAudio && window.HLAudio.isPlaying()) { localStorage.setItem('hl-sound', 'on'); window.HLAudio.toggle(); } } catch (e) { }
+    try { if (window.HLAudio && window.HLAudio.isPlaying()) { localStorage.setItem('hl-sound', 'on'); window.HLAudio.stop(); } } catch (e) { }
     whoosh();
     var go = function () { location.assign(href); };
     if (reduce) {

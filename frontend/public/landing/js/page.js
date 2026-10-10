@@ -31,17 +31,51 @@
   vbtn.addEventListener('click',function(){if(window.HLAudio)window.HLAudio.playClick();setFocus(!document.body.classList.contains('focus'));});
   addEventListener('keydown',function(e){if(e.key==='Escape')setFocus(false);});
 
-  /* ---------- kontrol audio suasana ---------- */
+  /* ---------- kontrol audio suasana (default aktif) ---------- */
   var aBtn=$('#audioBtn');
+  var soundPref=null;
+  try{soundPref=localStorage.getItem('hl-sound');}catch(e){}
+  var soundActive=(soundPref!=='off');
+
+  function syncAudioBtn(on){
+    if(!aBtn)return;
+    aBtn.setAttribute('aria-pressed',on?'true':'false');
+    aBtn.classList.toggle('playing',on);
+    aBtn.setAttribute('aria-label',on?'Matikan suara suasana alam':'Nyalakan suara suasana alam');
+    aBtn.title=on?'Matikan suara alam':'Nyalakan suara alam';
+  }
+
   if(aBtn){
+    if(soundActive){
+      syncAudioBtn(true);
+      if(window.HLAudio)window.HLAudio.start();
+    }else{
+      syncAudioBtn(false);
+    }
+
+    /* Auto-unlock audio saat interaksi pengguna */
+    function unlockSound(){
+      var sp=null;
+      try{sp=localStorage.getItem('hl-sound');}catch(e){}
+      if(sp!=='off'){
+        if(window.HLAudio) window.HLAudio.resume();
+        syncAudioBtn(true);
+      }
+      if(window.HLAudio && window.HLAudio.isLive && window.HLAudio.isLive()){
+        ['pointerdown','click','keydown','touchstart','wheel','scroll'].forEach(function(ev){
+          removeEventListener(ev,unlockSound,true);
+        });
+      }
+    }
+    ['pointerdown','click','keydown','touchstart','wheel','scroll'].forEach(function(ev){
+      addEventListener(ev,unlockSound,{capture:true,passive:true});
+    });
+
     aBtn.addEventListener('click',function(){
       if(!window.HLAudio)return;
       var on=window.HLAudio.toggle();
       try{localStorage.setItem('hl-sound',on?'on':'off');}catch(e){}
-      aBtn.setAttribute('aria-pressed',on?'true':'false');
-      aBtn.classList.toggle('playing',on);
-      aBtn.setAttribute('aria-label',on?'Matikan suara suasana alam':'Nyalakan suara suasana alam');
-      aBtn.title=on?'Matikan suara alam':'Nyalakan suara alam';
+      syncAudioBtn(on);
     });
   }
 

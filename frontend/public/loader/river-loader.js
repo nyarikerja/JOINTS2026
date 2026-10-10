@@ -2121,16 +2121,16 @@ function createApp(opts) {
 
   function syncSoundBtn() {
     if (!els.sound) return;
-    const on = !!(sound && sound.on);
+    const isMuted = sound ? sound.prefOff : false;
+    const on = !isMuted;
     els.sound.setAttribute('aria-pressed', on ? 'true' : 'false');
     els.sound.setAttribute('aria-label', on ? 'Matikan suara' : 'Nyalakan suara');
     els.sound.classList.toggle('on', on);
-    if (els.hint) els.hint.classList.toggle('on', !on && !!sound && !sound.prefOff && ctl.mode === 'loading');
+    if (els.hint) els.hint.classList.toggle('on', !on && !isMuted && ctl.mode === 'loading');
   }
   function firstGesture(e) {
     if (e.target && e.target.closest && e.target.closest('#ldSound')) return;
-    removeEventListener('pointerdown', firstGesture, true); removeEventListener('keydown', firstGesture, true);
-    if (sound && !sound.on && !sound.prefOff && ctl.mode === 'loading') { sound.set(true); syncSoundBtn(); }
+    if (sound && !sound.prefOff && ctl.mode === 'loading') { sound.resume(); syncSoundBtn(); }
   }
   function onKey(e) {
     if (destroyed || ctl.mode !== 'loading') return;
@@ -2189,7 +2189,9 @@ function createApp(opts) {
     if (!sound && els.sound) els.sound.hidden = true;
     addEventListener('resize', onResize); document.addEventListener('visibilitychange', onVis);
     addEventListener('keydown', onKey);
-    addEventListener('pointerdown', firstGesture, true); addEventListener('keydown', firstGesture, true);
+    ['pointerdown', 'click', 'keydown', 'touchstart', 'wheel'].forEach(ev => {
+      addEventListener(ev, firstGesture, { capture: true, passive: true });
+    });
     if (sound) sound.autostart().then(syncSoundBtn); else syncSoundBtn();
     setTimeout(syncSoundBtn, 600);
     requestAnimationFrame(() => els.title && els.title.classList.add('in'));
@@ -2310,7 +2312,16 @@ function createRiverSound() {
   }
 
   function ensure() {
-    if (!ctx) { try { ctx = new AC(); } catch (e) { return false; } }
+    if (!ctx) {
+      try {
+        ctx = new AC();
+        ctx.onstatechange = () => {
+          if (ctx.state === 'running' && on) {
+            fadeTo(0.8, 1.2);
+          }
+        };
+      } catch (e) { return false; }
+    }
     if (!built) build();
     return true;
   }
@@ -2321,14 +2332,28 @@ function createRiverSound() {
     autostart() {
       if (pref() === 'off') return Promise.resolve(false);
       if (!ensure()) return Promise.resolve(false);
-      return ctx.resume().catch(() => { }).then(() => { if (ctx.state === 'running') { on = true; fadeTo(0.8, 2.5); return true; } return false; });
+      on = true;
+      fadeTo(0.8, 2.5);
+      if (ctx.state !== 'running') {
+        ctx.resume().catch(() => { });
+      }
+      return ctx.resume().catch(() => { }).then(() => { if (ctx.state === 'running') { fadeTo(0.8, 2.5); return true; } return false; });
+    },
+    resume() {
+      if (pref() === 'off') return;
+      if (!ensure()) return;
+      on = true;
+      fadeTo(0.8, 1.2);
+      if (ctx.state !== 'running') {
+        ctx.resume().catch(() => { });
+      }
     },
     set(v) {
-      if (v) { if (!ensure()) return false; on = true; ctx.resume(); fadeTo(0.8, 1.2); save('on'); }
+      if (v) { if (!ensure()) return false; on = true; ctx.resume().catch(() => { }); fadeTo(0.8, 1.2); save('on'); }
       else { on = false; fadeTo(0, 0.5); save('off'); }
       return on;
     },
-    get on() { return on && !!ctx && ctx.state === 'running'; },
+    get on() { return on && pref() !== 'off'; },
     progress(p) { progress = p; },
     speed(k) { if (L.river && ctx) L.river.g.gain.setTargetAtTime(0.42 + k * 0.25, ctx.currentTime, 0.4); },
     stroke(k) { if (on && ctx && k > 0.08) splash(ctx.currentTime + 0.02, Math.min(1, k)); },
