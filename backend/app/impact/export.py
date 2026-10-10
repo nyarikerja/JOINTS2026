@@ -200,28 +200,28 @@ def generate_printable_html(export_data: Dict[str, Any]) -> str:
 
   <div class="alert-banner">
     <span>TINGKAT PERINGATAN: {alert_level}</span>
-    <span style="font-size:8.5pt;font-weight:400;">Horizon Simulasi: T + {horizon} Jam</span>
+    <span style="font-size:8.5pt;font-weight:400;">Estimasi Waktu: {horizon} Jam Ke Depan</span>
   </div>
 
   <div class="disclaimer-box">
-    <strong>DISCLAIMER OTORITATIF:</strong> {disclaimer}
+    <strong>PERINGATAN PENTING:</strong> {disclaimer}
   </div>
 
   <div class="meta-grid">
     <div class="meta-item"><strong>Jenis Bahaya:</strong> {hazard}</div>
     <div class="meta-item"><strong>Skenario / Lokasi:</strong> {scenario_label}</div>
-    <div class="meta-item"><strong>Ansambel Fisika:</strong> {n_members} anggota ({members_source})</div>
-    <div class="meta-item"><strong>Integritas Data:</strong> Multi-Satelit &amp; Telemetri PVMBG/BMKG</div>
+    <div class="meta-item"><strong>Model Prediksi:</strong> {n_members} Skenario</div>
+    <div class="meta-item"><strong>Sumber Data:</strong> Satelit Cuaca &amp; Sensor PVMBG/BMKG</div>
   </div>
 
-  <h2>1. Estimasi Dampak Populasi &amp; Paparan Spasial (P5 &ndash; P50 &ndash; P95)</h2>
+  <h2>1. Estimasi Jumlah Penduduk &amp; Luas Area Terdampak</h2>
   <table>
     <thead>
       <tr>
         <th>Indikator Dampak</th>
-        <th>Rentang Ketidakpastian Ansambel {{Min &ndash; Median &ndash; Maks}}</th>
+        <th>Estimasi Jumlah (Batas Bawah &ndash; Menengah &ndash; Batas Atas)</th>
         <th>Satuan</th>
-        <th>Metodologi &amp; Keterangan</th>
+        <th>Keterangan</th>
       </tr>
     </thead>
     <tbody>
@@ -229,7 +229,7 @@ def generate_printable_html(export_data: Dict[str, Any]) -> str:
         <td><strong>Penduduk Terpapar (Total)</strong></td>
         <td class="mono">{fmt_r(pop)}</td>
         <td>Jiwa</td>
-        <td>Tumpang tindih grid populasi resolusi tinggi dengan jejak sebaran</td>
+        <td>Dihitung berdasarkan pemetaan kepadatan penduduk di area yang terdampak</td>
       </tr>
       <tr>
         <td>Anak-anak (&lt;15 Tahun)</td>
@@ -244,10 +244,10 @@ def generate_printable_html(export_data: Dict[str, Any]) -> str:
         <td>Kelompok risiko tinggi komplikasi kardiopulmoner &amp; PPOK</td>
       </tr>
       <tr>
-        <td>Luas Jejak Sebaran (Footprint)</td>
+        <td>Total Luas Area Terdampak</td>
         <td class="mono">{fmt_r(area)}</td>
         <td>km&sup2;</td>
-        <td>Luas area kumulatif yang terlewati konsentrasi berbahaya</td>
+        <td>Perkiraan total luas wilayah daratan yang tertutup oleh sebaran abu</td>
       </tr>
       <tr>
         <td>Fasilitas Publik Berisiko</td>
@@ -281,7 +281,7 @@ def generate_printable_html(export_data: Dict[str, Any]) -> str:
     <thead>
       <tr>
         <th>Nama Sekolah</th>
-        <th>Peluang Paparan</th>
+        <th>Risiko Terdampak</th>
         <th>Instruksi Operasional</th>
         <th>Tindakan Dini yang Wajib Dilakukan</th>
       </tr>
@@ -297,7 +297,7 @@ def generate_printable_html(export_data: Dict[str, Any]) -> str:
       <tr>
         <th>Rumah Sakit Rujukan Aman</th>
         <th>Status Zona Udara</th>
-        <th>Jarak dari Episentrum</th>
+        <th>Jarak dari Pusat Bencana</th>
         <th>Kontak Darurat / Call Center</th>
       </tr>
     </thead>

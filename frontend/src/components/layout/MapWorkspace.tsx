@@ -619,12 +619,8 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
     <div className="relative w-full h-full isolate z-0">
       <div ref={mapContainerRef} className="w-full h-full bg-[#140f0e]" />
 
-      {/* 2 & 3. Kontrol Navigasi Kanan Bawah: Lapisan Spasial, Kompas, dan Zoom (+ / -) */}
-      <div
-        className={`absolute bottom-6 flex flex-col items-center gap-2 z-[500] transition-all duration-300 ease-out ${
-          isDrawerOpen ? "right-[366px]" : "right-4"
-        }`}
-      >
+      {/* 2 & 3. Kontrol Navigasi Kiri Bawah: Lapisan Spasial, Kompas, dan Zoom (+ / -) */}
+      <div className="absolute bottom-6 left-4 flex flex-col items-center gap-2 z-[500] transition-all duration-300 ease-out">
         {/* Tombol Lapisan Spasial Aktif */}
         <div className="relative">
           <button
@@ -640,17 +636,18 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
           >
             <Layers className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
           </button>
+        </div>
 
-          {/* Popover Lapisan Spasial (Muncul Mengambang di Sebelah Kiri Tombol) */}
-          {isLayerPanelOpen && (
-            <div
-              className="absolute bottom-0 right-12 rounded-xl p-3 shadow-2xl flex flex-col gap-2.5 backdrop-blur-md text-[#140f0e] border animate-in fade-in zoom-in-95 duration-200"
-              style={{
-                background: "rgba(245, 239, 227, 0.96)",
-                borderColor: "rgba(235, 137, 91, 0.4)",
-                minWidth: "210px"
-              }}
-            >
+        {/* Popover Lapisan Spasial (Diletakkan berpatokan pada bawah grup agar tidak menabrak atas) */}
+        {isLayerPanelOpen && (
+          <div
+            className="absolute bottom-0 left-[3.25rem] rounded-xl p-3 shadow-2xl flex flex-col gap-2.5 backdrop-blur-md text-[#140f0e] border animate-in fade-in zoom-in-95 duration-200"
+            style={{
+              background: "rgba(245, 239, 227, 0.96)",
+              borderColor: "rgba(235, 137, 91, 0.4)",
+              minWidth: "210px"
+            }}
+          >
               <div className="flex items-center justify-between border-b pb-1.5 mb-0.5" style={{ borderColor: "rgba(0, 0, 0, 0.1)" }}>
                 <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: "#EB895B" }}>
                   Lapisan Spasial
@@ -702,7 +699,6 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
               </label>
             </div>
           )}
-        </div>
 
         {/* Tombol Bulat Reset Tampilan Peta ke Seluruh Indonesia */}
         <button
