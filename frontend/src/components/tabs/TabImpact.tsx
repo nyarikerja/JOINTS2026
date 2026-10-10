@@ -16,7 +16,7 @@ export const TabImpact: React.FC<TabImpactProps> = ({
   hazard,
   rainMm,
   currentHour = 12,
-  onOpenLegend,
+  onOpenLegend: _onOpenLegend,
   simulatedEventName
 }) => {
   // Ambil metrik dinamis jam aktif dari backend (hourly_series) atau fallback ke akumulasi

@@ -394,7 +394,7 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
               className="w-full py-2 px-3 rounded font-medium text-xs tracking-wide flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-white bg-[#EB895B] hover:bg-[#d97746] active:scale-[0.99] shadow-xs"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
-              <span>{isRunning ? "Menghitung Sebaran..." : "Mulai Simulasi"}</span>
+              <span>{isRunning ? (progressText || "Menghitung Sebaran...") : "Mulai Simulasi"}</span>
             </button>
 
             {/* Tombol Ekspor Laporan */}

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { RefreshCw, PanelRight, Layers, HelpCircle, X } from "lucide-react";
+import { RefreshCw, PanelRight, Layers, HelpCircle, X, Home } from "lucide-react";
 import { api } from "../../services/api";
 import type { SummaryKpiResponse } from "../../types/api";
 
@@ -107,19 +107,23 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
         boxShadow: "0 2px 14px rgba(0, 0, 0, 0.2)"
       }}
     >
-      <div className="flex items-center gap-2.5">
+      <a
+        href="/"
+        className="flex items-center gap-2.5 group cursor-pointer transition hover:opacity-90 no-underline"
+        title="Kembali ke Landing Page HelaLoka"
+      >
         <img
-          src="/gunung.png"
+          src="/gunung_black.png"
           alt="Logo hELAlOKA"
-          className="w-8 h-8 object-contain shrink-0 drop-shadow-sm select-none pointer-events-none"
+          className="w-8 h-8 object-contain shrink-0 drop-shadow-sm select-none pointer-events-none group-hover:scale-105 transition-transform"
         />
         <div className="flex items-center gap-1.5">
           <span className="font-extrabold text-base tracking-tight" style={{ color: "#140f0e" }}>hELAlOKA</span>
-          <span className="font-bold text-[10px] px-1.5 py-0.5 rounded tracking-wider text-white shadow-xs" style={{ backgroundColor: "#A14646" }}>
+          <span className="font-bold text-[10px] px-1.5 py-0.5 rounded tracking-wider text-white shadow-xs" style={{ backgroundColor: "#dc2626" }}>
             INDONESIA
           </span>
         </div>
-      </div>
+      </a>
 
       {/* Live Telemetry Ticker (KPI Dinamis Nasional) */}
       <div className="hidden md:flex items-center gap-2.5">
@@ -165,6 +169,21 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
           <div className="font-bold" style={{ color: "#140f0e" }}>{clockWib}</div>
           <div className="text-[10px]" style={{ color: "rgba(20, 15, 14, 0.75)" }}>{clockUtc}</div>
         </div>
+
+        {/* Tombol Kembali ke Landing Page */}
+        <a
+          href="/"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs hover:brightness-105 active:scale-95 no-underline bg-[#F5EFE3]"
+          style={{
+            border: "1px solid rgba(20, 15, 14, 0.12)",
+            color: "#140f0e",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.08)"
+          }}
+          title="Kembali ke Landing Page HelaLoka"
+        >
+          <Home className="w-3.5 h-3.5" style={{ color: "#A14646" }} />
+          <span className="hidden sm:inline">Beranda</span>
+        </a>
 
         <button
           onClick={() => setIsHelpOpen(true)}
