@@ -379,7 +379,7 @@
     /* pelari pagi melintas di kejauhan dengan earphone */
     var runO={skin:'#9C6A45',hair:'#141010',top:'#2F8F83',tk:'tank',bot:'#24282E',bk:'shorts',shoe:'#F25C3B',hat:'phones',d:1};
     var runner=frames(8,function(p){return cv(1,1.5,.5,.03,function(g){shadow(g,0,.02,.22,.04,.22);fig(g,gait(p,true,1),runO);});});
-    E.push(ent(runner,-16,.42,{s:.86,z:.06,upd:function(t,e,W){var c=(t+6)%26;e.x=-17+c*1.45;e.f=Math.floor(t*12)%8;e.follow=1;e.a=e.x>17?0:1;}}));
+    E.push(ent(runner,-16,.38,{s:.86,z:.04,upd:function(t,e,W){var c=(t+6)%26;e.x=-17+c*1.45;e.f=Math.floor(t*12)%8;e.follow=1;e.a=e.x>17?0:1;}}));
     /* kakek senam pagi: 3 bingkai disilangkan halus */
     var gpO={skin:'#A9774F',hair:'#d9d6d0',top:'#F2EEE4',tk:'tee',bot:'#556070',bk:'pants',shoe:'#3A3530',glasses:true,hs:'short',grey:true,d:1};
     var gp=[cv(.9,1.6,.45,.02,function(g){shadow(g,0,.02,.25,.04,.28);fig(g,stand({el:[[-.12,.86],[.14,.86]],hn:[[-.18,.68],[.2,.68]]}),gpO);}),
@@ -497,9 +497,9 @@
       g.strokeStyle=css([60,60,66]);g.lineWidth=.016;g.beginPath();g.moveTo(-.44,.03);g.lineTo(.3,.03);g.quadraticCurveTo(.42,.03,.38,.12);g.stroke();
       line(g,[[-.3,.06],[-.3,.03]],css([60,60,66]),.012);line(g,[[.15,.06],[.15,.03]],css([60,60,66]),.012);});
     var SL=40;
-    E.push(ent(walk,-15,.6,{id:'walker',s:.92,z:.08,upd:function(t,e){var c=(t+12)%SL;e.x=-16+c*.85;e.f=Math.floor(t*7)%8;e.follow=1;e.a=e.x>17?0:1;}}));
-    E.push(ent(sled,-15,.6,{id:'sled',s:.92,z:.07,upd:function(t,e){var c=(t+12)%SL;e.x=-16+c*.85-1.15;e.follow=1;e.oy=.0;e.a=e.x>17?0:1;}}));
-    E.push({line:1,col:[60,50,40],a:.8,upd:function(t,e,W){e.a0=W.pt('walker',-.22,1.1-.36);e.a1=W.pt('sled',.4,.1);e.sag=.06;e.vis=W.get('walker').a;}});
+    E.push(ent(walk,-15,.40,{id:'walker',s:.92,z:.04,upd:function(t,e){var c=(t+12)%SL;e.x=-16+c*.85;e.f=Math.floor(t*7)%8;e.follow=1;e.a=e.x>17?0:1;}}));
+    E.push(ent(sled,-15,.40,{id:'sled',s:.92,z:.038,upd:function(t,e){var c=(t+12)%SL;e.x=-16+c*.85-1.15;e.follow=1;e.oy=.0;e.a=e.x>17?0:1;}}));
+    E.push({line:1,col:[60,50,40],a:.8,ro:5.604,upd:function(t,e,W){e.a0=W.pt('walker',-.22,1.1-.36);e.a1=W.pt('sled',.4,.1);e.sag=.06;e.vis=W.get('walker').a;}});
     return E;
   }
 
@@ -599,7 +599,7 @@
   /* kijang sebagai entitas: merumput, sesekali menegakkan kepala dan bergeser sedikit */
   function deer(x,dy,o,seed){
     var fr=[deerTex(0,o),deerTex(.5,o),deerTex(1,o)];
-    return ent(fr,x,dy,{s:o.fawn?.95:.9,z:.05,fade:1,flip:o.flip||1,upd:function(t,e){
+    return ent(fr,x,dy,{s:o.fawn?.95:.9,z:.10,follow:1,fade:1,flip:o.flip||1,upd:function(t,e){
       var c=(t+seed)%9;e.f=c<5?0:(c<6?(c-5)*2:(c<8?2:2-(c-8)*2));
       e.x=x+Math.sin((t+seed)*.11)*.35*(o.fawn?1.4:1);}});
   }
@@ -670,7 +670,7 @@
       B.el[1]=[B.sh[1][0]+.04,B.sh[1][1]-.16];B.hn[1]=[B.sh[1][0]+.02,B.sh[1][1]+.04];
       fig(g,A,bO);fig(g,B,Object.assign({},aO,{post:function(g,P){var hb=.02*Math.sin(p*TAU*2);umbrella(g,.08,1.6+hb,.58,'#1F2B3A','#1F2B3A',[P.hn[1][0],P.hn[1][1]]);}}));});});
     var CW=46;
-    E.push(ent(couple,-15,.62,{s:.95,z:.07,upd:function(t,e){var c=(t+20)%CW;e.x=-16+c*.75;e.f=Math.floor(t*6.5)%8;e.follow=1;e.a=e.x>17?0:1;}}));
+    E.push(ent(couple,-15,.42,{s:.95,z:.04,upd:function(t,e){var c=(t+20)%CW;e.x=-16+c*.75;e.f=Math.floor(t*6.5)%8;e.follow=1;e.a=e.x>17?0:1;}}));
     /* pelari berpayung daun pisang, berlari dari kanan ke kiri */
     var lO={skin:'#9A6644',hair:'#120d0b',top:'#E9E2D0',tk:'tee',bot:'#5A4A3A',bk:'shorts',shoe:'#2F2A26',d:1};
     var leafRun=frames(8,function(p){return cv(1.5,1.8,.75,.03,function(g){shadow(g,0,.02,.22,.04,.22,shR);
@@ -683,7 +683,7 @@
         g.strokeStyle='rgba(230,240,190,.7)';g.lineWidth=.012;g.beginPath();g.moveTo(-.55,-.02);g.quadraticCurveTo(-.05,.08,.5,.04);g.stroke();
         g.strokeStyle='rgba(40,70,30,.7)';g.lineWidth=.006;for(var i=0;i<6;i++){var x=-.4+i*.14;g.beginPath();g.moveTo(x,.05+.02*Math.sin(i));g.lineTo(x+.05,.14-.03*i/6);g.stroke();}
         line(g,[[.5,.04],[.62,.0]],css([90,120,50]),.02);g.restore();}}));});});
-    E.push(ent(leafRun,16,.48,{s:.86,z:.06,flip:-1,upd:function(t,e){var c=(t+3)%24;e.x=17-c*1.5;e.f=Math.floor(t*12)%8;e.follow=1;e.a=e.x<-17?0:1;}}));
+    E.push(ent(leafRun,16,.40,{s:.86,z:.04,flip:-1,upd:function(t,e){var c=(t+3)%24;e.x=17-c*1.5;e.f=Math.floor(t*12)%8;e.follow=1;e.a=e.x<-17?0:1;}}));
     /* katak kecil di tepi genangan, sesekali melompat */
     var frog=[cv(.2,.14,.1,.02,function(g){ball(g,0,.045,.07,.045,[90,140,60]);ball(g,.05,.07,.025,.025,[100,150,66]);ball(g,.055,.085,.012,.012,[20,20,20]);limb(g,[-.05,.03],[-.08,.01],.02,.015,[80,125,52]);}),
               cv(.2,.14,.1,.02,function(g){ball(g,0,.06,.07,.035,[90,140,60],.3);ball(g,.06,.085,.022,.022,[100,150,66]);limb(g,[-.05,.05],[-.1,.0],.016,.012,[80,125,52]);})];

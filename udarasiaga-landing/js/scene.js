@@ -738,7 +738,7 @@
       if(e.line){
         e.pos=new Float32Array(24*3);var lg=new THREE.BufferGeometry();lg.setAttribute('position',new THREE.BufferAttribute(e.pos,3));
         e.mat=new THREE.LineBasicMaterial({color:new THREE.Color(e.col[0]/255,e.col[1]/255,e.col[2]/255),transparent:true,opacity:0,depthWrite:false});
-        e.mesh=new THREE.Line(lg,e.mat);e.mesh.frustumCulled=false;e.mesh.renderOrder=e.L!=null?5.47:5.9;e.mesh.visible=false;scene.add(e.mesh);folk.push(e);return;
+        e.mesh=new THREE.Line(lg,e.mat);e.mesh.frustumCulled=false;e.mesh.renderOrder=e.ro!=null?e.ro:(e.L!=null?5.47:(e.z!=null?5.6+e.z*.1:5.9));e.mesh.visible=false;scene.add(e.mesh);folk.push(e);return;
       }
       var fr=Array.isArray(e.c)?e.c:[e.c],c0=fr[0];
       var geo=new THREE.PlaneGeometry(c0.w,c0.h);geo.translate(c0.w/2-c0.ax,c0.h/2-c0.ay,0);
