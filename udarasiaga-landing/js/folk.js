@@ -1,7 +1,7 @@
 /* HelaLoka: warga di padang rumput depan. Semua figur dan properti dilukis prosedural di canvas (tanpa aset gambar),
    lalu dipasang js/scene.js sebagai sprite yang ikut cahaya, bayangan awan, dan cuaca.
    Tiap musim punya adegan sendiri: Fajar (piknik keluarga), Kemarau (musim layangan), Salju, Mekar (hanami), Hujan (berpayung),
-   ditambah kijang yang merumput di tepi padang.
+   ditambah kijang yang merumput di tepi padang dan menara bertingkat gaya Istana Pagaruyung di bukit kiri dengan warga di deknya.
    Satuan: 1 = kira-kira 1,3 m. Sumbu y ke atas, titik (0,0) = tanah di bawah titik jangkar sprite. */
 (function(){
   var mobile=window.innerWidth<700||/Mobi|Android/i.test(navigator.userAgent);
@@ -65,7 +65,7 @@
   function fig(g,P,o){
     var d=o.d||1;if(d<0)P=mirror(P);
     var s=o.s||1,pf=o.tk==='puffer'?1.32:(o.tk==='coat'||o.tk==='sweater'?1.12:1);
-    var R={hd:(o.hr||.078)*(o.kid?1.12:1),ua:.041*s*pf,fa:.033*s*pf,hn:.027*s,th:.061*s*(o.tk==='puffer'?1.08:1),sn:.045*s,sh:.104*s*pf,hp:.09*s};
+    var R={hd:(o.hr||.068)*(o.kid?1.14:1),ua:.041*s*pf,fa:.033*s*pf,hn:.027*s,th:.061*s*(o.tk==='puffer'?1.08:1),sn:.045*s,sh:.104*s*pf,hp:.09*s};
     var skin=hx(o.skin||SKIN[0]),top=hx(o.top),bot=hx(o.bot||'#3A4250'),shoe=hx(o.shoe||'#2B2622'),far=-.17;
     var hd=P.hd,nk=P.nk,pe=P.pe,wa=lp(nk,pe,.84);
     if(o.pre)o.pre(g,P,d);
@@ -75,7 +75,7 @@
     function arm(i){
       var k=i?0:far,S=P.sh[i],E=P.el[i],Hd=P.hn[i],tc=sh(top,k),sk=sh(skin,k);
       limb(g,S,E,R.ua/pf,R.fa/pf*1.02,sk);limb(g,E,Hd,R.fa/pf,R.hn*.9,sk);
-      if(o.mit)ball(g,Hd[0],Hd[1],R.hn*1.35,R.hn*1.25,sh(o.mit,k));else ball(g,Hd[0],Hd[1],R.hn,R.hn*1.08,sk);
+      if(o.mit)ball(g,Hd[0],Hd[1],R.hn*1.35,R.hn*1.25,sh(o.mit,k));else{var fdx=Hd[0]-E[0],fdy=Hd[1]-E[1],fl=Math.hypot(fdx,fdy)||1;ball(g,Hd[0]+fdx/fl*R.hn*.25,Hd[1]+fdy/fl*R.hn*.25,R.hn*.82,R.hn*1.18,sk,Math.atan2(fdy,fdx)-Math.PI/2);ball(g,Hd[0]+d*R.hn*.55,Hd[1]+R.hn*.15,R.hn*.34,R.hn*.5,sh(sk,-.06),.5);}
       var tk=o.tk||'tee';
       if(tk==='tee'||tk==='dress'){limb(g,S,lp(S,E,.5),R.ua*1.18,R.ua*1.12,tc);}
       else if(tk!=='tank'){limb(g,S,E,R.ua*1.08,R.fa*1.12,tc);var cf=lp(E,Hd,tk==='puffer'?.78:.84);limb(g,E,cf,R.fa*1.1,R.fa*(tk==='puffer'?1.12:.98),tc);
@@ -101,12 +101,19 @@
       if(o.skirtPat)o.skirtPat(g,sk2);}
     arm(0);
     /* leher dan badan */
-    limb(g,lp(hd,nk,.45),nk,R.hd*.36,R.hd*.4,skin);
+    limb(g,lp(hd,nk,.45),nk,R.hd*.4,R.hd*.44,skin);
+    g.fillStyle=css(sh(skin,-.4),.35);g.beginPath();g.ellipse(lp(hd,nk,.62)[0]-d*R.hd*.05,lp(hd,nk,.62)[1],R.hd*.36,R.hd*.14,0,0,TAU);g.fill();
     var tA=[nk[0]+(pe[0]-nk[0])*.1,nk[1]-R.sh*.5];
-    limb(g,tA,wa,R.sh,R.hp*.98,top,.9);
-    g.save();g.beginPath();g.arc(tA[0],tA[1],R.sh,0,TAU);g.arc(wa[0],wa[1],R.hp*.98,0,TAU);
-    var dxT=wa[0]-tA[0],dyT=wa[1]-tA[1],LT=Math.hypot(dxT,dyT),pxT=-dyT/LT*1,pyT=dxT/LT;
-    g.moveTo(tA[0]+pxT*R.sh,tA[1]+pyT*R.sh);g.lineTo(wa[0]+pxT*R.hp,wa[1]+pyT*R.hp);g.lineTo(wa[0]-pxT*R.hp,wa[1]-pyT*R.hp);g.lineTo(tA[0]-pxT*R.sh,tA[1]-pyT*R.sh);g.closePath();g.clip();
+    /* badan berbentuk: bahu lebar, dada, pinggang menyempit, pinggul; gradasi terang dari kiri atas, sisi jauh lebih gelap */
+    var dxT=wa[0]-tA[0],dyT=wa[1]-tA[1],LT=Math.hypot(dxT,dyT),ux=dxT/LT,uy=dyT/LT,pxT=-uy,pyT=ux;
+    var prof=[[-.32,R.sh*.82],[-.12,R.sh*1.06],[.25,R.sh*1.0],[.62,R.hp*.84],[.9,R.hp*.94],[1.08,R.hp*.98],[1.22,R.hp*.7]];
+    function torsoPath(){var Lp=[],Rp=[];prof.forEach(function(q){var c=[tA[0]+dxT*q[0],tA[1]+dyT*q[0]];if(q[0]<0){c=[tA[0]+ux*q[0]*R.sh*2.2,tA[1]+uy*q[0]*R.sh*2.2];}
+      Lp.push([c[0]+pxT*q[1],c[1]+pyT*q[1]]);Rp.push([c[0]-pxT*q[1],c[1]-pyT*q[1]]);});poly(g,Lp.concat(Rp.reverse()),null,true);}
+    torsoPath();g.fillStyle=grad(g,(tA[0]+wa[0])/2,(tA[1]+wa[1])/2,LD[0],LD[1],R.sh,top,.95);g.fill();
+    g.save();torsoPath();g.clip();
+    var sx=(tA[0]+wa[0])/2,sy=(tA[1]+wa[1])/2,sg=g.createLinearGradient(sx-d*R.sh,sy,sx+d*R.sh*1.1,sy);sg.addColorStop(0,'rgba(255,255,255,.08)');sg.addColorStop(.55,'rgba(0,0,0,0)');sg.addColorStop(1,'rgba(0,0,0,.24)');g.fillStyle=sg;g.fillRect(sx-R.sh*1.5,sy-LT,R.sh*3,LT*2.4);
+    g.strokeStyle=css(sh(top,-.4),.22);g.lineWidth=R.sh*.06;[[-.7,.15,.65],[.7,.2,.7],[0,.55,.95]].forEach(function(f){var a=[tA[0]+dxT*f[1]+pxT*R.sh*f[0],tA[1]+dyT*f[1]+pyT*R.sh*f[0]],b=[tA[0]+dxT*f[2]+pxT*R.sh*f[0]*.3,tA[1]+dyT*f[2]+pyT*R.sh*f[0]*.3];
+      g.beginPath();g.moveTo(a[0],a[1]);g.quadraticCurveTo((a[0]+b[0])/2+pxT*R.sh*.12,(a[1]+b[1])/2,b[0],b[1]);g.stroke();});
     /* motif dan detail pakaian, dipotong mengikuti badan */
     if(o.stripe){g.strokeStyle=css(o.stripe,.85);g.lineWidth=.022;for(var y=-.3;y<.4;y+=.055){g.beginPath();g.moveTo(nk[0]-.3,wa[1]+y);g.lineTo(nk[0]+.3,wa[1]+y+(pe[0]-nk[0])*.1);g.stroke();}}
     if(o.batik){g.strokeStyle=css(o.batik,.75);g.lineWidth=.008;for(var by=-.1;by<.5;by+=.06)for(var bx=-.2;bx<.2;bx+=.06){g.beginPath();g.ellipse(nk[0]+bx+((by*16|0)%2)*.03,wa[1]+by,.018,.012,0,0,TAU);g.stroke();}}
@@ -138,6 +145,9 @@
       if(hs==='bun')ball(g,x-d*r*.55,y+r*.75,r*.42,r*.38,hair,0,.7);
       if(hs==='pony'){limb(g,[x-d*r*.85,y+r*.35],[x-d*r*1.45,y-r*.55],r*.3,r*.16,hair,.6);}
       ball(g,x-d*r*.12,y+r*.1,r*1.06,r*1.04,hair,0,.75);
+      g.save();g.beginPath();g.ellipse(x-d*r*.12,y+r*.1,r*1.06,r*1.04,0,0,TAU);g.clip();g.lineWidth=r*.06;
+      for(var hs2=0;hs2<9;hs2++){var ha=-.6+hs2*.15;g.strokeStyle=css(sh(hair,hs2%2?.22:-.25),.45);g.beginPath();g.arc(x-d*r*(.6-hs2*.04),y-r*.3,r*(1.0+hs2*.05),-1.4+ha*.2,-.2+ha*.2);g.stroke();}
+      g.strokeStyle=css(sh(hair,.45),.35);g.lineWidth=r*.14;g.beginPath();g.arc(x-d*r*.2,y+r*.1,r*.75,-2.5,-1.7);g.stroke();g.restore();
       if(hs==='curly'||hs==='curlylong'){for(var c=0;c<9;c++){var a=c/9*TAU;ball(g,x-d*r*.12+Math.cos(a)*r*.95,y+r*.12+Math.sin(a)*r*.9,r*.28,r*.28,hair,0,.6);}}
     }
     /* wajah 3/4: elips kulit bergeser ke arah hadap */
@@ -155,13 +165,15 @@
       g.restore();}
     /* mata, alis, pipi, mulut */
     var ex=fx+d*fr*.48,ey=fy+fr*.18;
-    g.fillStyle=css([28,20,18]);g.beginPath();g.ellipse(ex,ey,fr*.085,fr*.12,0,0,TAU);g.fill();
-    g.beginPath();g.ellipse(fx+d*fr*.02,ey,fr*.07,fr*.11,0,0,TAU);g.fill();
+    g.fillStyle=css(sh(skin,-.25),.5);g.beginPath();g.ellipse(ex-d*fr*.02,ey+fr*.04,fr*.13,fr*.07,0,0,TAU);g.fill();g.beginPath();g.ellipse(fx+d*fr*.02,ey+fr*.04,fr*.11,fr*.07,0,0,TAU);g.fill();
+    g.fillStyle=css([28,20,18]);g.beginPath();g.ellipse(ex,ey,fr*.062,fr*.078,0,0,TAU);g.fill();
+    g.beginPath();g.ellipse(fx+d*fr*.02,ey,fr*.05,fr*.072,0,0,TAU);g.fill();
+    g.fillStyle=css(sh(skin,-.35),.45);g.beginPath();g.ellipse(fx+d*fr*.8,fy-fr*.18,fr*.12,fr*.05,0,0,TAU);g.fill();
     if(o.closed){g.fillStyle=css(skin);g.fillRect(ex-fr*.12,ey-fr*.02,fr*.24,fr*.16);g.fillRect(fx+d*fr*.02-fr*.1,ey-fr*.02,fr*.2,fr*.16);}
     g.strokeStyle=css(sh(o.hair||'#1E1714',-.1),.85);g.lineWidth=fr*.07;g.beginPath();g.moveTo(ex-fr*.14,ey+fr*.24);g.lineTo(ex+fr*.12,ey+fr*.27);g.stroke();
-    g.fillStyle=css([230,110,110],.28);g.beginPath();g.arc(fx+d*fr*.45,fy-fr*.22,fr*.2,0,TAU);g.fill();
-    g.strokeStyle=css(sh(skin,-.45),.9);g.lineWidth=fr*.06;g.beginPath();
-    if(o.smile!==false){g.arc(fx+d*fr*.55,fy-fr*.35,fr*.15,Math.PI*1.1,Math.PI*1.9,false);}
+    g.fillStyle=css([220,110,100],.1);g.beginPath();g.arc(fx+d*fr*.45,fy-fr*.22,fr*.2,0,TAU);g.fill();
+    g.strokeStyle=css([Math.min(255,skin[0]*.82+30),skin[1]*.52,skin[2]*.5],.9);g.lineWidth=fr*.07;g.beginPath();
+    if(o.smile!==false){g.arc(fx+d*fr*.58,fy-fr*.32,fr*.12,Math.PI*1.15,Math.PI*1.85,false);}
     if(o.blow){g.fillStyle=css([120,50,50]);g.beginPath();g.arc(fx+d*fr*.82,fy-fr*.38,fr*.1,0,TAU);g.fill();}
     else g.stroke();
     if(o.glasses){g.strokeStyle=css([40,34,30]);g.lineWidth=fr*.06;g.beginPath();g.arc(ex,ey,fr*.18,0,TAU);g.stroke();g.beginPath();g.moveTo(ex-fr*.18,ey);g.lineTo(x-d*r*.1,ey+fr*.05);g.stroke();}
@@ -679,6 +691,369 @@
     return E;
   }
 
+  /* ===== MENARA BERTINGKAT GAYA ISTANA PAGARUYUNG (Minangkabau), dilihat miring 3/4 =====
+     Denah bujur sangkar diproyeksikan (diputar 38 derajat, dilihat sedikit dari atas) sehingga sisi depan yang tersinari dan sisi kanan
+     yang teduh sama-sama tampak. Alas batu andesit bertangga, dua lantai dinding kayu berukir berjendela, atap ijuk tiap lantai bersudut
+     melengkung naik bertanduk, dek pandang berpagar, dan atap gonjong di puncak dengan singkok berukir dan bendera merah putih.
+     Tiga lapis (belakang, warga, pagar depan) supaya warga di dek tampak berdiri di balik pagar; lapis malam berisi jendela dan lampu menyala. */
+  var DECK=5.95,BW=1.36,TS=mobile?.72:1.0,TPX=mobile?80:130;
+  function cvp(px,w,h,ax,ay,fn){
+    var c=document.createElement('canvas');c.width=Math.ceil(w*px);c.height=Math.ceil(h*px);
+    var g=c.getContext('2d');g.translate(ax*px,c.height-ay*px);g.scale(px,-px);g.lineJoin=g.lineCap='round';
+    fn(g);c.w=w;c.h=h;c.ax=ax;c.ay=ay;return c;
+  }
+  var WOOD=[120,76,46],WDK=sh(WOOD,-.45),STONE=[128,118,102],IJUK=[30,25,22],RED=[150,36,28],GOLD=[218,172,72],INK=[30,22,18];
+  var CA=Math.cos(38*Math.PI/180),SA=Math.sin(38*Math.PI/180),EL=.17;
+  function P3(x,y,z){return [x*CA+z*SA,y+(z*CA-x*SA)*EL];}
+  function polyP(g,pts,fill){poly(g,pts.map(function(p){return P3(p[0],p[1],p[2]);}),fill);}
+  /* bidang datar → transform afin kanvas: (u,v) lokal = o + u*U + v*V */
+  function face(g,o,U,V){var a=P3(U[0],U[1],U[2]),c=P3(V[0],V[1],V[2]),e=P3(o[0],o[1],o[2]);g.transform(a[0],a[1],c[0],c[1],e[0],e[1]);}
+  function front(g,h,k){face(g,[0,0,-h],[1,0,0],[0,1,k||0]);}
+  function right(g,h,k){face(g,[h,0,0],[0,0,1],[-(k||0),1,0]);}
+  function shade(g,x0,x1,y0,y1,a){g.fillStyle='rgba(8,6,4,'+a+')';g.fillRect(x0,y0,x1-x0,y1-y0);}
+  function ukiran(g,x0,x1,y0,y1,step){
+    poly(g,[[x0,y0],[x1,y0],[x1,y1],[x0,y1]],css(RED));
+    g.fillStyle=css(GOLD);g.strokeStyle=css(INK,.85);g.lineWidth=.012;
+    for(var x=x0+step*.1;x<x1-step*.5;x+=step){g.beginPath();g.moveTo(x,y0+.02);g.lineTo(x+step*.4,y1-.02);g.lineTo(x+step*.8,y0+.02);g.closePath();g.fill();g.stroke();}
+    line(g,[[x0,y0],[x1,y0]],css(INK),.016);line(g,[[x0,y1],[x1,y1]],css(GOLD),.014);
+  }
+  function panel(g,x0,x1,y0,y1,red){
+    poly(g,[[x0,y0],[x1,y0],[x1,y1],[x0,y1]],css(red?RED:[44,30,24]));
+    g.strokeStyle=css(GOLD,.9);g.lineWidth=.016;g.strokeRect(x0+.03,y0+.03,x1-x0-.06,y1-y0-.06);
+    var cx=(x0+x1)/2,cy=(y0+y1)/2,w=(x1-x0)*.36,h=(y1-y0)*.34,r=Math.min(w,h);
+    g.lineWidth=.012;for(var k=0;k<4;k++){var sx=k%2?1:-1,sy=k<2?1:-1;g.beginPath();g.arc(cx+sx*w*.55,cy+sy*h*.55,r*.42,0,TAU*.8);g.stroke();}
+    g.fillStyle=css(red?GOLD:RED);g.beginPath();g.arc(cx,cy,r*.3,0,TAU);g.fill();g.fillStyle=css(INK);g.beginPath();g.arc(cx,cy,r*.1,0,TAU);g.fill();
+  }
+  /* tingkat: [y0,y1,setengah sisi,jendela u]; atap: [y tepi,setengah tepi,y atas,setengah atas,angkat sudut] */
+  var ST=[[2.5,3.76,1.25,[-.8,-.27,.27,.8]],[4.42,5.4,1.0,[-.55,0,.55]]],RF=[[3.74,1.92,4.42,1.0,.62],[5.38,1.56,5.95,.9,.52]];
+  function wallFace(g,i,dark){
+    var y0=ST[i][0],y1=ST[i][1],hw=ST[i][2],n=i?4:5,pw=hw*2/n;
+    poly(g,[[-hw,y0],[hw,y0],[hw,y1],[-hw,y1]],css(sh(WOOD,-.3)));
+    for(var k=0;k<n;k++){var x0=-hw+k*pw;panel(g,x0+.04,x0+pw-.04,y0+.12,y1-.1,(k+i)%2===0);}
+    ST[i][3].forEach(function(x){var y=y0+(i?.24:.5),ww=.17,wh=.42;
+      poly(g,[[x-ww-.05,y-.05],[x+ww+.05,y-.05],[x+ww+.05,y+wh+.05],[x-ww-.05,y+wh+.05]],css(sh(WOOD,-.2)));
+      poly(g,[[x-ww,y],[x+ww,y],[x+ww,y+wh],[x-ww,y+wh]],css([22,16,14]));
+      line(g,[[x,y],[x,y+wh]],css(sh(WOOD,-.1)),.02);for(var b=1;b<4;b++)line(g,[[x-ww,y+wh*b/4],[x+ww,y+wh*b/4]],css(sh(WOOD,-.1),.8),.012);
+      ukiran(g,x-ww-.05,x+ww+.05,y+wh+.05,y+wh+.14,.09);});
+    for(var p=0;p<=n;p++){var px=-hw+p*pw;limb(g,[px,y0],[px,y1],.032,.032,sh(WOOD,-.1),.8);}
+    limb(g,[-hw,y0+.04],[hw,y0+.04],.05,.05,WOOD,.9);line(g,[[-hw,y0+.1],[hw,y0+.1]],css(GOLD,.85),.014);
+    var sg=g.createLinearGradient(0,y1,0,y1-.45);sg.addColorStop(0,'rgba(10,6,4,.6)');sg.addColorStop(1,'rgba(10,6,4,0)');g.fillStyle=sg;g.fillRect(-hw,y1-.45,hw*2,.45);
+    shade(g,-hw,hw,y0,y1,dark?.34:0);
+    if(!dark){var lg=g.createLinearGradient(-hw,0,hw,0);lg.addColorStop(0,'rgba(255,230,190,.12)');lg.addColorStop(1,'rgba(0,0,0,.06)');g.fillStyle=lg;g.fillRect(-hw,y0,hw*2,y1-y0);}
+  }
+  function stones(g,R,dark){
+    var Y=2.36;poly(g,[[-1.7,0],[1.7,0],[1.44,Y],[-1.44,Y]],css([58,52,46]));
+    g.save();poly(g,[[-1.7,0],[1.7,0],[1.44,Y],[-1.44,Y]]);g.clip();
+    for(var y=0;y<Y;y+=.2+R()*.06){var x=-1.9-R()*.3;while(x<1.9){var w=.24+R()*.3,h=.16+R()*.08,cx=x+w/2,cy=y+h/2,c=sh(STONE,(R()-.5)*.35);
+        if(R()<.25)c=[c[0]*.92,c[1]*.98,c[2]*.88];
+        var pts=[],nv=5+Math.floor(R()*3),a0=R();for(var k=0;k<nv;k++){var a=(k+a0*.6)/nv*TAU;pts.push([cx+Math.cos(a)*w*.5*(.7+R()*.35),cy+Math.sin(a)*h*.5*(.65+R()*.4)]);}
+        poly(g,pts,grad(g,cx,cy,LD[0],LD[1],Math.max(w,h)*.5,c,.9),true);x+=w+.025;}}
+    for(var m=0;m<30;m++){g.fillStyle=css([70,96,52],.2+R()*.3);g.beginPath();g.ellipse(-1.7+R()*3.4,R()*.35,.05+R()*.12,.02+R()*.04,0,0,TAU);g.fill();}
+    shade(g,-1.8,1.8,0,Y,dark?.32:0);g.restore();
+  }
+  function box(g,h,y0,y1,c){
+    polyP(g,[[-h,y1,-h],[h,y1,-h],[h,y1,h],[-h,y1,h]],css(sh(c,.18)));
+    polyP(g,[[-h,y0,-h],[h,y0,-h],[h,y1,-h],[-h,y1,-h]],css(sh(c,.02)));
+    polyP(g,[[h,y0,-h],[h,y0,h],[h,y1,h],[h,y1,-h]],css(sh(c,-.3)));
+  }
+  /* atap rok tiap lantai: dua bidang tampak (depan terang, kanan teduh), sudut melengkung naik dan bertanduk */
+  /* tepi atap: satu lengkung mulus yang makin curam ke sudut lalu meruncing menjadi satu titik (tanpa tanduk tempelan) */
+  function eK(a){return 1+.3*Math.pow(a,4);}
+  /* ujung tetap di bawah tepi atas atap agar bidang depan dan samping tidak terlipat */
+  function eY(r,a){return r[0]+r[4]*(.3*a*a+.7*Math.pow(a,6));}
+  function eaveF(r,t){var a=Math.abs(t),k=eK(a);return [t*r[1]*k,eY(r,a),-r[1]*k];}
+  function eaveR(r,t){var a=Math.abs(t),k=eK(a);return [r[1]*k,eY(r,a),t*r[1]*k];}
+  function eaveL(r,t){var a=Math.abs(t),k=eK(a);return [-r[1]*k,eY(r,a),t*r[1]*k];}
+  function ijukFill(g,pts,y0,y1,lit,R,fib){
+    poly(g,pts);var rg=g.createLinearGradient(0,y1,0,y0);rg.addColorStop(0,css(sh(IJUK,-.25)));rg.addColorStop(.6,css(IJUK));rg.addColorStop(1,css(sh(IJUK,lit?.22:.05)));g.fillStyle=rg;g.fill();
+    g.save();poly(g,pts);g.clip();fib();if(!lit){g.fillStyle='rgba(0,0,0,.25)';g.fillRect(-4,y0-1,8,y1-y0+3);}g.restore();
+  }
+  function tier(g,r,R,wall){
+    var N=40,F=[],Rt=[],T=[],i;for(i=0;i<=N;i++){var t=-1+2*i/N;T.push(t);F.push(eaveF(r,t));Rt.push(eaveR(r,t));}
+    /* ujung sudut kiri-belakang yang mencuat di balik atap */
+    var BL=[];for(i=0;i<=16;i++)BL.push(eaveL(r,.15+.85*i/16));BL.push([-r[3],r[2],r[3]],[-r[3],r[2],0]);
+    ijukFill(g,BL.map(function(p){return P3(p[0],p[1],p[2]);}),r[0],r[2]+.5,false,R,function(){});
+    /* plafon bawah atap: dari tepi atap ke puncak dinding, menutup rongga di bawah sudut yang terangkat */
+    if(wall){var wy=wall[1]-.02,wh=wall[2];polyP(g,F.concat([[wh,wy,-wh],[-wh,wy,-wh]]),css([34,24,18]));polyP(g,Rt.concat([[wh,wy,wh],[wh,wy,-wh]]),css([22,16,12]));}
+    /* sofit: tebal tepi atap, menipis ke ujung */
+    function thick(A){return A.concat(A.slice().reverse().map(function(p,k){var a=Math.abs(T[N-k]);return [p[0],p[1]-.09*(1-Math.pow(a,4)),p[2]];}));}
+    polyP(g,thick(F),css([20,14,10]));polyP(g,thick(Rt),css([14,10,8]));
+    var fp=F.map(function(p){return P3(p[0],p[1],p[2]);}).concat([P3(r[3],r[2],-r[3]),P3(-r[3],r[2],-r[3])]);
+    var rp=Rt.map(function(p){return P3(p[0],p[1],p[2]);}).concat([P3(r[3],r[2],r[3]),P3(r[3],r[2],-r[3])]);
+    function fibers(E,T0,T1){return function(){for(var k=0;k<90;k++){var t=k/89,e=E(-1+2*t),a=P3(e[0],e[1],e[2]),tp=[T0[0]+(T1[0]-T0[0])*t,T0[1],T0[2]+(T1[2]-T0[2])*t],b=P3(tp[0],tp[1],tp[2]);
+        g.strokeStyle=R()<.5?css([96,82,66],.14+R()*.1):css([8,6,5],.35);g.lineWidth=.012+R()*.012;g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.stroke();}
+      for(var bnd=1;bnd<3;bnd++){var f=bnd/3;g.strokeStyle=css([8,6,5],.42);g.lineWidth=.03;g.beginPath();for(var j=0;j<=30;j++){var tt=-1+2*j/30,e2=E(tt),tp2=[T0[0]+(T1[0]-T0[0])*(tt*.5+.5),T0[1],T0[2]+(T1[2]-T0[2])*(tt*.5+.5)];
+        var q=P3(e2[0]+(tp2[0]-e2[0])*f,e2[1]+(tp2[1]-e2[1])*f,e2[2]+(tp2[2]-e2[2])*f);j?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]);}g.stroke();}};}
+    ijukFill(g,rp,r[0],r[2],false,R,fibers(function(t){return eaveR(r,t);},[r[3],r[2],-r[3]],[r[3],r[2],r[3]]));
+    ijukFill(g,fp,r[0],r[2],true,R,fibers(function(t){return eaveF(r,t);},[-r[3],r[2],-r[3]],[r[3],r[2],-r[3]]));
+    /* bubungan jurai di sudut depan: menutup sambungan dua bidang atap */
+    var hp=[];for(i=0;i<=10;i++){var u=i/10,tp=eaveF(r,1);hp.push(P3(tp[0]+(r[3]-tp[0])*u,tp[1]+(r[2]-tp[1])*Math.pow(u,.8),tp[2]+(-r[3]-tp[2])*u));}
+    g.beginPath();hp.forEach(function(q,k){k?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]);});g.strokeStyle=css([14,10,8]);g.lineWidth=.07;g.stroke();
+    g.strokeStyle=css([120,104,84],.25);g.lineWidth=.02;g.stroke();
+  }
+  /* atap puncak bergonjong: bubungan sejajar sumbu x melengkung naik ke dua tanduk */
+  function ridgeP(s){var a=Math.abs(s);return [s*(1.12+.5*Math.pow(a,3)),7.62+1.23*Math.pow(a,2.4),0];}
+  /* tepi atap mendekati bubungan di ujung tanduk, menyisakan ujung kecil yang sedikit tumpul */
+  function eaveTop(s,z){var a=Math.abs(s),w=Math.pow(a,7)*.86,r=ridgeP(s),b=[s*1.12*(1+.06*a*a*a),7.0+.12*a*a*a,z];return [b[0]+(r[0]-b[0])*w,b[1]+(r[1]-b[1])*w,z*(1-w)];}
+  function topRoof(g,R){
+    var N=64,FE=[],RG=[],i;for(i=0;i<=N;i++){var s=-1+2*i/N;FE.push(eaveTop(s,-1.18));RG.push(ridgeP(s));}
+    /* ujung kanan: profil atap melengkung ke tanduk, lalu singkok (dinding segitiga) berukir */
+    var side=[];for(i=0;i<=20;i++)side.push(eaveTop(.5+.5*i/20,-1.18));side.push(ridgeP(1));for(i=20;i>=0;i--)side.push(eaveTop(.5+.5*i/20,1.18));
+    ijukFill(g,side.map(function(p){return P3(p[0],p[1],p[2]);}),7.0,8.85,false,R,function(){});
+    g.save();right(g,1.0);poly(g,[[-1.0,6.98],[1.0,6.98],[0,7.78]],css(RED));g.save();poly(g,[[-1.0,6.98],[1.0,6.98],[0,7.78]]);g.clip();
+    for(var k=0;k<5;k++){var yy=7.0+k*.15,hw=1-(yy-6.98)/.8;g.strokeStyle=css(k%2?GOLD:INK,.9);g.lineWidth=.03;g.beginPath();g.moveTo(-hw,yy);g.lineTo(hw,yy);g.stroke();}
+    for(var x=-.85;x<.9;x+=.17){g.fillStyle=css(GOLD);g.beginPath();g.moveTo(x,6.99);g.lineTo(x+.07,7.12);g.lineTo(x+.14,6.99);g.fill();}
+    g.restore();shade(g,-1.1,1.1,6.9,7.9,.22);g.restore();
+    var fp=FE.map(function(p){return P3(p[0],p[1],p[2]);}).concat(RG.slice().reverse().map(function(p){return P3(p[0],p[1],p[2]);}));
+    ijukFill(g,fp,7.0,8.85,true,R,function(){for(var k=0;k<160;k++){var s=-1+2*k/159,e=eaveTop(s,-1.18),rg=ridgeP(s),a=P3(e[0],e[1],e[2]),b=P3(rg[0],rg[1],rg[2]);
+        g.strokeStyle=R()<.5?css([96,82,66],.14+R()*.1):css([8,6,5],.35);g.lineWidth=.012+R()*.012;g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.stroke();}
+      for(var bnd=1;bnd<3;bnd++){var f=bnd/3;g.strokeStyle=css([8,6,5],.42);g.lineWidth=.035;g.beginPath();for(var j=0;j<=20;j++){var s2=-1+2*j/20,e2=eaveTop(s2,-1.18),r2=ridgeP(s2),q=P3(e2[0]+(r2[0]-e2[0])*f,e2[1]+(r2[1]-e2[1])*f,e2[2]+(r2[2]-e2[2])*f);j?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]);}g.stroke();}});
+    g.beginPath();RG.forEach(function(p,j){var q=P3(p[0],p[1],p[2]);j?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]);});g.strokeStyle=css([16,12,10]);g.lineWidth=.06;g.stroke();
+    limb(g,[0,7.6],[0,9.06],.016,.012,[214,212,206],.8);ball(g,0,9.08,.03,.03,[222,190,96]);
+  }
+  var LAMP=P3(.5,6.62,-.55);
+  function towerBack(){return cvp(TPX,6.8,10.6,3.4,.6,function(g){
+    var R=rng(41);
+    /* alas batu: sisi kanan teduh dulu, lalu sisi depan dengan tangga dan gapura */
+    g.save();right(g,1.7,.11);stones(g,R,true);g.restore();
+    g.save();front(g,1.7,.11);stones(g,R,false);
+      for(var s2=0;s2<6;s2++){var w2=.34-s2*.012;poly(g,[[-w2,s2*.2],[w2,s2*.2],[w2,s2*.2+.2],[-w2,s2*.2+.2]],css(sh(STONE,.12-s2*.02)));line(g,[[-w2,s2*.2+.2],[w2,s2*.2+.2]],css(sh(STONE,.35)),.014);}
+      [-1,1].forEach(function(s){poly(g,[[s*.36,0],[s*.48,0],[s*.46,1.25],[s*.36,1.25]],css(sh(STONE,-.1)));ball(g,s*.42,1.33,.08,.1,sh(STONE,.05));});
+    g.restore();
+    box(g,1.5,2.36,2.5,sh(STONE,.05));
+    [0,1].forEach(function(i){var h=ST[i][2];
+      g.save();right(g,h);wallFace(g,i,true);g.restore();g.save();front(g,h);wallFace(g,i,false);g.restore();
+      limb(g,P3(h,ST[i][0],-h),P3(h,ST[i][1],-h),.04,.04,WOOD,1);
+      tier(g,RF[i],R,ST[i]);});
+    /* dek pandang: lantai, ruang dalam teduh di dinding belakang, tiang belakang, pagar belakang, lampu */
+    /* balkon lebar bertopang siku kayu, lebih lebar dari atap puncak di atasnya */
+    [-1.05,-.35,.35,1.05].forEach(function(u){limb(g,P3(u*.82,DECK-.62,-.9),P3(u,DECK-.12,-BW+.06),.035,.03,sh(WOOD,-.05),.9);limb(g,P3(.9,DECK-.62,u*.82),P3(BW-.06,DECK-.12,u),.035,.03,sh(WOOD,-.35),.6);});
+    box(g,BW,DECK-.14,DECK,sh(WOOD,-.1));
+    g.save();front(g,BW);ukiran(g,-BW,BW,DECK-.14,DECK-.01,.13);g.restore();g.save();right(g,BW);ukiran(g,-BW,BW,DECK-.14,DECK-.01,.13);shade(g,-BW,BW,DECK-.15,DECK,.32);g.restore();
+    /* paviliun terbuka: hanya tiang, langit tetap tembus di belakang; balok atas belakang menopang atap */
+    limb(g,P3(-.9,6.92,-.9),P3(-.9,6.92,.9),.03,.03,WDK,.4);limb(g,P3(-.9,6.92,.9),P3(.9,6.92,.9),.03,.03,WDK,.4);
+    [[-.9,.9],[.9,.9]].forEach(function(c){limb(g,P3(c[0],DECK,c[1]),P3(c[0],6.95,c[1]),.03,.028,WDK,.4);});
+    [[-.9,-.9],[.9,-.9]].forEach(function(c){limb(g,P3(c[0],DECK,c[1]),P3(c[0],6.95,c[1]),.042,.038,WOOD,1);});
+    var rb=[[-BW,-BW],[-BW,BW],[BW,BW]];for(var e=0;e<2;e++){var a=rb[e],b=rb[e+1];limb(g,P3(a[0],DECK+.42,a[1]),P3(b[0],DECK+.42,b[1]),.022,.022,WDK,.4);
+      for(var t=0;t<=1;t+=.1){var x=a[0]+(b[0]-a[0])*t,z=a[1]+(b[1]-a[1])*t;line(g,[P3(x,DECK,z),P3(x,DECK+.42,z)],css(WDK,.8),.016);}}
+    line(g,[[LAMP[0],LAMP[1]+.24],[LAMP[0],LAMP[1]+.08]],css([30,24,20]),.01);ball(g,LAMP[0],LAMP[1],.065,.085,[196,72,44]);
+    /* pita ukiran di bawah atap puncak (depan dan kanan), lalu atap gonjong */
+    g.save();right(g,1.0);ukiran(g,-1.0,1.0,6.8,6.98,.12);shade(g,-1,1,6.8,6.98,.3);g.restore();
+    g.save();front(g,1.0);ukiran(g,-1.0,1.0,6.8,6.98,.12);g.restore();
+    topRoof(g,R);
+  });}
+  function towerFront(){return cvp(TPX,4.6,1.6,2.3,-DECK+.6,function(g){
+    /* pagar depan dan kanan balkon, tiang sudut berkepala bulat */
+    [[[-BW,-BW],[BW,-BW]],[[BW,-BW],[BW,BW]]].forEach(function(ed,k){var a=ed[0],b=ed[1];
+      for(var t=0;t<=1.001;t+=1/14){var x=a[0]+(b[0]-a[0])*t,z=a[1]+(b[1]-a[1])*t;limb(g,P3(x,DECK,z),P3(x,DECK+.42,z),.015,.013,sh(WOOD,k?-.25:.06),.8);}
+      limb(g,P3(a[0],DECK+.06,a[1]),P3(b[0],DECK+.06,b[1]),.02,.02,sh(WOOD,k?-.3:-.05),.8);limb(g,P3(a[0],DECK+.43,a[1]),P3(b[0],DECK+.43,b[1]),.03,.03,sh(WOOD,k?-.25:0),1);});
+    g.save();front(g,BW);ukiran(g,-.34,.34,DECK+.1,DECK+.34,.1);g.restore();g.save();right(g,BW);ukiran(g,-.34,.34,DECK+.1,DECK+.34,.1);shade(g,-.4,.4,DECK+.08,DECK+.36,.3);g.restore();
+    [[-BW,-BW],[BW,-BW],[BW,BW]].forEach(function(c){limb(g,P3(c[0],DECK,c[1]),P3(c[0],DECK+.52,c[1]),.045,.04,WOOD,1);ball(g,P3(c[0],DECK+.56,c[1])[0],P3(c[0],DECK+.56,c[1])[1],.05,.04,sh(WOOD,.1));});
+  });}
+  function towerSnow(){return cvp(TPX,6.8,10.6,3.4,.6,function(g){
+    var R=rng(77);
+    function band(pts,y0,y1){poly(g,pts.map(function(p){return P3(p[0],p[1],p[2]);}));var gr=g.createLinearGradient(0,y1,0,y0+(y1-y0)*.35);gr.addColorStop(0,'rgba(248,251,253,.97)');gr.addColorStop(1,'rgba(248,251,253,0)');g.fillStyle=gr;g.fill();}
+    RF.forEach(function(r){var F=[],Rt=[];for(var i=0;i<=40;i++){var t=-1+2*i/40;F.push(eaveF(r,t));Rt.push(eaveR(r,t));}
+      band(F.concat([[r[3],r[2],-r[3]],[-r[3],r[2],-r[3]]]),r[0],r[2]);band(Rt.concat([[r[3],r[2],r[3]],[r[3],r[2],-r[3]]]),r[0],r[2]);});
+    var FE=[],RG=[];for(var i=0;i<=64;i++){var s=-1+2*i/64;FE.push(eaveTop(s,-1.18));RG.push(ridgeP(s));}
+    poly(g,FE.map(function(p){return P3(p[0],p[1],p[2]);}).concat(RG.slice().reverse().map(function(p){return P3(p[0],p[1],p[2]);})));
+    var gr=g.createLinearGradient(0,8.6,0,7.1);gr.addColorStop(0,'rgba(248,251,253,.97)');gr.addColorStop(.5,'rgba(248,251,253,.9)');gr.addColorStop(1,'rgba(248,251,253,0)');g.fillStyle=gr;g.fill();
+    g.beginPath();RG.forEach(function(p,j){var q=P3(p[0],p[1],p[2]);j?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]);});g.strokeStyle='rgba(250,252,254,.95)';g.lineWidth=.08;g.stroke();
+    /* salju di pelataran alas batu (tidak menutupi dinding gedung, bervolume tebal, menggantung & berombak alami) */
+    var NF=36,crestF=[],lipF=[],innerF=[];
+    for(var k=0;k<=NF;k++){
+      var u=k/NF,x=-1.5+3.0*u;
+      var puff=Math.sin(u*15.7)*.016+Math.sin(u*31.4)*.009+Math.cos(u*7.8)*.008;
+      var droop=.038+Math.sin(u*17.2)*.015+Math.sin(u*34.5)*.007;
+      var fz=-1.50-puff*.4;
+      var yCr=2.57+puff*.6,yLp=2.47-droop;
+      crestF.push([x,yCr,fz]);
+      lipF.push([x,yLp,fz-.015]);
+    }
+    for(var j=0;j<=24;j++){
+      var t=j/24,xin=1.25-2.75*t;
+      var yin=2.59+Math.sin(t*6.2)*.012;
+      innerF.push([xin,yin,-1.25]);
+    }
+
+    var NR=30,crestR=[],lipR=[],innerR=[];
+    for(var m=0;m<=NR;m++){
+      var v=m/NR,z=-1.5+2.95*v;
+      var puffR=Math.sin(v*14.1)*.015+Math.sin(v*28.3)*.008+Math.cos(v*6.5)*.007;
+      var droopR=.036+Math.sin(v*15.5)*.014+Math.sin(v*31.0)*.007;
+      var rx=1.50+puffR*.4;
+      var ryCr=2.57+puffR*.6,ryLp=2.475-droopR;
+      crestR.push([rx,ryCr,z]);
+      lipR.push([rx+.015,ryLp,z]);
+    }
+    for(var jr=0;jr<=24;jr++){
+      var tr=jr/24,zin=1.45-2.70*tr;
+      var ryin=2.58+Math.sin(tr*5.8)*.01;
+      innerR.push([1.25,ryin,zin]);
+    }
+
+    /* 1. Endapan salju alami di celah batu kali pondasi bawah */
+    g.save();front(g,1.7,.11);
+    var stR=rng(103);
+    for(var si=0;si<22;si++){
+      var sx=-1.35+stR()*2.7,sy=.25+stR()*1.9;
+      g.fillStyle='rgba(245,249,253,'+(.5+stR()*.35)+')';
+      g.beginPath();g.ellipse(sx,sy,.08+stR()*.12,.02+stR()*.025,0,0,TAU);g.fill();
+    }
+    g.restore();
+    g.save();right(g,1.7,.11);
+    for(var sj=0;sj<14;sj++){
+      var rx2=-1.35+stR()*2.7,ry2=.25+stR()*1.9;
+      g.fillStyle='rgba(195,216,235,'+(.45+stR()*.3)+')';
+      g.beginPath();g.ellipse(rx2,ry2,.07+stR()*.11,.018+stR()*.02,0,0,TAU);g.fill();
+    }
+    g.restore();
+
+    /* 2. Permukaan atas bantalan salju pelataran samping kanan (sisi teduh) */
+    var topPtsR=crestR.concat(innerR);
+    var pTR=topPtsR.map(function(p){return P3(p[0],p[1],p[2]);});
+    var grTR=g.createLinearGradient(0,2.68,0,2.15);
+    grTR.addColorStop(0,'rgba(238,246,252,.96)');
+    grTR.addColorStop(1,'rgba(220,233,244,.92)');
+    poly(g,pTR,grTR);
+
+    /* 3. Muka tebal salju yang menggantung di bibir kanan (right drooping rim) */
+    var rimPtsR=crestR.concat(lipR.slice().reverse());
+    var pRR=rimPtsR.map(function(p){return P3(p[0],p[1],p[2]);});
+    var grRR=g.createLinearGradient(0,2.58,0,2.44);
+    grRR.addColorStop(0,'rgba(195,214,234,.94)');
+    grRR.addColorStop(.6,'rgba(175,196,218,.92)');
+    grRR.addColorStop(1,'rgba(152,174,198,.88)');
+    poly(g,pRR,grRR);
+
+    /* 4. Permukaan atas bantalan salju pelataran depan (sisi terang) */
+    var topPtsF=crestF.concat(innerF);
+    var pTF=topPtsF.map(function(p){return P3(p[0],p[1],p[2]);});
+    var grTF=g.createLinearGradient(0,2.65,0,2.15);
+    grTF.addColorStop(0,'rgba(255,255,255,.99)');
+    grTF.addColorStop(.5,'rgba(246,251,255,.97)');
+    grTF.addColorStop(1,'rgba(235,244,252,.95)');
+    poly(g,pTF,grTF);
+
+    /* 5. Muka tebal salju yang menggantung di bibir depan (front drooping rim) */
+    var rimPtsF=crestF.concat(lipF.slice().reverse());
+    var pRF=rimPtsF.map(function(p){return P3(p[0],p[1],p[2]);});
+    var grRF=g.createLinearGradient(0,2.58,0,2.44);
+    grRF.addColorStop(0,'rgba(252,254,255,.98)');
+    grRF.addColorStop(.6,'rgba(235,244,252,.95)');
+    grRF.addColorStop(1,'rgba(206,222,238,.90)');
+    poly(g,pRF,grRF);
+
+    /* 6. Bayangan kontak halus di pangkal dinding kayu (ambient occlusion) */
+    var aoF=[P3(-1.25,2.59,-1.25),P3(1.25,2.59,-1.25)];
+    line(g,aoF,'rgba(36,26,18,.32)',.022);
+    var aoR=[P3(1.25,2.58,-1.25),P3(1.25,2.58,1.25)];
+    line(g,aoR,'rgba(28,20,14,.36)',.022);
+
+    /* 7. Gumpalan empuk & tekstur kilau salju di sepanjang bibir pelataran */
+    for(var k2=0;k2<NF;k2+=4){
+      var pt=P3(crestF[k2][0],crestF[k2][1]-.01,crestF[k2][2]);
+      ball(g,pt[0],pt[1],.065,.032,[252,254,255],.4);
+    }
+    for(var m2=0;m2<NR;m2+=4){
+      var ptR=P3(crestR[m2][0],crestR[m2][1]-.01,crestR[m2][2]);
+      ball(g,ptR[0],ptR[1],.06,.03,[205,224,242],-.3);
+    }
+    /* gumpalan membulat di sudut terdepan */
+    var cCorner=P3(1.49,2.57,-1.49);
+    ball(g,cCorner[0],cCorner[1],.08,.045,[254,255,255],.3);
+
+    /* 8. Bantalan salju empuk di anak tangga (bukan balok kaku) */
+    for(var s2=0;s2<6;s2++){
+      var w=.34-s2*.012,ySt=s2*.2+.2,zSt=-1.7+.11*ySt;
+      var pTop=[P3(-w*.96,ySt+.038,zSt+.08),P3(w*.96,ySt+.038,zSt+.08),P3(w,ySt+.032,zSt-.01),P3(-w,ySt+.032,zSt-.01)];
+      poly(g,pTop,'rgba(252,254,255,.98)');
+      var pLip=[P3(-w,ySt+.032,zSt-.01),P3(w,ySt+.032,zSt-.01),P3(w*.98,ySt-.015,zSt-.028),P3(-w*.98,ySt-.015,zSt-.028)];
+      var grLip=g.createLinearGradient(0,ySt+.03,0,ySt-.015);
+      grLip.addColorStop(0,'rgba(250,252,255,.96)');grLip.addColorStop(1,'rgba(210,226,240,.88)');
+      poly(g,pLip,grLip);
+    }
+  });}
+  function towerSnowFront(){return cvp(TPX,4.6,1.6,2.3,-DECK+.6,function(g){
+    [[[-BW,-BW],[BW,-BW]],[[BW,-BW],[BW,BW]]].forEach(function(ed){limb(g,P3(ed[0][0],DECK+.47,ed[0][1]),P3(ed[1][0],DECK+.47,ed[1][1]),.02,.02,[244,248,251],.3);});});}
+  /* lapis malam: jendela di kedua sisi menyala hangat dengan pendar lembut */
+  function towerNight(){return cvp(TPX/2,6.8,10.6,3.4,.6,function(g){
+    [0,1].forEach(function(i){var h=ST[i][2];[[front,1],[right,.7]].forEach(function(fs){
+      ST[i][3].forEach(function(x){var y=ST[i][0]+(i?.24:.5);
+        var c=fs[0]===front?P3(x,y+.21,-h):P3(h,y+.21,x);var r=g.createRadialGradient(c[0],c[1],0,c[0],c[1],.42);r.addColorStop(0,'rgba(255,196,120,'+(.8*fs[1])+')');r.addColorStop(.35,'rgba(255,170,90,'+(.3*fs[1])+')');r.addColorStop(1,'rgba(255,140,60,0)');
+        g.fillStyle=r;g.fillRect(c[0]-.45,c[1]-.45,.9,.9);
+        g.save();fs[0](g,h);g.fillStyle='rgba(255,214,150,'+(.9*fs[1])+')';g.fillRect(x-.14,y+.03,.28,.36);g.restore();});});});});}
+  function flagTex(ph){return cv(.8,.5,.04,.44,function(g){
+    var N=14,W=.62,H=.38;
+    for(var i=0;i<N;i++){var x0=i/N*W,x1=(i+1)/N*W,w0=Math.sin(x0*9-ph*TAU)*.035*(x0/W+.15),w1=Math.sin(x1*9-ph*TAU)*.035*(x1/W+.15);
+      var sl=Math.cos(x0*9-ph*TAU)*.22;
+      poly(g,[[x0,w0],[x1,w1],[x1,w1-H/2],[x0,w0-H/2]],css(sh([200,30,38],sl)));
+      poly(g,[[x0,w0-H/2],[x1,w1-H/2],[x1,w1-H],[x0,w0-H]],css(sh([244,243,238],sl*.6)));}
+  });}
+  function lampGlow(){return cv(1.6,1.6,.8,.8,function(g){var r=g.createRadialGradient(0,0,0,0,0,.78);
+    r.addColorStop(0,'rgba(255,214,140,1)');r.addColorStop(.1,'rgba(255,180,100,.7)');r.addColorStop(.45,'rgba(255,145,65,.22)');r.addColorStop(1,'rgba(255,120,40,0)');g.fillStyle=r;g.fillRect(-.8,-.8,1.6,1.6);});}
+  function tent(c,x,oy,z,ro,o){o=o||{};o.c=c;o.x=x;o.dy=.1;o.oy=oy;o.z=z;o.s=TS;o.tw=1;o.L=4;o.ro=ro;return o;}
+  function towerParts(){
+    var flag=frames(4,function(p){return flagTex(p);});
+    return {
+      tower:[tent(towerBack(),0,0,.6,5.40,{solid:1}),tent(flag,0,9.04,.61,5.41,{fade:1,upd:function(t,e){e.f=(t*2.2)%4;}}),tent(towerFront(),0,0,.64,5.44,{solid:1})],
+      snowT:[tent(towerSnow(),0,0,.601,5.405),tent(towerSnowFront(),0,0,.641,5.445)],
+      night:[tent(towerNight(),0,0,.602,5.406,{add:1,glow:1,upd:function(t,e){e.a=.9+.06*Math.sin(t*1.3);}}),
+        tent(lampGlow(),LAMP[0],LAMP[1],.65,5.46,{add:1,glow:1,upd:function(t,e){e.a=.9+.1*Math.sin(t*7.3)*Math.sin(t*3.1);}}),
+        tent(lampGlow(),LAMP[0]/2.6,(LAMP[1]-.15)/2.6,.651,5.461,{add:1,glow:1,s:TS*2.6,upd:function(t,e){e.a=.55+.05*Math.sin(t*5.1);}})]
+    };
+  }
+  /* warga di dek, satu adegan per musim (z .62, di antara lapis belakang dan pagar depan) */
+  function deck(c,x,o){o=o||{};return tent(c,x,DECK-.14,.62+(o.zz||0),5.42+(o.zz||0)*.1,o);}
+  function binoc(g,P,d){var h=P.hd;limb(g,[h[0]+d*.07,h[1]+.005],[h[0]+d*.17,h[1]+.01],.022,.024,[34,34,36],.6);limb(g,[h[0]+d*.07,h[1]-.035],[h[0]+d*.17,h[1]-.03],.022,.024,[28,28,30],.6);}
+  function phone(g,h,c){poly(g,[[h[0]-.018,h[1]-.01],[h[0]+.018,h[1]-.01],[h[0]+.018,h[1]+.06],[h[0]-.018,h[1]+.06]],css(c||[30,32,38]));}
+  function deckScenes(){
+    /* warga melambai ke arah lembah: lengan kanan terangkat, telapak bergoyang kiri-kanan */
+    function waveF(o,k){return frames(4,function(p,i){var a=Math.sin(i/4*TAU);return cv(.9,1.9,.45,.02,function(g){fig(g,stand({k:k||1,el:[[-.06,.86],[.17,1.24]],hn:[[-.04,.68],[.2+a*.11,1.48-Math.abs(a)*.03]]}),o);});});}
+    function waveE(o,x,k,zz){return deck(waveF(o,k),x,{zz:zz||.002,fade:1,upd:function(t,e){e.f=(t*5.5)%4;}});}
+    var rgO={skin:'#A8744C',hair:'#15100d',top:'#7A6E48',tk:'long',bot:'#4A4A3A',bk:'pants',shoe:'#2a2420',hat:'cap',hatc:'#5B5236',d:1};
+    /* FAJAR: petugas pos pantau meneropong gunung api, anak berjinjit di pagar, ibu memotret matahari terbit */
+    var ranger=[cv(.9,1.6,.45,.02,function(g){fig(g,stand({el:[[.1,1.0],[.14,.98]],hn:[[.15,1.2],[.19,1.18]]}),Object.assign({post:binoc},rgO));}),
+                cv(.9,1.6,.45,.02,function(g){fig(g,stand({el:[[-.02,.86],[.18,1.02]],hn:[[.02,.7],[.36,1.12]]}),Object.assign({hold:[function(g,h){limb(g,[h[0]-.03,h[1]],[h[0]+.05,h[1]],.022,.024,[34,34,36],.6);},null]},rgO));})];
+    var kidO={skin:'#B47A50',hair:'#1b1310',top:'#E85D3F',tk:'tee',bot:'#2F4F6F',bk:'shorts',shoe:'#F2F2F2',s:.8,hr:.072,kid:true,d:1};
+    var kid=cv(.8,1.2,.4,.02,function(g){fig(g,stand({k:.78,el:[[.04,.82],[.12,.8]],hn:[[.16,.66],[.22,.64]],an:[[-.02,.1],[.06,.1]],to:[[.08,.04],[.15,.04]]}),kidO);});
+    var momO={skin:'#D49C74',hs:'hijab',hijab:'#C9798B',long:true,top:'#F3E3C8',tk:'long',bk:'skirt',skirt:'#5C4A6E',shoe:'#5C4A6E',d:1};
+    var mom=cv(.9,1.6,.45,.02,function(g){fig(g,stand({el:[[.06,.95],[.12,.96]],hn:[[.12,1.13],[.16,1.13]]}),Object.assign({hold:[null,function(g,h){phone(g,[h[0]+.01,h[1]-.02]);}]},momO));});
+    var sunrise=[deck(ranger,.42,{fade:1,upd:function(t,e){var c=t%9;e.f=c<5?0:(c<5.6?(c-5)/.6:(c<8.4?1:1-(c-8.4)/.6));}}),waveE(kidO,-.12,.78),deck(mom,-.62,{zz:.001,breath:.004})];
+    /* KEMARAU: remaja menerbangkan layangan dari dek, bapak berkipas caping */
+    var tO={skin:'#9A6644',hair:'#120d0b',top:'#F2C14E',tk:'tee',bot:'#B04A3A',bk:'pants',shoe:'#2F2A26',d:1};
+    var teen=frames(2,function(p,i){return cv(.9,1.7,.45,.02,function(g){fig(g,stand({el:[[-.08,.92],[.16,1.14-i*.03]],hn:[[-.02,.76],[.3,1.36-i*.05]]}),tO);});});
+    var fanO={skin:'#9C6A45',hair:'#141010',top:'#F1E7D2',tk:'tee',batik:'#8A4B2A',bot:'#3A3F4A',bk:'pants',shoe:'#5a3d2a',d:1};
+    var fan=frames(3,function(p,i){var a=.3+i*.35;return cv(1.1,1.7,.55,.02,function(g){fig(g,stand({el:[[-.06,.86],[.18,.98]],hn:[[-.04,.68],[.2+.12*Math.cos(a),1.08+.16*Math.sin(a)]]}),
+      Object.assign({hold:[null,function(g,h){g.save();g.translate(h[0]+.02,h[1]+.06);g.rotate(-.4+i*.3);ball(g,0,0,.2,.06,[216,184,110]);ball(g,0,.03,.07,.05,[196,160,90]);g.restore();}]},fanO));});});
+    var kite=frames(4,function(p){return kiteTex(p,[214,58,52],[250,240,220]);});
+    var autumn=[waveE({skin:'#C08A60',hair:'#1a120e',hs:'pony',top:'#5FA08C',tk:'tee',bot:'#3A4A6A',bk:'pants',shoe:'#EDE6DA',s:.8,hr:.072,kid:true,d:1},.04,.8),deck(teen,.5,{id:'tteen',fade:1,upd:function(t,e){e.f=Math.sin(t*1.7)*.5+.5;}}),deck(fan,-.45,{zz:.001,fade:1,upd:function(t,e){e.f=(Math.sin(t*4.2)*.5+.5)*2;}}),
+      tent(kite,4.4,9.0,.7,5.47,{id:'tkite',s:TS*1.3,fade:1,upd:function(t,e){e.f=(t*2.4)%4;e.x=4.4+Math.sin(t*.43)*.5+Math.sin(t*1.3)*.1;e.oy=9.0+Math.sin(t*.61)*.3;e.rot=Math.sin(t*.9)*.18+Math.sin(t*2.3)*.05;}}),
+      {line:1,L:4,col:[250,250,245],a:.7,upd:function(t,e,W){e.a0=W.pt('tteen',.3,1.36-.05*(1-(Math.sin(t*1.7)*.5+.5)));e.a1=W.pt('tkite',0,0);e.sag=.4;}}];
+    /* SALJU: memotret lanskap bersalju, menghangatkan tangan dengan cokelat panas */
+    var p1={skin:'#D9A47C',hair:'#2a1a12',hs:'long',top:'#C8433A',tk:'puffer',bot:'#2E2A36',bk:'pants',shoe:'#3a2a26',hat:'beanie',hatc:'#F2EEE4',scarf:'#2F5E8C',mit:'#2F5E8C',d:1};
+    var cam=cv(.9,1.6,.45,.02,function(g){fig(g,stand({el:[[.08,.96],[.14,.95]],hn:[[.15,1.17],[.19,1.16]]}),Object.assign({post:function(g,P,d){var h=P.hd;poly(g,[[h[0]+d*.08,h[1]-.05],[h[0]+d*.2,h[1]-.05],[h[0]+d*.2,h[1]+.04],[h[0]+d*.08,h[1]+.04]],css([30,30,34]));ball(g,h[0]+d*.22,h[1]-.005,.03,.03,[60,62,70]);}},p1));});
+    var p2={skin:'#A86F48',hair:'#14100d',top:'#3D6E5A',tk:'puffer',bot:'#2A2D36',bk:'pants',shoe:'#2c201a',hat:'beanie',hatc:'#D8A031',scarf:'#B8432E',d:1};
+    var coco=cv(.9,1.6,.45,.02,function(g){fig(g,stand({el:[[.02,.84],[.1,.84]],hn:[[.1,.95],[.14,.95]]}),Object.assign({hold:[null,function(g,h){cup(g,h[0]-.02,h[1]-.04,[230,90,70],1.1);}]},p2));});
+    var steam=frames(3,function(p){return steamTex(p);});
+    var snow=[waveE({skin:'#C68A5E',hair:'#1A1412',top:'#E0B23A',tk:'puffer',bot:'#2E3446',bk:'pants',shoe:'#3a2a26',hat:'beanie',hatc:'#C8433A',mit:'#C8433A',d:1},.06),deck(cam,.45),deck(coco,-.35,{zz:.001,breath:.005}),deck(steam,-.21/.6,{zz:.003,s:TS*.6,fade:1,upd:function(t,e){e.f=t*.9;e.oy=(DECK+.95)/.6;e.a=.55;}})];
+    /* MEKAR: pasangan berswafoto dengan mahkota bunga */
+    var wO={skin:'#D7A27A',hair:'#2a1d18',hs:'long',top:'#F7C9D4',tk:'tee',bk:'dress',belt:'#C9798B',shoe:'#F2E6E0',hat:'crown',d:-1};
+    var selfie=cv(.9,1.7,.45,.02,function(g){fig(g,stand({el:[[-.12,1.0],[-.2,1.12]],hn:[[-.08,.82],[-.32,1.32]]}),Object.assign({hold:[null,function(g,h){phone(g,h,[240,236,230]);}]},wO));});
+    var mO={skin:'#B07A52',hair:'#14100d',top:'#6E8FB8',tk:'long',bot:'#E9E2D0',bk:'pants',shoe:'#3a2a26',d:-1};
+    var peace=cv(.9,1.7,.45,.02,function(g){fig(g,stand({el:[[-.06,.86],[.18,1.12]],hn:[[-.04,.68],[.2,1.34]]}),Object.assign({hold:[null,function(g,h){limb(g,h,[h[0]-.02,h[1]+.07],.008,.007,hx(mO.skin));limb(g,h,[h[0]+.02,h[1]+.07],.008,.007,hx(mO.skin));}]},mO));});
+    var sakura=[deck(selfie,-.1,{breath:.004}),deck(peace,.32,{zz:.001,breath:.005}),waveE({skin:'#B47A50',hair:'#1b1310',top:'#F2A6B8',tk:'tee',bot:'#3A4A6A',bk:'shorts',shoe:'#F2F2F2',s:.8,hr:.072,kid:true,hat:'crown',d:1},-.56,.78)];
+    /* HUJAN: petugas berjas hujan melapor lewat HT, rekan memegang payung tertutup */
+    var rrO=Object.assign({},rgO,{top:'#E8B422',tk:'coat',hat:null,hs:'hijab',hijab:'#E8B422'});
+    var ht=cv(.9,1.6,.45,.02,function(g){fig(g,stand({el:[[-.02,.86],[.14,.98]],hn:[[.0,.68],[.14,1.2]]}),Object.assign({hold:[null,function(g,h){poly(g,[[h[0]-.02,h[1]-.04],[h[0]+.02,h[1]-.04],[h[0]+.02,h[1]+.07],[h[0]-.02,h[1]+.07]],css([24,24,26]));line(g,[[h[0]+.01,h[1]+.07],[h[0]+.01,h[1]+.16]],css([24,24,26]),.008);}]},rrO));});
+    var uO={skin:'#C68A5E',hair:'#1A1412',top:'#3D5A73',tk:'coat',bot:'#2A2D36',bk:'pants',shoe:'#2c201a',d:1};
+    var umb=cv(.9,1.6,.45,.02,function(g){fig(g,stand({el:[[-.02,.86],[.12,.84]],hn:[[.0,.68],[.18,.72]]}),Object.assign({hold:[null,function(g,h){limb(g,[h[0],h[1]+.05],[h[0]+.12,h[1]-.62],.022,.008,[40,52,70],.6);limb(g,[h[0],h[1]+.05],[h[0]-.03,h[1]+.12],.012,.012,[90,60,40]);}]},uO));});
+    var rain=[deck(ht,.42),deck(umb,-.4,{zz:.001}),waveE({skin:'#C48E64',hs:'hijab',hijab:'#F2C230',top:'#F2C230',tk:'coat',bot:'#3A5A8A',bk:'pants',boots:'#D83A34',shoe:'#B52E2A',s:.8,hr:.072,kid:true,d:1},.02,.78)];
+    return {sunrise:sunrise,autumn:autumn,snow:snow,sakura:sakura,rain:rain};
+  }
+
   window.FOLK={PX:PX,build:function(){var H=herds();
-    return {sunrise:sceneSunrise().concat(H.sunrise),autumn:sceneAutumn().concat(H.autumn),snow:sceneSnow().concat(H.snow),sakura:sceneSakura().concat(H.sakura),rain:sceneRain()};}};
+    var T=towerParts(),D=deckScenes();
+    return {sunrise:sceneSunrise().concat(H.sunrise,D.sunrise),autumn:sceneAutumn().concat(H.autumn,D.autumn),snow:sceneSnow().concat(H.snow,D.snow),sakura:sceneSakura().concat(H.sakura,D.sakura),rain:sceneRain().concat(D.rain),
+      tower:T.tower,snowT:T.snowT,night:T.night};}};
 })();

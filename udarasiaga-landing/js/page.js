@@ -376,9 +376,9 @@
     });
   }
 
-  /* navigasi bersembunyi saat menggulir ke bawah, muncul saat ke atas */
-  var nav=$('#nav'),navHidden=false,navSc=null,lastY=scrollY;
-  function navAuto(y){var sc=y>40;if(sc!==navSc){navSc=sc;nav.classList.toggle('scrolled',sc);}var dy=y-lastY;if(Math.abs(dy)<4)return;var hide=dy>0&&y>innerHeight*.6&&!mNav.classList.contains('open');if(hide!==navHidden){navHidden=hide;nav.classList.toggle('hide',hide);}lastY=y;}
+  /* navigasi selalu tampil dengan ukuran tetap; latarnya sedikit lebih pekat setelah menggulir */
+  var nav=$('#nav'),navSc=null;
+  function navAuto(y){var sc=y>40;if(sc!==navSc){navSc=sc;nav.classList.toggle('scrolled',sc);}}
 
   /* di layar sempit jam disembunyikan selama menggulir, muncul lagi 0,7 detik setelah berhenti */
   var awayT=null,isAway=false;

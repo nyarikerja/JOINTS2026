@@ -79,13 +79,12 @@ p{margin:0 0 16px;text-wrap:pretty}
 /* ---------- navigasi ----------
    Kapsul kaca hijau tua. Pil terang meluncur ke tautan yang ditunjuk/aktif, nomor bagian sama dengan angka besar di tiap bagian,
    aksen (--acc) berganti warna mengikuti suasana, garis progres gulir di tepi bawah kapsul. Saat menggulir kapsul merapat. */
-.nav{position:fixed;z-index:30;left:0;right:0;top:env(safe-area-inset-top,0px);padding:12px var(--gutter);display:flex;justify-content:center;pointer-events:none;transition:transform .5s var(--ease)}
-.nav.hide{transform:translateY(calc(-100% - 48px))}
+.nav{position:fixed;z-index:30;left:0;right:0;top:env(safe-area-inset-top,0px);padding:12px var(--gutter);display:flex;justify-content:center;pointer-events:none;transition:opacity .5s var(--ease)}
 .nav-in{pointer-events:auto;position:relative;display:flex;align-items:center;gap:clamp(10px,2vw,24px);max-width:1240px;width:100%;
   background:linear-gradient(180deg,rgba(30,62,53,.8),rgba(18,40,34,.76));color:var(--cream);backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3);
   border:1px solid rgba(251,244,228,.14);border-radius:20px 56px 20px 56px;padding:7px 8px 7px 18px;
-  box-shadow:0 18px 40px -22px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.09);transition:max-width .6s var(--ease),padding .4s var(--ease),background .4s}
-.nav.scrolled .nav-in{max-width:1140px;padding-top:5px;padding-bottom:5px;background:linear-gradient(180deg,rgba(24,52,45,.9),rgba(16,36,31,.88))}
+  box-shadow:0 18px 40px -22px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.09);transition:background .4s}
+.nav.scrolled .nav-in{background:linear-gradient(180deg,rgba(24,52,45,.9),rgba(16,36,31,.88))}
 .brand{display:flex;align-items:center;gap:10px;text-decoration:none;white-space:nowrap}
 .brand svg{width:28px;height:28px;flex:none;transition:transform .6s var(--ease)}
 .brand:hover svg{transform:rotate(-14deg) scale(1.08)}
@@ -98,10 +97,11 @@ p{margin:0 0 16px;text-wrap:pretty}
 .nav-pill{position:absolute;z-index:0;left:0;top:4px;bottom:4px;width:0;border-radius:12px;background:rgba(251,244,228,.11);box-shadow:inset 0 0 0 1px rgba(251,244,228,.12);
   opacity:0;pointer-events:none;transition:transform .5s var(--ease),width .5s var(--ease),opacity .3s}
 .nav-pill::after{content:"";position:absolute;left:50%;bottom:3px;width:16px;height:2px;margin-left:-8px;border-radius:2px;background:var(--acc);transition:background .8s}
-.nav-cta{position:relative;display:inline-flex;align-items:center;gap:8px;font:700 13.5px var(--sans);background:var(--gold);color:var(--ink);padding:10px 14px 10px 16px;border-radius:14px 30px 14px 30px;
-  text-decoration:none;white-space:nowrap;flex:none;box-shadow:0 8px 22px -10px rgba(253,183,115,.9);transition:background .25s,transform .25s var(--ease),box-shadow .25s}
+.nav-cta{position:relative;display:inline-flex;align-items:center;gap:8px;font:700 13.5px var(--sans);color:var(--cream);padding:10px 16px 10px 18px;border-radius:999px;text-decoration:none;white-space:nowrap;flex:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,.07));border:1px solid rgba(255,255,255,.42);backdrop-filter:blur(12px) saturate(1.4);-webkit-backdrop-filter:blur(12px) saturate(1.4);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 8px 22px -12px rgba(0,0,0,.5);transition:background .25s,transform .25s var(--ease),border-color .25s}
 .nav-cta svg{width:16px;height:16px;transition:transform .35s var(--ease)}
-.nav-cta:hover{background:var(--cream);transform:translateY(-1px);box-shadow:0 12px 26px -10px rgba(255,240,197,.9)}
+.nav-cta:hover{background:linear-gradient(180deg,rgba(255,255,255,.32),rgba(255,255,255,.14));border-color:rgba(255,255,255,.7);transform:translateY(-1px)}
 .nav-cta:hover svg{transform:translateX(3px)}
 /* tombol suara: bulat senada tombol menu. Mati: speaker dicoret. Nyala: emas, gelombang berdenyut, cincin aksen */
 .audio-btn{position:relative;display:grid;place-items:center;width:40px;height:40px;flex:none;padding:0;border:0;border-radius:50%;cursor:pointer;
@@ -164,13 +164,15 @@ main{position:relative;z-index:5;overflow-x:clip}
 .ink-num{--numc:rgba(22,48,42,.5)}
 
 /* ---------- tombol ---------- */
-.btn{font:700 15px var(--sans);border:1.5px solid currentColor;color:inherit;background:transparent;padding:13px 22px;border-radius:16px 34px 16px 34px;
-  text-decoration:none;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:transform .25s var(--ease),background .25s,color .25s,border-color .25s,border-radius .4s var(--ease)}
+.btn{font:700 15px var(--sans);border:1.5px solid currentColor;color:inherit;background:transparent;padding:13px 24px;border-radius:999px;
+  text-decoration:none;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:transform .25s var(--ease),background .25s,color .25s,border-color .25s,box-shadow .25s}
 .btn svg{width:18px;height:18px;transition:transform .3s var(--ease)}
-.btn:hover{transform:translateY(-2px);border-radius:34px 16px 34px 16px}
+.btn:hover{transform:translateY(-2px);box-shadow:0 12px 24px -12px rgba(29,42,46,.55)}
 .btn:hover svg{transform:translateX(3px)}
-.btn.fill{background:var(--ink);border-color:var(--ink);color:var(--cream)}
-.btn.fill:hover{background:var(--ember);border-color:var(--ember)}
+.btn.fill{color:var(--ink);background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,252,244,.26));border:1px solid rgba(255,255,255,.85);
+  backdrop-filter:blur(14px) saturate(1.5);-webkit-backdrop-filter:blur(14px) saturate(1.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 12px 30px -14px rgba(29,42,46,.5)}
+.btn.fill:hover{background:linear-gradient(180deg,rgba(255,255,255,.75),rgba(255,252,244,.45));border-color:#fff}
+.dark .btn.fill{color:var(--cream);background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.06));border-color:rgba(255,255,255,.45);box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
 .btn.ghost:hover{background:var(--ink);border-color:var(--ink);color:var(--cream)}
 .dark .btn:hover{background:var(--cream);border-color:var(--cream);color:var(--ash)}
 .dark .btn[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:var(--ash)}
@@ -220,10 +222,11 @@ main{position:relative;z-index:5;overflow-x:clip}
 .facts li{--R:clamp(30px,5vw,70px)}
 .facts b{display:block;font:500 clamp(30px,3.4vw,44px)/1 var(--serif);letter-spacing:-.03em;font-variant-numeric:lining-nums;margin-bottom:6px}
 .facts span{font-size:13.5px;line-height:1.4;display:block;color:var(--ink-2)}
-.cue{position:absolute;left:50%;bottom:28px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;font:700 10.5px var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--ink);opacity:.8}
-.cue i{width:1px;height:46px;background:linear-gradient(var(--ink),transparent);position:relative;overflow:hidden}
-.cue i::after{content:"";position:absolute;left:-1px;top:-14px;width:3px;height:14px;border-radius:3px;background:var(--ember);animation:drip 2.2s var(--ease) infinite}
-@keyframes drip{to{top:46px}}
+/* penanda gulir: ikon mouse dengan roda yang bergerak turun, dijangkarkan ke dasar layar pertama */
+.cue{position:absolute;left:50%;top:calc(100svh - 86px);z-index:3;width:26px;height:42px;margin-left:-13px;border:2px solid rgba(255,255,255,.95);border-radius:14px;
+  background:rgba(29,42,46,.18);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:0 6px 18px -6px rgba(0,0,0,.45),inset 0 0 0 1px rgba(29,42,46,.12)}
+.cue i{position:absolute;left:50%;top:7px;width:4px;height:8px;margin-left:-2px;border-radius:2px;background:#fff;animation:cueWheel 1.7s var(--ease) infinite}
+@keyframes cueWheel{0%{transform:translateY(0);opacity:1}70%{transform:translateY(13px);opacity:0}100%{transform:translateY(13px);opacity:0}}
 @media (max-width:700px){.cue{display:none}.facts{gap:10px}.facts li{padding:14px 16px}.hero-copy::before{inset:-60px -30px -40px -30px}}
 
 /* ---------- latar ---------- */
@@ -443,7 +446,9 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50% 50%
 .view-btn svg{width:18px;height:18px}
 .view-btn:hover,.view-btn[aria-pressed="true"]{background:var(--gold);color:var(--ink)}
 @media (max-width:700px){.view-btn span{display:none}.view-btn{padding:11px}}
-body.focus main,body.focus footer,body.focus .annot{opacity:0;pointer-events:none}
+body.focus main,body.focus footer,body.focus .annot,body.focus .nav{opacity:0!important;pointer-events:none!important}
+/* mode lanskap: hanya pemandangan, rel suasana di kanan, dan jam; tombol keluar dibuat samar dan menjadi jelas saat disentuh */
+body.focus .view-btn{opacity:.4;background:rgba(22,48,42,.4)}body.focus .view-btn:hover,body.focus .view-btn:focus-visible{opacity:1}
 main,footer{transition:opacity .6s var(--ease)}
 
 /* ---------- anotasi yang menempel di objek 3D ---------- */
@@ -529,5 +534,5 @@ footer{position:relative;z-index:5;padding:30px var(--gutter) calc(34px + env(sa
   .split .w>span{transform:none;transition:none}
   .rbar{transform:none;transition:none}
   .vine-wrap svg.stalk path{stroke-dashoffset:0;transition:none}
-  .cue i::after{animation:none}
+  .cue i{animation:none}
 }
