@@ -212,7 +212,11 @@ def get_demo_playback_sequence(event_id: str) -> Dict[str, Any]:
 
 
 @router.get("/runs/{run_id}/export")
-def export_run_summary(run_id: str, format: str = Query("json", enum=["json", "html"])) -> Any:
+def export_run_summary(
+    run_id: str, 
+    format: str = Query("json", enum=["json", "html"]),
+    event_name: str = Query(None, description="Nama spesifik kejadian (misal nama gunung)")
+) -> Any:
     """
     Menghasilkan ringkasan skenario run satu halaman dalam format JSON atau HTML cetak.
     """
@@ -245,7 +249,7 @@ def export_run_summary(run_id: str, format: str = Query("json", enum=["json", "h
         "run_id": run_id,
         "hazard": data.get("hazard", "volcano"),
         "mode": data.get("mode", "auto"),
-        "scenario_label": data.get("scenario_label", "skenario"),
+        "scenario_label": event_name or data.get("scenario_label", "skenario"),
         "members_source": data.get("members_source", "synthetic_spread"),
         "n_members": data.get("n_members", 5),
         "horizon_hours": data.get("horizon_hours", 48),

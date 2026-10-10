@@ -291,7 +291,7 @@ export const App: React.FC = () => {
         hospital?.name || "RSUD Terdekat"
       );
       // Backend sudah mengembalikan dalam format [lat, lng], tidak perlu di-swap lagi
-      const geom: [number, number][] = res.geometry || [];
+      const geom: [number, number][] = res.coordinates || [];
       
       setEvacuationRoute({
         geometry: geom.length > 0 ? geom : [[sLat, sLng], [destLat, destLng]],
@@ -428,6 +428,7 @@ export const App: React.FC = () => {
           isRunning={isRunning}
           progressText={progressText}
           activeRunId={activeRunId}
+          simulatedEventName={simulatedEventName}
         />
 
         {/* Zona C: Timeline Player Melayang di Bawah Peta */}

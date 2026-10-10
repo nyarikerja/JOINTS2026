@@ -20,6 +20,7 @@ interface ControllerDockProps {
   isRunning: boolean;
   progressText: string;
   activeRunId?: string | null;
+  simulatedEventName?: string;
 }
 
 export const ControllerDock: React.FC<ControllerDockProps> = ({
@@ -35,7 +36,8 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
   onRunSimulation,
   isRunning,
   progressText,
-  activeRunId
+  activeRunId,
+  simulatedEventName
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<string>("ALL");
@@ -400,7 +402,8 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
               type="button"
               onClick={() => {
                 if (activeRunId) {
-                  window.open(`${CONFIG.API_BASE}/runs/${activeRunId}/export?format=html`, "_blank");
+                  const eventNameParam = simulatedEventName ? `&event_name=${encodeURIComponent(simulatedEventName)}` : "";
+                  window.open(`${CONFIG.API_BASE}/runs/${activeRunId}/export?format=html${eventNameParam}`, "_blank");
                 } else {
                   window.print();
                 }
