@@ -6,6 +6,9 @@
   var root=document.documentElement,reduce=US.reduce,T=US.T;
   var THREE=window.THREE,canvas=document.getElementById('gl'),renderer;
   if(!THREE){root.classList.add('nogl');return;}
+  /* cek WebGL lebih dulu agar tanpa WebGL tidak ada galat di konsol; latar lukisan statis dipakai (.nogl) */
+  var probeGL=null;try{var pc=document.createElement('canvas');probeGL=pc.getContext('webgl2')||pc.getContext('webgl');var lc=probeGL&&probeGL.getExtension('WEBGL_lose_context');if(lc)lc.loseContext();}catch(e){}
+  if(!probeGL){root.classList.add('nogl');return;}
   try{renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:false,alpha:false,stencil:false,powerPreference:'high-performance'});}
   catch(e){root.classList.add('nogl');return;}
   if(!renderer.getContext()){root.classList.add('nogl');return;}
@@ -61,7 +64,13 @@
   var scene=new THREE.Scene();
   var camera=new THREE.PerspectiveCamera(38,1,.5,500);
   camera.position.set(0,3,22);
-  var PR=Math.min(window.devicePixelRatio||1,mobile?1.25:1.75),Q=1,emaDt=.016,fc=0,noAdapt=/[?&]hq/.test(location.search);
+  /* kualitas grafis (dipilih lewat tombol Kualitas di navigasi, disimpan di localStorage 'hl-quality'):
+     high = resolusi penuh tanpa penurunan otomatis, auto = adaptif, lite = resolusi rendah + 30 fps,
+     static = hanya menggambar ulang saat suasana berubah (gulir), tanpa animasi menerus */
+  var QUAL='auto';try{QUAL=localStorage.getItem('hl-quality')||'auto';}catch(e){}
+  var STAT=QUAL==='static',LITE=QUAL==='lite';
+  function basePR(){var d=window.devicePixelRatio||1;return QUAL==='high'?Math.min(d,2):LITE?Math.min(d,1):STAT?Math.min(d,1.25):Math.min(d,mobile?1.25:1.75);}
+  var PR=basePR(),Q=LITE?.8:1,emaDt=.016,fc=0,noAdapt=/[?&]hq/.test(location.search)||QUAL==='high';
   renderer.setPixelRatio(PR);
   var shared={uTime:{value:0},uWind:{value:1},uGust:{value:.5},uPR:{value:PR},uPointer:{value:new THREE.Vector2(9,9)},uRes:{value:new THREE.Vector2(1,1)},
     uFlash:{value:0},uCS:{value:0},uSunCol:{value:new THREE.Color(1,.9,.7)},uBack:{value:0}};
@@ -460,17 +469,40 @@
   function bestX(L,a,b){var bx=a,bh=-99;for(var x=a;x<=b;x+=.25){var h=heightJS(L,x);if(h>bh){bh=h;bx=x;}}return bx;}
   function spr(k,w,h,L,x,dy,zo){var m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:TX[k],transparent:true,depthWrite:false,fog:false}));
     m.position.set(x,heightJS(L,x)+dy+h/2,L.z+zo);m.renderOrder=ridges.indexOf(L)+.5;scene.add(m);props.push(m);return m;}
+  /* teratai: dilukis sekali ke kanvas dalam ruang UV danau (lingkaran kolam tampak pipih karena sudut pandang rendah) */
+  function lotusTex(){
+    var W=1024,H=160,cv=document.createElement('canvas');cv.width=W;cv.height=H;var g=cv.getContext('2d'),R=rnd(31);
+    for(var i=0;i<8;i++){
+      var px=Math.sin(i*2.37+1)*.64,py=Math.cos(i*1.71+.4)*.56,pr=.07+.03*R();
+      var u=.5+px*.49,v=.55+py*.4,cx=u*W,cy=(1-v)*H,rx=pr*.49*W,ry=pr*.4*H,a0=R()*6.283;
+      g.save();g.translate(cx,cy);g.scale(rx,ry);
+      var gr=g.createRadialGradient(-.2,-.2,.05,0,0,1);gr.addColorStop(0,'#6f9a3d');gr.addColorStop(.7,'#3f6e2b');gr.addColorStop(1,'#2a4c1f');
+      g.fillStyle=gr;g.beginPath();g.moveTo(0,0);g.arc(0,0,1,a0+.32,a0+6.283-.32);g.closePath();g.fill();
+      g.strokeStyle='rgba(20,40,14,.35)';g.lineWidth=.04;for(var k=0;k<9;k++){var an=a0+.4+k*.65;g.beginPath();g.moveTo(0,0);g.lineTo(Math.cos(an)*.95,Math.sin(an)*.95);g.stroke();}
+      g.restore();
+      if(i%3===0){ /* bunga teratai merah muda, tampak dari samping */
+        var fx=cx+rx*.15,fy=cy-ry*.35,s=ry*1.1;
+        for(var p2=0;p2<5;p2++){var ang=-1.2+p2*.6;g.save();g.translate(fx,fy);g.rotate(ang*.5);g.scale(s*.42,s);
+          var pg=g.createLinearGradient(0,0,0,-1);pg.addColorStop(0,'#f3a5bd');pg.addColorStop(1,'#fff0f4');g.fillStyle=pg;
+          g.beginPath();g.moveTo(0,0);g.quadraticCurveTo(-.9,-.55,0,-1.1);g.quadraticCurveTo(.9,-.55,0,0);g.fill();g.restore();}
+        g.fillStyle='#f6d36b';g.beginPath();g.ellipse(fx,fy-s*.15,s*.12,s*.07,0,0,6.283);g.fill();
+      }
+    }
+    var t=new THREE.CanvasTexture(cv);t.anisotropy=4;return t;
+  }
+
   var R4=ridges[4],R5=ridges[5],lakeX=bestX(R4,2,12);
   [[-1.5,1],[7,.8],[12.5,1.1]].forEach(function(r){spr('rock',r[1],r[1]*.62,R5,r[0],-.12,.45);});
   [[13,0],[16.4,0]].forEach(function(f){spr('fence',3.4,.85,R5,f[0],-.15,.8);});
 
   /* danau: memantulkan langit, riak tertiup angin, kilau matahari, cincin hujan */
-  var lakeU=Object.assign({uTop:{value:new THREE.Color()},uMid:{value:new THREE.Color()},uBot:{value:new THREE.Color()},uTint:{value:C(0x2F5E66)},uFog:{value:new THREE.Color()},uFogK:{value:0},uRain:{value:0},uGlint:{value:0},uSunX:{value:.5},uShore:{value:new THREE.Color()}},
+  var lakeU=Object.assign({uTop:{value:new THREE.Color()},uMid:{value:new THREE.Color()},uBot:{value:new THREE.Color()},uTint:{value:C(0x2F5E66)},uFog:{value:new THREE.Color()},uFogK:{value:0},uRain:{value:0},uGlint:{value:0},uSunX:{value:.5},uShore:{value:new THREE.Color()},
+    tLotus:{value:lotusTex()},uRing:{value:[0,1,2].map(function(){return new THREE.Vector3(0,0,-99);})}},
     {uTime:shared.uTime,uWind:shared.uWind,uSunCol:shared.uSunCol,uFlash:shared.uFlash});
   var lake=new THREE.Mesh(new THREE.PlaneGeometry(9,1.5),new THREE.ShaderMaterial({uniforms:lakeU,transparent:true,depthWrite:false,
     vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
     fragmentShader:[
-      'varying vec2 vUv;uniform vec3 uTop,uMid,uBot,uTint,uFog,uSunCol,uShore;uniform float uFogK,uRain,uGlint,uSunX,uTime,uWind,uFlash;',
+      'varying vec2 vUv;uniform vec3 uTop,uMid,uBot,uTint,uFog,uSunCol,uShore;uniform float uFogK,uRain,uGlint,uSunX,uTime,uWind,uFlash;uniform vec3 uRing[3];uniform sampler2D tLotus;',
       'float lh(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}',
       'float ln(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(lh(i),lh(i+vec2(1.,0.)),f.x),mix(lh(i+vec2(0.,1.)),lh(i+vec2(1.,1.)),f.x),f.y);}',
       'void main(){vec2 p=(vUv-vec2(.5,.55))/vec2(.49,.4);float r=length(p);if(r>1.)discard;',
@@ -480,11 +512,64 @@
       'vec3 c=mix(uTint*(.55+.45*refl),refl,.35+.45*far);c*=.92+.16*(rip-.5);',
       'float gl=smoothstep(.7,.95,rip)*exp(-pow((vUv.x-uSunX)*2.6,2.))*(.4+.6*far);c+=uSunCol*gl*uGlint*1.8;',
       'if(uRain>.01){vec2 g=vUv*vec2(26.,7.);vec2 id=floor(g);vec2 f=fract(g)-.5;float t=fract(uTime*.8+lh(id)*7.);float rr=length(f*vec2(1.,2.6));c+=smoothstep(.05,0.,abs(rr-t*.42))*(1.-t)*uRain*.3;}',
+      /* cincin riak saat koi menyentuh permukaan (tanpa percabangan: aman untuk kompilator shader D3D) */
+      'vec3 g0=uRing[0],g1=uRing[1],g2=uRing[2];vec3 ag=vec3(uTime)-vec3(g0.z,g1.z,g2.z);vec3 ee=vec3(length(p-g0.xy),length(p-g1.xy),length(p-g2.xy));',
+      'vec3 rg=smoothstep(.014,0.,abs(ee-ag*.11))*clamp(1.-ag/3.2,0.,1.)*step(0.,ag);c+=vec3(.92,.96,1.)*(rg.x+rg.y+rg.z)*.55*(.6+.4*far);',
+      /* teratai (daun bertakik + bunga) dilukis sekali ke tekstur, mengapung pelan */
+      'vec4 lt=texture2D(tLotus,vUv+vec2(sin(uTime*.31)*.0015,cos(uTime*.23)*.004));c=mix(c,lt.rgb*(uTint*.45+.6),lt.a);',
       'c+=vec3(.5,.55,.7)*uFlash*.3;',
       'float sh=smoothstep(.86,.99,r);c=mix(c,uShore,sh*.85);',
       'c=mix(c,uFog,uFogK);gl_FragColor=vec4(c,smoothstep(1.,.95,r));}'
     ].join('\n')}));
   lake.position.set(lakeX,heightJS(R4,lakeX)-1.25+.75,R4.z+.4);lake.renderOrder=4.6;scene.add(lake);
+
+  /* koi di danau: perilaku diadaptasi dari utsuroi src/garden/koi.js (MIT, (c) 2026 Bill Chan) di ruang kolam 2D:
+     target acak, menjauhi tepi, berkelompok longgar, sesekali naik ke permukaan dan meninggalkan cincin riak (uRing) */
+  /* tiap koi = satu bidang kecil di depan danau dengan shader sederhana (tanpa loop): tubuh bergelombang ke ekor,
+     corak dari derau, makin samar saat menyelam, dan bayangan lembut di dasar */
+  var koiF=['uniform vec4 uK,uKB;uniform vec3 uTint,uFog;uniform float uFogK,uTime;varying vec2 vP;',
+    'float kh(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}',
+    'float kn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(kh(i),kh(i+vec2(1.,0.)),f.x),mix(kh(i+vec2(0.,1.)),kh(i+vec2(1.,1.)),f.x),f.y);}',
+    'float body(vec2 q){float wd=.24*sqrt(max(0.,1.-pow(q.x*.92+.1,2.)));return smoothstep(.05,-.03,abs(q.y)-wd)*step(-1.,q.x)*step(q.x,1.);}',
+    'void main(){float rr=length(vP);if(rr>.9)discard;vec2 d=(vP-uK.xy)*vec2(1.,.13);float ca=cos(uK.z),sa=sin(uK.z);',
+    'vec2 q=vec2(ca*d.x+sa*d.y,-sa*d.x+ca*d.y)/uKB.z;q.y+=sin(q.x*7.-uTime*(5.+uKB.w)+uKB.y)*.09*smoothstep(.4,-1.,q.x);',
+    'float bd=body(q);float tl=smoothstep(.05,-.02,abs(q.y)-(-q.x-.9)*.75)*step(q.x,-.9)*step(-1.4,q.x);float fm=max(bd,tl*.8);',
+    'float shd=body(q+vec2(.25,.35))*(1.-fm);',
+    'float n=kn(q*vec2(2.2,3.)+uKB.y*3.1),n2=kn(q*vec2(4.,5.)-uKB.y);vec3 W=vec3(.95,.92,.86),Rd=vec3(.86,.2,.07),Bk=vec3(.05,.05,.06),kc=W;float k=uK.w;',
+    'if(k<.5)kc=mix(W,Rd,step(.5,n));else if(k<1.5){kc=mix(W,Rd,step(.52,n));kc=mix(kc,Bk,step(.72,n2));}else if(k<2.5){kc=mix(Bk,Rd,step(.5,n));kc=mix(kc,W,step(.66,n2));}',
+    'else if(k<3.5)kc=vec3(.98,.68,.16);else if(k<4.5)kc=vec3(.42,.27,.13);else kc=mix(vec3(.4,.5,.62),Rd,step(.4,-q.y*3.+.5));',
+    'kc=mix(kc,W,tl*.6)*(uTint*.5+.55);float far=clamp(vP.y*.5+.5,0.,1.);float vis=(.5+.5*uKB.x)*(1.-far*.4)*smoothstep(.9,.8,rr);',
+    'float a=fm*vis*(.75+.25*uKB.x);vec3 col=kc;float sa2=shd*.25*(1.-uKB.x*.5)*(1.-far*.5)*smoothstep(.9,.8,rr);',
+    'col=mix(vec3(.02,.06,.07),col,a/(a+sa2+1e-4));a=max(a,sa2);if(a<.004)discard;col=mix(col,uFog,uFogK);gl_FragColor=vec4(col,a);}'].join('\n');
+  var koiV='uniform vec2 uLake;varying vec2 vP;void main(){vec4 w=modelMatrix*vec4(position,1.);vP=vec2((w.x-uLake.x)/(.49*9.),((w.y-uLake.y)/1.5-.05)/.4);gl_Position=projectionMatrix*viewMatrix*w;}';
+  var koiM=[];
+  for(var km=0;km<6;km++){
+    var ku={uK:{value:new THREE.Vector4(9,9,0,0)},uKB:{value:new THREE.Vector4(0,0,.085,0)},uTint:lakeU.uTint,uFog:lakeU.uFog,uFogK:lakeU.uFogK,uTime:shared.uTime,uLake:{value:new THREE.Vector2(lake.position.x,lake.position.y)}};
+    var kmesh=new THREE.Mesh(new THREE.PlaneGeometry(1.5,.32),new THREE.ShaderMaterial({uniforms:ku,vertexShader:koiV,fragmentShader:koiF,transparent:true,depthWrite:false}));
+    kmesh.renderOrder=4.605;kmesh.frustumCulled=false;scene.add(kmesh);koiM.push(kmesh);
+  }
+  var koiA=[],ringSlot=0,KR=rnd(77);
+  for(var ki0=0;ki0<6;ki0++){var a0=KR()*6.283,r0=KR()*.5;koiA.push({x:Math.cos(a0)*r0,y:Math.sin(a0)*r0,vx:0,vy:0,ang:KR()*6.283,tx:0,ty:0,rise:0,riseT:4+KR()*14,kind:[0,3,1,0,2,5][ki0],ph:KR()*20});}
+  function koiTarget(k){var a=KR()*6.283,r=Math.sqrt(KR())*.62;k.tx=Math.cos(a)*r;k.ty=Math.sin(a)*r;}
+  koiA.forEach(koiTarget);
+  function koiFrame(t,dt){
+    if(dt>.2)dt=.2;
+    for(var i=0;i<koiA.length;i++){
+      var k=koiA[i],dx=k.tx-k.x,dy=k.ty-k.y,dl=Math.hypot(dx,dy)||1;
+      if(dl<.08||KR()<dt*.06)koiTarget(k);
+      var ax=dx/dl*.09,ay=dy/dl*.09,rr=Math.hypot(k.x,k.y);
+      if(rr>.66){ax-=k.x/rr*(rr-.66)*1.6;ay-=k.y/rr*(rr-.66)*1.6;}
+      for(var j=0;j<koiA.length;j++){if(j===i)continue;var o=koiA[j],ox=o.x-k.x,oy=o.y-k.y,ol=Math.hypot(ox,oy);
+        if(ol<.1){ax-=ox/(ol+.01)*.06;ay-=oy/(ol+.01)*.06;}else if(ol<.45){ax+=ox*.02;ay+=oy*.02;}}
+      k.vx+=(ax-k.vx)*Math.min(1,dt*.9);k.vy+=(ay-k.vy)*Math.min(1,dt*.9);
+      k.x+=k.vx*dt;k.y+=k.vy*dt;
+      var ta=Math.atan2(k.vy,k.vx),da=Math.atan2(Math.sin(ta-k.ang),Math.cos(ta-k.ang));k.ang+=da*Math.min(1,dt*2.5);
+      k.riseT-=dt;if(k.riseT<0){k.rise=1;k.riseT=10+KR()*20;}
+      if(k.rise>0){var b4=k.rise;k.rise-=dt*.3;if(b4>=.5&&k.rise<.5){lakeU.uRing.value[ringSlot++%3].set(k.x,k.y,t);}}
+      var mu=koiM[i].material.uniforms;mu.uK.value.set(k.x,k.y,k.ang,k.kind);mu.uKB.value.set(Math.sin(Math.max(0,k.rise)*Math.PI),k.ph,.1,Math.hypot(k.vx,k.vy)*20);
+      koiM[i].position.set(lake.position.x+k.x*.49*9,lake.position.y+(k.y*.4+.05)*1.5,lake.position.z+.02);
+    }
+  }
 
   /* ---------- bunga liar: rumpun lukisan per spesies, bergoyang tertiup angin ----------
      Atlas 8 sel (128x256): lupin merah muda, lupin ungu, poppy, aster putih, buttercup, violet, kosmos, calendula.
@@ -1243,6 +1328,74 @@
       }};
   })();}catch(err){post=null;}
 
+  /* ---------- judul 3D: berdiri di antara pegunungan jauh dan gunung api ----------
+     Huruf dilukis ke kanvas dengan sisi tebal (ekstrusi) dan sorot cahaya, lalu ditaruh sebagai bidang di kedalaman z=-74:
+     menara, pepohonan, dan gunung api di depannya menutupi sebagian huruf. Saat menggulir, judul tenggelam ke balik bukit.
+     Posisi dihitung dari kotak teks <h1> di DOM (teks DOM tetap ada untuk pembaca layar dan SEO, hanya dibuat transparan). */
+  var title=(function(){
+    var h1a=document.querySelector('.hero-brand .h1a');if(!h1a||STAT&&mobile)return null;
+    var TZ=-74,u={tMap:{value:null},uTint:{value:new THREE.Color(1,1,1)},uFog:{value:new THREE.Color()},uFogK:{value:0},uA:{value:0}};
+    var mesh=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.ShaderMaterial({uniforms:u,transparent:true,depthWrite:false,
+      vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+      fragmentShader:'uniform sampler2D tMap;uniform vec3 uTint,uFog;uniform float uFogK,uA;varying vec2 vUv;void main(){vec4 c=texture2D(tMap,vUv);if(c.a<.004)discard;vec3 col=c.rgb*uTint;col=mix(col,uFog*c.a,uFogK);gl_FragColor=vec4(col,c.a)*uA;}',
+      premultipliedAlpha:true}));
+    mesh.frustumCulled=false;mesh.renderOrder=2.8;mesh.visible=false;scene.add(mesh);
+    var ref=new THREE.PerspectiveCamera(),ray=new THREE.Vector3(),tex=null,box=null,baseY=0,hWorld=1,ok=false;
+    function toWorld(sx,sy,out){
+      ray.set(sx/innerWidth*2-1,-(sy/innerHeight)*2+1,.5).unproject(ref).sub(ref.position).normalize();
+      var t=(TZ-ref.position.z)/ray.z;return out.copy(ref.position).addScaledVector(ray,t);
+    }
+    function draw(r){
+      var fs=parseFloat(getComputedStyle(h1a).fontSize),k=Math.min(2,2048/(r.width*1.2)),W=Math.ceil(r.width*k),H=Math.ceil(r.height*k);
+      var D=Math.round(fs*k*.075),pad=Math.round(D*1.4),cv=document.createElement('canvas');cv.width=W+pad*2;cv.height=H+pad*2;
+      var g=cv.getContext('2d'),txt=h1a.textContent,f='800 '+(fs*k)+'px Manrope, system-ui, sans-serif',ls=-.035*fs*k;
+      /* garis dasar diukur dari DOM supaya huruf kanvas jatuh tepat di posisi huruf DOM */
+      var probe=document.createElement('span');probe.style.cssText='display:inline-block;width:0;height:0;vertical-align:baseline';h1a.appendChild(probe);
+      var base=(probe.getBoundingClientRect().top-h1a.getBoundingClientRect().top)*k;h1a.removeChild(probe);
+      g.font=f;g.textBaseline='alphabetic';
+      function run(dx,dy){var x=pad+dx;for(var i=0;i<txt.length;i++){g.fillText(txt[i],x,pad+base+dy);x+=g.measureText(txt[i]).width+ls;}}
+      /* sisi tebal: lapisan bergeser ke kanan bawah, makin dalam makin gelap */
+      for(var i=D;i>0;i--){var t=i/D;g.fillStyle='rgb('+Math.round(14+10*(1-t))+','+Math.round(34+18*(1-t))+','+Math.round(30+14*(1-t))+')';run(i*.55,i*.85);}
+      /* muka huruf: gradasi hijau tua dengan sorot hangat dari kiri atas */
+      var gr=g.createLinearGradient(0,pad+base-fs*k*.75,0,pad+base);gr.addColorStop(0,'#2c5a4c');gr.addColorStop(.55,'#1d4237');gr.addColorStop(1,'#14302a');
+      g.fillStyle=gr;run(0,0);
+      g.globalCompositeOperation='source-atop';
+      var hl=g.createLinearGradient(pad,pad,pad+W*.6,pad+H);hl.addColorStop(0,'rgba(255,226,170,.38)');hl.addColorStop(.45,'rgba(255,226,170,.06)');hl.addColorStop(1,'rgba(255,226,170,0)');
+      g.fillStyle=hl;g.fillRect(0,0,cv.width,pad+base-fs*k*.02);
+      g.globalCompositeOperation='source-over';
+      g.lineWidth=Math.max(1,k*1.1);g.strokeStyle='rgba(255,240,205,.32)';
+      (function(){var x=pad;for(var i=0;i<txt.length;i++){g.strokeText(txt[i],x,pad+base);x+=g.measureText(txt[i]).width+ls;}})();
+      if(tex)tex.dispose();tex=new THREE.CanvasTexture(cv);tex.premultiplyAlpha=true;tex.anisotropy=4;u.tMap.value=tex;
+      return {pad:pad/k,W:cv.width/k,H:cv.height/k};
+    }
+    function place(){
+      var hero=document.getElementById('beranda');
+      /* layar potret: matahari terbit tepat di belakang judul sehingga pucat; pakai judul DOM yang tajam */
+      if(!hero||camera.aspect<.9){ok=false;root.classList.remove('gltitle');mesh.visible=false;return;}
+      var sy=scrollY;ref.copy(camera);ref.fov=camera.fov;ref.aspect=camera.aspect;ref.position.set(0,3.2,22);
+      ref.lookAt(0,4.8+.12*1.5+(camera.aspect<1?(1-camera.aspect)*10:0),0);ref.updateProjectionMatrix();ref.updateMatrixWorld();
+      /* posisi dari offset tata letak (tidak terpengaruh animasi masuk yang menggeser hero sementara) */
+      var ox=0,oy=0,el=h1a;while(el){ox+=el.offsetLeft;oy+=el.offsetTop;el=el.offsetParent;}
+      var r={left:ox,top:oy,width:h1a.offsetWidth,height:h1a.offsetHeight},top=oy,d=draw(r);
+      var a=toWorld(r.left-d.pad,top-d.pad,new THREE.Vector3()),b=toWorld(r.left-d.pad+d.W,top-d.pad+d.H,new THREE.Vector3());
+      mesh.scale.set(b.x-a.x,a.y-b.y,1);mesh.position.set((a.x+b.x)/2,(a.y+b.y)/2,TZ);baseY=mesh.position.y;hWorld=a.y-b.y;
+      ok=true;root.classList.add('gltitle');US.dirty=true;
+    }
+    function frame(){
+      if(!ok){mesh.visible=false;return;}
+      /* tenggelam ke balik bukit: 0 di puncak halaman, penuh setelah ~70% tinggi layar digulir */
+      var k=Math.min(1,Math.max(0,scrollY/(innerHeight*.7))),e=k*k*(3-2*k);
+      mesh.position.y=baseY-e*hWorld*3.2;mesh.visible=k<1;
+      u.uA.value=1;u.uTint.value.copy(cur.lightCol).multiplyScalar(.5*cur.lI).add(colB.copy(cur.amb).multiplyScalar(.42*cur.aI)).addScalar(.1);
+      u.uFog.value.copy(ridges[1].u.uFog.value);u.uFogK.value=ridges[2].u.uFogK.value*.1;
+    }
+    var rt=0;function later(){clearTimeout(rt);rt=setTimeout(place,120);}
+    if(document.fonts&&document.fonts.load)document.fonts.load('800 100px Manrope').then(place,place);else place();
+    setTimeout(place,1600);
+    addEventListener('resize',later);
+    return {frame:frame,place:later};
+  })();
+
   /* ---------- ukuran dan tata letak ---------- */
   var aspect=1.6,crY=0,lavaPt=new THREE.Vector3(),mudPt=new THREE.Vector3();
   function resize(){
@@ -1402,12 +1555,13 @@
   var aV=new THREE.Vector3();
 
   /* ---------- loop (dipanggil dari js/page.js) ---------- */
-  var last=performance.now(),time=reduce?7:0,flash=0,nextFlash=1.5,roll=0,lastDraw=0;
+  var last=performance.now(),time=(reduce||STAT)?7:0,flash=0,nextFlash=1.5,roll=0,lastDraw=0;
   US.frame=function(now){
-    var dt=Math.min(.05,(now-last)/1000);last=now;fdt=reduce?1:dt;
+    if(LITE&&now-lastDraw<31&&!US.dirty)return;
+    var dt=Math.min(.05,(now-last)/1000);last=now;fdt=(reduce||STAT)?1:dt;
     if(document.hidden)return;
-    /* mode gerak dikurangi: gambar ulang hanya saat ada perubahan */
-    if(reduce&&!US.dirty&&now-lastDraw<1000)return;
+    /* mode gerak dikurangi / statis: gambar ulang hanya saat ada perubahan */
+    if((reduce||STAT)&&!US.dirty&&now-lastDraw<1000)return;
     US.dirty=false;lastDraw=now;
     emaDt+=(dt-emaDt)*.05;
     if(++fc%90===0&&!noAdapt){if(emaDt>.034&&Q>.5){Q=Math.max(.5,Q-.15);resize();}else if(emaDt<.018&&Q<1&&fc%360===0){Q=Math.min(1,Q+.1);resize();}}
@@ -1417,7 +1571,7 @@
     /* jam langit memakai pegas teredam agar perpindahan siang-malam mengalir */
     S.hv+=((T.hour-S.hour)*22-S.hv*9.4)*dt;S.hour+=S.hv*dt;US.hour=S.hour;
     S.km+=(T.km-S.km)*kf;S.wind+=(T.wind-S.wind)*kf;
-    if(!reduce)time+=dt;
+    if(!(reduce||STAT))time+=dt;
     pulse=.55+.45*Math.sin(time*.55)*Math.sin(time*.23+1.3);
     var flow=smoothstep01(.55,.95,S.ash)*Math.pow(Math.max(0,Math.sin(time*.31)*Math.sin(time*.17+2.1)+.6),.7);
     updatePyro(time,Math.min(1,flow*1.4));
@@ -1443,7 +1597,7 @@
     skyU.uFlash.value=fv;boltM.opacity=Math.min(1,fv*1.4);shared.uFlash.value=fv*S.storm;
     if(!reduce&&S.ash>.7&&time>nextVl){vlT=1;nextVl=time+.8+Math.random()*3.5;var H=plumeU.uH.value;vlPos.set(coneX+(Math.random()-.5)*H*.2,crY+H*(.25+Math.random()*.5),VZ+2);vlight.position.copy(vlPos);}
     vlT*=Math.exp(-dt*9);vlU.uI.value=vlT*(.6+.4*Math.sin(time*80))*smoothstep01(.6,.9,S.ash);
-    apply(time);folkFrame(Math.max(0,time));dolFrame(time);
+    apply(time);folkFrame(Math.max(0,time));dolFrame(time);koiFrame(time,fdt);if(title)title.frame();
     var H2=plumeU.uH.value;
     anchor('plume',aV.set(coneX+S.wind*H2*.16,crY+H2*.62,VZ+1),S.ash>.6);
     anchor('lava',lavaPt,volU.uLava.value>.5&&S.mud<.3&&S.ash<.6);

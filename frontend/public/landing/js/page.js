@@ -37,6 +37,7 @@
     aBtn.addEventListener('click',function(){
       if(!window.HLAudio)return;
       var on=window.HLAudio.toggle();
+      try{localStorage.setItem('hl-sound',on?'on':'off');}catch(e){}
       aBtn.setAttribute('aria-pressed',on?'true':'false');
       aBtn.classList.toggle('playing',on);
       aBtn.setAttribute('aria-label',on?'Matikan suara suasana alam':'Nyalakan suara suasana alam');
@@ -71,8 +72,10 @@
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&mNav.classList.contains('open')){menu(false);mBtn.focus();}});
 
   /* tautan luar: isi LINKS, tombolnya otomatis tampil */
-  var LINKS={app:'',repo:'',email:''};
+  var LINKS={app:'/app/',repo:'https://github.com/nyarikerja/JOINTS2026',email:''};
   $$('[data-link]').forEach(function(a){var k=a.getAttribute('data-link'),v=LINKS[k];if(v){a.href=(k==='email'?'mailto:':'')+v;a.hidden=false;}});
+
+  /* tombol menuju aplikasi ditangani js/portal.js (gerbang dimensi ke /app/, tempat loader sungai berjalan) */
 
   /* ---------- gulir halus (Lenis). Lompatan lewat menu jadi time-lapse sinematik ---------- */
   var lenis=null;
