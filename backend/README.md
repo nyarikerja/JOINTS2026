@@ -15,7 +15,7 @@ graph TD
         A1[PVMBG MAGMA: Elevasi, Radius KRB, VONA]
         A2[NASA FIRMS: Deteksi Titik Api NRT VIIRS / MODIS]
         A3[Open-Meteo Ensemble: Angin Multi-Aras u, v & Hujan]
-        A4[WorldPop: Grid Demografi Resolusi 100m]
+        A4[WorldPop 2020: Grid Penduduk 1 km]
         A5[Kemenkes & Kemendikbud: Faskes & Sekolah Posko]
     end
 
@@ -36,9 +36,9 @@ graph TD
     subgraph Impact["4. Estimasi Dampak & Protokol Aksi Dini"]
         D1[Agregasi Gaussian & Poligon Kontur P5 - P50 - P95]
         D2[Hierarki Spasial: Kecamatan sebagai Wadah Induk]
-        D3[Triase Sekolah SPAB: Mandat PJJ Daring >= 40%]
+        D3[Triase Sekolah: Pertimbangkan PJJ >= 90%, Batasi Luar Ruang >= 50%]
         D4[Routing Jalan Raya Riil OSRM ke RS Rujukan Aman]
-        D5[AI Emergency Advisory Gemini: Siaran Pers & WhatsApp]
+        D5[Ringkasan AI Warga: Featherless Qwen3.6]
         D6[Mitigasi APD Medis N95, Larangan Softlens & Air Minum]
         D7[Ekspor Lembar Rencana Aksi Darurat Cetak A4 / PDF]
     end
@@ -87,7 +87,7 @@ pytest
 ruff check app tests
 ```
 
-*Status Verifikasi Saat Ini:* **37 passed in 5.47s**, 0 error, 0 warning linter.
+*Status Verifikasi Saat Ini (11 Okt 2026):* **40 passed**, 0 error linter (ruff F/E9).
 
 ---
 
@@ -181,10 +181,34 @@ classDiagram
     }
 ```
 
-* **70 Gunung Api Aktif Tipe A**: Terdaftar dengan elevasi puncak, koordinat kawah, radius KRB, dan status aktivitas PVMBG.
+* **70 Gunung Api**: Elevasi puncak, koordinat kawah, dan radius katalog; level aktivitas disalin dari MAGMA tiap jam (`app/services/magma_status.py`).
 * **36 Kawasan Hutan & Lahan Gambut**: Terdaftar dengan koordinat sentroid, luas hektare, tingkat kerawanan, dan poligon batas spasial resmi.
 * **2.039 Fasilitas Publik Nasional**:
   * 1.332 Sekolah (SDN, SMPN, SMAN, SMKN) sebagai basis Tempat Evakuasi Sementara (TES) BPBD di 38 provinsi.
   * 628 Fasilitas Kesehatan (RSUP, RSUD rujukan, dan Puskesmas ring-1 tanggap darurat).
   * 79 Bandar Udara (komersial internasional, domestik utama, dan perintis Nusantara).
 * **1.680 Titik Api Satelit**: Deteksi sensor satelit NASA FIRMS VIIRS & MODIS.
+
+## Status Data Langsung (diperbarui 11 Oktober 2026)
+
+Seluruh angka di aplikasi `/app/` berasal dari sumber langsung; tidak ada data contoh atau nilai karangan.
+
+| Data | Sumber | Pembaruan |
+| :--- | :--- | :--- |
+| Level gunung api (I–IV) | MAGMA Indonesia, PVMBG (halaman tingkat aktivitas) | tiap jam |
+| Tinggi puncak abu & waktu erupsi | VONA MAGMA per gunung | tiap 10 menit saat diminta |
+| Titik api & FRP | NASA FIRMS NRT: VIIRS S-NPP, NOAA-20, NOAA-21, MODIS | tiap 15 menit (jendela 7 hari) |
+| Angin & hujan simulasi | Open-Meteo Ensemble, ECMWF IFS 0,25° (51 anggota), mulai jam awal run | per run |
+| Grid angin nasional | Open-Meteo forecast | tiap 3 jam |
+| Penduduk | WorldPop 2020, 1 km, UN-adjusted (diunduh otomatis) | statis (sensus) |
+| Sekolah, faskes, bandara | OpenStreetMap via Overpass, cache per tile 1° | unduh latar, 30 hari |
+| Ringkasan AI warga | LLM Featherless (Qwen3.6) dari fakta di atas | per permintaan |
+
+Aturan yang menjaga konsistensi antar fitur:
+- **Mode Kondisi Nyata, sumber bertingkat.** Semua gunung api dan kawasan hutan katalog dapat disimulasikan:
+  - Gunung api: (1) VONA MAGMA berabu ≤ 24 jam, erupsi sedang teramati, H+0 = waktu VONA; (2) VONA berabu terakhir di riwayat MAGMA; (3) erupsi Holosen terakhir di Smithsonian GVP, tinggi kolom dari VEI (Newhall & Self 1982); (4) tanpa catatan apa pun, VEI asumsi 2. Tingkat 2–4 memakai cuaca saat ini dan berlabel `skenario dari erupsi terakhir ...`.
+  - Kebakaran: (1) FIRMS 24 jam; (2) hari kebakaran terakhir dalam 7 hari; (3) hari kebakaran terakhir di arsip VIIRS S-NPP hingga 2 tahun. Tingkat 2–3 berlabel `skenario dari kebakaran terakhir terdeteksi`.
+  - Sumber yang dipakai tampil di `source_info` (dengan `tier`) dan di kartu "Data masukan run".
+- **FRP** dirata-ratakan per lintasan satelit sebelum dipakai untuk emisi dan karbon (FRP adalah daya sesaat; menjumlahkan semua lintasan menghitung api yang sama berkali-kali).
+- **Ambang fasilitas** sama di backend dan UI: peluang ≥ 90% pertimbangkan PJJ daring, ≥ 50% batasi kegiatan luar ruang, RS dengan peluang < 10% dianggap di luar jalur paparan. Rujukan RS tidak menyeberang ke pulau lain.
+- Informasi yang datanya belum ada (kategori ISPU, lahan pertanian dan sumber air, kurva sensitivitas) tidak ditampilkan di UI.

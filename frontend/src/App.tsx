@@ -8,11 +8,13 @@ import { AnalyticsDrawer } from "./components/layout/AnalyticsDrawer";
 import { LegendModal } from "./components/layout/LegendModal";
 import { api } from "./services/api";
 import { isLoaderActive } from "./utils/bootProgress";
+import { useLocationWatch } from "./utils/locationWatch";
 import type {
   HazardType,
   ModelingMode,
   SimulationOverrides,
   SimulationPayload,
+  SimulationResponse,
   ImpactResponse,
   FacilitiesImpactResponse,
   ValidationResponse,
@@ -31,12 +33,14 @@ export const App: React.FC = () => {
   });
 
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const [runInfo, setRunInfo] = useState<SimulationResponse | null>(null);
+  const [simError, setSimError] = useState<string | null>(null);
   const [currentHour, setCurrentHour] = useState<number>(0);
   const [hourlyTiersCache, setHourlyTiersCache] = useState<Record<string | number, any> | null>(null);
 
   const [impactData, setImpactData] = useState<ImpactResponse | null>(null);
   const [facilitiesData, setFacilitiesData] = useState<FacilitiesImpactResponse | null>(null);
-  const [validationData, setValidationData] = useState<ValidationResponse | null>(null);
+  const [validationData] = useState<ValidationResponse | null>(null);
   const [advisoryData, setAdvisoryData] = useState<any>(null);
 
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
@@ -44,6 +48,8 @@ export const App: React.FC = () => {
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [progressText, setProgressText] = useState<string>("");
   const [loadingProgress, setLoadingProgress] = useState<number>(0);
+  const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null);
+  const [selectedPlumeTier, setSelectedPlumeTier] = useState<string | null>(null);
 
   const [evacuationRoute, setEvacuationRoute] = useState<{
     geometry: [number, number][];
@@ -51,9 +57,11 @@ export const App: React.FC = () => {
     distanceKm?: number;
     durationMin?: number;
     facilityId?: string;
+    originName?: string;
+    destName?: string;
   } | null>(null);
 
-  const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; _t: number } | null>(null);
+  const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; _t: number; name?: string; type?: "school" | "hospital" | string } | null>(null);
   const [resetViewTrigger, setResetViewTrigger] = useState<number>(0);
   const [isMapReady, setIsMapReady] = useState<boolean>(false);
   // Loader sungai (public/loader) menggantikan overlay "Memuat Data Spasial" selama masih tampil
@@ -66,59 +74,96 @@ export const App: React.FC = () => {
   }, [riverLoaderOn]);
   const [selectedEventName, setSelectedEventName] = useState<string>("G. Anak Krakatau");
 
-  // Pulihkan sesi simulasi terakhir dari localStorage saat pertama kali dimuat
+  // Pulihkan run dari tautan (?run=...) atau sesi terakhir (localStorage) saat pertama kali dimuat
   React.useEffect(() => {
     const restoreLastSession = async () => {
-      const savedRunId = localStorage.getItem("lastRunId");
-      const savedEventId = localStorage.getItem("lastEventId");
-      const savedEventName = localStorage.getItem("lastEventName");
-      const savedHazard = localStorage.getItem("lastHazard") as HazardType;
-      
-      if (savedRunId && savedEventId) {
-        setEventId(savedEventId);
-        if (savedHazard) setHazard(savedHazard);
-        if (savedEventName) setSelectedEventName(savedEventName);
-        
-        setActiveRunId(savedRunId);
-        setSimulatedEventName(savedEventName || savedEventId);
-        setCurrentHour(48);
-        
-        try {
-          const [impact, facilities, validation, advisory, tier48] = await Promise.all([
-            api.getImpact(savedRunId).catch(() => null),
-            api.getFacilitiesImpacted(savedRunId).catch(() => null),
-            api.getValidation(savedEventId).catch(() => null),
-            api.getEmergencyAdvisory(savedRunId).catch(() => null),
-            api.getTiersAtHour(savedRunId, 48).catch(() => null)
-          ]);
-          
-          if (tier48) setHourlyTiersCache({ 48: tier48 });
-          if (impact) setImpactData(impact);
-          if (facilities) setFacilitiesData(facilities);
-          if (validation) setValidationData(validation);
-          if (advisory) setAdvisoryData(advisory);
-        } catch (e) {
-          console.error("Gagal memuat sesi sebelumnya", e);
+      const urlRun = new URLSearchParams(window.location.search).get("run");
+      const savedRunId = urlRun || localStorage.getItem("lastRunId");
+      if (!savedRunId) return;
+      try {
+        const info = await api.getRun(savedRunId).catch(() => null);
+        if (!info) {
+          // Run sudah tidak ada di server: jangan tampilkan sesi kosong
+          ["lastRunId", "lastEventId", "lastEventName", "lastHazard"].forEach((k) => localStorage.removeItem(k));
+          if (urlRun) setSimError(`Run ${urlRun} tidak ditemukan di server.`);
+          return;
         }
+        const name = info.event_name || info.event_id || savedRunId;
+        setHazard(info.hazard);
+        if (info.event_id && !info.event_id.startsWith("custom_")) setEventId(info.event_id);
+        setSelectedEventName(name);
+        setSimulatedEventName(name);
+        setActiveRunId(savedRunId);
+        setRunInfo(info);
+        setCurrentHour(48);
+        const [impact, facilities, advisory, allTiers] = await Promise.all([
+          api.getImpact(savedRunId).catch(() => null),
+          api.getFacilitiesImpacted(savedRunId).catch(() => null),
+          api.getEmergencyAdvisory(savedRunId).catch(() => null),
+          api.getAllTiers(savedRunId).catch(() => null)
+        ]);
+        if (allTiers && typeof allTiers === "object") {
+          const normalized: Record<string | number, any> = {};
+          Object.entries(allTiers).forEach(([k, val]) => {
+            normalized[k] = val;
+            normalized[Number(k)] = val;
+            normalized[`hour_${k}`] = val;
+          });
+          setHourlyTiersCache(normalized);
+        }
+        if (impact) setImpactData(impact);
+        if (facilities) setFacilitiesData(facilities);
+        if (advisory) setAdvisoryData(advisory);
+        if (urlRun) setIsDrawerOpen(true);
+      } catch (e) {
+        console.error("Gagal memuat sesi sebelumnya", e);
       }
     };
     restoreLastSession();
   }, []);
 
-  // Ambil poligon sebaran jam tertentu saat activeRunId aktif atau currentHour berubah
+  // Tautan berbagi: URL selalu memuat run yang aktif
+  React.useEffect(() => {
+    const url = new URL(window.location.href);
+    if (activeRunId) url.searchParams.set("run", activeRunId);
+    else url.searchParams.delete("run");
+    window.history.replaceState(null, "", url.toString());
+  }, [activeRunId]);
+
+  useLocationWatch();
+
+  // Ambil seluruh 48 jam poligon sebaran secara instan agar animasi timeline mulus tanpa kedip
   React.useEffect(() => {
     if (!activeRunId) return;
 
-    api.getTiersAtHour(activeRunId, currentHour)
-      .then((geo) => {
-        setHourlyTiersCache((prev) => ({
-          ...(prev || {}),
-          [currentHour]: geo,
-          [`hour_${currentHour}`]: geo
-        }));
+    api.getAllTiers(activeRunId)
+      .then((allTiers) => {
+        if (allTiers && typeof allTiers === "object") {
+          const normalized: Record<string | number, any> = {};
+          Object.entries(allTiers).forEach(([k, val]) => {
+            normalized[k] = val;
+            normalized[Number(k)] = val;
+            normalized[`hour_${k}`] = val;
+          });
+          setHourlyTiersCache((prev) => ({
+            ...(prev || {}),
+            ...normalized
+          }));
+        }
       })
-      .catch((err) => console.error("Gagal memuat poligon jam", currentHour, err));
-  }, [activeRunId, currentHour]);
+      .catch((err) => {
+        console.warn("Fallback load single hour", err);
+        api.getTiersAtHour(activeRunId, currentHour)
+          .then((geo) => {
+            setHourlyTiersCache((prev) => ({
+              ...(prev || {}),
+              [currentHour]: geo,
+              [`hour_${currentHour}`]: geo
+            }));
+          })
+          .catch(() => {});
+      });
+  }, [activeRunId]);
 
   const handleHazardChange = (newHazard: HazardType) => {
     if (newHazard !== hazard) {
@@ -134,18 +179,28 @@ export const App: React.FC = () => {
   };
 
   const [simulatedEventName, setSimulatedEventName] = useState<string>("G. Anak Krakatau");
-  const demoIntervalRef = React.useRef<any>(null);
 
-  const handleRunSimulation = async (targetHazard?: HazardType, targetEventId?: string) => {
+  const handleRunSimulation = async (
+    targetHazard?: HazardType,
+    targetEventId?: string,
+    customLocation?: { lat: number; lng: number; name?: string }
+  ) => {
     const activeHazard = targetHazard || hazard;
-    const activeEventId = targetEventId || eventId;
+    const activeEventId = customLocation ? "" : (targetEventId || eventId);
 
     if (targetHazard) setHazard(targetHazard);
-    if (targetEventId) setEventId(targetEventId);
+    if (targetEventId && !customLocation) setEventId(targetEventId);
 
     setIsRunning(true);
+    setSimError(null);
     setLoadingProgress(0);
-    setProgressText("Mengkalkulasi parameter vulkanik & mensimulasikan sebaran abu...");
+    setProgressText(
+      customLocation
+        ? `Mensimulasikan titik koordinat [${customLocation.lat.toFixed(2)}, ${customLocation.lng.toFixed(2)}]...`
+        : activeHazard === "volcano"
+          ? (mode === "auto" ? "Mengambil VONA MAGMA & prakiraan angin ensemble..." : "Mengambil prakiraan angin ensemble...")
+          : "Mengambil titik api NASA FIRMS & prakiraan angin ensemble..."
+    );
 
     const loadingInterval = setInterval(() => {
       setLoadingProgress((prev) => {
@@ -178,7 +233,14 @@ export const App: React.FC = () => {
     const payload: SimulationPayload = {
       hazard: activeHazard,
       mode,
-      source: { event_id: activeEventId },
+      source: customLocation
+        ? {
+            event_id: "",
+            latitude: customLocation.lat,
+            longitude: customLocation.lng,
+            name: customLocation.name || `Titik Koordinat [${customLocation.lat.toFixed(2)}, ${customLocation.lng.toFixed(2)}]`
+          }
+        : { event_id: activeEventId },
       horizon_hours: 48,
       n_members: 15,
       seed: 42,
@@ -190,9 +252,12 @@ export const App: React.FC = () => {
       const simRes = await api.runSimulation(payload);
       const runId = simRes.run_id;
       setActiveRunId(runId);
-      
-      // Gunakan selectedEventName karena backend hanya mengembalikan "kejadian observasi" tanpa nama gunung
-      setSimulatedEventName(selectedEventName || simRes.scenario_label || activeEventId);
+      setRunInfo(simRes);
+
+      const eventLabel = customLocation
+        ? `Titik Bebas (${customLocation.lat.toFixed(2)}, ${customLocation.lng.toFixed(2)})`
+        : (simRes.event_name || selectedEventName || activeEventId);
+      setSimulatedEventName(eventLabel);
 
       setProgressText("Menganalisis proyeksi dampak populasi & infrastruktur...");
       setLoadingProgress(85);
@@ -200,32 +265,42 @@ export const App: React.FC = () => {
       // Set pratinjau jam ke 48 (akhir) agar pengguna tahu simulasi mencakup 48 jam penuh
       setCurrentHour(48);
 
-      const [impact, facilities, validation, advisory, tier48] = await Promise.all([
+      const [impact, facilities, advisory, allTiers] = await Promise.all([
         api.getImpact(runId).catch(() => null),
         api.getFacilitiesImpacted(runId).catch(() => null),
-        api.getValidation(activeEventId).catch(() => null),
         api.getEmergencyAdvisory(runId).catch(() => null),
-        api.getTiersAtHour(runId, 48).catch(() => null)
+        api.getAllTiers(runId).catch(() => null)
       ]);
 
-      if (tier48) {
-        setHourlyTiersCache({ 48: tier48 });
+      if (allTiers && typeof allTiers === "object") {
+        const normalized: Record<string | number, any> = {};
+        Object.entries(allTiers).forEach(([k, val]) => {
+          normalized[k] = val;
+          normalized[Number(k)] = val;
+          normalized[`hour_${k}`] = val;
+        });
+        setHourlyTiersCache(normalized);
       }
 
       setImpactData(impact);
       setFacilitiesData(facilities);
-      setValidationData(validation);
       setAdvisoryData(advisory);
       setIsDrawerOpen(true);
-      setProgressText(`Selesai: ${simRes.scenario_label || "15 anggota ensemble"}`);
+      setProgressText(`Selesai: ${simRes.scenario_label}`);
 
-      // Simpan referensi run terakhir ke local storage
+      // Simpan referensi run terakhir dan riwayat run (untuk fitur bandingkan)
+      try {
+        const hist = JSON.parse(localStorage.getItem("runHistory") || "[]").filter((r: any) => r.id !== runId);
+        hist.unshift({ id: runId, name: eventLabel, mode: simRes.mode, hazard: activeHazard, label: simRes.scenario_label, t: Date.now() });
+        localStorage.setItem("runHistory", JSON.stringify(hist.slice(0, 12)));
+      } catch {}
       localStorage.setItem("lastRunId", runId);
-      localStorage.setItem("lastEventId", activeEventId);
-      localStorage.setItem("lastEventName", selectedEventName || simRes.scenario_label || activeEventId);
+      localStorage.setItem("lastEventId", activeEventId || runId);
+      localStorage.setItem("lastEventName", eventLabel);
       localStorage.setItem("lastHazard", activeHazard);
     } catch (err: any) {
-      setProgressText(`Gagal: ${err.message || "Server offline"}`);
+      setProgressText("");
+      setSimError(err?.message || "Server tidak dapat dihubungi.");
     } finally {
       clearInterval(loadingInterval);
       setLoadingProgress(100);
@@ -237,41 +312,7 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleRunDemo = async () => {
-    setIsRunning(true);
-    setProgressText("Memulai putar demo otomatis...");
 
-    try {
-      const demo = await api.playDemo(eventId).catch(() => null);
-      if (demo && demo.steps && demo.steps.length > 0) {
-        if (!activeRunId) {
-          await handleRunSimulation(hazard, eventId);
-        }
-
-        let stepIdx = 0;
-        if (demoIntervalRef.current) clearInterval(demoIntervalRef.current);
-
-        demoIntervalRef.current = setInterval(() => {
-          if (stepIdx >= demo.steps.length) {
-            clearInterval(demoIntervalRef.current);
-            demoIntervalRef.current = null;
-            setProgressText("Selesai memutar demo skenario.");
-            setTimeout(() => setProgressText(""), 3000);
-            return;
-          }
-
-          const step = demo.steps[stepIdx];
-          setCurrentHour(step.hour);
-          setProgressText(step.commentary || step.time_label);
-          stepIdx++;
-        }, 1200);
-      } else {
-        await handleRunSimulation(hazard, eventId);
-      }
-    } catch {
-      await handleRunSimulation(hazard, eventId);
-    }
-  };
 
   const handleDrawRoute = async (s: SchoolItem) => {
     const facilityId = s.id || s.facility_id || s.name;
@@ -285,8 +326,12 @@ export const App: React.FC = () => {
     if (sLat === undefined || sLng === undefined || !activeRunId) return;
 
     const hospital = s.nearest_safe_hospital || s.nearest_hospital;
-    const destLat = hospital?.lat ?? hospital?.latitude ?? sLat + 0.035;
-    const destLng = hospital?.lng ?? hospital?.longitude ?? sLng + 0.035;
+    const destLat = hospital?.lat ?? hospital?.latitude;
+    const destLng = hospital?.lng ?? hospital?.longitude;
+    if (!hospital || destLat === undefined || destLng === undefined) {
+      setSimError(`Tidak ada rumah sakit OSM di sekitar ${s.name} untuk dijadikan tujuan rujukan.`);
+      return;
+    }
 
     setProgressText(`Menghitung rute evakuasi dari ${s.name}...`);
     try {
@@ -297,28 +342,27 @@ export const App: React.FC = () => {
         destLat,
         destLng,
         s.name,
-        hospital?.name || "RSUD Terdekat"
+        hospital.name
       );
       // Backend sudah mengembalikan dalam format [lat, lng], tidak perlu di-swap lagi
       const geom: [number, number][] = res.coordinates || [];
       
       setEvacuationRoute({
         geometry: geom.length > 0 ? geom : [[sLat, sLng], [destLat, destLng]],
-        label: `Evakuasi: ${s.name} → ${hospital?.name || "RSUD Terdekat"}`,
-        distanceKm: res.distance_km,
-        durationMin: res.duration_min,
-        facilityId
+        label: res.is_real_road
+          ? `Evakuasi: ${s.name} → ${hospital.name}`
+          : `Arah garis lurus (rute jalan tidak tersedia): ${s.name} → ${hospital.name}`,
+        distanceKm: res.distance_km ?? undefined,
+        durationMin: res.estimated_duration_minutes ?? undefined,
+        facilityId,
+        originName: s.name,
+        destName: hospital.name
       });
       setProgressText("");
     } catch (err) {
       console.error(err);
-      setProgressText("Gagal mengambil rute riil, menampilkan garis lurus.");
-      setEvacuationRoute({
-        geometry: [[sLat, sLng], [destLat, destLng]],
-        label: `Evakuasi: ${s.name} → ${hospital?.name || "RSUD Terdekat"}`,
-        facilityId
-      });
-      setTimeout(() => setProgressText(""), 3000);
+      setProgressText("");
+      setSimError("Gagal mengambil rute evakuasi dari server.");
     }
   };
 
@@ -333,6 +377,7 @@ export const App: React.FC = () => {
         isLegendOpen={isLegendOpen}
       />
 
+
       {/* Main Workspace (Zona B, C, dan D) */}
       <div className="relative flex-1 w-full h-full overflow-hidden">
         {/* Zona C: Peta Leaflet Full Canvas */}
@@ -341,6 +386,7 @@ export const App: React.FC = () => {
           eventId={eventId}
           currentHour={currentHour}
           hourlyTiersCache={hourlyTiersCache}
+          impactedFacilities={facilitiesData}
           evacuationRoute={evacuationRoute}
           onSelectEvent={(newId) => {
             handleEventChange(newId);
@@ -348,9 +394,20 @@ export const App: React.FC = () => {
           resetViewTrigger={resetViewTrigger}
           flyToTarget={flyToTarget}
           activeRunId={activeRunId}
+          runCenter={runInfo?.center_coords ?? null}
           isDrawerOpen={isDrawerOpen}
           onToggleLegend={() => setIsLegendOpen((prev) => !prev)}
           onLayersLoaded={() => setIsMapReady(true)}
+          onSelectFacility={(id) => {
+            setSelectedFacilityId(id);
+            if (id) setIsDrawerOpen(true);
+          }}
+          selectedFacilityId={selectedFacilityId}
+          onSelectPlumeTier={(tier) => {
+            setSelectedPlumeTier(tier);
+            if (tier && tier !== "all") setIsDrawerOpen(true);
+          }}
+          selectedPlumeTier={selectedPlumeTier}
         />
 
         {/* Global Loading Overlay (Di bawah Navbar): cadangan jika loader sungai dilewati sebelum peta siap */}
@@ -407,17 +464,29 @@ export const App: React.FC = () => {
         {/* Floating Active Simulation Pill */}
         {activeRunId && (
           <div className="absolute top-3.5 left-1/2 -translate-x-1/2 bg-[#1c1513]/90 backdrop-blur-md border border-[#EB895B]/30 rounded-full px-3.5 py-1 z-[1000] text-xs flex items-center gap-2 shadow-xl pointer-events-none">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-[#8AD6D1] animate-pulse" />
             <span className="text-[#FFF0C5]/70">Simulasi Aktif:</span>
             <strong className="text-[#FFF0C5] font-semibold">{simulatedEventName}</strong>
-            <span className="text-[#EB895B] font-mono text-[11px]">(H+{currentHour}:00)</span>
+            <span className="text-[#EB895B] font-mono text-[11px]">
+              (H+{String(currentHour).padStart(2, "0")}
+              {runInfo?.start_utc
+                ? ` · ${new Date(new Date(runInfo.start_utc).getTime() + currentHour * 3600000).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", weekday: "short", hour: "2-digit", minute: "2-digit" })} WIB`
+                : ""}
+              )
+            </span>
+            {runInfo && runInfo.scenario_label !== "kejadian observasi" && (
+              <span className="hidden sm:inline text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-200 border border-amber-300/40">
+                {runInfo.mode === "experiment" ? "Skenario Hipotetis" : "Berbasis Data Historis"}
+              </span>
+            )}
           </div>
         )}
 
-        {/* Watermark Skenario Hipotetis (Mode Coba-Coba / Experiment) */}
-        {mode === "experiment" && activeRunId && (
-          <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-amber-950/80 backdrop-blur-sm border border-amber-500/40 rounded px-2.5 py-0.5 z-[999] text-[10px] font-mono tracking-wider text-amber-200 uppercase pointer-events-none shadow-md">
-            SKENARIO HIPOTETIS &bull; BUKAN DATA RESMI
+        {simError && (
+          <div role="alert" className="absolute top-14 left-1/2 -translate-x-1/2 z-[2100] max-w-lg w-[calc(100%-2rem)] bg-[#f7f3ed] text-[#2b211e] border border-[#DA6556]/50 rounded-xl shadow-2xl px-4 py-3 text-xs flex items-start gap-3">
+            <span className="font-bold text-[#A14646] shrink-0">Tidak dapat diproses</span>
+            <span className="leading-relaxed flex-1">{simError}</span>
+            <button type="button" onClick={() => setSimError(null)} className="shrink-0 font-bold text-[#A14646] hover:opacity-70 cursor-pointer" aria-label="Tutup">✕</button>
           </div>
         )}
 
@@ -433,7 +502,6 @@ export const App: React.FC = () => {
           overrides={overrides}
           onOverridesChange={setOverrides}
           onRunSimulation={handleRunSimulation}
-          onRunDemo={handleRunDemo}
           isRunning={isRunning}
           progressText={progressText}
           activeRunId={activeRunId}
@@ -459,12 +527,19 @@ export const App: React.FC = () => {
           currentHour={currentHour}
           rainMm={mode === "experiment" ? overrides.rain_scavenging_mm_h ?? 0 : 0}
           onOpenLegend={() => setIsLegendOpen(true)}
-          onFlyTo={(lat, lng) => {
-            setFlyToTarget({ lat, lng, _t: Date.now() });
+          onFlyTo={(lat, lng, name, type) => {
+            setFlyToTarget({ lat, lng, _t: Date.now(), name, type });
           }}
           onDrawRoute={handleDrawRoute}
           activeRouteId={evacuationRoute?.facilityId}
           simulatedEventName={simulatedEventName}
+          activeRunId={activeRunId}
+          selectedFacilityId={selectedFacilityId}
+          onSelectFacility={setSelectedFacilityId}
+          selectedPlumeTier={selectedPlumeTier}
+          onSelectPlumeTier={setSelectedPlumeTier}
+          eventId={eventId}
+          runInfo={runInfo}
         />
 
         {/* Modal Legenda Otoritatif PVMBG & Dispersi */}

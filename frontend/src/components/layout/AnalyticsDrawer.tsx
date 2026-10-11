@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, MapPin, Building2, ShieldAlert } from "lucide-react";
 import { TabImpact } from "../tabs/TabImpact";
 import { TabFacilities } from "../tabs/TabFacilities";
@@ -8,7 +8,8 @@ import type {
   FacilitiesImpactResponse,
   ValidationResponse,
   HazardType,
-  SchoolItem
+  SchoolItem,
+  SimulationResponse
 } from "../../types/api";
 
 interface AnalyticsDrawerProps {
@@ -16,16 +17,23 @@ interface AnalyticsDrawerProps {
   onClose: () => void;
   impact: ImpactResponse | null;
   facilities: FacilitiesImpactResponse | null;
-  validation: ValidationResponse | null;
+  validation?: ValidationResponse | null;
   advisory?: any;
   hazard: HazardType;
   currentHour?: number;
   rainMm: number;
   onOpenLegend?: () => void;
-  onFlyTo: (lat: number, lng: number) => void;
+  onFlyTo: (lat: number, lng: number, name?: string, type?: "school" | "hospital" | string) => void;
   onDrawRoute: (s: SchoolItem) => void;
   activeRouteId?: string;
   simulatedEventName?: string;
+  activeRunId?: string | null;
+  selectedFacilityId?: string | null;
+  onSelectFacility?: (id: string | null) => void;
+  selectedPlumeTier?: string | null;
+  onSelectPlumeTier?: (tier: string | null) => void;
+  eventId?: string;
+  runInfo?: SimulationResponse | null;
 }
 
 type TabType = "region" | "facilities" | "protocol";
@@ -43,9 +51,22 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
   onFlyTo,
   onDrawRoute,
   activeRouteId,
-  simulatedEventName
+  simulatedEventName,
+  activeRunId,
+  selectedFacilityId,
+  onSelectFacility,
+  selectedPlumeTier,
+  onSelectPlumeTier,
+  eventId,
+  runInfo
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>("region");
+
+  useEffect(() => {
+    if (selectedFacilityId || (selectedPlumeTier && selectedPlumeTier !== "all")) {
+      setActiveTab("facilities");
+    }
+  }, [selectedFacilityId, selectedPlumeTier]);
 
   const tabs = [
     { id: "region", label: "Wilayah", icon: MapPin },
@@ -55,7 +76,7 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
 
   return (
     <aside
-      className={`absolute top-0 right-0 w-[350px] max-w-full h-full backdrop-blur-xl z-[1050] flex flex-col shadow-2xl transition-transform duration-300 ease-out font-sans ${
+      className={`absolute top-0 right-0 w-[380px] max-w-full h-full backdrop-blur-xl z-[1050] flex flex-col shadow-2xl transition-transform duration-300 ease-out font-sans overflow-visible ${
         isOpen ? "translate-x-0" : "translate-x-full"
       }`}
       style={{
@@ -114,7 +135,7 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
         </button>
       </div>
 
-      {/* Content Body */}
+      {/* Content Body Scrollable */}
       <div className="flex-1 overflow-y-auto p-3.5 custom-scrollbar">
         {!impact ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-6 opacity-80 mt-12">
@@ -123,7 +144,7 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
             </div>
             <h3 className="font-bold text-[#2b211e] mb-1">Simulasi Belum Dijalankan</h3>
             <p className="text-[11px] text-[#2b211e]/70 leading-relaxed">
-              Silakan pilih kejadian di Pusat Kendali lalu tekan <strong>Mulai Simulasi</strong> untuk melihat proyeksi dampak.
+              Silakan pilih kejadian di Pusat Kendali lalu tekan <strong>Mulai Simulasi</strong> untuk melihat proyeksi dampak wilayah &amp; aksi dini.
             </p>
           </div>
         ) : (
@@ -136,8 +157,11 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
                 currentHour={currentHour}
                 onOpenLegend={onOpenLegend}
                 simulatedEventName={simulatedEventName}
+                activeRunId={activeRunId}
+                runInfo={runInfo}
               />
             )}
+
             {activeTab === "facilities" && (
               <TabFacilities
                 schools={facilities?.schools || []}
@@ -146,10 +170,25 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
                 onFlyTo={onFlyTo}
                 onDrawRoute={onDrawRoute}
                 activeRouteId={activeRouteId}
+                activeRunId={activeRunId}
+                selectedFacilityId={selectedFacilityId}
+                onSelectFacility={onSelectFacility}
+                selectedPlumeTier={selectedPlumeTier}
+                onSelectPlumeTier={onSelectPlumeTier}
+                coverage={facilities?.facilities_coverage}
+                truncated={facilities?.list_truncated}
+                totalSchools={facilities?.total_schools_at_risk}
               />
             )}
+
             {activeTab === "protocol" && (
-              <TabProtocolAI hazard={hazard} advisory={advisory} />
+              <TabProtocolAI
+                hazard={hazard}
+                advisory={advisory}
+                eventId={eventId}
+                currentCoords={runInfo?.center_coords ? { lat: runInfo.center_coords.latitude, lng: runInfo.center_coords.longitude } : null}
+                placeName={runInfo?.event_name || simulatedEventName}
+              />
             )}
           </>
         )}
@@ -157,3 +196,4 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
     </aside>
   );
 };
+

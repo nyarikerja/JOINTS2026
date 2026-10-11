@@ -1,5 +1,8 @@
+import pytest
 """
 tests/test_database.py
+
+pytestmark = pytest.mark.network
 
 Pengujian unit dan performa untuk basis data spasial terpadu UdaraSiaga
 (SQLite + R*Tree Spatial Engine + Repository Layer).
@@ -9,9 +12,7 @@ import time
 
 from fastapi.testclient import TestClient
 
-from app.db.repositories.facility_repo import FacilityRepository
 from app.db.repositories.forest_repo import ForestRepository
-from app.db.repositories.hotspot_repo import HotspotRepository
 from app.db.repositories.volcano_repo import VolcanoRepository
 from app.db.session import DB_PATH, get_db_connection
 from app.main import app
@@ -60,27 +61,21 @@ def test_forest_repository_and_boundaries():
     assert len(boundaries["features"]) > 0
 
 
-def test_facility_repository_spatial_bbox_latency():
+def test_osm_facilities_bbox_from_tile_cache():
     """
-    Memverifikasi kueri spasial R*Tree BBOX pada ribuan fasilitas
-    berjalan sangat cepat (di bawah 20 milidetik).
+    Fasilitas berasal dari cache tile OpenStreetMap (bukan tabel sintetis) dan kueri bbox
+    pada tile yang sudah tersimpan berjalan cepat.
     """
-    # Warmup connection
-    FacilityRepository.get_by_bbox(lat_min=-7.0, lat_max=-6.5, lon_min=106.0, lon_max=107.0, limit=10)
+    from app.ingest.overpass import OverpassIngest
 
+    OverpassIngest.get_facilities_with_coverage(-7.0, -6.5, 106.0, 107.0)  # pemanasan cache memori
     t0 = time.perf_counter()
-    # BBOX sekitar Jawa Barat & Banten
-    results = FacilityRepository.get_by_bbox(
-        lat_min=-7.5,
-        lat_max=-6.0,
-        lon_min=105.0,
-        lon_max=108.5,
-        limit=100
-    )
+    facs, missing = OverpassIngest.get_facilities_with_coverage(-7.5, -6.0, 105.0, 108.5)
     elapsed_ms = (time.perf_counter() - t0) * 1000
-
-    assert len(results) > 0, "Harus menemukan fasilitas di BBOX Jawa Barat/Banten"
-    assert elapsed_ms < 50.0, f"Kueri R*Tree spasial harus < 50 ms, didapat {elapsed_ms:.2f} ms"
+    if missing and not facs:
+        pytest.skip("Tile OSM Jawa Barat belum terunduh")
+    assert all(f["facility_id"].startswith("osm_") for f in facs if f["facility_type"] != "airport")
+    assert elapsed_ms < 500.0, f"Kueri cache tile harus < 500 ms, didapat {elapsed_ms:.2f} ms"
 
 
 def test_facilities_endpoint_lod_and_zoom():
@@ -100,7 +95,14 @@ def test_facilities_endpoint_lod_and_zoom():
     assert "school" in types_high, "Pada zoom tinggi sekolah harus muncul"
 
 
-def test_hotspot_repository_event_query():
-    """Memverifikasi pengambilan titik api satelit dari database."""
-    hotspots = HotspotRepository.get_by_event("national")
-    assert len(hotspots) > 0, "Harus ada titik api nasional di database"
+def test_firms_live_national_query():
+    """Titik api nasional berasal dari cache FIRMS near-real-time dengan waktu akuisisi 24 jam terakhir."""
+    from app.services import firms_live
+
+    hotspots = firms_live.query(24.0)
+    if not firms_live.status()["available"]:
+        pytest.skip("FIRMS belum tersedia (tanpa jaringan dan tanpa snapshot)")
+    assert len(hotspots) > 0
+    h = hotspots[0]
+    assert {"latitude", "longitude", "frp", "confidence", "acq_datetime_utc", "sensor"} <= set(h)
+

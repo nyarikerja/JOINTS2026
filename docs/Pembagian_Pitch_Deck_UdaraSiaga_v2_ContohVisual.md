@@ -57,7 +57,7 @@ Sebelum menyusun slide grafis, buka dan pelajari gaya tata letak (*layout*), kon
 - **Tata Letak Visual:**
   - Latar belakang: Gelap taktis (`#0b0f19`) dengan siluet kontur dispersi partikel halus dan kilatan sensor satelit.
   - Sisi Kiri: Logo resmi UdaraSiaga, lencana status hijau berkedip `SIAGA 24/7`, sub-judul *"Sistem Intelejen Sebaran Atmosfer Multi-Bahaya & Panduan Evakuasi Dini Berbasis Sains"*.
-  - Sisi Kanan: Ticker telemetri nasional: *"70 Gunung Api Terpantau | 36 Kawasan Hutan Konservasi | Resolusi Spasial 100m"*.
+  - Sisi Kanan: Ticker telemetri nasional: *"70 Gunung Api (level MAGMA langsung) | 36 Kawasan Hutan Konservasi | Grid Penduduk 1 km"*.
 - **Naskah Presenter:**
   > *"Selamat pagi Dewan Juri yang terhormat. Setiap kali gunung api erupsi atau kebakaran hutan gambut melanda, jutaan anak sekolah dan warga rentan menghirup udara beracun tanpa tahu kapan bahaya tiba di depan pintu mereka. Kami mempersembahkan **UdaraSiaga**: platform intelejen atmosferik terpadu yang mentransformasi miliaran data satelit mentah menjadi instruksi evakuasi taktis dan kebijakan sekolah otomatis demi menyelamatkan generasi masa depan Indonesia."*
 - **Faktor Penilaian Juri:** Kesan pertama yang sangat terstruktur, berwibawa, dan langsung menyentuh urgensi kemanusiaan.
@@ -121,7 +121,7 @@ Sebelum menyusun slide grafis, buka dan pelajari gaya tata letak (*layout*), kon
     - *Ingestion Layer:* Open-Meteo Ensemble API (angin multi-aras 1000–50 hPa), NASA FIRMS (VIIRS SNPP), OpenAQ v3, PVMBG MAGMA.
     - *Storage & Indexing:* SQLite R*Tree Spatial Database (kueri spasial $<1\text{ ms}$, memory-mapped I/O tanpa latensi).
     - *Simulation Core:* Lagrangian Particle Dispersion (adveksi RK2, difusi turbulen acak, wet scavenging pencucian hujan).
-    - *Routing & AI Engine:* OSRM (OpenStreetMap Routing Machine) untuk jaringan jalan nyata & Google Gemini API dengan fallback deterministik BNPB lokal.
+    - *Routing & AI Engine:* OSRM (OpenStreetMap Routing Machine) untuk jaringan jalan nyata & LLM Featherless (Qwen3.6) yang hanya merangkum fakta dari backend, dengan template sebagai cadangan.
 - **Naskah Presenter:**
   > *"Di balik antarmuka yang bersih ini bekerja arsitektur rekayasa yang sangat solid. Kami menggunakan modul spasial R*Tree bawaan SQLite C yang memungkinkan kueri jutaan titik fasilitas publik selesai dalam waktu kurang dari 1 milidetik tanpa memerlukan server basis data eksternal yang boros daya. Mesin dispersi kami menggunakan integrasi numerik Runge-Kutta 2 untuk memperhitungkan geser angin multi-ketinggian dari Open-Meteo. Untuk perutean, kami tidak memakai garis lurus burung yang menyesatkan di lapangan, melainkan algoritma routing jalan raya riil OSRM. Dan yang terpenting: sistem kami dilengkapi protokol `UDARASIAGA_OFFLINE=1`, memastikan posko darurat tetap dapat menjalankan simulasi penuh meski jaringan internet putus total di zona bencana."*
 
@@ -228,7 +228,7 @@ Siapkan 4 slide lampiran (*Appendix*) di bagian akhir berkas PDF. Begitu dewan j
 - **Pertanyaan Juri:** *"Bagaimana kalian menjamin data kalian tidak bias atau mengandung asumsi palsu?"*
 - **Jawaban & Tampilan Slide:**
   - Tampilkan tabel katalog 24 parameter dari `config/assumptions.yaml`:
-    - **Sourced (Otoritatif Primer):** D01 (Angin permukaan Open-Meteo), D09 (NASA FIRMS FRP), D18 (Grid WorldPop 100m 2020), D24 (Formula Mastin JVGR 2009).
+    - **Sourced (Otoritatif Primer):** D01 (Angin permukaan Open-Meteo), D09 (NASA FIRMS FRP), D18 (Grid WorldPop 1 km 2020), D24 (Formula Mastin JVGR 2009).
     - **Sourced Secondary:** D05 (VONA MAGMA ESDM), D15 (Baku mutu ISPU Permen LHK 14/2020).
     - **Assumption Placeholder (Transparan):** D13b (Faktor emisi PM2.5 gambut) yang secara etis kami nyatakan belum berstatus primer sehingga konversi ISPU sengaja dinonaktifkan.
   - Ini membuktikan UdaraSiaga adalah proyek yang jujur secara akademis dan tidak melakukan manipulasi data (*scientific integrity*).

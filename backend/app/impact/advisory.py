@@ -11,8 +11,7 @@ Mengintegrasikan standar otoritatif:
 6. Kemenhub / ICAO Annex 3 (NOTAM / ASHTAM Ruang Udara Bandara)
 """
 
-import math
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 
 def generate_emergency_advisory(
@@ -42,15 +41,15 @@ def generate_emergency_advisory(
     # Klasifikasi tingkat bahaya operasional
     median_pop = pop_exposed.get("median", 0)
     if median_pop > 500000 or len(schools) > 20:
-        alert_level = "SIAGA TERTINGGI (DARURAT MERAH)"
+        alert_level = "PRIORITAS KESIAPSIAGAAN TINGGI (hasil simulasi)"
         alert_code = "RED"
         badge_bg = "#dc2626"
     elif median_pop > 50000 or len(schools) > 5:
-        alert_level = "WASPADA TINGGI (SIAGA ORANYE)"
+        alert_level = "PRIORITAS KESIAPSIAGAAN SEDANG (hasil simulasi)"
         alert_code = "ORANGE"
         badge_bg = "#ea580c"
     else:
-        alert_level = "WASPADA DINI (SIAGA KUNING)"
+        alert_level = "PRIORITAS KESIAPSIAGAAN RENDAH (hasil simulasi)"
         alert_code = "YELLOW"
         badge_bg = "#d97706"
 
@@ -197,46 +196,7 @@ def generate_emergency_advisory(
         if d and d != "-":
             districts_impacted.add(d)
 
-    # Pemulihan wilayah jika fasilitas kosong (misal muat dari disk tanpa masker array)
-    if not districts_impacted:
-        try:
-            from app.db.repositories.facility_repo import FacilityRepository
-            from app.impact.exposure import haversine_km
-            all_facs = FacilityRepository.get_all()
-            center = run_output.get("center_coords") or {
-                "latitude": (run_output.get("grid", {}).get("lat_min", 0) + run_output.get("grid", {}).get("lat_max", 0)) / 2.0,
-                "longitude": (run_output.get("grid", {}).get("lon_min", 0) + run_output.get("grid", {}).get("lon_max", 0)) / 2.0,
-            }
-            c_lat = float(center.get("latitude") or 0.0)
-            c_lon = float(center.get("longitude") or 0.0)
-            nearby = [
-                f for f in all_facs 
-                if haversine_km(c_lat, c_lon, f["latitude"], f["longitude"]) <= 95.0
-            ]
-            for f in nearby:
-                d = f.get("district")
-                if d and d != "-":
-                    districts_impacted.add(d)
-            if not schools:
-                schools = [f for f in nearby if f.get("facility_type") == "school"]
-            if not healthcare:
-                healthcare = [f for f in nearby if f.get("facility_type") == "healthcare"]
-        except Exception:
-            pass
-
-    if not districts_impacted:
-        eid = (run_output.get("event_id") or "").lower()
-        if "krakatau" in eid:
-            districts_impacted = {"Lampung Selatan", "Pandeglang", "Pesawaran", "Bandar Lampung", "Cilegon"}
-        elif "merapi" in eid:
-            districts_impacted = {"Sleman", "Magelang", "Boyolali", "Klaten", "Yogyakarta"}
-        elif "sebangau" in eid or "kalimantan" in eid:
-            districts_impacted = {"Palangka Raya", "Pulang Pisau", "Katingan", "Kapuas"}
-        elif run_output.get("province"):
-            districts_impacted = {run_output.get("province")}
-        else:
-            districts_impacted = {"Lampung Selatan", "Pandeglang"}
-
+    # Wilayah prioritas hanya dari tag alamat fasilitas OSM yang benar-benar terpapar (tanpa daftar tebakan)
     pop_summary = {
         "total_median": pop_exposed.get("median", 0),
         "children_median": child_exposed.get("median", 0),

@@ -64,8 +64,9 @@
    ============================================================ */
 
 @theme {
-  --font-serif: 'Butler', Georgia, serif;
-  --font-sans: 'Poppins', sans-serif;
+  --font-serif: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'DM Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
   /* Color Hunt Palette: #A14646, #DA6556, #EB895B, #FDB773 */
   --color-hunt-maroon: #A14646;
@@ -108,17 +109,29 @@
    ============================================================ */
 @layer base {
   *, ::before, ::after {
-    font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+    font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
   }
 
   body {
     background-color: #140f0e;
     color: #FFF0C5;
-    font-family: 'Butler', Georgia, serif;
+    font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+    font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+  }
+
+  .font-serif {
+    font-family: 'Fraunces', Georgia, 'Times New Roman', serif !important;
+  }
+
+  .font-sans {
+    font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif !important;
+  }
+
+  .font-mono {
+    font-family: 'DM Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace !important;
   }
 
   /* Scrollbar taktis hangat */
@@ -243,10 +256,6 @@ header {
   .text-red-400 { color: #DA6556 !important; }
   .text-red-500 { color: #A14646 !important; }
   .bg-red-600 { background-color: #A14646 !important; }
-  .ring-red { border-color: #DA6556 !important; }
-
-  /* Orange -> Ember */
-  .ring-orange { border-color: #EB895B !important; }
 
   /* Emerald pulse */
   .bg-emerald-400 { background-color: #8AD6D1 !important; }
@@ -260,7 +269,7 @@ header {
 }
 
 /* ============================================================
-   ANIMASI PULSE CINCIN BAHAYA GUNUNG
+   ANIMASI PULSE CINCIN BAHAYA GUNUNG & HUTAN
    ============================================================ */
 .volcano-pulse-ring {
   position: absolute;
@@ -272,20 +281,26 @@ header {
 }
 
 .ring-red {
-  border: 2px solid #DA6556;
+  border: 2px solid #ef4444 !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+  animation: pulse-ring 1.8s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
 }
 
 .ring-orange {
-  border: 2px solid #EB895B;
+  border: 2px solid #f97316 !important;
+  border-color: #f97316 !important;
+  box-shadow: 0 0 6px rgba(249, 115, 22, 0.6);
+  animation: pulse-ring 1.8s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
 }
 
 @keyframes pulse-ring {
   0% {
     transform: scale(0.6);
-    opacity: 0.9;
+    opacity: 0.95;
   }
   100% {
-    transform: scale(1.6);
+    transform: scale(1.65);
     opacity: 0;
   }
 }
@@ -311,7 +326,8 @@ header {
   will-change: transform;
 }
 
-.volcano-div-icon {
+.volcano-div-icon,
+.forest-div-icon {
   overflow: visible !important;
 }
 
@@ -320,6 +336,84 @@ header {
    ============================================================ */
 .dark-tiles {
   filter: brightness(0.4) invert(1) contrast(3) hue-rotate(155deg) saturate(0.2) brightness(0.65);
+}
+
+/* ============================================================
+   LEAFLET VECTOR OUTLINE RESET & INTERACTIVE STYLES
+   ============================================================ */
+.leaflet-container path:focus,
+.leaflet-container path:focus-visible,
+.leaflet-container svg:focus,
+.leaflet-container svg:focus-visible,
+.leaflet-container:focus,
+.leaflet-container:focus-visible,
+.leaflet-pane > svg path:focus,
+.leaflet-pane > svg path:focus-visible,
+.leaflet-pane > svg path.leaflet-interactive:focus,
+.leaflet-pane > svg path.leaflet-interactive:focus-visible,
+.leaflet-interactive:focus,
+.leaflet-interactive:focus-visible,
+path.leaflet-interactive:focus,
+path.leaflet-interactive:focus-visible,
+path:focus,
+path:focus-visible,
+svg:focus,
+svg:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* ============================================================
+   PLUME ATMOSPHERIC CONTOURS & DYNAMIC SELECTED HIGHLIGHT
+   Menampilkan kontur putih tegas berpendar saat poligon udara diklik
+   ============================================================ */
+.plume-polygon-tier {
+  transition: stroke 0.18s ease, stroke-width 0.18s ease, stroke-opacity 0.18s ease, fill-opacity 0.18s ease;
+  stroke-linejoin: round !important;
+  stroke-linecap: round !important;
+  cursor: pointer !important;
+}
+
+path.plume-selected-contour,
+svg.leaflet-zoom-animated path.plume-selected-contour,
+.leaflet-pane > svg path.plume-selected-contour,
+.plume-selected-contour {
+  stroke: #ffffff !important;
+  stroke-width: 3.2px !important;
+  stroke-opacity: 1 !important;
+  stroke-dasharray: none !important;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.85)) !important;
+}
+
+/* ============================================================
+   MARKER INTERACTIVE EFFECTS & RADAR PULSE
+   ============================================================ */
+.volcano-marker-pin,
+.facility-marker-pin {
+  transition: transform 0.15s ease;
+  cursor: pointer;
+}
+
+.volcano-marker-pin:hover,
+.facility-marker-pin:hover {
+  transform: scale(1.25);
+  z-index: 9999 !important;
+}
+
+@keyframes radar-pulse {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+.radar-pulse-ring {
+  position: absolute;
+  border-radius: 50%;
+  animation: radar-pulse 1.6s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+  pointer-events: none;
+}
+
+.evac-route-glow {
+  filter: drop-shadow(0 0 6px #10b981) !important;
 }
 
 /* ============================================================
@@ -335,3 +429,78 @@ header {
     overflow: visible !important;
   }
 }
+
+/* ============================================================
+   BINGKAI SULUR MERAMBAT ORGANIK (LANDING PAGE STYLE)
+   ============================================================ */
+.vframe {
+  position: absolute;
+  inset: -14px;
+  width: calc(100% + 28px);
+  height: calc(100% + 28px);
+  overflow: visible;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.vframe .wc-stem {
+  fill: none;
+  stroke: #4B3A22;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+.vframe .wc-leaf {
+  fill: #5E9C40;
+  stroke: rgba(0, 0, 0, 0.18);
+  stroke-width: 0.45;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+
+.vframe .wc-leaf.b {
+  fill: #2F6B2E;
+}
+
+.vframe .wc-vein {
+  fill: none;
+  stroke: rgba(236, 255, 220, 0.55);
+  stroke-width: 0.55;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.vframe .wc-tendril {
+  fill: none;
+  stroke: #4B3A22;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+}
+
+.vframe .wc-fl {
+  fill: #FFF7DE;
+  stroke: #EB895B;
+  stroke-width: 0.35;
+}
+
+.vframe .wc-ctr {
+  fill: #F2C14E;
+  stroke: none;
+}
+
+/* ============================================================
+   FORGEHACK MAP STYLES: EXPOSURE PAPER & DARK TILES
+   ============================================================ */
+.dark-tiles {
+  filter: brightness(0.4) invert(1) contrast(3) hue-rotate(155deg) saturate(0.2) brightness(0.65);
+}
+
+.leaflet-container.map-paper {
+  background: linear-gradient(#F4EEDC, #D6E8D8) !important;
+}
+
+.paper-tiles {
+  filter: grayscale(1) sepia(.25) contrast(.8) brightness(1.12);
+  opacity: .55;
+}
+

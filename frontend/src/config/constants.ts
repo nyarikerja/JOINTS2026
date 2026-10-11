@@ -2,11 +2,26 @@
  * config/constants.ts - Konstanta Konfigurasi Global Aplikasi UdaraSiaga
  */
 
+function resolveApiBase(): string {
+  const fromEnv = (import.meta.env.VITE_API_BASE as string | undefined)?.trim();
+  if (fromEnv) return fromEnv.replace(/\/$/, "");
+  if (typeof window === "undefined") return "http://127.0.0.1:8000";
+  const { protocol, hostname, port, origin } = window.location;
+  if (hostname === "localhost" || hostname === "127.0.0.1") {
+    return "http://127.0.0.1:8000";
+  }
+  if (port && port !== "80" && port !== "443" && port !== "8000") {
+    return `${protocol}//${hostname}:8000`;
+  }
+  return origin;
+}
+
 export const CONFIG = {
-  // Base URL Backend FastAPI (mendukung dev server lokal port 8000)
-  API_BASE: typeof window !== "undefined" && window.location.port === "8000"
-    ? window.location.origin
-    : "http://127.0.0.1:8000",
+  // Alamat backend FastAPI:
+  // 1. VITE_API_BASE saat build (mis. https://api.helaloka.id) bila backend di domain lain;
+  // 2. dev server Vite (port 5173): backend di host yang sama, port 8000 (juga jalan dari HP di jaringan lokal);
+  // 3. produksi: backend menyajikan frontend di origin yang sama.
+  API_BASE: resolveApiBase(),
 
   DEFAULT_MAP_VIEW: {
     lat: -2.5,

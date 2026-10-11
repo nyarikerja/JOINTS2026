@@ -61,7 +61,33 @@ pytest tests/
 # Pemeriksaan linter kode Python (Ruff)
 ruff check app/ tests/
 ```
-*Hasil Verifikasi: 37/37 PASSED (100% lulus dalam ~5.5 detik), 0 lint warning.*
+*Hasil Verifikasi (11 Okt 2026): 40/40 PASSED, 0 lint error (ruff F/E9).*
+
+---
+
+## Status Data Langsung (diperbarui 11 Oktober 2026)
+
+Seluruh angka di aplikasi `/app/` berasal dari sumber langsung; tidak ada data contoh atau nilai karangan.
+
+| Data | Sumber | Pembaruan |
+| :--- | :--- | :--- |
+| Level gunung api (I–IV) | MAGMA Indonesia, PVMBG (halaman tingkat aktivitas) | tiap jam |
+| Tinggi puncak abu & waktu erupsi | VONA MAGMA per gunung | tiap 10 menit saat diminta |
+| Titik api & FRP | NASA FIRMS NRT: VIIRS S-NPP, NOAA-20, NOAA-21, MODIS | tiap 15 menit (jendela 7 hari) |
+| Angin & hujan simulasi | Open-Meteo Ensemble, ECMWF IFS 0,25° (51 anggota), mulai jam awal run | per run |
+| Grid angin nasional | Open-Meteo forecast | tiap 3 jam |
+| Penduduk | WorldPop 2020, 1 km, UN-adjusted (diunduh otomatis) | statis (sensus) |
+| Sekolah, faskes, bandara | OpenStreetMap via Overpass, cache per tile 1° | unduh latar, 30 hari |
+| Ringkasan AI warga | LLM Featherless (Qwen3.6) dari fakta di atas | per permintaan |
+
+Aturan yang menjaga konsistensi antar fitur:
+- **Mode Kondisi Nyata, sumber bertingkat.** Semua gunung api dan kawasan hutan katalog dapat disimulasikan:
+  - Gunung api: (1) VONA MAGMA berabu ≤ 24 jam, erupsi sedang teramati, H+0 = waktu VONA; (2) VONA berabu terakhir di riwayat MAGMA; (3) erupsi Holosen terakhir di Smithsonian GVP, tinggi kolom dari VEI (Newhall & Self 1982); (4) tanpa catatan apa pun, VEI asumsi 2. Tingkat 2–4 memakai cuaca saat ini dan berlabel `skenario dari erupsi terakhir ...`.
+  - Kebakaran: (1) FIRMS 24 jam; (2) hari kebakaran terakhir dalam 7 hari; (3) hari kebakaran terakhir di arsip VIIRS S-NPP hingga 2 tahun. Tingkat 2–3 berlabel `skenario dari kebakaran terakhir terdeteksi`.
+  - Sumber yang dipakai tampil di `source_info` (dengan `tier`) dan di kartu "Data masukan run".
+- **FRP** dirata-ratakan per lintasan satelit sebelum dipakai untuk emisi dan karbon (FRP adalah daya sesaat; menjumlahkan semua lintasan menghitung api yang sama berkali-kali).
+- **Ambang fasilitas** sama di backend dan UI: peluang ≥ 90% pertimbangkan PJJ daring, ≥ 50% batasi kegiatan luar ruang, RS dengan peluang < 10% dianggap di luar jalur paparan. Rujukan RS tidak menyeberang ke pulau lain.
+- Informasi yang datanya belum ada (kategori ISPU, lahan pertanian dan sumber air, kurva sensitivitas) tidak ditampilkan di UI.
 
 ---
 
@@ -71,10 +97,10 @@ ruff check app/ tests/
 flowchart TD
     subgraph S1["1. SUMBER DATA OTORITATIF (INGEST)"]
         A1["PVMBG MAGMA: Elevasi kawah, koordinat vent, radius KRB, VONA"]
-        A2["NASA FIRMS: Titik api NRT satelit VIIRS SNPP / NOAA-20 & FRP"]
-        A3["Open-Meteo Ensemble: Vektor angin multi-level (u, v) & presipitasi"]
-        A4["WorldPop: Grid demografi 100m (total jiwa, anak <15, lansia >=65)"]
-        A5["Kemendikbud & Kemenkes: Sekolah posko evakuasi BPBD, RS rujukan, bandara"]
+        A2["NASA FIRMS: Titik api NRT VIIRS S-NPP / NOAA-20 / NOAA-21 & MODIS, FRP"]
+        A3["Open-Meteo Ensemble ECMWF 51 anggota: angin multi-level & presipitasi"]
+        A4["WorldPop 2020: Grid penduduk 1 km (anak <15 & lansia >=65 dari rasio nasional)"]
+        A5["OpenStreetMap: Sekolah, klinik/puskesmas, rumah sakit, bandara"]
     end
 
     subgraph S2["2. BASIS DATA SPASIAL TERPUSAT (STORAGE & R*TREE)"]
@@ -93,8 +119,8 @@ flowchart TD
 
     subgraph S4["4. ESTIMASI DAMPAK & PROTOKOL AKSI DINI (IMPACT & UI)"]
         D1["Agregasi Kontur Gaussian: Rentang Ketidakpastian P5 - P50 - P95"]
-        D2["Triase Sekolah: Rekomendasi PJJ Daring (>=40%) / Pembatasan Luar Ruang"]
-        D3["Triase Fasilitas Kesehatan: Rujukan ke RS Aman Bebas Abu Terdekat"]
+        D2["Triase Sekolah: Pertimbangkan PJJ (>=90%) / Batasi Luar Ruang (>=50%)"]
+        D3["Rujukan ke RS di luar jalur paparan (<10%), satu pulau"]
         D4["Visualisasi Kanvas Taktis 4-Zona & Player Garis Waktu 48 Jam"]
     end
 
@@ -115,7 +141,7 @@ Pengguna mengakses antarmuka dan mengatur parameter skenario melalui **Panel Kon
    - **Erupsi Gunung Api (Abu Vulkanik)**: Menargetkan partikulat silika tajam dan gas vulkanik.
    - **Kebakaran Hutan & Lahan (Asap Karhutla)**: Menargetkan kabut asap organik dan partikel $PM_{2.5}$.
 2. **Pilihan Lokasi Kejadian (Cakupan Penuh 1 Indonesia)**:
-   - **Katalog 70 Gunung Api Aktif Tipe A PVMBG**: Menjangkau seluruh gunung api aktif di Sumatera (13 gunung), Jawa (19 gunung), Bali & Nusa Tenggara (18 gunung), Sulawesi & Sangihe (10 gunung), serta Maluku & Papua (10 gunung) berstatus Level I s.d. Level IV.
+   - **Katalog 70 Gunung Api dengan level MAGMA terkini**: Menjangkau seluruh gunung api aktif di Sumatera (13 gunung), Jawa (19 gunung), Bali & Nusa Tenggara (18 gunung), Sulawesi & Sangihe (10 gunung), serta Maluku & Papua (10 gunung) berstatus Level I s.d. Level IV.
    - **Katalog 7 Zona Karhutla Strategis Nasional**: Meliputi Kalimantan (Kalteng, Kalbar, Kalsel), Sumatera (Riau, Sumsel-OKI, Jambi), dan Papua Selatan (Merauke).
    - **Mode Simulasi Titik Bebas (Klik Peta Indonesia)**: Pengguna dapat mengklik sembarang titik koordinat di atas kepulauan Nusantara untuk menjalankan simulasi dispersi dinamis secara *on-the-fly* via API live Open-Meteo dan deteksi otomatis faskes serta sekolah sekitar.
 3. **Pilihan Mode Operasional**:
@@ -129,11 +155,11 @@ Pengguna mengakses antarmuka dan mengatur parameter skenario melalui **Panel Kon
 
 ### Langkah 2: Pengambilan & Sinkronisasi Sumber Data Otoritatif
 Ketika skenario dijalankan, backend melakukan agregasi data dari berbagai sumber resmi:
-- **Laporan VONA / PVMBG**: Memuat koordinat kawah, elevasi puncak, dan riwayat letusan.
-- **NASA FIRMS (VIIRS SNPP/NOAA-20)**: Memuat titik api aktif dan nilai *Fire Radiative Power* (FRP dalam satuan Megawatt).
-- **Open-Meteo Weather Ensemble**: Mengunduh komponen angin zona zonal ($u$) dan meridional ($v$) pada berbagai aras ketinggian atmosfer serta laju curah hujan per jam.
+- **MAGMA / PVMBG**: Level aktivitas terkini tiap gunung dan VONA terbaru (tinggi puncak abu, waktu erupsi).
+- **NASA FIRMS (VIIRS S-NPP/NOAA-20/NOAA-21 dan MODIS)**: Titik api 24 jam terakhir dan nilai *Fire Radiative Power* (FRP, MW), disegarkan tiap 15 menit.
+- **Open-Meteo Ensemble (ECMWF IFS 0,25°, 51 anggota)**: Angin per anggota pada aras sesuai tinggi kolom (10 m untuk asap; 850–300 hPa untuk abu) serta hujan per jam, mulai dari jam awal simulasi.
 - **WorldPop & OSM**: Menyiapkan grid populasi dan titik koordinat fasilitas publik (sekolah, puskesmas, rumah sakit rujukan, bandara).
-- *Dukungan Offline*: Seluruh data acuan telah disimpan dalam cache lokal (`data/events/` dan `data/layers/`) sehingga sistem dapat berjalan tanpa koneksi internet.
+- *Cache*: Data langsung disimpan sebagai snapshot (`data/layers/`, `data/events/*/weather_live.json`) dan ditandai `stale` bila sumber tidak dapat dihubungi.
 
 ---
 
@@ -149,9 +175,9 @@ Inti komputasi aplikasi digerakkan oleh mesin partikel fisik terpadu di [simulat
    - Menambahkan difusi turbulen acak ($K = 80\text{ m}^2/\text{s}$) untuk memodelkan turbulensi atmosferik.
 3. **Pencucian oleh Hujan (*Wet Scavenging*) & Peringatan Lahar**:
    - Menghitung pengendapan partikel akibat guyuran hujan $\Lambda = a \cdot R^b$.
-   - Jika intensitas hujan lebat terjadi di sekitar endapan abu tebal, sistem secara otomatis menerbitkan peringatan sekunder bahaya **Lahar Hujan (Cold Lahar Flow)** di alur sungai lereng gunung.
+   - Potensi **lahar hujan** ditampilkan dari peluang hujan prakiraan ensemble di puncak gunung melampaui ambang asumsi (bukan ambang resmi PVMBG).
 4. **Prakiraan Berulang (Ensemble Simulation)**:
-   - Dijalankan sebanyak 15 hingga 51 anggota ansambel secara paralel untuk memetakan rentang kemungkinan spasial.
+   - Aplikasi memakai 15 dari 51 anggota ensemble ECMWF asli untuk memetakan rentang kemungkinan spasial.
 
 ---
 
@@ -179,12 +205,10 @@ Laci analitik kanan menyajikan seluruh informasi spasial dalam **satu lingkup ge
 1. **Penyajian Rentang Ketidakpastian (P5 – P50 – P95)**:
    - Mematuhi prinsip data integrity: **tidak pernah menampilkan angka tunggal**. Seluruh metrik disajikan dalam batas bawah (P5), median (P50), dan batas atas (P95).
 2. **Demografi Kependudukan & Kerentanan**:
-   - Estimasi total jiwa terpapar berdasarkan grid WorldPop 100m.
+   - Estimasi total jiwa terpapar berdasarkan grid WorldPop 2020 1 km.
    - Perhitungan kelompok rentan khusus: Anak-anak ($< 15\text{ tahun}$) dan Lansia ($\ge 65\text{ tahun}$).
-3. **Dampak Lingkungan, Pertanian, & Karhutla**:
-   - Luas sawah dan kebun terdampak abu (hektare berisiko gagal panen).
-   - Sumber air minum dan DAS hulu berisiko tercemar asam abu.
-   - Tonase pelepasan karbon kebakaran hutan ($CO_2e$ gambut dan non-gambut).
+3. **Karhutla**:
+   - Tonase pelepasan karbon kebakaran hutan ($CO_2e$ gambut dan non-gambut) dari FRP rata-rata per lintasan satelit.
 4. **Hierarki Spasial: Kecamatan sebagai Wadah Induk (*Spatial Container*)**:
    - Menyatukan data administratif dan aset publik: Di bawah setiap kartu Kecamatan, langsung tercantum sekolah-sekolah di wilayah tersebut (dengan mandat PJJ) dan faskes rujukan terdekat.
    - Filter chip cepat: `[Semua Wilayah]`, `[Hanya Sekolah (PJJ)]`, dan `[Hanya RS & Faskes]`.
@@ -195,8 +219,8 @@ Laci analitik kanan menyajikan seluruh informasi spasial dalam **satu lingkup ge
 
 ### Langkah 6: Pusat Komando Aksi, AI Emergency Briefing, & Edukasi Medis (Tab 2: Protokol & Edukasi AI)
 Pusat komando komunikasi publik dan protokol aksi taktis multi-sektor berbasis standar Kemenkes, WHO, IVHHN, dan PERDAMI:
-1. **AI Emergency Briefing (Didukung Google Gemini & Pusdalops BNPB)**:
-   - **Draf Siaran Pers Resmi BPBD**: Teks siap rilis media massa dengan narasi otoritatif dan terstruktur.
+1. **Ringkasan AI untuk Warga (LLM Featherless Qwen3.6, dari fakta FIRMS, MAGMA, dan lintasan angin)**:
+   - Ringkasan dan langkah keluarga untuk titik episentrum atau lokasi GPS; bukan peringatan resmi.
    - **Draf Pesan Siaran WhatsApp Warga**: Format pesan berpoin ringkas dengan tombol 1-klik salin teks untuk dibagikan ke grup warga dan relawan.
 2. **Standar Masker Wajib: Respirator N95 vs Larangan Masker Kain**:
    - Masker kain dan masker bedah dilarang keras karena kebocoran samping mencapai $30\% - 50\%$. Wajib menggunakan respirator N95/KN95/KF94 dengan filtrasi $\ge 95\%$ partikel hingga $0.3\text{ mikron}$.
@@ -254,9 +278,9 @@ flowchart TB
 | Kategori Data | Variabel / Parameter | Sumber Data Otoritatif | Lisensi / Keterangan |
 | :--- | :--- | :--- | :--- |
 | **Vulkanologi** | Koordinat kawah, elevasi puncak, status level (I–IV), radius bahaya KRB, laporan letusan VONA | **PVMBG Badan Geologi ESDM** (MAGMA Indonesia) | Data Terbuka Pemerintah Indonesia |
-| **Kebakaran Hutan** | Koordinat titik api, Fire Radiative Power (FRP), tingkat keyakinan sensor | **NASA FIRMS** (Satelit VIIRS SNPP & NOAA-20) | NASA Earthdata Open Access |
-| **Meteorologi** | Vektor kecepatan & arah angin ($u, v$) multi-aras, curah hujan presipitasi | **Open-Meteo Ensemble API** (ECMWF & GFS) | CC BY 4.0 |
-| **Kependudukan** | Estimasi total penduduk, struktur usia anak-anak ($<15$ th) dan lansia ($\ge 65$ th) per grid 100m | **WorldPop Project** | CC BY 4.0 |
+| **Kebakaran Hutan** | Koordinat titik api, Fire Radiative Power (FRP), tingkat keyakinan sensor | **NASA FIRMS** (VIIRS S-NPP, NOAA-20, NOAA-21, MODIS) | NASA Earthdata Open Access |
+| **Meteorologi** | Vektor kecepatan & arah angin ($u, v$) multi-aras, curah hujan presipitasi | **Open-Meteo Ensemble API** (ECMWF IFS 0,25°, 51 anggota) | CC BY 4.0 |
+| **Kependudukan** | Estimasi total penduduk, struktur usia anak-anak ($<15$ th) dan lansia ($\ge 65$ th) per grid 1 km (2020) | **WorldPop Project** | CC BY 4.0 |
 | **Infrastruktur Publik**| Lokasi sekolah, puskesmas, rumah sakit rujukan darurat, bandara | **OpenStreetMap Contributors** (via Overpass API) | Open Database License (ODbL) |
 | **Fisika Erupsi** | Laju Pelepasan Massa (*Mass Eruption Rate* / MER) berdasarkan tinggi kolom | **Mastin et al. (2009)**, *J. Volcanol. Geotherm. Res.* | DOI: 10.1016/j.jvolgeores.2009.01.008 |
 | **Fisika Biomassa** | Faktor konversi FRP ke biomassa terbakar dan laju emisi partikulat $PM_{2.5}$ | **Wooster et al. (2005)** & **Li et al. (2018)** | Wooster (2005) doi:10.1029/2005JD006318 |

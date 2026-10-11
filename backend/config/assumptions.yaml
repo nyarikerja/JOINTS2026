@@ -88,3 +88,42 @@ fine_ash_fraction:
   status: sourced_secondary
   source: "Mastin dkk. 2009 doi:10.1016/j.jvolgeores.2009.01.008"
   caveat: "Fraksi abu halus (< 63 um) untuk tipe erupsi basaltik/andesitik berkisar 0.01 - 0.50."
+
+population_age_fractions:
+  value:
+    children_under_15: 0.24
+    elderly_65_plus: 0.065
+  status: to_verify
+  source: "Rasio nasional rata-rata (perkiraan struktur umur Indonesia sekitar 2020); WorldPop 1 km tidak memuat struktur umur"
+  caveat: "Satu rasio nasional diterapkan ke seluruh sel. Struktur umur tiap kabupaten bisa berbeda. Verifikasi dengan tabel BPS SP2020 sebelum status diubah."
+
+volcanic_emission_duration_h:
+  value: 6.0
+  status: assumption_placeholder
+  source: null
+  caveat: "VONA hanya memuat tinggi puncak abu pada satu waktu pengamatan, bukan lama erupsi. Durasi emisi untuk mode Kondisi Nyata memakai nilai ini."
+
+lahar_rain_trigger_mm_h:
+  value: 20.0
+  status: assumption_placeholder
+  source: null
+  caveat: "Ambang intensitas hujan pemicu lahar berbeda per gunung api. Angka ini hanya pemicu tampilan risiko, bukan ambang resmi PVMBG."
+
+vei_column_height_km:
+  value:
+    "0": 0.05
+    "1": 0.3
+    "2": 2.2
+    "3": 6.7
+    "4": 15.8
+    "5": 25.0
+    "6": 30.0
+  status: sourced_range
+  source: "Newhall & Self 1982, doi:10.1029/JC087iC02p01231 (tinggi kolom per VEI: 0 <0,1 km; 1 0,1-1; 2 1-5; 3 3-15; 4 10-25; 5 >25 km)"
+  caveat: "Nilai adalah titik tengah geometris rentang tinggi kolom di atas kawah. Dipakai hanya bila tidak ada VONA berabu; ketidakpastian ditangani sebaran MER lognormal antar anggota."
+
+default_vei_without_record:
+  value: 2
+  status: assumption_placeholder
+  source: null
+  caveat: "Dipakai hanya untuk gunung tanpa VONA berabu dan tanpa catatan erupsi Holosen di GVP (mis. Klabat, Seulawah Agam). Hasil diberi label asumsi."

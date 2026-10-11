@@ -16,7 +16,6 @@ interface ControllerDockProps {
   overrides: SimulationOverrides;
   onOverridesChange: (overrides: SimulationOverrides) => void;
   onRunSimulation: () => void;
-  onRunDemo?: () => void;
   isRunning: boolean;
   progressText: string;
   activeRunId?: string | null;
@@ -39,7 +38,7 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
   activeRunId,
   simulatedEventName
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
   const [selectedRegion, setSelectedRegion] = useState<string>("ALL");
   const [volcanoGroups, setVolcanoGroups] = useState<Record<string, any[]>>({});
   const [forestGroups, setForestGroups] = useState<Record<string, any[]>>({});
@@ -168,7 +167,7 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
 
   return (
     <div
-      className="absolute top-3.5 left-3.5 w-72 backdrop-blur-md rounded-xl shadow-2xl z-[1000] flex flex-col font-sans text-[#140f0e] overflow-visible"
+      className="absolute top-3.5 left-3.5 w-[calc(100vw-1.75rem)] sm:w-72 max-h-[calc(100%-1.75rem)] overflow-y-auto sm:overflow-visible backdrop-blur-md rounded-xl shadow-2xl z-[1000] flex flex-col font-sans text-[#140f0e] overflow-visible"
       style={{
         background: "rgba(245, 239, 227, 0.95)",
         border: "4px solid #EB895B"
@@ -302,6 +301,13 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
                   Uji Skenario
                 </button>
               </div>
+              <p className="mt-1 text-[10px] leading-snug text-[#140f0e]/60">
+                {mode === "auto"
+                  ? hazard === "volcano"
+                    ? "Tinggi kolom dari VONA MAGMA berabu 24 jam terakhir; bila tidak ada, dari erupsi terakhir di riwayat VONA atau catatan erupsi GVP (VEI). Angin dari ensemble ECMWF saat ini."
+                    : "Titik api NASA FIRMS 24 jam terakhir; bila tidak ada, kebakaran terakhir yang terdeteksi FIRMS (hingga 2 tahun). Angin dari ensemble ECMWF saat ini."
+                  : "Hasil berlabel skenario hipotetis; parameter di bawah boleh diubah."}
+              </p>
             </div>
 
             {/* 5. Parameter Uji Skenario */}
@@ -317,7 +323,7 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
                 {hazard === "volcano" ? (
                   <div>
                     <div className="flex justify-between text-[11px] mb-1 text-[#140f0e]/80">
-                      <span>Tinggi Letusan</span>
+                      <span>Tinggi puncak abu (dpl)</span>
                       <strong className="text-[#140f0e] font-semibold">{overrides.column_height_km ?? 12} km</strong>
                     </div>
                     <input

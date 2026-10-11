@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { X, Layers, Flame, ShieldAlert, Info } from "lucide-react";
+import { X, Layers, ShieldAlert, Flame, Info } from "lucide-react";
 
 interface LegendModalProps {
   isOpen: boolean;
@@ -26,7 +26,7 @@ export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => 
       onClick={onClose}
     >
       <div
-        className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl flex flex-col border transition-all animate-in zoom-in-95 duration-200"
+        className="w-full max-w-3xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col border transition-all animate-in zoom-in-95 duration-200 relative overflow-visible"
         style={{
           background: "#FFFFFF",
           borderColor: "rgba(0, 0, 0, 0.1)",
@@ -34,7 +34,8 @@ export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => 
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Header */}
+        <div className="w-full h-full max-h-[90vh] overflow-y-auto rounded-2xl flex flex-col">
+          {/* Modal Header */}
         <div
           className="px-6 py-4 flex items-center justify-between shrink-0"
           style={{
@@ -236,20 +237,36 @@ export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => 
             }}
           >
             <div className="flex items-center gap-2">
-              <Flame className="w-4 h-4" style={{ color: "#EB895B" }} />
+              <img src="/titik_api.png" alt="Titik Api" className="w-4 h-4 object-contain shrink-0" />
               <h3 className="font-bold text-sm tracking-wide" style={{ color: "#140f0e" }}>
-                Titik Api NASA FIRMS (Anomali Termal)
+                Titik Api NASA FIRMS (Anomali Termal Hybrid LOD)
               </h3>
             </div>
 
+            {/* Skala Makro: Heatmap */}
+            <div className="p-3 rounded-lg flex items-start gap-3 transition bg-white border border-orange-100 shadow-sm">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-yellow-300 via-orange-500 to-red-700 shrink-0 shadow-inner flex items-center justify-center text-[10px] font-bold text-white">
+                &lt; 9
+              </div>
+              <div className="flex-1">
+                <strong className="text-xs font-bold block text-orange-600 mb-0.5">
+                  Peta Panas / Heatmap (Skala Makro Zoom &lt; 9)
+                </strong>
+                <span className="text-[11px] leading-relaxed block text-slate-600">
+                  Jumlah daya radiasi api (FRP) deteksi NASA FIRMS 24 jam terakhir per sel 0,25°, seluruh Indonesia.
+                </span>
+              </div>
+            </div>
+
+            {/* Skala Mikro: Titik Api Presisi */}
             <div className="p-3 rounded-lg flex items-start gap-3 transition bg-white border border-orange-100 shadow-sm">
               <img src="/titik_api.png" alt="Titik Api" className="w-8 h-8 shrink-0 object-contain" />
               <div className="flex-1">
-                <strong className="text-xs font-bold block text-orange-600 mb-0.5">
-                  Titik Panas (Hotspot) Aktif
+                <strong className="text-xs font-bold block text-red-600 mb-0.5">
+                  Titik Api Presisi (Skala Mikro Zoom &ge; 9)
                 </strong>
                 <span className="text-[11px] leading-relaxed block text-slate-600">
-                  Titik api yang terdeteksi satelit. Semakin besar lingkaran merah, semakin besar energi api (dalam Megawatt) yang menyala.
+                  Setiap deteksi FIRMS 24 jam terakhir di area tampilan, dengan sensor (VIIRS/MODIS), FRP, tingkat keyakinan, dan waktu deteksi.
                 </span>
               </div>
             </div>
@@ -313,16 +330,17 @@ export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => 
           </div>
         </div>
 
-        {/* Modal Footer */}
-        <div
-          className="px-6 py-4 flex items-center justify-center shrink-0 text-[11px]"
-          style={{
-            borderTop: "1px solid rgba(0, 0, 0, 0.08)",
-            background: "#F5EFE3",
-            color: "rgba(20, 15, 14, 0.6)"
-          }}
-        >
-          <span>Otoritas: Badan Geologi PVMBG &bull; NASA FIRMS VIIRS &bull; Open-Meteo GFS</span>
+          {/* Modal Footer */}
+          <div
+            className="px-6 py-4 flex items-center justify-center shrink-0 text-[11px]"
+            style={{
+              borderTop: "1px solid rgba(0, 0, 0, 0.08)",
+              background: "#F5EFE3",
+              color: "rgba(20, 15, 14, 0.6)"
+            }}
+          >
+            <span>Sumber: MAGMA Indonesia (PVMBG) &bull; NASA FIRMS (VIIRS &amp; MODIS) &bull; Open-Meteo (ECMWF ensemble) &bull; WorldPop &bull; OpenStreetMap</span>
+          </div>
         </div>
       </div>
     </div>

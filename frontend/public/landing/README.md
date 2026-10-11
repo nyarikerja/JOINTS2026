@@ -90,7 +90,7 @@ Catatan : scene dibuat orisinal bergaya referensi ThreeUI, bukan salinan source 
 
 ## Catatan v14
 - Navigasi: pil "JOINTS UGM 2026" (tidak bisa diklik) diganti tombol CTA "Coba simulasi"; menu hamburger kini mulai di <=1100px agar tautan tidak terlipat di tablet
-- Hero: lead dipersingkat; statistik diganti angka nyata (70 gunung api, 36 kawasan hutan, grid 100 m, P5–P95) di atas kartu krem agar terbaca di atas pepohonan
+- Hero: lead dipersingkat; statistik diganti angka nyata (70 gunung api dengan level MAGMA, 36 kawasan hutan, grid penduduk 1 km, P5–P95) di atas kartu krem agar terbaca di atas pepohonan
 - Bagian baru `#masalah` (data ada, keputusan terlambat) setelah hero, `data-norail`
 - Peta simulasi bisa dipakai lewat keyboard (fokus lalu tombol panah, Shift untuk langkah besar)
 - Tautan langsung (mis. `#hasil`) langsung memakai suasana bagian itu
@@ -103,3 +103,11 @@ Catatan : scene dibuat orisinal bergaya referensi ThreeUI, bukan salinan source 
 - Realisme: pascaproses HDR (bloom, sinar matahari, vinyet, grain), rumput bergoyang, bayangan awan, danau memantulkan langit, burung, kunang-kunang, cahaya tembus di tajuk, salju di pohon, endapan abu di lereng
 - Transisi: semua nilai suasana bergeser menerus, Lenis + lompatan menu berupa time-lapse, kamera parallax mengikuti gulir
 - `?hq` mematikan kualitas adaptif (untuk tangkapan layar)
+
+## Pembaruan 11 Oktober 2026
+
+- **Sulur kartu** dibangun ulang lewat `ResizeObserver` setiap kali ukuran kartu berubah, sehingga bingkai selalu menempel pada kartu di semua ukuran layar. Ujung batang meruncing dan ditutup tunas serta sulur pilin.
+- **Warna sulur ikut musim aktif.** Kartu mewarisi variabel `:root[data-s=...]`: daun jingga dan beri di musim gugur, salju dan beri merah di musim salju, bunga sakura di musim mekar.
+- **Performa.** Kartu besar tidak lagi memakai `backdrop-filter`. Di HP, layar sentuh, atau mode Hemat/Statis, blur dimatikan seluruhnya.
+- **Tabel prioritas sekolah** bertumpuk menjadi kartu di layar ≤ 600 px.
+- Teks landing disamakan dengan aplikasi: FIRMS VIIRS dan MODIS, WorldPop 1 km, ensemble ECMWF 51 anggota, serta ambang sekolah ≥ 90% dan ≥ 50%.

@@ -124,9 +124,9 @@ def list_events():
                     "name": f"[{v.get('level_name', 'Level I')}] {v.get('name')} ({v.get('province')})",
                     "region": v.get("region", "Indonesia"),
                     "elevation_m": v.get("elevation_m"),
-                    "members_source": "open_meteo_live_forecast_api",
+                    "members_source": "open_meteo_ensemble_ecmwf_ifs025",
                     "n_members": 51,
-                    "data_status": {"weather": "open_meteo_live_or_ensemble", "vona": "pvmbg_national_catalog"}
+                    "data_status": {"weather": "open_meteo_ensemble_live", "level": v.get("level_source"), "eruption_source": "magma_vona_24h"}
                 })
                 seen_ids.add(eid)
     except Exception:
@@ -160,9 +160,9 @@ def list_events():
                 "hazard": "fire",
                 "name": k["name"],
                 "province": k["province"],
-                "members_source": "open_meteo_live_forecast_api",
+                "members_source": "open_meteo_ensemble_ecmwf_ifs025",
                 "n_members": 51,
-                "data_status": {"weather": "open_meteo_live_or_ensemble", "firms": "live_nrt_cluster"}
+                "data_status": {"weather": "open_meteo_ensemble_live", "firms": "nasa_firms_nrt_24h"}
             })
             seen_ids.add(eid)
 

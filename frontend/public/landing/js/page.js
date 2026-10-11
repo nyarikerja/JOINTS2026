@@ -328,42 +328,82 @@
     [258,346,428,494].forEach(function(t,j){var s=at(t,rv(t)+1),g=el('g',{'class':'wc-fl',transform:'translate('+s[0].toFixed(2)+' '+s[1].toFixed(2)+') rotate('+(t*2)+') scale('+(j%2?.85:1)+')'});
       for(var k=0;k<5;k++)el('ellipse',{rx:2.1,ry:3.3,transform:'rotate('+k*72+') translate(0 -2.8)'},g);el('circle',{r:1.5,'class':'wc-ctr'},g);});
   })();
-  /* bingkai sulur untuk kapsul navigasi atas dan rail, senada dengan jam: batang bergelombang menyusuri tepi kapsul,
-     daun mencuat ke luar, bunga, embun saat hujan, salju menumpuk di tepi atas. Dibangun ulang saat ukuran kapsul berubah */
+  /* bingkai sulur untuk kapsul navigasi atas, rail, dan setiap kartu pada landing page:
+     batang bergelombang menyusuri tepi kartu, daun mencuat ke luar, bunga, embun saat hujan, salju di tepi atas.
+     - Dibangun ulang lewat ResizeObserver setiap kali ukuran kartu berubah (isi dimuat, layar diputar, font siap),
+       sehingga bingkai selalu menempel pada kartu di semua ukuran layar.
+     - Ujung batang meruncing dan ditutup tunas daun serta sulur pilin, jadi sulur tidak tampak terpotong.
+     - Warna daun dan bunga mengikuti musim adegan yang sedang aktif (:root[data-s]), bukan dikunci per seksi. */
   var LEAF='M0 0C-3.6-2.2-6.4-6.6-4.6-10.6-3.4-13.2-1.2-13.4 0-15.6 1.2-13.4 3.4-13.2 4.6-10.6 6.4-6.6 3.6-2.2 0 0Z';
-  function vineFrame(host,R,runs,seed){
+  var TENDRIL='M0 0C0-4 1.5-7.5 4.6-8.2 7.4-8.8 8.4-5.6 6.4-4.2 4.8-3.1 3.6-4.6 4.7-5.6';
+  var vfQueue=new Set(),vfRaf=0;
+  function vfFlush(){vfRaf=0;vfQueue.forEach(function(fn){fn();});vfQueue.clear();}
+  function vfSchedule(fn){vfQueue.add(fn);if(!vfRaf)vfRaf=requestAnimationFrame(vfFlush);}
+  var vfRO=('ResizeObserver' in window)?new ResizeObserver(function(es){es.forEach(function(e){var fn=e.target.__vfBuild;if(fn)vfSchedule(fn);});}):null;
+  var vframeRebuilds=[];
+  function vineFrame(host,R,runs,seed,isCard){
     if(!host)return;
+    if(host.querySelector(':scope > .vframe'))return;
     var NS='http://www.w3.org/2000/svg',svg=document.createElementNS(NS,'svg'),lw=0,lh=0,P=12;
-    svg.setAttribute('class','vframe');svg.setAttribute('aria-hidden','true');host.appendChild(svg);
+    svg.setAttribute('class','vframe'+(isCard?' vcard':''));svg.setAttribute('aria-hidden','true');
+    svg.setAttribute('preserveAspectRatio','xMinYMin meet');
+    host.appendChild(svg);
     function el(n,a,p){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e;}
     function f2(v){return v.toFixed(1);}
+    function line(pts){var d='';pts.forEach(function(p,i){d+=(i?'L':'M')+f2(p[0])+' '+f2(p[1]);});return d;}
     function build(){
       var w=host.offsetWidth,h=host.offsetHeight;if(!w||!h||(Math.abs(w-lw)<2&&Math.abs(h-lh)<2))return;lw=w;lh=h;
       svg.setAttribute('viewBox','0 0 '+(w+2*P)+' '+(h+2*P));while(svg.firstChild)svg.removeChild(svg.firstChild);
-      var r=R.map(function(v){return Math.min(v,h/2,w/2);}),x0=P,y0=P,x1=P+w,y1=P+h;
+      var effectiveR=R;
+      if(!effectiveR){
+        var cs=getComputedStyle(host);
+        effectiveR=[cs.borderTopLeftRadius,cs.borderTopRightRadius,cs.borderBottomRightRadius,cs.borderBottomLeftRadius]
+          .map(function(v){return parseFloat(v)||28;});
+      }
+      var r=effectiveR.map(function(v){return Math.min(v,h/2,w/2);}),x0=P,y0=P,x1=P+w,y1=P+h;
       var d='M'+(x0+r[0])+' '+y0+'H'+(x1-r[1])+'A'+r[1]+' '+r[1]+' 0 0 1 '+x1+' '+(y0+r[1])+'V'+(y1-r[2])+'A'+r[2]+' '+r[2]+' 0 0 1 '+(x1-r[2])+' '+y1+
         'H'+(x0+r[3])+'A'+r[3]+' '+r[3]+' 0 0 1 '+x0+' '+(y1-r[3])+'V'+(y0+r[0])+'A'+r[0]+' '+r[0]+' 0 0 1 '+(x0+r[0])+' '+y0+'Z';
       var guide=el('path',{d:d,fill:'none',stroke:'none'}),L=guide.getTotalLength(),n=0;
-      runs.forEach(function(run,ri){
+      /* kartu kecil di layar sempit: daun lebih jarang agar ringan */
+      var step=w<360?4:3;
+      var effectiveRuns=runs;
+      if(!effectiveRuns||!effectiveRuns.length){
+        var sd0=(seed||1);
+        effectiveRuns=(w>420&&h>220)
+          ?[[(.80+(sd0*.11)%0.08),(1.18+(sd0*.07)%0.08)],[(.32+(sd0*.09)%0.08),(.68+(sd0*.06)%0.08)]]
+          :[[(.83+(sd0*.12)%0.09),(1.14+(sd0*.08)%0.09)],[(.35+(sd0*.10)%0.09),(.64+(sd0*.07)%0.09)]];
+      }
+      effectiveRuns.forEach(function(run,ri){
         var pts=[],a=run[0]*L,b=run[1]*L,s,i;
         for(s=a;s<=b;s+=4){var q=guide.getPointAtLength(((s%L)+L)%L);pts.push([q.x,q.y]);}
-        if(pts.length<3)return;
+        if(pts.length<8)return;
         var N=pts.map(function(p,i){var A=pts[Math.max(0,i-1)],B=pts[Math.min(pts.length-1,i+1)],tx=B[0]-A[0],ty=B[1]-A[1],l=Math.hypot(tx,ty)||1;return [tx/l,ty/l,ty/l,-tx/l];});
-        var S=pts.map(function(p,i){var o=1.5*Math.sin(i*.55+seed+ri*2);return [p[0]+N[i][2]*o,p[1]+N[i][3]*o];});
-        var sd='';S.forEach(function(p,i){sd+=(i?'L':'M')+f2(p[0])+' '+f2(p[1]);});
-        el('path',{d:sd,'class':'wc-stem'});
-        for(i=2;i<S.length-2;i+=3){
-          var t=N[i],side=n%2?1:-1,ang=(side>0?.6:-.6)+Math.sin(n*1.9+seed)*.25,out=n%5===4?-.35:1;
+        var S=pts.map(function(p,i){var o=1.5*Math.sin(i*.55+(seed||1)+ri*2);return [p[0]+N[i][2]*o,p[1]+N[i][3]*o];});
+        var tipN=Math.min(6,Math.floor(S.length/4));
+        /* batang utuh di tengah, meruncing di kedua ujung */
+        el('path',{d:line(S.slice(tipN-1,S.length-tipN+1)),'class':'wc-stem'});
+        el('path',{d:line(S.slice(0,tipN)),'class':'wc-stem tip'});
+        el('path',{d:line(S.slice(S.length-tipN)),'class':'wc-stem tip'});
+        /* ujung: sulur pilin mengikuti arah tumbuh + tunas daun kecil */
+        [[0,-1],[S.length-1,1]].forEach(function(e,k){
+          var ix=e[0],t=N[ix],dir=e[1],ang=Math.atan2(t[0]*dir,-t[1]*dir)*180/Math.PI;
+          el('path',{d:TENDRIL,'class':'wc-tendril',transform:'translate('+f2(S[ix][0])+' '+f2(S[ix][1])+') rotate('+(ang+(k?-70:70)).toFixed(0)+') scale(.85)'});
+          var bud=el('g',{transform:'translate('+f2(S[ix][0])+' '+f2(S[ix][1])+') rotate('+(ang+(k?20:-20)).toFixed(0)+') scale(.38)'});
+          el('path',{d:LEAF,'class':'wc-leaf b'},bud);
+        });
+        for(i=tipN;i<S.length-tipN;i+=step){
+          var t=N[i],side=n%2?1:-1,ang=(side>0?.6:-.6)+Math.sin(n*1.9+(seed||1))*.25,out=n%5===4?-.35:1;
           var vx=(t[2]*Math.cos(ang)+t[0]*Math.sin(ang))*out,vy=(t[3]*Math.cos(ang)+t[1]*Math.sin(ang))*out;
           if(out<0){vx=t[0]*side*.8-t[2]*.3;vy=t[1]*side*.8-t[3]*.3;}
-          var rot=Math.atan2(vx,-vy)*180/Math.PI,sc=(out<0?.42:.6+.18*Math.sin(n*1.3+seed)).toFixed(2);
+          var rot=Math.atan2(vx,-vy)*180/Math.PI,sc=(out<0?.42:.6+.18*Math.sin(n*1.3+(seed||1))).toFixed(2);
           var g=el('g',{transform:'translate('+f2(S[i][0])+' '+f2(S[i][1])+') rotate('+rot.toFixed(0)+') scale('+sc+')'});
           el('path',{d:LEAF,'class':'wc-leaf'+(n%3===0?' b':''),style:'--d:'+((n*.71)%4).toFixed(2)+'s'},g);
           el('path',{d:'M0-1.5L0-12.5M0-5L-2.4-8M0-8L2.2-10.6','class':'wc-vein'},g);
           if(n%4===1)el('circle',{cx:1.8,cy:-8.5,r:1.7,'class':'wc-drop'},g);
-          if(n%7===3){var fg=el('g',{'class':'wc-fl',transform:'translate('+f2(S[i+1][0])+' '+f2(S[i+1][1])+') rotate('+(n*37%360)+') scale(.8)'});
+          if(n%5===2&&S[i+1]){var fg=el('g',{'class':'wc-fl',transform:'translate('+f2(S[i+1][0])+' '+f2(S[i+1][1])+') rotate('+(n*37%360)+') scale(.8)'});
             for(var k=0;k<5;k++)el('ellipse',{rx:2.1,ry:3.2,transform:'rotate('+k*72+') translate(0 -2.7)'},fg);el('circle',{r:1.4,'class':'wc-ctr'},fg);}
-          if(n%9===5)el('path',{d:'M0 0C0-4 1.5-7.5 4.6-8.2 7.4-8.8 8.4-5.6 6.4-4.2 4.8-3.1 3.6-4.6 4.7-5.6','class':'wc-tendril',
+          if(n%5===4)el('circle',{cx:f2(S[i][0]+t[2]*4),cy:f2(S[i][1]+t[3]*4),r:1.6,'class':'wc-berry'});
+          if(n%9===5)el('path',{d:TENDRIL,'class':'wc-tendril',
             transform:'translate('+f2(S[i][0])+' '+f2(S[i][1])+') rotate('+(rot+180*(side<0)).toFixed(0)+') scale(.9)'});
           n++;
         }
@@ -372,12 +412,27 @@
       });
       svg.removeChild(guide);
     }
+    host.__vfBuild=build;
     build();
-    if(window.ResizeObserver)new ResizeObserver(function(){requestAnimationFrame(build);}).observe(host);
-    if(document.fonts&&document.fonts.ready)document.fonts.ready.then(build);
+    vframeRebuilds.push(build);
+    if(vfRO)vfRO.observe(host);
   }
-  vineFrame($('.nav-in'),[20,56,20,56],[[.9,1.07],[.445,.585]],1.3);
+
+  /* Navbar atas (.nav-in) dan rail */
+  vineFrame($('.nav-in'),[20,56,20,56],[[.85,1.15],[.35,.65],[.10,.28],[.62,.78]],1.3);
   vineFrame(rail,[24,24,24,24],[[-.05,.1],[.58,.97]],4.1);
+
+  /* Seluruh kartu pada landing page; warnanya ikut musim adegan yang aktif */
+  $$('.panel, .side, .decide, .facts li, .ask li, .res > div, .vine li, .aud li, .src li').forEach(function(card,idx){
+    vineFrame(card,null,null,idx*1.618+0.6,true);
+  });
+
+  /* Cadangan untuk peramban tanpa ResizeObserver */
+  if(!vfRO){
+    var vfTimer=null;
+    window.addEventListener('resize',function(){clearTimeout(vfTimer);vfTimer=setTimeout(function(){vframeRebuilds.forEach(function(fn){fn();});},150);});
+  }
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){vframeRebuilds.forEach(vfSchedule);});
   function clock(h){
     var sea=T.scene;if(sea!==lastSeason){lastSeason=sea;root.setAttribute('data-s',sea);}
     var hr=((h%24)+24)%24,hh=Math.floor(hr),mm=Math.floor((hr-hh)*60),s=(hh<10?'0':'')+hh+'.'+(mm<10?'0':'')+mm;

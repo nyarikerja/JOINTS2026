@@ -3,33 +3,55 @@ app/impact/exposure.py
 
 Perhitungan dampak paparan pada penduduk, kelompok rentan (anak & lansia), dan fasilitas publik.
 Mematuhi Prinsip AGENTS.md:
-1. Angka dampak SELALU rentang {min, median, max} (P5, P50, P95). Tidak ada angka tunggal.
+1. Angka dampak SELALU rentang {min, median, max} (P5, P50, P95) lintas anggota ensemble.
 2. Kategori ISPU hanya dihitung bila faktor emisi PM2.5 berstatus sourced*.
+4. Data yang tidak ada dijawab available: false dengan alasan (tanpa angka karangan).
+
+Sumber: populasi WorldPop 2020 (app/ingest/population.py), fasilitas OpenStreetMap
+(app/services/osm_facilities.py). Fasilitas hanya dimuat untuk kotak jejak paparan.
 """
 
 import math
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
 from app.core.config import is_pm25_emission_factor_sourced
 from app.engine.grid import SimulationGrid
 from app.ingest.overpass import OverpassIngest
+from app.ingest.population import SOURCE as POP_SOURCE
 from app.ingest.population import PopulationIngest
+from app.services.osm_facilities import SOURCE as OSM_SOURCE
+
+SAFE_PROB = 0.10
+LIST_LIMIT_SCHOOLS = 500
+LIST_LIMIT_HEALTH = 300
+REFERRAL_RADIUS_KM = 220.0
+EMERGENCY_NUMBERS = "119 (SPGDT) / 112"
 
 
 def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """Menghitung jarak garis lurus bola bumi dalam kilometer (Haversine Formula)."""
-    R = 6371.0
+    """Jarak garis lurus bola bumi dalam kilometer (Haversine)."""
+    r = 6371.0
     dlat = math.radians(lat2 - lat1)
     dlon = math.radians(lon2 - lon1)
     a = math.sin(dlat / 2.0) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2.0) ** 2
-    c = 2.0 * math.atan2(math.sqrt(a), math.sqrt(1.0 - a))
-    return round(R * c, 2)
+    return round(r * 2.0 * math.atan2(math.sqrt(a), math.sqrt(1.0 - a)), 2)
+
+
+def get_landmass_region(fac: Dict[str, Any]) -> int:
+    """Indeks pulau (poligon garis pantai) sebuah fasilitas; -1 bila tidak diketahui."""
+    from app.engine.landmask import LandMask
+    return int(LandMask.island_ids([fac["latitude"]], [fac["longitude"]])[0])
+
+
+def _hav_np(lat1, lon1, lat2, lon2):
+    lat1, lon1, lat2, lon2 = map(np.radians, (lat1, lon1, lat2, lon2))
+    a = np.sin((lat2 - lat1) / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin((lon2 - lon1) / 2) ** 2
+    return 6371.0 * 2 * np.arcsin(np.sqrt(np.clip(a, 0, 1)))
 
 
 def _safe_float(val: Any) -> float | None:
-    """Konversi nilai float aman tanpa crash jika input None, NaN, atau string."""
     if val is None:
         return None
     try:
@@ -39,270 +61,146 @@ def _safe_float(val: Any) -> float | None:
         return None
 
 
-def get_landmass_region(fac: Dict[str, Any]) -> str:
-    """
-    Menentukan kluster pulau/daratan kontigu untuk memastikan rute evakuasi darat
-    tidak menyeberangi lautan/selat (misal: sekolah di Lampung tidak dirujuk ke Banten/Jawa).
-    """
-    prov = str(fac.get("province") or "").lower()
-    dist = str(fac.get("district") or "").lower()
-    lat = float(fac.get("latitude") or 0.0)
-    lon = float(fac.get("longitude") or 0.0)
-
-    # 1. Klasifikasi berdasarkan nama Provinsi / Kabupaten
-    sumatera_kw = ["sumatera", "lampung", "aceh", "riau", "jambi", "bengkulu", "babel", "bangka", "belitung"]
-    if any(k in prov or k in dist for k in sumatera_kw):
-        return "sumatera"
-
-    jawa_kw = ["jawa", "banten", "dki", "jakarta", "diy", "yogyakarta", "serang", "cilegon", "pandeglang", "lebak", "tangerang"]
-    if any(k in prov or k in dist for k in jawa_kw):
-        return "jawa"
-
-    bali_nusa_kw = ["bali", "lombok", "ntb", "ntt", "sumbawa", "bima", "dompu", "flores", "timor", "alor", "lembata", "sumba"]
-    if any(k in prov or k in dist for k in bali_nusa_kw):
-        return "bali_nusa"
-
-    kalimantan_kw = ["kalimantan", "kalteng", "kalsel", "kalbar", "kaltim", "kaltara", "palangka", "sampit", "banjar", "pontianak", "balikpapan", "samarinda"]
-    if any(k in prov or k in dist for k in kalimantan_kw):
-        return "kalimantan"
-
-    sulawesi_kw = ["sulawesi", "sulut", "sulteng", "sulsel", "sultra", "sulbar", "gorontalo", "manado", "palu", "makassar", "kendari", "mamuju"]
-    if any(k in prov or k in dist for k in sulawesi_kw):
-        return "sulawesi"
-
-    maluku_papua_kw = ["maluku", "papua", "ambon", "ternate", "jayapura", "sorong", "merauke", "timika", "biak"]
-    if any(k in prov or k in dist for k in maluku_papua_kw):
-        return "maluku_papua"
-
-    # 2. Heuristik Geospasial batas Selat Sunda & Nusantara
-    if lat > -6.0 and lon < 105.82:
-        return "sumatera"
-    if lat <= -5.8 and lat >= -9.0 and lon >= 105.82 and lon < 115.0:
-        return "jawa"
-    if lat >= -4.5 and lat <= 4.5 and lon >= 108.5 and lon <= 119.5:
-        return "kalimantan"
-    if lat >= -6.0 and lat <= 2.5 and lon >= 119.5 and lon <= 126.0:
-        return "sulawesi"
-    if lat < -7.5 and lon >= 114.5 and lon <= 126.0:
-        return "bali_nusa"
-
-    return "unknown"
+def _range(vals) -> Dict[str, float]:
+    arr = np.asarray(vals, dtype=float)
+    if arr.size == 0:
+        return {"min": 0.0, "median": 0.0, "max": 0.0}
+    return {
+        "min": round(float(np.percentile(arr, 5)), 1),
+        "median": round(float(np.percentile(arr, 50)), 1),
+        "max": round(float(np.percentile(arr, 95)), 1),
+    }
 
 
+def _ever_exposed(run_output: Dict[str, Any]) -> Optional[np.ndarray]:
+    masks = run_output.get("hourly_exposure_masks")
+    if masks is None or not hasattr(masks, "shape"):
+        return None
+    return np.any(masks, axis=0)  # (n_members, n_lat, n_lon)
 
 
-def _synthesize_hourly_series(base_impact: Dict[str, Any]) -> Dict[str, Any]:
-    """Sintesis estimasi metrik per jam (0..48) saat hourly_masks tidak ada di disk."""
-    out = {}
-    pop = base_impact.get("population_exposed", {"min": 0, "median": 0, "max": 0})
-    ch = base_impact.get("children_exposed", {"min": 0, "median": 0, "max": 0})
-    el = base_impact.get("elderly_exposed", {"min": 0, "median": 0, "max": 0})
-    ar = base_impact.get("area_exposed_km2", {"min": 0, "median": 0, "max": 0})
-    sc = base_impact.get("schools_exposed", {"min": 0, "median": 0, "max": 0})
-    hc = base_impact.get("healthcare_exposed", {"min": 0, "median": 0, "max": 0})
-
-    def scale_m(m, f, is_int=False):
-        if is_int:
-            return {"min": int(round(m.get("min", 0) * f)), "median": int(round(m.get("median", 0) * f)), "max": int(round(m.get("max", 0) * f))}
-        return {"min": round(m.get("min", 0) * f, 1), "median": round(m.get("median", 0) * f, 1), "max": round(m.get("max", 0) * f, 1)}
-
-    for h in range(49):
-        # Penjalaran dispersi non-linear t^0.75
-        f = max(0.04, min(1.0, (h / 48.0) ** 0.75)) if h > 0 else 0.02
-        out[str(h)] = {
-            "population_exposed": scale_m(pop, f),
-            "children_exposed": scale_m(ch, f),
-            "elderly_exposed": scale_m(el, f),
-            "area_exposed_km2": scale_m(ar, f),
-            "schools_exposed": scale_m(sc, f, is_int=True),
-            "healthcare_exposed": scale_m(hc, f, is_int=True),
-            "cropland_exposed_ha": {"min": round(ar.get("min", 0) * 35.0 * f, 1), "median": round(ar.get("median", 0) * 35.0 * f, 1), "max": round(ar.get("max", 0) * 35.0 * f, 1)},
-            "water_sources_exposed_count": {"min": int(round(ar.get("min", 0) * 0.1 * f)), "median": int(round(ar.get("median", 0) * 0.1 * f)), "max": int(round(ar.get("max", 0) * 0.1 * f))},
-            "rain_pop_reduced": scale_m(pop, f * 0.22),
-            "rain_area_reduced": scale_m(ar, f * 0.22),
-        }
-    return out
-
-
-def calculate_impact_ranges(
-    run_output: Dict[str, Any],
-    grid: SimulationGrid,
-) -> Dict[str, Any]:
-    """
-    Menghitung rentang dampak lintas anggota ensemble.
-    Semua metrik dikembalikan dalam bentuk {min, median, max}.
-    """
-    if "impact" in run_output and isinstance(run_output["impact"], dict) and "population_exposed" in run_output["impact"]:
-        res = dict(run_output["impact"])
-        if "hourly_series" not in res or not res["hourly_series"]:
-            res["hourly_series"] = _synthesize_hourly_series(res)
-        return res
-
-    hourly_masks = run_output.get("hourly_exposure_masks")
-    if hourly_masks is None or not hasattr(hourly_masks, "shape"):
-        return {
-            "population_exposed": {"min": 0, "median": 0, "max": 0},
-            "children_exposed": {"min": 0, "median": 0, "max": 0},
-            "elderly_exposed": {"min": 0, "median": 0, "max": 0},
-            "area_exposed_km2": {"min": 0.0, "median": 0.0, "max": 0.0},
-            "schools_exposed": {"min": 0, "median": 0, "max": 0},
-            "healthcare_exposed": {"min": 0, "median": 0, "max": 0},
-            "airports_exposed": {"min": 0, "median": 0, "max": 0},
-            "ispu": {"available": False, "reason": "Matriks simulasi tidak tersedia pada ringkasan run."}
-        }
-
-    n_hours, n_members, n_lat, n_lon = hourly_masks.shape
-
-    # Masker kumulatif per anggota: sel yang pernah terkena setidaknya satu jam
-    ever_exposed_per_member = np.any(hourly_masks, axis=0)  # shape (n_members, n_lat, n_lon)
-
-    # Ambil grid populasi
-    pop_data = PopulationIngest.get_population_grid(
-        grid.lat_min, grid.lat_max, grid.lon_min, grid.lon_max, grid.resolution_deg,
-        shape=(grid.n_lat, grid.n_lon)
-    )
-    pop_total_grid = pop_data["total"]
-    pop_children_grid = pop_data["children"]
-    pop_elderly_grid = pop_data["elderly"]
-
-    # Ambil fasilitas dalam domain
-    facilities = OverpassIngest.get_facilities_in_bbox(
-        grid.lat_min, grid.lat_max, grid.lon_min, grid.lon_max
+def footprint_bbox(run_output: Dict[str, Any], grid: SimulationGrid, pad_deg: float = 0.0) -> Optional[Tuple[float, float, float, float]]:
+    ever = _ever_exposed(run_output)
+    if ever is None:
+        return None
+    any_m = np.any(ever, axis=0)
+    rows, cols = np.nonzero(any_m)
+    if rows.size == 0:
+        return None
+    return (
+        float(grid.lats[rows.min()]) - pad_deg, float(grid.lats[rows.max()]) + pad_deg,
+        float(grid.lons[cols.min()]) - pad_deg, float(grid.lons[cols.max()]) + pad_deg,
     )
 
-    # Vektor dampak per anggota
-    member_pop_impact = []
-    member_child_impact = []
-    member_elderly_impact = []
-    member_area_impact = []
-    member_schools_impact = []
-    member_hc_impact = []
-    member_air_impact = []
 
-    for m in range(n_members):
-        exp_m = ever_exposed_per_member[m]
+def run_facilities(run_output: Dict[str, Any], grid: SimulationGrid) -> Dict[str, Any]:
+    """Fasilitas OSM di jejak paparan (+ RS rujukan di sekitarnya). Di-cache per run."""
+    from app.services import osm_facilities
 
-        # Penduduk
-        tot_pop = float(np.sum(pop_total_grid[exp_m]))
-        child_pop = float(np.sum(pop_children_grid[exp_m]))
-        eld_pop = float(np.sum(pop_elderly_grid[exp_m]))
-        area_km2 = float(np.sum(grid.cell_area_m2[exp_m])) / 1e6
+    cached = run_output.get("_facilities")
+    if cached is not None:
+        missing = [tuple(t) for t in cached.get("missing_tiles", [])]
+        if not missing or not osm_facilities.tiles_available(missing):
+            return cached
+    bbox = footprint_bbox(run_output, grid, pad_deg=grid.resolution_deg)
+    if bbox is None:
+        res = {"in_footprint": [], "hospitals_nearby": [], "missing_tiles": []}
+    else:
+        facs, missing = OverpassIngest.get_facilities_with_coverage(*bbox, fetch_missing=False)
+        lat_min, lat_max, lon_min, lon_max = bbox
+        hosp, missing2 = OverpassIngest.get_facilities_with_coverage(
+            lat_min - 1.0, lat_max + 1.0, lon_min - 1.0, lon_max + 1.0, facility_type="healthcare",
+            fetch_missing=False,
+        )
+        hosp = [h for h in hosp if h.get("subtype") == "hospital"]
+        res = {"in_footprint": facs, "hospitals_nearby": hosp, "missing_tiles": sorted(set(missing) | set(missing2))}
+    run_output["_facilities"] = res
+    return res
 
-        # Fasilitas
-        n_schools = 0
-        n_hc = 0
-        n_air = 0
-        for fac in facilities:
-            r, c = grid.coord_to_index(fac["latitude"], fac["longitude"])
-            if exp_m[r, c]:
-                ft = fac.get("facility_type")
-                if ft == "school":
-                    n_schools += 1
-                elif ft == "healthcare":
-                    n_hc += 1
-                elif ft == "airport":
-                    n_air += 1
 
-        member_pop_impact.append(tot_pop)
-        member_child_impact.append(child_pop)
-        member_elderly_impact.append(eld_pop)
-        member_area_impact.append(area_km2)
-        member_schools_impact.append(n_schools)
-        member_hc_impact.append(n_hc)
-        member_air_impact.append(n_air)
+def _fac_arrays(facs: List[Dict[str, Any]], grid: SimulationGrid):
+    if not facs:
+        return np.zeros(0, int), np.zeros(0, int), np.zeros(0, bool)
+    lat = np.array([f["latitude"] for f in facs])
+    lon = np.array([f["longitude"] for f in facs])
+    inside = (lat >= grid.lat_min) & (lat <= grid.lat_max) & (lon >= grid.lon_min) & (lon <= grid.lon_max)
+    r, c = grid.coord_to_index(lat, lon)
+    return np.asarray(r), np.asarray(c), inside
 
-    def to_range_metric(vals: list[float]) -> Dict[str, float]:
-        arr = np.array(vals)
+
+def _coverage_note(fac_info: Dict[str, Any]) -> Dict[str, Any]:
+    missing = fac_info.get("missing_tiles", [])
+    return {
+        "source": OSM_SOURCE,
+        "complete": not missing,
+        "missing_tiles": [list(t) for t in missing],
+        "note": (
+            "Data fasilitas OSM lengkap untuk jejak paparan." if not missing else
+            f"{len(missing)} tile 1 derajat sedang diunduh dari Overpass; jumlah fasilitas bisa kurang dari "
+            "kenyataan dan akan diperbarui otomatis saat dibuka ulang."
+        ),
+    }
+
+
+def calculate_impact_ranges(run_output: Dict[str, Any], grid: SimulationGrid) -> Dict[str, Any]:
+    """Rentang dampak lintas anggota ensemble, plus deret per jam."""
+    if isinstance(run_output.get("impact"), dict) and "population_exposed" in run_output["impact"]:
+        return dict(run_output["impact"])
+
+    ever = _ever_exposed(run_output)
+    if ever is None:
         return {
-            "min": round(float(np.percentile(arr, 5)), 1),
-            "median": round(float(np.percentile(arr, 50)), 1),
-            "max": round(float(np.percentile(arr, 95)), 1),
+            "run_id": run_output.get("run_id"),
+            "available": False,
+            "reason": "Matriks paparan run ini tidak tersimpan; jalankan ulang simulasi.",
         }
+    masks = run_output["hourly_exposure_masks"]
+    n_hours, n_members = masks.shape[0], masks.shape[1]
 
-    # Hitung runtut waktu per jam (hourly_series) secara tervarisasi penuh lintas ensemble
-    hourly_series = {}
-    try:
-        cum_masks_all = np.maximum.accumulate(hourly_masks, axis=0)  # (n_hours, n_members, n_lat, n_lon)
-        cell_area_km2 = grid.cell_area_m2 / 1e6
+    pop = PopulationIngest.get_population_grid(
+        grid.lat_min, grid.lat_max, grid.lon_min, grid.lon_max, grid.resolution_deg, shape=(grid.n_lat, grid.n_lon)
+    )
+    cell_km2 = grid.cell_area_m2 / 1e6
 
-        tot_pop_all = np.sum(cum_masks_all * pop_total_grid, axis=(-2, -1))
-        child_pop_all = np.sum(cum_masks_all * pop_children_grid, axis=(-2, -1))
-        elder_pop_all = np.sum(cum_masks_all * pop_elderly_grid, axis=(-2, -1))
-        area_km2_all = np.sum(cum_masks_all * cell_area_km2, axis=(-2, -1))
+    fac_info = run_facilities(run_output, grid)
+    facs = fac_info["in_footprint"]
+    r, c, inside = _fac_arrays(facs, grid)
+    types = np.array([f["facility_type"] for f in facs]) if facs else np.zeros(0, dtype=str)
 
-        land_mask = None
-        try:
-            from app.engine.landmask import LandMask
-            land_mask = LandMask.get_mask(grid.lats, grid.lons)
-        except Exception:
-            pass
+    def fac_counts(mask_mf: np.ndarray, kind: str) -> np.ndarray:
+        sel = inside & (types == kind)
+        return mask_mf[..., sel].sum(axis=-1) if sel.any() else np.zeros(mask_mf.shape[:-1])
 
-        if land_mask is not None:
-            land_area_all = np.sum(cum_masks_all * (cell_area_km2 * land_mask), axis=(-2, -1))
-        else:
-            land_area_all = area_km2_all
+    ever_f = ever[:, r, c] if facs else np.zeros((n_members, 0), bool)
+    cum = np.maximum.accumulate(masks, axis=0)
+    cum_f = cum[:, :, r, c] if facs else np.zeros((n_hours, n_members, 0), bool)
 
-        fac_indexed = []
-        for fac in facilities:
-            r, c = grid.coord_to_index(fac["latitude"], fac["longitude"])
-            fac_indexed.append((r, c, fac.get("facility_type")))
+    tot = np.tensordot(cum, pop["total"], axes=([2, 3], [0, 1]))      # (H, M)
+    area = np.tensordot(cum, cell_km2, axes=([2, 3], [0, 1]))
+    child_f = float(pop["children"].sum() / pop["total"].sum()) if pop["total"].sum() > 0 else 0.0
+    elder_f = float(pop["elderly"].sum() / pop["total"].sum()) if pop["total"].sum() > 0 else 0.0
+    sch_h, hc_h = fac_counts(cum_f, "school"), fac_counts(cum_f, "healthcare")
 
-        for h_idx in range(n_hours):
-            h_pop = tot_pop_all[h_idx]
-            h_child = child_pop_all[h_idx]
-            h_elder = elder_pop_all[h_idx]
-            h_area = area_km2_all[h_idx]
-            h_land = land_area_all[h_idx]
+    hourly_series: Dict[str, Any] = {}
+    for h in range(n_hours):
+        hourly_series[str(h)] = {
+            "population_exposed": _range(tot[h]),
+            "children_exposed": _range(tot[h] * child_f),
+            "elderly_exposed": _range(tot[h] * elder_f),
+            "area_exposed_km2": _range(area[h]),
+            "schools_exposed": _range(sch_h[h]),
+            "healthcare_exposed": _range(hc_h[h]),
+        }
+    if n_hours > 0:
+        hourly_series[str(n_hours)] = hourly_series[str(n_hours - 1)]
 
-            sch_m = []
-            hc_m = []
-            for m in range(n_members):
-                ns = 0
-                nh = 0
-                for r, c, ft in fac_indexed:
-                    if cum_masks_all[h_idx, m, r, c]:
-                        if ft == "school":
-                            ns += 1
-                        elif ft == "healthcare":
-                            nh += 1
-                sch_m.append(ns)
-                hc_m.append(nh)
-
-            cropland_ha = h_land * 100.0 * 0.35
-            water_pts = np.round(h_land * 0.05 * 2.0).astype(int)
-            rain_pop = h_pop * 0.22
-            rain_area = h_area * 0.22
-
-            hourly_series[str(h_idx)] = {
-                "population_exposed": to_range_metric(h_pop),
-                "children_exposed": to_range_metric(h_child),
-                "elderly_exposed": to_range_metric(h_elder),
-                "area_exposed_km2": to_range_metric(h_area),
-                "schools_exposed": to_range_metric(sch_m),
-                "healthcare_exposed": to_range_metric(hc_m),
-                "cropland_exposed_ha": to_range_metric(cropland_ha),
-                "water_sources_exposed_count": to_range_metric(water_pts),
-                "rain_pop_reduced": to_range_metric(rain_pop),
-                "rain_area_reduced": to_range_metric(rain_area),
-            }
-
-        if n_hours > 0 and str(n_hours) not in hourly_series and str(n_hours - 1) in hourly_series:
-            hourly_series[str(n_hours)] = hourly_series[str(n_hours - 1)]
-    except Exception:
-        hourly_series = {}
-
-    # Prinsip 11: ISPU hanya aktif jika faktor emisi PM2.5 berstatus sourced*
     if is_pm25_emission_factor_sourced():
-        ispu_info = {
-            "available": True,
-            "category_range": {"min": "sedang", "median": "tidak_sehat", "max": "sangat_tidak_sehat"},
-            "caveat": "Dihitung dari rata-rata bergulir 24 jam Permen LHK P.14/2020."
-        }
+        ispu_info = {"available": True, "caveat": "Dihitung dari rata-rata 24 jam Permen LHK P.14/2020."}
     else:
         ispu_info = {
             "available": False,
-            "reason": "Kategori ISPU dinonaktifkan: faktor emisi PM2.5 (D13b) belum berstatus sourced* (Prinsip 11 AGENTS.md).",
-            "relative_risk_index": {"min": 1.2, "median": 2.5, "max": 4.1}
+            "reason": "Kategori ISPU tidak ditampilkan: faktor emisi PM2.5 (D13b) masih placeholder, "
+                      "sehingga konsentrasi absolut belum layak dikonversi ke kategori ISPU (Prinsip 11).",
         }
 
     return {
@@ -310,391 +208,263 @@ def calculate_impact_ranges(
         "scenario_label": run_output["scenario_label"],
         "disclaimer": run_output["disclaimer"],
         "assumptions_used": run_output["assumptions_used"],
-        "population_exposed": to_range_metric(member_pop_impact),
-        "children_exposed": to_range_metric(member_child_impact),
-        "elderly_exposed": to_range_metric(member_elderly_impact),
-        "schools_exposed": to_range_metric(member_schools_impact),
-        "healthcare_exposed": to_range_metric(member_hc_impact),
-        "airports_exposed": to_range_metric(member_air_impact),
-        "area_exposed_km2": to_range_metric(member_area_impact),
+        "population_exposed": _range(tot[-1]),
+        "children_exposed": _range(tot[-1] * child_f),
+        "elderly_exposed": _range(tot[-1] * elder_f),
+        "schools_exposed": _range(fac_counts(ever_f, "school")),
+        "healthcare_exposed": _range(fac_counts(ever_f, "healthcare")),
+        "airports_exposed": _range(fac_counts(ever_f, "airport")),
+        "area_exposed_km2": _range(area[-1]),
         "ispu": ispu_info,
+        "population_source": POP_SOURCE,
+        "facilities_coverage": _coverage_note(fac_info),
         "hourly_series": hourly_series,
     }
 
 
-def evaluate_decision_card(
-    run_output: Dict[str, Any],
-    facility_id: str,
-    grid: SimulationGrid
-) -> Dict[str, Any]:
-    """
-    Menghasilkan kartu keputusan untuk fasilitas tertentu (sekolah, puskesmas, bandara).
-    Menampilkan peluang terkena, jam tiba tercepat & paling mungkin, dan keparahan.
-    """
-    fac = OverpassIngest.get_facility_by_id(facility_id)
+def _arrival(run_output, key, r, c):
+    arr = run_output.get("arrival_time", {}).get(key) or []
+    if not arr:
+        return None
+    v = _safe_float(arr[r][c])
+    return round(v, 1) if v is not None else None
+
+
+def evaluate_decision_card(run_output: Dict[str, Any], facility_id: str, grid: SimulationGrid) -> Dict[str, Any]:
+    """Kartu keputusan satu fasilitas: peluang terkena dan jam tiba (dari run yang sama)."""
+    fac = None
+    info = run_output.get("_facilities")
+    if info:
+        fac = next((f for f in info["in_footprint"] + info["hospitals_nearby"] if f["facility_id"] == facility_id), None)
+    if fac is None:
+        for pool in (run_output.get("facilities_impacted") or {}).values():
+            if isinstance(pool, list):
+                fac = next((f for f in pool if isinstance(f, dict) and f.get("facility_id") == facility_id), None)
+                if fac:
+                    break
+    if fac is None:
+        fac = OverpassIngest.get_facility_by_id(facility_id)
     if not fac:
         return {"available": False, "reason": f"Fasilitas ID '{facility_id}' tidak ditemukan."}
 
-    hourly_masks = run_output.get("hourly_exposure_masks")
-    n_hours, n_members, n_lat, n_lon = hourly_masks.shape
-
-    r, c = grid.coord_to_index(fac["latitude"], fac["longitude"])
-
-    # Fraksi anggota yang pernah mencapai lokasi ini
-    ever_exp = np.any(hourly_masks[:, :, r, c], axis=0)  # shape (n_members,)
-    prob = float(np.mean(ever_exp))
-
-    earliest_arr = run_output.get("arrival_time", {}).get("earliest", [])
-    likely_arr = run_output.get("arrival_time", {}).get("most_likely", [])
-
-    earliest_h = _safe_float(earliest_arr[r][c]) if earliest_arr else None
-    likely_h = _safe_float(likely_arr[r][c]) if likely_arr else None
+    masks = run_output.get("hourly_exposure_masks")
+    lat, lon = fac["latitude"], fac["longitude"]
+    in_grid = grid.lat_min <= lat <= grid.lat_max and grid.lon_min <= lon <= grid.lon_max
+    prob, earliest, likely = 0.0, None, None
+    if in_grid and masks is not None:
+        r, c = grid.coord_to_index(lat, lon)
+        prob = float(np.mean(np.any(masks[:, :, r, c], axis=0)))
+        earliest, likely = _arrival(run_output, "earliest", r, c), _arrival(run_output, "most_likely", r, c)
+    elif fac.get("exposure_probability") is not None:
+        prob = float(fac["exposure_probability"])
+        earliest = fac.get("arrival_time_earliest_h")
+        likely = fac.get("arrival_time_most_likely_h")
 
     return {
+        "available": True,
         "facility_id": fac["facility_id"],
         "name": fac["name"],
         "facility_type": fac["facility_type"],
-        "latitude": fac["latitude"],
-        "longitude": fac["longitude"],
+        "latitude": lat,
+        "longitude": lon,
         "district": fac.get("district", "-"),
         "exposure_probability": round(prob, 2),
-        "arrival_time_earliest_h": earliest_h,
-        "arrival_time_most_likely_h": likely_h,
+        "exposure_probability_pct": int(round(prob * 100)),
+        "arrival_time_earliest_h": earliest,
+        "arrival_time_most_likely_h": likely,
+        "source": OSM_SOURCE,
         "scenario_label": run_output["scenario_label"],
-        "disclaimer": run_output["disclaimer"]
+        "disclaimer": run_output["disclaimer"],
     }
 
 
-def get_exposed_facilities_list(
-    run_output: Dict[str, Any],
-    grid: SimulationGrid,
-    min_prob: float = 0.05
-) -> Dict[str, Any]:
-    """
-    Mengambil daftar seluruh fasilitas publik (sekolah & faskes) di dalam jalur paparan,
-    lengkap dengan rekomendasi aksi operasional dini (PJJ daring vs tatap muka).
-    """
-    facilities = OverpassIngest.get_facilities_in_bbox(
-        grid.lat_min, grid.lat_max, grid.lon_min, grid.lon_max
-    )
-
-    hourly_masks = run_output.get("hourly_exposure_masks")
-    earliest_arr = run_output.get("arrival_time", {}).get("earliest", [])
-    likely_arr = run_output.get("arrival_time", {}).get("most_likely", [])
-
-    schools = []
-    healthcare = []
-    airports = []
-
-    # Muat seluruh fasilitas nasional untuk kalkulasi rujukan evakuasi terdekat & aman
-    all_facilities = OverpassIngest.load_all_facilities()
-    all_hospitals = [f for f in all_facilities if f.get("facility_type") == "healthcare"]
-    for f in facilities:
-        if f.get("facility_type") == "healthcare" and f not in all_hospitals:
-            all_hospitals.append(f)
-
-    # Evaluasi status paparan & keamanan untuk seluruh rumah sakit
-    hospital_eval_list = []
-    for h in all_hospitals:
-        h_lat = h["latitude"]
-        h_lon = h["longitude"]
-        h_prob = 0.0
-        h_earliest = None
-        if grid.lat_min <= h_lat <= grid.lat_max and grid.lon_min <= h_lon <= grid.lon_max:
-            r, c = grid.coord_to_index(h_lat, h_lon)
-            ever_exp = np.any(hourly_masks[:, :, r, c], axis=0)
-            h_prob = float(np.mean(ever_exp))
-            if earliest_arr:
-                val = _safe_float(earliest_arr[r][c])
-                if val is not None:
-                    h_earliest = round(val, 1)
-
-        is_safe = h_prob < 0.10
-        if is_safe:
-            evac_status = "SAFE_ZONE"
-            status_badge = "[RUJUKAN UTAMA] Zona Aman Bebas Abu"
-            badge_color = "#10b981"
-            evac_recommendation = "Prioritas rujukan utama evakuasi. Udara bersih, kapasitas IGD & O2 aman."
-        elif h_prob < 0.35:
-            evac_status = "WARNING_ZONE"
-            status_badge = "[TRIASE LAPANGAN] Siaga Penyangga"
-            badge_color = "#f59e0b"
-            evac_recommendation = "Siaga pertolongan pertama & stabilisasi pasien sebelum dirujuk ke RS aman."
-        else:
-            evac_status = "DANGER_ZONE"
-            status_badge = "[TERDAMPAK] Zona Bahaya Abu"
-            badge_color = "#ef4444"
-            evac_recommendation = "RS terpapar abu lebat. Tidak disarankan menerima rujukan korban luar; prioritaskan perlindungan pasien internal."
-
-        hospital_eval_list.append({
-            "facility_id": h["facility_id"],
-            "name": h["name"],
-            "facility_type": "healthcare",
-            "district": h.get("district", "-"),
-            "latitude": h_lat,
-            "longitude": h_lon,
-            "exposure_probability": round(h_prob, 2),
-            "exposure_pct": int(round(h_prob * 100)),
-            "arrival_time_earliest_h": h_earliest,
-            "is_safe": is_safe,
-            "evacuation_status": evac_status,
-            "status_badge": status_badge,
-            "badge_color": badge_color,
-            "evac_recommendation": evac_recommendation,
-            "emergency_hotline": "SPGDT 119 / Call Center 112",
-            "capabilities": ["IGD 24 Jam", "Pasokan O2 Medis", "Ruang Rawat ISPA", "Unit Ambulans Gawat Darurat"]
-        })
-
-    # Pusat kejadian untuk hitung jarak RS ke episentrum
-    center = run_output.get("center_coords") or {
-        "latitude": (grid.lat_min + grid.lat_max) / 2.0,
-        "longitude": (grid.lon_min + grid.lon_max) / 2.0
-    }
-    c_lat, c_lon = center["latitude"], center["longitude"]
-    for h in hospital_eval_list:
-        h["distance_from_epicenter_km"] = round(haversine_km(c_lat, c_lon, h["latitude"], h["longitude"]), 1)
-
-    # RS Rujukan Terdekat dari episentrum (radius ~220 km)
-    evacuation_referral_hospitals = [
-        h for h in hospital_eval_list if h["distance_from_epicenter_km"] <= 220.0
-    ]
-    evacuation_referral_hospitals.sort(key=lambda x: (not x["is_safe"], x["distance_from_epicenter_km"]))
-
-    # Evaluasi fasilitas publik dalam grid
-    for fac in facilities:
-        r, c = grid.coord_to_index(fac["latitude"], fac["longitude"])
-        ever_exp = np.any(hourly_masks[:, :, r, c], axis=0)
-        prob = float(np.mean(ever_exp))
-
-        if prob < min_prob:
-            continue
-
-        earliest_h = _safe_float(earliest_arr[r][c]) if earliest_arr else None
-        likely_h = _safe_float(likely_arr[r][c]) if likely_arr else None
-
-        ftype = fac.get("facility_type")
-        item = {
-            "facility_id": fac["facility_id"],
-            "name": fac["name"],
-            "facility_type": ftype,
-            "district": fac.get("district", "-"),
-            "latitude": fac["latitude"],
-            "longitude": fac["longitude"],
-            "exposure_probability": round(prob, 2),
-            "exposure_pct": int(round(prob * 100)),
-            "arrival_time_earliest_h": round(earliest_h, 1) if earliest_h is not None else None,
-            "arrival_time_most_likely_h": round(likely_h, 1) if likely_h is not None else None,
+def _school_advice(prob: float, earliest: Optional[float]) -> Dict[str, str]:
+    if prob >= 0.90:
+        return {
+            "alert_level": "PELUANG SANGAT TINGGI", "badge_color": "#ef4444",
+            "recommendation": "PERTIMBANGKAN PJJ DARING",
+            "action_detail": (
+                f"Model memperkirakan paparan pada sebagian besar anggota ensemble"
+                f"{f', paling cepat T+{earliest} jam' if earliest is not None else ''}. "
+                "Koordinasikan dengan dinas pendidikan/BPBD sebelum mengubah KBM."
+            ),
         }
+    if prob >= 0.50:
+        return {
+            "alert_level": "PELUANG SEDANG", "badge_color": "#f59e0b",
+            "recommendation": "BATASI AKTIVITAS LUAR RUANG",
+            "action_detail": "Kurangi olahraga/upacara di luar gedung dan siapkan masker N95 di UKS.",
+        }
+    return {
+        "alert_level": "PELUANG RENDAH", "badge_color": "#10b981",
+        "recommendation": "PANTAU PERKEMBANGAN",
+        "action_detail": "KBM normal; pantau informasi resmi BMKG/PVMBG/BPBD.",
+    }
 
-        # Rekomendasi aksi operasional pencegahan & evakuasi (sinkron dengan tier P90, P50, P05)
-        if ftype == "school":
-            if prob >= 0.90:
-                item["alert_level"] = "SIAGA TINGGI"
-                item["badge_color"] = "#ef4444"
-                item["recommendation"] = "ALIHKAN KE PJJ DARING (BELAJAR DARI RUMAH)"
-                item["action_detail"] = (
-                    f"Hentikan KBM tatap muka. Pulangkan siswa sebelum T+{item['arrival_time_earliest_h'] or 'segera'} jam "
-                    f"atau alihkan langsung ke daring. Amankan ruang kelas dan tutup ventilasi."
-                )
-            elif prob >= 0.50:
-                item["alert_level"] = "WASPADA"
-                item["badge_color"] = "#f59e0b"
-                item["recommendation"] = "HENTIKAN AKTIVITAS LUAR RUANG (OUTDOOR)"
-                item["action_detail"] = "Larang upacara, olahraga, dan istirahat di luar gedung. Siapkan masker N95 di UKS."
-            else:
-                item["alert_level"] = "SIAGA DINI"
-                item["badge_color"] = "#10b981"
-                item["recommendation"] = "MONITORING PERKEMBANGAN ANGIN"
-                item["action_detail"] = "KBM berjalan normal dengan kewaspadaan telemetri berkala."
 
-            # Cari RS terdekat & RS rujukan aman terdekat untuk evakuasi korban sekolah ini
-            # Wajib pada daratan/pulau yang sama (menolak rute ambulans menyeberang selat/lautan)
-            sch_landmass = get_landmass_region(fac)
-            same_landmass_hospitals = [
-                h for h in hospital_eval_list
-                if get_landmass_region(h) == sch_landmass
-            ]
-            eval_hospitals = same_landmass_hospitals if same_landmass_hospitals else hospital_eval_list
+def _health_advice(prob: float, earliest: Optional[float]) -> Dict[str, str]:
+    if prob >= 0.90:
+        return {
+            "alert_level": "PELUANG SANGAT TINGGI", "badge_color": "#ef4444",
+            "recommendation": "SIAPKAN LAYANAN PERNAPASAN",
+            "action_detail": (
+                "Periksa stok oksigen, nebulizer, dan masker N95 untuk nakes"
+                f"{f' sebelum T+{earliest} jam' if earliest is not None else ''}."
+            ),
+        }
+    if prob >= 0.50:
+        return {
+            "alert_level": "PELUANG SEDANG", "badge_color": "#f59e0b",
+            "recommendation": "INVENTARISASI LOGISTIK PERNAPASAN",
+            "action_detail": "Pastikan masker partikulat dan obat pernapasan tersedia.",
+        }
+    return {
+        "alert_level": "PELUANG RENDAH", "badge_color": "#10b981",
+        "recommendation": "PANTAU KELUHAN PERNAPASAN",
+        "action_detail": "Pantau keluhan pernapasan warga secara berkala.",
+    }
 
-            # Cari RS terdekat & RS rujukan aman minim dampak untuk evakuasi korban sekolah ini
-            # Menolak evakuasi yang memindahkan ambulans semakin dekat ke kawah aktif / menembus KRB pekat
-            fac_lat = fac["latitude"]
-            fac_lon = fac["longitude"]
-            fac_to_center = haversine_km(fac_lat, fac_lon, c_lat, c_lon)
 
-            best_safe_h = None
-            best_safe_score = float("inf")
-            nearest_any_h = None
-            min_any_dist = float("inf")
-            # Cari RS rujukan aman terdekat (prioritaskan 100% RS yang berstatus is_safe == True)
-            safe_pool = [h for h in eval_hospitals if h.get("is_safe")]
-            search_pool = safe_pool if safe_pool else eval_hospitals
+def get_exposed_facilities_list(run_output: Dict[str, Any], grid: SimulationGrid, min_prob: float = 0.05) -> Dict[str, Any]:
+    """Fasilitas OSM di jalur paparan beserta RS rujukan aman terdekat."""
+    masks = run_output.get("hourly_exposure_masks")
+    if masks is None:
+        return {"available": False, "reason": "Matriks paparan run ini tidak tersimpan.", "schools": [], "healthcare": [],
+                "airports": [], "evacuation_referral_hospitals": []}
+    ever = np.any(masks, axis=0)
+    fac_info = run_facilities(run_output, grid)
+    center = run_output.get("center_coords") or {
+        "latitude": (grid.lat_min + grid.lat_max) / 2, "longitude": (grid.lon_min + grid.lon_max) / 2
+    }
+    c_lat, c_lon = float(center["latitude"]), float(center["longitude"])
 
-            for h in eval_hospitals:
-                dist = haversine_km(fac_lat, fac_lon, h["latitude"], h["longitude"])
-                if dist < min_any_dist:
-                    min_any_dist = dist
-                    nearest_any_h = {**h, "distance_km": round(dist, 1)}
+    def evaluate(facs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        if not facs:
+            return []
+        r, c, inside = _fac_arrays(facs, grid)
+        prob = np.where(inside, ever[:, r, c].mean(axis=0), 0.0)
+        out = []
+        for i, f in enumerate(facs):
+            p = float(prob[i])
+            out.append({
+                "facility_id": f["facility_id"],
+                "name": f["name"],
+                "facility_type": f["facility_type"],
+                "subtype": f.get("subtype"),
+                "district": f.get("district", "-"),
+                "latitude": f["latitude"],
+                "longitude": f["longitude"],
+                "exposure_probability": round(p, 2),
+                "exposure_pct": int(round(p * 100)),
+                "arrival_time_earliest_h": _arrival(run_output, "earliest", r[i], c[i]) if inside[i] else None,
+                "arrival_time_most_likely_h": _arrival(run_output, "most_likely", r[i], c[i]) if inside[i] else None,
+            })
+        return out
 
-            for h in search_pool:
-                h_lat = h["latitude"]
-                h_lon = h["longitude"]
-                dist = haversine_km(fac_lat, fac_lon, h_lat, h_lon)
-                h_to_center = haversine_km(h_lat, h_lon, c_lat, c_lon)
-                h_prob = h.get("exposure_probability", 0.0)
+    # RS rujukan: rumah sakit di sekitar jejak paparan, aman bila peluang < SAFE_PROB
+    hospitals = evaluate(fac_info["hospitals_nearby"])
+    for h in hospitals:
+        h["distance_from_epicenter_km"] = haversine_km(c_lat, c_lon, h["latitude"], h["longitude"])
+        h["is_safe"] = h["exposure_probability"] < SAFE_PROB
+        h["evacuation_status"] = "SAFE_ZONE" if h["is_safe"] else ("WARNING_ZONE" if h["exposure_probability"] < 0.35 else "DANGER_ZONE")
+        h["status_badge"] = (
+            "Di luar jalur paparan (peluang < 10%)" if h["is_safe"] else f"Di jalur paparan ({h['exposure_pct']}%)"
+        )
+        h["badge_color"] = "#10b981" if h["is_safe"] else ("#f59e0b" if h["exposure_probability"] < 0.35 else "#ef4444")
+        h["emergency_hotline"] = EMERGENCY_NUMBERS
+    referral = [h for h in hospitals if h["distance_from_epicenter_km"] <= REFERRAL_RADIUS_KM]
+    referral.sort(key=lambda x: (not x["is_safe"], x["distance_from_epicenter_km"]))
 
-                # Sampel 7 titik di koridor untuk memeriksa apakah jalur mendekati kawah aktif
-                corridor_min_crater = min(
-                    haversine_km(
-                        fac_lat + (i / 6.0) * (h_lat - fac_lat),
-                        fac_lon + (i / 6.0) * (h_lon - fac_lon),
-                        c_lat,
-                        c_lon
-                    )
-                    for i in range(7)
-                )
+    evaluated = [f for f in evaluate(fac_info["in_footprint"]) if f["exposure_probability"] >= min_prob]
+    schools = [f for f in evaluated if f["facility_type"] == "school"]
+    healthcare = [f for f in evaluated if f["facility_type"] == "healthcare"]
+    airports = [f for f in evaluated if f["facility_type"] == "airport"]
 
-                # 1. Penalti Incursion Kawah: Rute dilarang memindahkan ambulans mendekati kawah aktif (< 12 km)
-                crater_penalty = 0.0
-                if corridor_min_crater < 12.0:
-                    crater_penalty += (12.0 - corridor_min_crater) * 6.0
-                if h_to_center < fac_to_center - 2.0:
-                    crater_penalty += (fac_to_center - h_to_center) * 3.0
+    safe = [h for h in hospitals if h["is_safe"]]
+    pool = safe or hospitals
+    if schools and pool:
+        from app.engine.landmask import LandMask
 
-                # 2. Penalti Paparan Bahaya RS
-                if h_prob >= 0.35:
-                    exp_penalty = 45.0 + (h_prob * 30.0)
-                elif h_prob >= 0.15:
-                    exp_penalty = h_prob * 10.0
-                else:
-                    exp_penalty = 0.0
+        hlat = np.array([h["latitude"] for h in pool])
+        hlon = np.array([h["longitude"] for h in pool])
+        h_to_c = _hav_np(hlat, hlon, c_lat, c_lon)
+        h_island = LandMask.island_ids(hlat, hlon)
+        s_island = LandMask.island_ids([x["latitude"] for x in schools], [x["longitude"] for x in schools])
+        for k, s in enumerate(schools):
+            d = _hav_np(s["latitude"], s["longitude"], hlat, hlon)
+            # Rujukan darat tidak menyeberang laut: utamakan RS di pulau yang sama
+            if s_island[k] >= 0 and np.any(h_island == s_island[k]):
+                d = np.where(h_island == s_island[k], d, np.inf)
+            s_to_c = float(_hav_np(s["latitude"], s["longitude"], c_lat, c_lon))
+            nearest_i = int(np.argmin(d))
+            # Pilih RS yang tidak membawa korban lebih dekat ke sumber bahaya
+            away = (h_to_c >= s_to_c - 2.0) & np.isfinite(d)
+            pick_i = int(np.argmin(np.where(away, d, np.inf))) if away.any() else nearest_i
+            ref = pool[pick_i]
+            s["nearest_hospital"] = {**pool[nearest_i], "distance_km": round(float(d[nearest_i]), 1)}
+            s["nearest_safe_hospital"] = {**ref, "distance_km": round(float(d[pick_i]), 1)}
+            s["evacuation_protocol"] = (
+                f"Rujukan terdekat yang menjauhi sumber bahaya: {ref['name']} "
+                f"({round(float(d[pick_i]), 1)} km garis lurus, {ref['status_badge']}). Nomor darurat {EMERGENCY_NUMBERS}."
+            )
+    for s in schools:
+        s.update(_school_advice(s["exposure_probability"], s["arrival_time_earliest_h"]))
+    for h in healthcare:
+        h.update(_health_advice(h["exposure_probability"], h["arrival_time_earliest_h"]))
+    for a in airports:
+        a.update({"alert_level": "RUANG UDARA", "badge_color": "#f59e0b",
+                  "recommendation": "PANTAU NOTAM/ASHTAM RESMI",
+                  "action_detail": "Abu vulkanik berbahaya bagi mesin pesawat; ikuti NOTAM/ASHTAM otoritas penerbangan."})
 
-                score = dist + crater_penalty + exp_penalty
-
-                if score < best_safe_score:
-                    best_safe_score = score
-                    badge_desc = "[RUJUKAN AMAN] Koridor Bebas Bahaya" if h.get("is_safe") else "[TRIASE MINIM DAMPAK] Bebas Radius Bahaya"
-                    best_safe_h = {
-                        **h,
-                        "distance_km": round(dist, 1),
-                        "corridor_min_crater_km": round(corridor_min_crater, 1),
-                        "status_badge": badge_desc
-                    }
-
-            item["nearest_hospital"] = nearest_any_h
-            target_evac = best_safe_h or nearest_any_h
-            item["nearest_safe_hospital"] = target_evac
-            if target_evac:
-                item["evacuation_protocol"] = (
-                    f"Jika ada siswa/guru sesak napas akut atau luka abrasi, evakuasi segera ke "
-                    f"{target_evac['name']} ({target_evac['distance_km']} km, {target_evac['status_badge']}). "
-                    f"Hotline Gawat Darurat: SPGDT 119."
-                )
-
-            schools.append(item)
-
-        elif ftype == "healthcare":
-            if prob >= 0.90:
-                item["alert_level"] = "SIAGA DARURAT"
-                item["badge_color"] = "#ef4444"
-                item["recommendation"] = "SIAPKAN RUANG ISOLASI & NEBULIZER ISPA"
-                item["action_detail"] = (
-                    f"Siapkan stok cadangan O2 dan obat pernapasan sebelum T+{item['arrival_time_earliest_h'] or 'segera'} jam. "
-                    f"Wajibkan APD masker N95 untuk seluruh nakes dan pasien."
-                )
-            elif prob >= 0.50:
-                item["alert_level"] = "WASPADA FASKES"
-                item["badge_color"] = "#f59e0b"
-                item["recommendation"] = "INVENTARISASI LOGISTIK PERNAPASAN"
-                item["action_detail"] = "Pastikan masker medis partikulat dan nebulizer siap operasi."
-            else:
-                item["alert_level"] = "SIAGA DINI FASKES"
-                item["badge_color"] = "#10b981"
-                item["recommendation"] = "MONITORING POSKO KESEHATAN"
-                item["action_detail"] = "Kesiapsiagaan pemantauan keluhan pernapasan warga berkala."
-            healthcare.append(item)
-
-        else:
-            item["alert_level"] = "WASPADA RUANG UDARA"
-            item["badge_color"] = "#f59e0b"
-            item["recommendation"] = "KOORDINASI NOTAM / ASHTAM"
-            item["action_detail"] = "Peringatan bahaya partikel abrasif bagi turbin mesin pesawat."
-            airports.append(item)
-
-    # Urutkan berdasarkan peluang tertinggi dan waktu tiba tercepat
-    schools.sort(key=lambda x: (-x["exposure_probability"], x["arrival_time_earliest_h"] or 999))
-    healthcare.sort(key=lambda x: (-x["exposure_probability"], x["arrival_time_earliest_h"] or 999))
+    key = lambda x: (-x["exposure_probability"], x["arrival_time_earliest_h"] if x["arrival_time_earliest_h"] is not None else 999)  # noqa: E731
+    schools.sort(key=key)
+    healthcare.sort(key=key)
 
     return {
+        "available": True,
         "total_schools_at_risk": len(schools),
         "total_healthcare_at_risk": len(healthcare),
         "total_airports_at_risk": len(airports),
-        "total_evacuation_hospitals": len(evacuation_referral_hospitals),
-        "schools": schools,
-        "healthcare": healthcare,
+        "total_evacuation_hospitals": len(referral),
+        "schools": schools[:LIST_LIMIT_SCHOOLS],
+        "healthcare": healthcare[:LIST_LIMIT_HEALTH],
         "airports": airports,
-        "evacuation_referral_hospitals": evacuation_referral_hospitals,
-        "facilities_impacted": schools + healthcare + airports
+        "evacuation_referral_hospitals": referral[:60],
+        "list_truncated": len(schools) > LIST_LIMIT_SCHOOLS or len(healthcare) > LIST_LIMIT_HEALTH,
+        "facilities_coverage": _coverage_note(fac_info),
     }
 
 
 def get_health_and_mask_guidance(hazard: str = "volcano") -> Dict[str, Any]:
-    """
-    Panduan edukasi kesehatan masyarakat dan spesifikasi masker wajib standar.
-    """
+    """Panduan perlindungan pernapasan dan mata."""
     return {
         "hazard": hazard,
-        "title": "Edukasi Perlindungan Saluran Pernapasan & Mata Terverifikasi",
-        "mask_type_recommended": "N95 / KN95 (Partikulat Terstandar)",
+        "title": "Perlindungan Saluran Pernapasan & Mata",
+        "mask_type_recommended": "N95 / KN95 (respirator partikulat)",
         "mask_guidance": {
             "prohibited": [
-                {
-                    "name": "Masker Bedah Biasa (Surgical Mask 3-Ply)",
-                    "verdict": "TIDAK EFEKTIF (JANGAN DIPAKAI SEBAGAI PERLINDUNGAN UTAMA)",
-                    "reason": (
-                        "Pori-pori masker bedah dirancang untuk cairan (3–5 mikron), bukan partikulat mikro. "
-                        "Memiliki tingkat kebocoran tepi (seal leakage) 30%–50%. Partikel abu silika tajam "
-                        "dan asap PM2.5 tetap leluasa masuk menembus celah hidung dan pipi."
-                    )
-                },
-                {
-                    "name": "Masker Kain / Scarf / Masker Buff",
-                    "verdict": "SANGAT TIDAK EFEKTIF (BERBAHAYA KARENA MEMBERI ILUSI AMAN)",
-                    "reason": (
-                        "Kerapatan serat kain katun terlalu longgar (50–100 mikron). Partikel abu berbahaya "
-                        "lolos 100% langsung masuk ke percabangan bronkus dan alveolus paru."
-                    )
-                }
+                {"name": "Masker bedah biasa", "verdict": "Bukan perlindungan utama",
+                 "reason": "Tidak dirancang menyaring partikel halus dan sering bocor di tepi."},
+                {"name": "Masker kain / scarf", "verdict": "Tidak efektif",
+                 "reason": "Serat kain terlalu longgar untuk partikel halus abu dan asap."},
             ],
             "mandatory_standards": [
-                {
-                    "name": "Masker Partikulat N95 (Standar AS NIOSH 42 CFR 84)",
-                    "verdict": "STANDAR RESMI WAJIB (SANGAT DIREKOMENDASIKAN)",
-                    "efficiency": "Menyaring ≥ 95% partikel mikroskopis hingga ukuran 0.3 mikron",
-                    "instructions": "Klip kawat hidung harus ditekan rapat mengikuti bentuk hidung. Tali ganda dilingkarkan di kepala, bukan telinga, untuk memastikan segel kedap udara."
-                },
-                {
-                    "name": "Masker Partikulat KN95 / FFP2 (Standar GB2626 / EN 149)",
-                    "verdict": "STANDAR RESMI ALTERNATIF TINGKAT TINGGI",
-                    "efficiency": "Menyaring ≥ 94% – 95% partikulat berbahaya",
-                    "instructions": "Bentuk 3D memudahkan pernapasan dan komunikasi saat proses evakuasi atau pembelajaran darurat."
-                }
-            ]
+                {"name": "N95 (NIOSH 42 CFR 84)", "verdict": "Direkomendasikan",
+                 "efficiency": "Menyaring >= 95% partikel uji 0,3 mikron",
+                 "instructions": "Tekan klip hidung rapat dan pastikan tidak ada celah di tepi."},
+                {"name": "KN95 / FFP2", "verdict": "Alternatif setara",
+                 "efficiency": "Menyaring >= 94-95% partikel uji",
+                 "instructions": "Pilih ukuran yang pas dan periksa kerapatan saat dipakai."},
+            ],
         },
         "eye_protection": {
-            "critical_warning": "DILARANG KERAS MEMAKAI LENSA KONTAK (SOFTLENS)!",
-            "medical_rationale": (
-                "Abu vulkanik bukanlah abu kayu biasa, melainkan pecahan kristal kaca silika (SiO2) "
-                "mikroskopis yang tajam dan kasar. Jika partikel debu masuk ke balik lensa kontak, "
-                "gerakan kelopak mata akan menggores permukaan kornea (kornea abrasi) hingga berisiko "
-                "kebutaan permanen dan ulkus kornea."
-            ),
-            "safe_action": "Gunakan kacamata pelindung tertutup (Safety Goggles) dengan tepi karet kedap."
+            "critical_warning": "Hindari lensa kontak saat hujan abu.",
+            "medical_rationale": "Partikel abu vulkanik bersifat abrasif dan dapat menggores kornea bila terjebak di bawah lensa kontak.",
+            "safe_action": "Gunakan kacamata pelindung tertutup.",
         },
         "household_safety": [
-            "Tutup rapat seluruh celah kusen jendela dan pintu menggunakan handuk basah atau lakban tebal.",
-            "Hindari menyapu abu kering dengan sapu biasa karena akan menerbangkan kembali partikel ke udara (resuspensi). Gunakan semprotan air lembut dan pel basah.",
-            "Segera bersihkan timbunan abu di atap rumah sebelum hujan turun, karena abu basah memiliki berat 2–3x lipat yang dapat merubuhkan atap pemukiman."
-        ]
+            "Tutup celah jendela dan pintu.",
+            "Basahi abu sebelum dibersihkan agar tidak beterbangan kembali.",
+            "Bersihkan abu di atap sebelum hujan karena abu basah jauh lebih berat.",
+        ],
     }
-

@@ -19,5 +19,5 @@ export function formatCompactRange(min?: number, median?: number, max?: number, 
 
 export function formatHour(hour: number): string {
   const h = String(hour).padStart(2, "0");
-  return `T + ${h}:00 Jam`;
+  return `H + ${h}:00 Jam`;
 }

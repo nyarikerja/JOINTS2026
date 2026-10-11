@@ -32,13 +32,12 @@ export const TimelinePlayer: React.FC<TimelinePlayerProps> = ({
 
   return (
     <div 
-      className={`absolute transition-all duration-300 ease-out z-[1000] ${
-        isDrawerOpen 
-          ? "left-1/2 -translate-x-[60%] w-[min(620px,calc(100vw-440px))]" 
-          : "left-1/2 -translate-x-1/2 w-[min(620px,calc(100vw-40px))]"
-      } ${
+      className={`absolute transition-all duration-300 ease-out z-[1000] -translate-x-1/2 w-[min(620px,calc(100vw-40px))] ${
         isExpanded ? "bottom-3.5 translate-y-0" : "bottom-0 translate-y-full"
       }`}
+      style={{
+        left: isDrawerOpen && window.innerWidth >= 1024 ? "calc(50vw - 190px)" : "50vw"
+      }}
     >
       {/* Tombol Toggle Slide */}
       <button 
@@ -56,10 +55,10 @@ export const TimelinePlayer: React.FC<TimelinePlayerProps> = ({
 
       {/* Main Panel */}
       <div 
-        className="w-full backdrop-blur-xl rounded-xl px-4 py-2.5 shadow-2xl text-[#140f0e]"
+        className="w-full backdrop-blur-xl rounded-xl px-3 sm:px-4 py-2.5 shadow-2xl text-[#140f0e]"
         style={{ background: "rgba(245, 239, 227, 0.95)", border: "1px solid rgba(0,0,0,0.1)" }}
       >
-        <div className="flex items-center justify-between mb-1.5">
+        <div className="flex flex-wrap items-center justify-between gap-y-1.5 mb-1.5">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsPlaying(!isPlaying)}
@@ -69,8 +68,8 @@ export const TimelinePlayer: React.FC<TimelinePlayerProps> = ({
             >
               {isPlaying ? <Pause className="w-3 h-3 text-white" /> : <Play className="w-3 h-3 fill-white text-white" />}
             </button>
-            <span className="text-xs font-bold" style={{ color: "#140f0e" }}>Horizon Waktu:</span>
-            <span className="font-mono text-xs font-bold px-2 py-0.5 rounded shadow-sm" style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.1)", color: "#140f0e" }}>
+            <span className="hidden sm:inline text-xs font-bold" style={{ color: "#140f0e" }}>Horizon Waktu:</span>
+            <span className="font-mono text-xs font-bold px-2 py-0.5 rounded shadow-sm whitespace-nowrap" style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.1)", color: "#140f0e" }}>
               {formatHour(currentHour)}
             </span>
           </div>
@@ -91,7 +90,7 @@ export const TimelinePlayer: React.FC<TimelinePlayerProps> = ({
                   background: "#FFFFFF", color: "rgba(20, 15, 14, 0.7)", borderColor: "rgba(0,0,0,0.1)"
                 }}
               >
-                T+{step}h
+                H+{step}
               </button>
             ))}
           </div>
@@ -109,11 +108,11 @@ export const TimelinePlayer: React.FC<TimelinePlayerProps> = ({
             style={{ accentColor: "#EB895B" }}
           />
           <div className="flex justify-between font-mono text-[9px] mt-0.5 font-medium" style={{ color: "rgba(20, 15, 14, 0.6)" }}>
-            <span>00:00 (Awal)</span>
+            <span>00:00 <span className="hidden sm:inline">(Awal)</span></span>
             <span>12:00</span>
             <span>24:00</span>
             <span>36:00</span>
-            <span>48:00 (Akhir)</span>
+            <span>48:00 <span className="hidden sm:inline">(Akhir)</span></span>
           </div>
         </div>
       </div>

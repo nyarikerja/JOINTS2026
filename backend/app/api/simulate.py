@@ -3,14 +3,26 @@ app/api/simulate.py
 
 Router untuk eksekusi simulasi, polling status, poligon tiga tingkat, dan kartu dampak.
 Mematuhi seluruh prinsip AGENTS.md (penolakan overrides pada mode auto, determinisme, label skenario).
+
+Data masukan mode `auto` (Kondisi Nyata) seluruhnya berasal dari sumber langsung:
+- gunung api: VONA MAGMA terbaru dengan awan abu teramati (tinggi puncak abu & waktu terbit);
+- kebakaran: deteksi NASA FIRMS 24 jam terakhir di wilayah kejadian;
+- cuaca: Open-Meteo Ensemble ECMWF (51 anggota) mulai jam awal simulasi.
+Bila salah satu tidak ada, permintaan ditolak (HTTP 422) dengan alasan, tanpa nilai karangan.
 """
 
-from typing import Any, Dict
+import datetime
+import hashlib
+import math
+import threading
+from typing import Any, Dict, List, Optional
 
+import httpx
+import numpy as np
 from fastapi import APIRouter, HTTPException, Query
 
 from app.api.events import NATIONAL_KARHUTLA
-from app.core.config import BACKEND_DIR, EVENTS_DIR, RUNS_DIR
+from app.core.config import RUNS_DIR, get_assumptions
 from app.engine.grid import SimulationGrid
 from app.engine.simulator import SimulationRunner
 from app.impact.exposure import (
@@ -19,455 +31,472 @@ from app.impact.exposure import (
     get_exposed_facilities_list,
     get_health_and_mask_guidance,
 )
-from app.ingest.firms import FirmsIngest
-from app.ingest.openmeteo import OpenMeteoIngest
+from app.ingest.firms import CUSTOM_HALF_DEG, FirmsIngest, event_area, mean_instantaneous_frp_scale, overpass_count
+from app.ingest.openmeteo import OpenMeteoIngest, WeatherUnavailable
 from app.schemas.simulation import SimulationRequest
+from app.services import magma_status
 
 router = APIRouter(tags=["simulation"])
 
-# In-memory store untuk run aktif yang membawa array lengkap (dibatasi 10 entri untuk mencegah kebocoran memori)
+# Run dengan larik lengkap di memori; run lain dimuat ulang dari disk (data/runs/*.npz)
 RUNS_CACHE: Dict[str, Dict[str, Any]] = {}
+RUNS_IN_MEMORY = 4
+# Paling banyak 2 simulasi berjalan bersamaan (limits.max_concurrent_runs)
+_SIM_SLOTS = threading.Semaphore(2)
+
+VONA_MAX_AGE_H = 24.0
+# Jarak titik grid angin ensemble 3x3 dari pusat (derajat); grid mencakup +-4 derajat domain abu/asap
+WIND_GRID_HALF_DEG = 2.5
+SOURCE_CELL_DEG = 0.05
+
+
+def _now() -> datetime.datetime:
+    return datetime.datetime.now(datetime.timezone.utc)
+
+
+def _assumption(key: str, default: float) -> float:
+    item = get_assumptions().get(key) or {}
+    try:
+        return float(item.get("value", default))
+    except (TypeError, ValueError):
+        return default
+
+
+def _elevation_m(lat: float, lon: float) -> Optional[float]:
+    try:
+        r = httpx.get("https://api.open-meteo.com/v1/elevation", params={"latitude": lat, "longitude": lon}, timeout=10)
+        r.raise_for_status()
+        return float(r.json()["elevation"][0])
+    except Exception:
+        return None
+
+
+def _wind_level_for_plume(plume_top_asl_km: float) -> str:
+    """Level angin perwakilan untuk transport abu (setengah tinggi kolom)."""
+    mid = plume_top_asl_km / 2.0
+    if mid >= 7.5:
+        return "300hPa"
+    if mid >= 4.5:
+        return "500hPa"
+    if mid >= 2.2:
+        return "700hPa"
+    return "850hPa"
+
+
+def _find_volcano(event_id: str) -> Optional[Dict[str, Any]]:
+    from app.db.repositories.volcano_repo import VolcanoRepository
+    v = VolcanoRepository.get_by_id(event_id)
+    if v:
+        return v
+    return next((x for x in VolcanoRepository.get_all() if x.get("event_id") == event_id), None)
+
+
+def _vei_height_km(vei: int) -> float:
+    table = (get_assumptions().get("vei_column_height_km") or {}).get("value") or {}
+    return float(table.get(str(min(max(int(vei), 0), 6)), 2.2))
+
+
+def _volcano_source(name: str, lat: float, lon: float, elev_m: float, in_catalog: bool):
+    """
+    Sumber tinggi kolom untuk mode Kondisi Nyata, bertingkat dari data paling langsung:
+    1. VONA MAGMA berabu <= 24 jam  -> erupsi yang sedang teramati (H+0 = waktu VONA);
+    2. VONA MAGMA berabu terakhir di riwayat -> skenario erupsi terakhir teramati, cuaca sekarang;
+    3. Erupsi Holosen terakhir di Smithsonian GVP -> tinggi kolom dari VEI (Newhall & Self 1982);
+    4. Tanpa catatan apa pun -> VEI asumsi (default_vei_without_record), diberi label asumsi.
+    """
+    from app.services import gvp
+
+    if in_catalog:
+        vona = magma_status.latest_ash_vona(name, VONA_MAX_AGE_H)
+        if vona and vona["ash_top_asl_m"] > elev_m + 10:
+            start = datetime.datetime.fromisoformat(vona["issued_utc"].replace("Z", "+00:00"))
+            return vona["ash_top_asl_m"] / 1000.0, start, {
+                "type": "vona", "tier": 1,
+                "label": f"VONA {vona['notice']} ({vona['color_code'].upper()}), erupsi sedang teramati",
+                "issued_utc": vona["issued_utc"], "ash_top_asl_m": vona["ash_top_asl_m"],
+                "ash_above_summit_m": vona.get("ash_above_summit_m"),
+                "ash_direction_reported": vona.get("ash_direction"),
+                "url": vona.get("url"), "source": magma_status.SOURCE,
+            }, None
+        hist = magma_status.latest_ash_vona_any(name)
+        if hist and hist["ash_top_asl_m"] > elev_m + 10:
+            return hist["ash_top_asl_m"] / 1000.0, _now(), {
+                "type": "vona_history", "tier": 2,
+                "label": f"Erupsi terakhir teramati: VONA {hist['notice']} ({hist['issued_utc'][:10]})",
+                "issued_utc": hist["issued_utc"], "ash_top_asl_m": hist["ash_top_asl_m"],
+                "url": hist.get("url"), "source": magma_status.SOURCE,
+            }, "skenario dari erupsi terakhir teramati"
+
+    erup = gvp.last_eruption_with_vei(lat, lon)
+    if erup:
+        h = _vei_height_km(erup["vei"])
+        date_txt = "-".join(str(x) for x in (erup["year"], erup.get("month"), erup.get("day")) if x)
+        return elev_m / 1000.0 + h, _now(), {
+            "type": "gvp_vei", "tier": 3,
+            "label": f"Erupsi terakhir tercatat GVP: {date_txt}, VEI {erup['vei']} (kolom ±{h:.1f} km di atas kawah)",
+            "eruption_date": date_txt, "vei": erup["vei"], "ash_top_asl_m": round(elev_m + h * 1000),
+            "url": "https://volcano.si.edu/", "source": erup["source"],
+        }, "skenario dari erupsi terakhir tercatat"
+
+    if not in_catalog:
+        raise HTTPException(422, "Titik ini tidak berada dekat gunung api yang tercatat (MAGMA/GVP). "
+                                 "Untuk titik bebas gunakan mode Uji Skenario.")
+    vei = int(_assumption("default_vei_without_record", 2))
+    h = _vei_height_km(vei)
+    return elev_m / 1000.0 + h, _now(), {
+        "type": "assumed_vei", "tier": 4,
+        "label": f"Tidak ada catatan erupsi; memakai asumsi VEI {vei} (kolom ±{h:.1f} km di atas kawah)",
+        "vei": vei, "ash_top_asl_m": round(elev_m + h * 1000), "source": "config/assumptions.yaml",
+    }, "skenario asumsi (tanpa catatan erupsi)"
+
+
+def _resolve_volcano(req: SimulationRequest, custom: bool) -> Dict[str, Any]:
+    if custom:
+        lat, lon = float(req.source.latitude), float(req.source.longitude)
+        name = req.source.name or f"Titik kustom ({lat:.3f}, {lon:.3f})"
+        elev = _elevation_m(lat, lon)
+        volcano = None
+    else:
+        volcano = _find_volcano(req.source.event_id)
+        if not volcano:
+            raise HTTPException(404, f"Gunung api '{req.source.event_id}' tidak ada di katalog.")
+        lat, lon, name = float(volcano["latitude"]), float(volcano["longitude"]), volcano["name"]
+        elev = volcano.get("elevation_m")
+
+    if elev is None:
+        raise HTTPException(503, "Elevasi kawah tidak diketahui (layanan elevasi Open-Meteo tidak dapat diakses).")
+
+    duration_h = _assumption("volcanic_emission_duration_h", 6.0)
+    scenario_label = None
+    if req.mode == "auto":
+        plume_top_km, start, source_info, scenario_label = _volcano_source(name, lat, lon, float(elev), volcano is not None)
+    else:
+        ovr = req.overrides or {}
+        plume_top_km = float(ovr.get("column_height_km") or 10.0)
+        duration_h = float(ovr.get("duration_h") or duration_h)
+        start = _now()
+        source_info = {"type": "scenario", "label": "Tinggi kolom abu ditentukan pengguna (skenario hipotetis)"}
+
+    if plume_top_km * 1000.0 <= float(elev) + 10.0:
+        raise HTTPException(422, f"Tinggi puncak abu {plume_top_km:.1f} km dpl tidak melebihi elevasi kawah ({float(elev):.0f} m).")
+
+    meta = {
+        "event_id": req.source.event_id or f"custom_volcano_{hashlib.md5(f'{lat:.4f}_{lon:.4f}'.encode()).hexdigest()[:8]}",
+        "hazard": "volcano",
+        "name": name,
+        "coordinates": {"latitude": lat, "longitude": lon},
+        "vent_elevation_m": float(elev),
+        "plume_top_asl_km": plume_top_km,
+        "duration_h": duration_h,
+        "peak_phase_duration_h": duration_h,
+        "start_utc": start.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "source_info": source_info,
+        "scenario_label": scenario_label,
+        "level_name": volcano.get("level_name") if volcano else None,
+    }
+    return {"meta": meta, "hotspots": [], "lat": lat, "lon": lon, "start": start,
+            "level": _wind_level_for_plume(plume_top_km)}
+
+
+def _aggregate_sources(hotspots: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Gabungkan deteksi ke sel 0,05° (jumlah FRP, posisi berbobot FRP) sebagai sumber emisi."""
+    scale = mean_instantaneous_frp_scale(hotspots)
+    cells: Dict[tuple, Dict[str, float]] = {}
+    for h in hotspots:
+        k = (math.floor(h["latitude"] / SOURCE_CELL_DEG), math.floor(h["longitude"] / SOURCE_CELL_DEG))
+        c = cells.setdefault(k, {"frp": 0.0, "wlat": 0.0, "wlon": 0.0, "n": 0})
+        f = max(float(h.get("frp") or 0.0), 0.1)
+        c["frp"] += f
+        c["wlat"] += h["latitude"] * f
+        c["wlon"] += h["longitude"] * f
+        c["n"] += 1
+    out = []
+    for i, c in enumerate(sorted(cells.values(), key=lambda x: -x["frp"])[:60]):
+        out.append({
+            "id": f"source_{i}",
+            "latitude": c["wlat"] / c["frp"],
+            "longitude": c["wlon"] / c["frp"],
+            "frp": round(c["frp"] * scale, 3),
+            "n_detections": c["n"],
+            "is_active": True,
+        })
+    return out
+
+
+def _fire_history(area: Dict[str, Any], name: str):
+    """
+    Kawasan tanpa api 24 jam terakhir: pakai kebakaran terakhir yang terdeteksi FIRMS.
+    2. hari terakhir dengan api dalam cache 7 hari (VIIRS dan MODIS);
+    3. hari terakhir dengan api di arsip VIIRS S-NPP hingga 2 tahun ke belakang.
+    """
+    from app.services import firms_history
+
+    week = FirmsIngest.load_area_hotspots(area, hours=7 * 24)
+    if week:
+        last_day = max(h["acq_date"] for h in week)
+        rows = [h for h in week if h["acq_date"] == last_day]
+        return rows, {"type": "firms_recent", "tier": 2, "area_kind": area["kind"],
+                      "label": f"Kebakaran terakhir terdeteksi {last_day}: {len(rows)} deteksi FIRMS",
+                      "fire_date": last_day}, "skenario dari kebakaran terakhir terdeteksi"
+    hist = firms_history.last_fire(area["bbox"], area.get("polygon")) if area.get("bbox") else None
+    if hist:
+        return hist["hotspots"], {"type": "firms_archive", "tier": 3, "area_kind": area["kind"],
+                                  "label": f"Kebakaran terakhir terdeteksi {hist['date']}: {len(hist['hotspots'])} deteksi arsip FIRMS",
+                                  "fire_date": hist["date"], "source": hist["source"]}, "skenario dari kebakaran terakhir terdeteksi"
+    raise HTTPException(
+        422,
+        f"Tidak ada deteksi titik api NASA FIRMS di {name} dalam 2 tahun terakhir. "
+        "Gunakan mode Uji Skenario untuk skenario hipotetis.",
+    )
+
+
+def _resolve_fire(req: SimulationRequest, custom: bool) -> Dict[str, Any]:
+    if custom:
+        lat, lon = float(req.source.latitude), float(req.source.longitude)
+        name = req.source.name or f"Titik kustom ({lat:.3f}, {lon:.3f})"
+        event_id = f"custom_fire_{hashlib.md5(f'{lat:.4f}_{lon:.4f}'.encode()).hexdigest()[:8]}"
+        area = event_area(event_id, center=(lat, lon), custom=True)
+    else:
+        event_id = req.source.event_id
+        k = NATIONAL_KARHUTLA.get(event_id)
+        if not k:
+            raise HTTPException(404, f"Kawasan '{event_id}' tidak ada di katalog karhutla/hutan nasional.")
+        lat, lon = float(k["coordinates"]["latitude"]), float(k["coordinates"]["longitude"])
+        name = k["name"]
+        area = event_area(event_id, center=(lat, lon))
+
+    hotspots = FirmsIngest.load_area_hotspots(area)
+    ovr = req.overrides or {}
+    scenario_label = None
+    if req.mode == "auto":
+        if hotspots:
+            source_info = {"type": "firms", "tier": 1, "label": f"{len(hotspots)} deteksi NASA FIRMS (24 jam terakhir)",
+                           "area_kind": area["kind"]}
+        else:
+            hotspots, source_info, scenario_label = _fire_history(area, name)
+    else:
+        if not hotspots:
+            rng = np.random.default_rng(req.seed)
+            hotspots = [{
+                "id": f"scenario_{i}", "latitude": lat + float(rng.normal(0, 0.04)),
+                "longitude": lon + float(rng.normal(0, 0.04)), "frp": float(rng.uniform(45.0, 160.0)),
+                "confidence": "skenario", "acq_date": "skenario", "acq_time": "", "sensor": "skenario", "is_active": True,
+            } for i in range(18)]
+            source_info = {"type": "scenario", "label": "Titik api hipotetis (tidak ada deteksi FIRMS 24 jam di area ini)"}
+        else:
+            source_info = {"type": "firms_modified", "label": f"{len(hotspots)} deteksi FIRMS, dimodifikasi pengguna"}
+        scale = float((ovr.get("hotspots") or {}).get("frp_scale") or 1.0)
+        if scale != 1.0:
+            hotspots = [{**h, "frp": round(float(h["frp"]) * scale, 2)} for h in hotspots]
+            source_info["frp_scale"] = scale
+
+    lats = [h["latitude"] for h in hotspots]
+    lons = [h["longitude"] for h in hotspots]
+    bbox = [min(lons) - 0.05, min(lats) - 0.05, max(lons) + 0.05, max(lats) + 0.05]
+    meta = {
+        "event_id": event_id,
+        "hazard": "fire",
+        "scenario_label": scenario_label,
+        "name": name,
+        "coordinates": {"latitude": lat, "longitude": lon},
+        "bbox": bbox,
+        "duration_h": float(ovr.get("duration_h") or 24.0),
+        "start_utc": _now().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "source_info": source_info,
+        "hotspots_used": {
+            "count": len(hotspots),
+            "n_overpasses": overpass_count(hotspots),
+            "mean_instantaneous_frp_mw": round(sum(float(h["frp"]) for h in hotspots) * mean_instantaneous_frp_scale(hotspots), 1),
+            "area_kind": area["kind"],
+            "window_h": 24,
+        },
+    }
+    return {"meta": meta, "hotspots": hotspots, "lat": lat, "lon": lon, "start": _now(), "level": "10m"}
 
 
 @router.post("/simulate")
 def start_simulation(req: SimulationRequest):
-    import datetime
-    import json
+    custom = not (req.source.event_id or "").strip() and req.source.latitude is not None and req.source.longitude is not None
+    if not custom and not (req.source.event_id or "").strip():
+        raise HTTPException(422, "Pilih event (event_id) atau titik koordinat.")
 
-    import numpy as np
-
-    event_id = (req.source.event_id or "").strip()
-    if not event_id:
-        if req.source.latitude is not None and req.source.longitude is not None:
-            import hashlib
-            coord_hash = hashlib.md5(f"{float(req.source.latitude):.4f}_{float(req.source.longitude):.4f}".encode()).hexdigest()[:8]
-            event_id = f"custom_{req.hazard}_{coord_hash}"
-        else:
-            event_id = "hutan_sebangau" if req.hazard == "fire" else "anak_krakatau_2026_09"
-
-    event_dir = EVENTS_DIR / event_id
-    meta_file = event_dir / "meta.json"
-
-    # 1. Muat metadata kejadian (Otomatis bangun metadata jika event berasal dari katalog nasional atau titik kustom)
-    event_meta = None
-    if meta_file.exists():
-        event_meta = json.loads(meta_file.read_text(encoding="utf-8-sig"))
-    else:
-        # Cek apakah ada direktori di data/events yang cocok (toleran terhadap perbedaan underscore)
-        clean_eid = event_id.replace("_", "").lower()
-        if EVENTS_DIR.exists():
-            for d in EVENTS_DIR.iterdir():
-                if d.is_dir() and d.name.replace("_", "").lower() == clean_eid:
-                    mf = d / "meta.json"
-                    if mf.exists():
-                        try:
-                            event_meta = json.loads(mf.read_text(encoding="utf-8-sig"))
-                            meta_file = mf
-                            event_dir = d
-                            event_id = d.name
-                            break
-                        except Exception:
-                            pass
-
-    if not event_meta:
-        # Cek apakah event_id ada di database katalog gunung api nasional
-        volc_feature = None
-        try:
-            from app.db.repositories.volcano_repo import VolcanoRepository
-            v_obj = VolcanoRepository.get_by_id(event_id)
-            if v_obj:
-                volc_feature = {
-                    "properties": v_obj,
-                    "geometry": {"coordinates": [v_obj["longitude"], v_obj["latitude"]]}
-                }
-        except Exception:
-            pass
-
-        if not volc_feature:
-            volc_path = BACKEND_DIR / "data" / "layers" / "volcanoes_indonesia.geojson"
-            if volc_path.exists():
-                try:
-                    geo = json.loads(volc_path.read_text(encoding="utf-8-sig"))
-                    clean_e = event_id.replace("_", "").lower()
-                    for feat in geo.get("features", []):
-                        f_id = (feat.get("properties", {}).get("id") or "").lower()
-                        f_ev = (feat.get("properties", {}).get("event_id") or "").lower()
-                        clean_fid = f_id.replace("_", "")
-                        clean_fev = f_ev.replace("_", "")
-                        if clean_fid == clean_e or clean_fev == clean_e or clean_fid.startswith(clean_e) or clean_e in clean_fid:
-                            volc_feature = feat
-                            break
-                except Exception:
-                    pass
-
-        if volc_feature:
-            p = volc_feature["properties"]
-            c = volc_feature["geometry"]["coordinates"]
-            event_meta = {
-                "event_id": event_id,
-                "hazard": "volcano",
-                "name": f"Erupsi {p['name']} ({p['province']})",
-                "start_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                "duration_h": 24.0,
-                "alert_level_at_event": p.get("level_name", "Level III (Siaga)"),
-                "restricted_radius_km": p.get("radius_bahaya_km", 5.0),
-                "column_height_km": 8.0,
-                "plume_top_asl_km": 12.0,
-                "vent_elevation_m": float(p.get("elevation_m", 1500.0)),
-                "coordinates": {"latitude": float(c[1]), "longitude": float(c[0])},
-                "bbox": [float(c[0]) - 0.7, float(c[1]) - 0.7, float(c[0]) + 0.7, float(c[1]) + 0.7],
-                "source": "PVMBG Badan Geologi ESDM RI (Katalog 70 Gunung Api Nasional)",
-                "members_source": "open_meteo_live_forecast_api",
-                "n_members": req.n_members,
-                "data_status": {
-                    "weather": "open_meteo_live_or_ensemble",
-                    "vona": "pvmbg_national_catalog",
-                    "column_height": "estimated_standard"
-                }
-            }
-            event_dir.mkdir(parents=True, exist_ok=True)
-            meta_file.write_text(json.dumps(event_meta, indent=2, ensure_ascii=False), encoding="utf-8")
-
-        elif event_id in NATIONAL_KARHUTLA:
-            k = NATIONAL_KARHUTLA[event_id]
-            coords = k.get("coordinates", {})
-            k_lat = float(coords.get("latitude") if "latitude" in coords else k.get("lat", -2.5))
-            k_lon = float(coords.get("longitude") if "longitude" in coords else k.get("lon", 113.5))
-            event_meta = {
-                "event_id": event_id,
-                "hazard": "fire",
-                "name": k["name"],
-                "province": k.get("province", "Indonesia"),
-                "start_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                "duration_h": 24.0,
-                "coordinates": {"latitude": k_lat, "longitude": k_lon},
-                "bbox": [k_lon - 0.7, k_lat - 0.7, k_lon + 0.7, k_lat + 0.7],
-                "source": "NASA FIRMS NRT (Zona Karhutla Nasional)",
-                "members_source": "open_meteo_live_forecast_api",
-                "n_members": req.n_members,
-                "data_status": {
-                    "weather": "open_meteo_live_or_ensemble",
-                    "firms": "live_nrt_cluster"
-                }
-            }
-            event_dir.mkdir(parents=True, exist_ok=True)
-            meta_file.write_text(json.dumps(event_meta, indent=2, ensure_ascii=False), encoding="utf-8")
-
-        elif req.source.latitude is not None and req.source.longitude is not None:
-            # Mode Simulasi Titik Bebas / Klik Sembarang Peta Indonesia
-            c_lat = float(req.source.latitude)
-            c_lon = float(req.source.longitude)
-            c_name = req.source.name or f"Titik Kustom ({c_lat:.3f}, {c_lon:.3f})"
-            event_meta = {
-                "event_id": event_id,
-                "hazard": req.hazard,
-                "name": c_name,
-                "start_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                "duration_h": 24.0,
-                "column_height_km": 6.0 if req.hazard == "volcano" else None,
-                "vent_elevation_m": 800.0 if req.hazard == "volcano" else None,
-                "coordinates": {"latitude": c_lat, "longitude": c_lon},
-                "bbox": [c_lon - 0.7, c_lat - 0.7, c_lon + 0.7, c_lat + 0.7],
-                "source": "Koordinat Kustom Pengguna (Interaktif)",
-                "members_source": "open_meteo_live_forecast_api",
-                "n_members": req.n_members
-            }
-            event_dir.mkdir(parents=True, exist_ok=True)
-            meta_file.write_text(json.dumps(event_meta, indent=2, ensure_ascii=False), encoding="utf-8")
-
-        else:
-            # Cek database katalog 36 hutan nasional
-            forest_obj = None
-            try:
-                from app.db.repositories.forest_repo import ForestRepository
-                db_f = ForestRepository.get_by_id(event_id)
-                if db_f:
-                    forest_obj = db_f
-            except Exception:
-                pass
-
-            if not forest_obj:
-                forest_path = BACKEND_DIR / "data" / "layers" / "forests_indonesia.json"
-                if forest_path.exists():
-                    try:
-                        f_data = json.loads(forest_path.read_text(encoding="utf-8-sig"))
-                        f_list = f_data if isinstance(f_data, list) else f_data.get("forests", [])
-                        clean_e = event_id.lower().replace("_", "")
-                        for f_item in f_list:
-                            fid = (f_item.get("id") or "").lower()
-                            clean_fid = fid.replace("_", "")
-                            if clean_fid == clean_e or clean_fid.startswith(clean_e) or clean_e in clean_fid:
-                                forest_obj = f_item
-                                break
-                    except Exception:
-                        pass
-
-            if forest_obj:
-                f_lat = float(forest_obj.get("lat") or forest_obj.get("latitude") or 0.0)
-                f_lon = float(forest_obj.get("lon") or forest_obj.get("longitude") or 0.0)
-                event_meta = {
-                    "event_id": event_id,
-                    "hazard": "fire",
-                    "name": forest_obj["name"],
-                    "province": forest_obj.get("province", "Indonesia"),
-                    "start_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                    "duration_h": 24.0,
-                    "coordinates": {"latitude": f_lat, "longitude": f_lon},
-                    "bbox": [f_lon - 0.7, f_lat - 0.7, f_lon + 0.7, f_lat + 0.7],
-                    "source": "Katalog 36 Kawasan Hutan & Konservasi Nasional",
-                    "members_source": "open_meteo_live_forecast_api",
-                    "n_members": req.n_members,
-                    "data_status": {"weather": "open_meteo_live_or_ensemble", "firms": "live_nrt_cluster"}
-                }
-                event_dir.mkdir(parents=True, exist_ok=True)
-                meta_file.write_text(json.dumps(event_meta, indent=2, ensure_ascii=False), encoding="utf-8")
-            else:
-                raise HTTPException(status_code=404, detail=f"Event '{event_id}' tidak ditemukan di data/events/ maupun katalog nasional.")
-
-    # 2. Muat data cuaca
+    if not _SIM_SLOTS.acquire(timeout=90):
+        raise HTTPException(503, "Server sedang menjalankan simulasi lain. Coba lagi sebentar lagi.")
     try:
-        weather_data = OpenMeteoIngest.get_weather_for_simulation(
-            event_id=event_id,
+        return _run_simulation(req, custom)
+    finally:
+        _SIM_SLOTS.release()
+
+
+def _run_simulation(req: SimulationRequest, custom: bool):
+    src = _resolve_volcano(req, custom) if req.hazard == "volcano" else _resolve_fire(req, custom)
+    meta = src["meta"]
+
+    try:
+        weather = OpenMeteoIngest.get_weather_for_simulation(
+            event_id=meta["event_id"],
+            latitude=src["lat"],
+            longitude=src["lon"],
+            start_utc=src["start"],
+            hours=min(req.horizon_hours, 48),
+            level=src["level"],
             n_members=req.n_members,
             seed=req.seed,
-            overrides=req.overrides
+            overrides=req.overrides,
+            half_deg=WIND_GRID_HALF_DEG,
         )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Gagal memuat cuaca: {e}")
+    except WeatherUnavailable as e:
+        raise HTTPException(503, str(e))
 
-    # 3. Muat titik api jika hazard kebakaran
-    hotspots = []
-    if req.hazard == "fire":
-        hotspots = FirmsIngest.load_event_hotspots(event_id, overrides=req.overrides)
-        total_frp = sum(float(h.get("frp", 0.0)) for h in hotspots)
-
-        # Jika titik api lokal minim / kosong, periksa apakah terdapat titik api riil satelit FIRMS
-        # yang jatuh di dalam poligon batas kawasan resmi (Point-in-Polygon query)
-        if len(hotspots) < 10 and not (req.overrides and "hotspots" in req.overrides):
-            f_geom = None
-            try:
-                from app.db.repositories.forest_repo import ForestRepository
-                db_forest = ForestRepository.get_by_id(event_id)
-                if db_forest and db_forest.get("geometry"):
-                    f_geom = db_forest["geometry"]
-            except Exception:
-                pass
-
-            if not f_geom:
-                bound_path = BACKEND_DIR / "data" / "layers" / "forest_boundaries.geojson"
-                if bound_path.exists():
-                    try:
-                        b_data = json.loads(bound_path.read_text(encoding="utf-8"))
-                        f_feat = next((feat for feat in b_data.get("features", []) if feat.get("id") == event_id), None)
-                        if f_feat:
-                            f_geom = f_feat["geometry"]
-                    except Exception:
-                        pass
-
-            if f_geom:
-                try:
-                    from shapely.geometry import Point, shape
-                    f_poly = shape(f_geom)
-                    nat_hotspots = FirmsIngest.load_event_hotspots("national")
-                    inside_pts = [h for h in nat_hotspots if f_poly.contains(Point(h["longitude"], h["latitude"]))]
-                    if len(inside_pts) > len(hotspots):
-                        hotspots = inside_pts
-                        total_frp = sum(float(h.get("frp", 0.0)) for h in hotspots)
-                except Exception:
-                    pass
-
-        # Jika mode 'experiment' (skenario uji coba) atau custom point dan belum ada titik api signifikan (< 40 MW),
-        # sediakan klaster titik api skenario agar pengguna dapat mengamati simulasi dispersi asap
-        if (req.mode == "experiment" and total_frp < 40.0) or (not hotspots and req.mode == "experiment") or (not hotspots and req.source.latitude is not None):
-            coords = event_meta.get("coordinates", {})
-            c_lat = coords.get("latitude") or coords.get("center_lat", -2.5)
-            c_lon = coords.get("longitude") or coords.get("center_lon", 113.5)
-            rng_f = np.random.default_rng(req.seed)
-            hotspots = []
-            for i in range(18):
-                d_lat = float(rng_f.normal(0, 0.04))
-                d_lon = float(rng_f.normal(0, 0.04))
-                frp_val = float(rng_f.uniform(45.0, 160.0))
-                hotspots.append({
-                    "id": f"scenario_hotspot_{i}",
-                    "latitude": float(c_lat + d_lat),
-                    "longitude": float(c_lon + d_lon),
-                    "frp": frp_val,
-                    "confidence": "high",
-                    "acq_date": "scenario_experiment",
-                    "acq_time": "1200",
-                    "is_active": True
-                })
-
-    # 4. Jalankan simulator
     runner = SimulationRunner(req)
-    run_output = runner.run(event_meta, weather_data, hotspots)
+    emission_sources = _aggregate_sources(src["hotspots"]) if req.hazard == "fire" else []
+    run_output = runner.run(meta, weather, emission_sources)
+    run_output["hotspots"] = src["hotspots"][:5000]
+    run_output["event_id"] = meta["event_id"]
 
-    # Simpan di memori dengan pembatasan LRU (maksimal 10 run)
-    if len(RUNS_CACHE) >= 10:
-        oldest_key = next(iter(RUNS_CACHE))
-        del RUNS_CACHE[oldest_key]
-    RUNS_CACHE[runner.run_id] = run_output
+    _remember(runner.run_id, run_output)
 
-    return {
-        "run_id": runner.run_id,
-        "hazard": req.hazard,
-        "mode": req.mode,
-        "status": "completed",
-        "scenario_label": run_output["scenario_label"],
-        "members_source": run_output["members_source"],
-        "n_members": req.n_members,
-        "seed": req.seed,
-        "created_at_utc": runner.created_at_utc,
-        "disclaimer": run_output["disclaimer"],
-        "assumptions_used": run_output["assumptions_used"],
-    }
+    return {**_run_summary(run_output), "status": "completed"}
+
+
+def _remember(run_id: str, data: Dict[str, Any]) -> None:
+    while len(RUNS_CACHE) >= RUNS_IN_MEMORY:
+        del RUNS_CACHE[next(iter(RUNS_CACHE))]
+    RUNS_CACHE[run_id] = data
 
 
 def _get_run_data(run_id: str) -> Dict[str, Any]:
     if run_id in RUNS_CACHE:
         return RUNS_CACHE[run_id]
-
-    # Coba muat dari file
+    if not run_id.replace("_", "").isalnum():
+        raise HTTPException(status_code=400, detail="run_id tidak valid.")
     save_file = RUNS_DIR / f"{run_id}.json"
     if not save_file.exists():
         raise HTTPException(status_code=404, detail=f"Run '{run_id}' tidak ditemukan.")
-
     import json
-    return json.loads(save_file.read_text(encoding="utf-8-sig"))
+    data = json.loads(save_file.read_text(encoding="utf-8-sig"))
+    arr_file = RUNS_DIR / f"{run_id}.npz"
+    if arr_file.exists():
+        try:
+            z = np.load(arr_file)
+            shape = tuple(int(x) for x in z["shape"])
+            data["hourly_exposure_masks"] = np.unpackbits(z["masks"], count=int(np.prod(shape))).astype(bool).reshape(shape)
+            data["member_max_severity"] = z["severity"].astype(float)
+            _remember(run_id, data)
+        except Exception:
+            pass
+    return data
 
 
-@router.get("/runs/{run_id}")
-def get_run_status(run_id: str):
-    data = _get_run_data(run_id)
+def _grid(data: Dict[str, Any]) -> SimulationGrid:
+    g = data["grid"]
+    return SimulationGrid(g["lat_min"], g["lat_max"], g["lon_min"], g["lon_max"], g["resolution_deg"])
+
+
+def _run_summary(data: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "run_id": data["run_id"],
         "hazard": data["hazard"],
         "mode": data["mode"],
-        "event_id": data["event_id"],
-        "status": data["status"],
+        "event_id": data.get("event_id"),
+        "event_name": data.get("event_name"),
+        "status": data.get("status", "completed"),
         "scenario_label": data["scenario_label"],
         "members_source": data["members_source"],
         "n_members": data["n_members"],
         "seed": data["seed"],
         "created_at_utc": data["created_at_utc"],
         "completed_at_utc": data.get("completed_at_utc"),
+        "start_utc": data.get("start_utc"),
+        "horizon_hours": data.get("horizon_hours"),
+        "center_coords": data.get("center_coords"),
+        "source_info": data.get("source_info"),
+        "weather": data.get("weather_summary"),
+        "hotspots_used": data.get("hotspots_used"),
         "disclaimer": data["disclaimer"],
         "assumptions_used": data.get("assumptions_used", []),
     }
 
 
+@router.get("/runs/{run_id}")
+def get_run_status(run_id: str):
+    return _run_summary(_get_run_data(run_id))
+
+
 @router.get("/runs/{run_id}/tiers")
-def get_run_tiers(run_id: str, t: int = Query(0, ge=0, le=48, description="Langkah jam")):
+def get_run_tiers(run_id: str, t: Optional[int] = Query(None, ge=0, le=48, description="Langkah jam (kosong = seluruh jam)")):
     data = _get_run_data(run_id)
     tiers = data.get("hourly_tiers", {})
-    # Key di JSON file mungkin berupa string
+    if t is None:
+        return tiers
     step_key = str(t) if str(t) in tiers else t
     if step_key not in tiers:
-        # Kembalikan FeatureCollection kosong yang valid jika di luar jam
-        return {
-            "type": "FeatureCollection",
-            "properties": {"hour": t, "thresholds": {"min": 0.9, "mid": 0.5, "max": 0.05}},
-            "features": []
-        }
+        return {"type": "FeatureCollection", "properties": {"hour": t}, "features": []}
     return tiers[step_key]
+
+
+@router.get("/runs/{run_id}/wind")
+def get_run_wind(run_id: str, t: Optional[int] = Query(None, ge=0, le=48)):
+    """Rata-rata angin ensemble di sumber (dari data cuaca yang dipakai run)."""
+    data = _get_run_data(run_id)
+    w_sum = data.get("hourly_wind") or {}
+    if not w_sum:
+        return {"available": False, "reason": "Run ini tidak menyimpan ringkasan angin; jalankan ulang simulasi."}
+    if t is None:
+        return w_sum
+    return w_sum.get(str(t)) or w_sum.get(t) or {"available": False, "reason": f"Jam {t} di luar horizon run."}
 
 
 @router.get("/runs/{run_id}/impact")
 def get_run_impact(run_id: str):
-    if run_id not in RUNS_CACHE:
-        raise HTTPException(status_code=404, detail=f"Data array run '{run_id}' tidak aktif di memori.")
-
-    data = RUNS_CACHE[run_id]
-    grid_meta = data["grid"]
-    grid = SimulationGrid(
-        lat_min=grid_meta["lat_min"],
-        lat_max=grid_meta["lat_max"],
-        lon_min=grid_meta["lon_min"],
-        lon_max=grid_meta["lon_max"],
-        resolution_deg=grid_meta["resolution_deg"],
-    )
-
-    return calculate_impact_ranges(data, grid)
+    if run_id in RUNS_CACHE:
+        data = RUNS_CACHE[run_id]
+        imp = data.get("impact") or {}
+        if not (imp.get("facilities_coverage") or {}).get("complete", True):
+            from app.services import osm_facilities
+            if osm_facilities.tiles_available(tuple(t) for t in imp["facilities_coverage"]["missing_tiles"]):
+                data["impact"] = None
+                data["_facilities"] = None
+        return calculate_impact_ranges(data, _grid(data))
+    data = _get_run_data(run_id)
+    if isinstance(data.get("impact"), dict):
+        return data["impact"]
+    raise HTTPException(404, f"Ringkasan dampak run '{run_id}' tidak tersedia.")
 
 
 @router.get("/runs/{run_id}/location/{facility_id}")
 def get_location_decision_card(run_id: str, facility_id: str):
-    if run_id in RUNS_CACHE:
-        data = RUNS_CACHE[run_id]
-        grid_meta = data["grid"]
-        grid = SimulationGrid(
-            lat_min=grid_meta["lat_min"],
-            lat_max=grid_meta["lat_max"],
-            lon_min=grid_meta["lon_min"],
-            lon_max=grid_meta["lon_max"],
-            resolution_deg=grid_meta["resolution_deg"],
-        )
-        return evaluate_decision_card(data, facility_id, grid)
-
-    # Fallback jika data telah tersimpan di disk
     data = _get_run_data(run_id)
-    fac_list = data.get("facilities_impacted", {})
-    if fac_list:
-        for pool in [
-            fac_list.get("schools", []),
-            fac_list.get("healthcare", []),
-            fac_list.get("airports", []),
-            fac_list.get("evacuation_referral_hospitals", []),
-        ]:
-            for item in pool:
-                if str(item.get("facility_id")) == str(facility_id) or str(item.get("id")) == str(facility_id):
-                    return {
-                        "available": True,
-                        "facility_id": facility_id,
-                        "name": item.get("name"),
-                        "facility_type": item.get("facility_type"),
-                        "exposure_probability": (item.get("exposure_pct") or 0) / 100.0,
-                        "exposure_probability_pct": item.get("exposure_pct") or 0,
-                        "earliest_arrival_h": item.get("arrival_time_earliest_h"),
-                        "alert_level": item.get("alert_level"),
-                        "action_recommendation": item.get("action_detail"),
-                        "nearest_safe_hospital": item.get("nearest_safe_hospital"),
-                    }
-
-    raise HTTPException(status_code=404, detail=f"Kartu keputusan fasilitas '{facility_id}' tidak ditemukan untuk run '{run_id}'.")
+    card = evaluate_decision_card(data, facility_id, _grid(data))
+    if card.get("available") is False:
+        raise HTTPException(404, card["reason"])
+    return card
 
 
 @router.get("/runs/{run_id}/facilities-impacted")
 def get_run_facilities_impacted(run_id: str, min_prob: float = Query(0.05, ge=0.01, le=1.0)):
     if run_id in RUNS_CACHE:
         data = RUNS_CACHE[run_id]
-        grid_meta = data["grid"]
-        grid = SimulationGrid(
-            lat_min=grid_meta["lat_min"],
-            lat_max=grid_meta["lat_max"],
-            lon_min=grid_meta["lon_min"],
-            lon_max=grid_meta["lon_max"],
-            resolution_deg=grid_meta["resolution_deg"],
-        )
-        return get_exposed_facilities_list(data, grid, min_prob=min_prob)
-
-    # Fallback ke hasil komputasi yang tersimpan di file
+        prev = data.get("facilities_impacted")
+        complete = isinstance(prev, dict) and (prev.get("facilities_coverage") or {}).get("complete", True)
+        if min_prob == 0.05 and prev and complete:
+            return prev
+        fresh = get_exposed_facilities_list(data, _grid(data), min_prob=min_prob)
+        if min_prob == 0.05:
+            data["facilities_impacted"] = fresh
+            data["impact"] = None
+            data["impact"] = calculate_impact_ranges(data, _grid(data))
+        return fresh
     data = _get_run_data(run_id)
-    if "facilities_impacted" in data and data["facilities_impacted"]:
+    if data.get("facilities_impacted"):
         return data["facilities_impacted"]
-
-    grid_meta = data.get("grid")
-    if grid_meta and "hourly_exposure_masks" in data:
-        grid = SimulationGrid(
-            lat_min=grid_meta["lat_min"],
-            lat_max=grid_meta["lat_max"],
-            lon_min=grid_meta["lon_min"],
-            lon_max=grid_meta["lon_max"],
-            resolution_deg=grid_meta["resolution_deg"],
-        )
-        return get_exposed_facilities_list(data, grid, min_prob=min_prob)
-
-    raise HTTPException(status_code=404, detail=f"Data fasilitas untuk run '{run_id}' tidak ditemukan.")
+    raise HTTPException(404, f"Data fasilitas untuk run '{run_id}' tidak ditemukan.")
 
 
 @router.get("/runs/{run_id}/health-guidance")
 def get_run_health_guidance(run_id: str):
     data = _get_run_data(run_id)
-    hazard = data.get("hazard", "volcano")
-    return get_health_and_mask_guidance(hazard=hazard)
+    return get_health_and_mask_guidance(hazard=data.get("hazard", "volcano"))
+
+
+__all__ = ["router", "RUNS_CACHE", "_get_run_data", "CUSTOM_HALF_DEG"]

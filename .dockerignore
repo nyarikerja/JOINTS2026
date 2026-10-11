@@ -1,0 +1,14 @@
+**/node_modules
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+frontend/dist
+frontend-original
+reference_repos
+backend/data/runs
+backend/data/layers/osm_facilities
+backend/data/layers/firms_history
+backend/.env
+*.zip
+*.jpg
+image*.png

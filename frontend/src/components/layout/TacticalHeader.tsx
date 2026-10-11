@@ -39,13 +39,27 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
     localStorage.setItem("hasSeenManual", "true");
   };
 
+  // Tanpa data dari server, tampilkan "—" (bukan angka cadangan)
   const volcanoAlertCount = kpi?.volcanoes
     ? (kpi.volcanoes.level_4_awas || 0) + (kpi.volcanoes.level_3_siaga || 0)
-    : 7;
+    : "—";
 
   const fireCount = kpi?.wildfire_hotspots?.active_24h_firms !== undefined
     ? Number(kpi.wildfire_hotspots.active_24h_firms).toLocaleString("id-ID")
-    : "1.680";
+    : "—";
+
+  const fmtWib = (iso?: string | null) =>
+    iso
+      ? new Date(iso).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) + " WIB"
+      : "belum tersedia";
+  const volcanoTitle = kpi?.volcanoes
+    ? `Level III (Siaga): ${kpi.volcanoes.level_3_siaga} · Level IV (Awas): ${kpi.volcanoes.level_4_awas}
+Sumber: MAGMA Indonesia (PVMBG), diperbarui ${fmtWib(kpi.volcanoes.fetched_at)}${kpi.volcanoes.stale ? " (data lama)" : ""}`
+    : "Status MAGMA belum dimuat";
+  const fireTitle = kpi?.wildfire_hotspots
+    ? `Deteksi NASA FIRMS (VIIRS & MODIS) 24 jam terakhir
+Deteksi terbaru: ${fmtWib(kpi.wildfire_hotspots.latest_detection_utc)} · diunduh ${fmtWib(kpi.wildfire_hotspots.fetched_at)}${kpi.wildfire_hotspots.stale ? " (data lama)" : ""}`
+    : "Data FIRMS belum dimuat";
 
   useEffect(() => {
     const updateTime = () => {
@@ -81,14 +95,17 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
 
   useEffect(() => {
     loadKpi();
+    const t = setInterval(loadKpi, 5 * 60 * 1000);
+    return () => clearInterval(t);
   }, []);
 
   const handleSync = async () => {
     setIsSyncing(true);
     try {
       const res = await api.syncLive();
-      setSyncStatus(`Tersinkron (${res.latency_ms || 92}ms)`);
-      await loadKpi();
+      if (res.kpi) setKpi(res.kpi);
+      else await loadKpi();
+      setSyncStatus(res.status === "synchronized" ? "Tersinkron" : res.status === "partial" ? "Sebagian gagal" : "Gagal");
     } catch {
       setSyncStatus("Gagal");
     } finally {
@@ -100,79 +117,81 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
   return (
     <>
       <header
-      className="h-[52px] backdrop-blur-md px-4 flex items-center justify-between z-[1100] shrink-0"
+      className="h-[52px] backdrop-blur-md px-2 sm:px-4 flex items-center justify-between gap-2 z-[1100] shrink-0 relative overflow-visible"
       style={{
         backgroundColor: "#EB895B",
         borderBottom: "1px solid rgba(161, 70, 70, 0.35)",
         boxShadow: "0 2px 14px rgba(0, 0, 0, 0.2)"
       }}
     >
-      <a
-        href="/"
-        className="flex items-center gap-2.5 group cursor-pointer transition hover:opacity-90 no-underline"
-        title="Kembali ke Landing Page HelaLoka"
-        onClick={() => {
-          try {
-            if (localStorage.getItem('hl-sound') !== 'off') {
-              localStorage.setItem('hl-sound', 'on');
-            }
-          } catch (e) {}
-        }}
-      >
-        <img
-          src="/gunung_black.png"
-          alt="Logo hELAlOKA"
-          className="w-8 h-8 object-contain shrink-0 drop-shadow-sm select-none pointer-events-none group-hover:scale-105 transition-transform"
-        />
-        <div className="flex items-center gap-1.5">
-          <span className="font-extrabold text-base tracking-tight" style={{ color: "#140f0e" }}>hELAlOKA</span>
-          <span className="font-bold text-[10px] px-1.5 py-0.5 rounded tracking-wider text-white shadow-xs" style={{ backgroundColor: "#dc2626" }}>
-            INDONESIA
-          </span>
-        </div>
-      </a>
+
+      <div className="relative overflow-visible">
+        <a
+          href="/"
+          className="flex items-center gap-2.5 px-3 py-1.5 rounded-full transition hover:opacity-95 no-underline bg-white/20 border border-black/10 relative overflow-visible shadow-xs group"
+          title="Kembali ke Landing Page HelaLoka"
+          onClick={() => {
+            try {
+              if (localStorage.getItem('hl-sound') !== 'off') {
+                localStorage.setItem('hl-sound', 'on');
+              }
+            } catch (e) {}
+          }}
+        >
+          <img
+            src="/gunung_black.png"
+            alt="Logo hELAlOKA"
+            className="w-7 h-7 object-contain shrink-0 drop-shadow-sm select-none pointer-events-none group-hover:scale-105 transition-transform"
+          />
+          <div className="flex items-center gap-1.5">
+            <span className="font-extrabold text-sm tracking-tight" style={{ color: "#140f0e" }}>hELAlOKA</span>
+            <span className="hidden sm:inline font-bold text-[9px] px-1.5 py-0.5 rounded tracking-wider text-white shadow-xs" style={{ backgroundColor: "#dc2626" }}>
+              INDONESIA
+            </span>
+          </div>
+        </a>
+      </div>
 
       {/* Live Telemetry Ticker (KPI Dinamis Nasional) */}
-      <div className="hidden md:flex items-center gap-2.5">
+      <div className="hidden xl:flex items-center gap-2.5 shrink-0">
         <div
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs shadow-xs"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs shadow-xs whitespace-nowrap"
           style={{
             background: "#F5EFE3",
             border: "1px solid rgba(20, 15, 14, 0.12)",
             color: "#140f0e",
             boxShadow: "0 1px 3px rgba(0, 0, 0, 0.08)"
           }}
-          title="Status Gunung Api Aktif PVMBG (Level III Siaga & Level IV Awas)"
+          title={volcanoTitle}
         >
-          <svg className="w-3.5 h-3.5 shrink-0" style={{ color: "#A14646" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-            <path d="M2 22L12 2l10 20H2z" />
-            <path d="M12 9v4" />
-          </svg>
+          <img
+            src="/3_siaga.png"
+            alt="Gunung Api Siaga"
+            className="w-4 h-4 shrink-0 object-contain drop-shadow-xs"
+          />
           <span className="text-xs font-semibold" style={{ color: "rgba(20, 15, 14, 0.85)" }}>Gunung Siaga / Awas:</span>
           <strong className="font-mono font-bold text-xs" style={{ color: "#A14646" }}>{volcanoAlertCount}</strong>
         </div>
 
         <div
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs shadow-xs"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs shadow-xs whitespace-nowrap"
           style={{
             background: "#F5EFE3",
             border: "1px solid rgba(20, 15, 14, 0.12)",
             color: "#140f0e",
             boxShadow: "0 1px 3px rgba(0, 0, 0, 0.08)"
           }}
-          title="Deteksi Titik Api Satelit NASA FIRMS VIIRS 24 Jam Terakhir"
+          title={fireTitle}
         >
-          <svg className="w-3.5 h-3.5 shrink-0" style={{ color: "#DA6556" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-            <path d="M12 2c-4 4-6 8-6 12 0 4.4 3.6 8 8 8s8-3.6 8-8c0-3-2-6-5-8-1 3-3 4-5 2z" />
-          </svg>
+          <img src="/titik_api.png" alt="Titik Api" className="w-3.5 h-3.5 shrink-0 object-contain" />
           <span className="text-xs font-semibold" style={{ color: "rgba(20, 15, 14, 0.85)" }}>Titik Api Aktif (24h):</span>
           <strong className="font-mono font-bold text-xs" style={{ color: "#DA6556" }}>{fireCount}</strong>
         </div>
       </div>
 
       {/* Jam Digital Ganda & Tombol Aksi */}
-      <div className="flex items-center gap-2.5">
-        <div className="text-right font-mono text-xs hidden sm:block leading-tight">
+      <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+        <div className="text-right font-mono text-xs hidden 2xl:block leading-tight whitespace-nowrap">
           <div className="font-bold" style={{ color: "#140f0e" }}>{clockWib}</div>
           <div className="text-[10px]" style={{ color: "rgba(20, 15, 14, 0.75)" }}>{clockUtc}</div>
         </div>
@@ -189,7 +208,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
           title="Kembali ke Landing Page HelaLoka"
         >
           <Home className="w-3.5 h-3.5" style={{ color: "#A14646" }} />
-          <span className="hidden sm:inline">Beranda</span>
+          <span className="hidden lg:inline">Beranda</span>
         </a>
 
         <button
@@ -215,10 +234,10 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
             color: "#140f0e",
             boxShadow: "0 1px 3px rgba(0, 0, 0, 0.08)"
           }}
-          title="Sinkronisasi sensor NASA & Open-Meteo"
+          title="Unduh ulang data NASA FIRMS, MAGMA (PVMBG), dan angin Open-Meteo"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} style={{ color: isSyncing ? "#DA6556" : "#A14646" }} />
-          <span>{syncStatus || "Live Sync"}</span>
+          <span className="hidden lg:inline">{syncStatus || "Sinkronisasi"}</span>
         </button>
 
         {/* Tombol Legenda */}
@@ -239,7 +258,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
           title="Buka / Tutup Keterangan Peta Status Gunung & Ancaman Udara"
         >
           <Layers className="w-3.5 h-3.5" style={{ color: isLegendOpen ? "#F5EFE3" : "#DA6556" }} />
-          <span>Legenda</span>
+          <span className="hidden lg:inline">Legenda</span>
         </button>
 
         <button
@@ -259,7 +278,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
           title="Buka / Tutup Proyeksi Dampak"
         >
           <PanelRight className="w-3.5 h-3.5" style={{ color: isDrawerOpen ? "#F5EFE3" : "#140f0e" }} />
-          <span>Proyeksi Dampak</span>
+          <span className="hidden md:inline">Proyeksi Dampak</span>
         </button>
       </div>
     </header>
@@ -267,9 +286,9 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
       {/* Modal Bantuan */}
       {isHelpOpen && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-[#f7f3ed] rounded-xl shadow-2xl max-w-sm w-full border border-[#2b211e]/10 overflow-hidden text-[#2b211e] animate-popup">
+          <div className="bg-[#f7f3ed] rounded-xl shadow-2xl max-w-sm w-full border border-[#2b211e]/10 overflow-visible relative text-[#2b211e] animate-popup">
             {/* Header Modal */}
-            <div className="bg-white px-4 py-3 border-b border-[#2b211e]/10 flex items-center justify-between">
+            <div className="bg-white px-4 py-3 border-b border-[#2b211e]/10 flex items-center justify-between rounded-t-xl">
               <div className="flex items-center gap-2">
                 <HelpCircle className="w-5 h-5 text-[#A14646]" />
                 <h3 className="font-sans text-sm font-bold tracking-wide">Panduan Simulasi</h3>
@@ -316,7 +335,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
             </div>
 
             {/* Footer Modal */}
-            <div className="px-5 py-3 bg-white border-t border-[#2b211e]/10 flex justify-end">
+            <div className="px-5 py-3 bg-white border-t border-[#2b211e]/10 flex justify-end rounded-b-xl">
               <button
                 onClick={closeHelp}
                 className="px-4 py-1.5 bg-[#EB895B] hover:bg-[#DA6556] text-white text-xs font-bold rounded-lg transition cursor-pointer shadow-xs"
@@ -327,6 +346,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
           </div>
         </div>
       )}
+
     </>
   );
 };

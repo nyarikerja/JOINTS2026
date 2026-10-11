@@ -25,11 +25,12 @@ router = APIRouter(tags=["Lapis 3: Bukti Kepercayaan"])
 
 
 @router.get("/validation/{event_id}")
-def get_event_validation(event_id: str) -> Dict[str, Any]:
+def get_event_validation(event_id: str, run_id: str | None = Query(None, description="Run yang dibandingkan")) -> Dict[str, Any]:
     """
-    Mengambil hasil evaluasi validasi model terhadap laporan kejadian riil.
+    Evaluasi run terhadap laporan dampak lapangan. Tanpa run_id, hanya status ketersediaan data.
     """
-    return evaluate_event_validation(event_id)
+    run = _get_run_data(run_id) if run_id else None
+    return evaluate_event_validation(event_id, run)
 
 
 @router.get("/limits")
@@ -162,51 +163,11 @@ def get_sources_catalog() -> Dict[str, Any]:
 
 @router.get("/demo/play/{event_id}")
 def get_demo_playback_sequence(event_id: str) -> Dict[str, Any]:
-    """
-    Menyajikan urutan snapshot tersimpan untuk fitur 'Putar Demo' otomatis.
-    """
-    is_volcano = "krakatau" in event_id
-
-    # Buat keyframes playback dari T+0 hingga T+48 (tiap 6 jam)
-    hours = [0, 6, 12, 18, 24, 30, 36, 42, 48]
-    steps = []
-
-    for h in hours:
-        if is_volcano:
-            commentary = (
-                f"T + {h:02d} jam: "
-                + (
-                    "Fase letusan awal dimulai dari kawah Anak Krakatau."
-                    if h == 0
-                    else f"Awan abu telah menyebar sejauh ~{h * 15} km terbawa angin troposfer atas ke arah Lampung & Selat Sunda."
-                )
-            )
-            pop_median = 0 if h == 0 else int(1500 + (h * 420))
-        else:
-            commentary = (
-                f"T + {h:02d} jam: "
-                + (
-                    "Deteksi awal konsentrasi titik api karhutla Kalimantan."
-                    if h == 0
-                    else f"Kepulan asap membentang seluas ~{h * 25} km², memicu potensi penurunan visibilitas."
-                )
-            )
-            pop_median = 0 if h == 0 else int(2200 + (h * 550))
-
-        steps.append({
-            "hour": h,
-            "time_label": f"T + {h:02d}:00 Jam",
-            "commentary": commentary,
-            "estimated_exposed_population_median": pop_median,
-        })
-
+    """Pemutaran demo tersimpan tidak tersedia: hasil harus berasal dari simulasi nyata (POST /simulate)."""
     return {
         "event_id": event_id,
-        "hazard": "volcano" if is_volcano else "fire",
-        "playback_title": "Simulasi Riwayat Kejadian (Pratinjau Otomatis)",
-        "total_duration_hours": 48,
-        "step_interval_hours": 6,
-        "steps": steps,
+        "available": False,
+        "reason": "Pemutaran demo berisi angka tetap telah dihapus. Jalankan POST /simulate lalu putar jam lewat /runs/{run_id}/tiers.",
         "disclaimer": settings.DISCLAIMER,
     }
 
@@ -249,9 +210,10 @@ def export_run_summary(
         "run_id": run_id,
         "hazard": data.get("hazard", "volcano"),
         "mode": data.get("mode", "auto"),
-        "scenario_label": event_name or data.get("scenario_label", "skenario"),
-        "members_source": data.get("members_source", "synthetic_spread"),
-        "n_members": data.get("n_members", 5),
+        "event_name": event_name or data.get("event_name"),
+        "scenario_label": data.get("scenario_label"),
+        "members_source": data.get("members_source"),
+        "n_members": data.get("n_members"),
         "horizon_hours": data.get("horizon_hours", 48),
         "disclaimer": settings.DISCLAIMER,
         "impact": impact_data,
@@ -339,33 +301,39 @@ def get_evacuation_corridor_route(
 @router.get("/runs/{run_id}/lahar-warning")
 def get_lahar_warning(run_id: str) -> Dict[str, Any]:
     """
-    Fitur opsional Lapis 3: Analisis peringatan potensi lahar hujan sekunder
-    berdasarkan ketebalan endapan abu dan intensitas presipitasi di DAS hulu.
+    Potensi lahar hujan dari prakiraan hujan ensemble (Open-Meteo ECMWF) di puncak gunung,
+    dibandingkan dengan ambang pemicu pada config/assumptions.yaml (lahar_rain_trigger_mm_h).
     """
     data = _get_run_data(run_id)
     hazard = data.get("hazard", "volcano")
-
     if hazard != "volcano":
-        return {
-            "run_id": run_id,
-            "hazard": hazard,
-            "lahar_risk_level": "none",
-            "message": "Bahaya lahar hanya relevan untuk erupsi gunung api dengan endapan piroklastik.",
-        }
-
+        return {"run_id": run_id, "hazard": hazard, "lahar_risk_level": "none",
+                "message": "Bahaya lahar hanya relevan untuk erupsi gunung api."}
+    ws = data.get("weather_summary") or {}
+    if ws.get("precip_max_mm_h") is None:
+        return {"run_id": run_id, "hazard": "volcano", "available": False, "lahar_risk_level": "unknown",
+                "reason": "Run ini tidak menyimpan prakiraan hujan; jalankan ulang simulasi."}
+    prob = float(ws.get("prob_rain_above_lahar_trigger") or 0.0)
+    thr = float(ws.get("lahar_trigger_mm_h") or 20.0)
+    level = "tinggi" if prob >= 0.5 else ("waspada" if prob >= 0.2 else "rendah")
+    pmax = ws["precip_max_mm_h"]
+    name = data.get("event_name") or "gunung api"
     return {
         "run_id": run_id,
         "hazard": "volcano",
-        "lahar_risk_level": "waspada",
-        "rainfall_threshold_trigger_mm_h": 20.0,
-        "critical_ash_thickness_mm": 5.0,
-        "vulnerable_drainage_basins": [
-            {"river_name": "DAS Way Sekampung (Lampung)", "risk": "sedang"},
-            {"river_name": "DAS Ci Asahan (Banten)", "risk": "rendah"},
-        ],
+        "available": True,
+        "lahar_risk_level": level,
+        "prob_rain_above_trigger": prob,
+        "rainfall_threshold_trigger_mm_h": thr,
+        "forecast_precip_max_mm_h": pmax,
+        "forecast_precip_total_mm": ws.get("precip_total_mm"),
+        "weather_model": ws.get("model"),
+        "vulnerable_drainage_basins": [],
         "warning_text": (
-            "PERINGATAN LAHAR HUJAN: Hujan dengan intensitas melampaui 20 mm/jam di sektor hulu "
-            "berisiko memobilisasi endapan abu lepas menjadi aliran lahar sekunder di alur sungai."
+            f"Prakiraan hujan maksimum di {name} dalam {data.get('horizon_hours', 48)} jam: "
+            f"{pmax['median']} mm/jam (median ensemble, rentang {pmax['min']}-{pmax['max']}). "
+            f"Peluang hujan >= {thr:.0f} mm/jam: {round(prob * 100)}%. Ambang pemicu adalah asumsi model, "
+            "bukan ambang resmi PVMBG; pantau peringatan lahar dari PVMBG dan BPBD setempat."
         ),
-        "source": "Pedoman Mitigasi Bahaya Sekunder PVMBG",
+        "source": ws.get("model"),
     }

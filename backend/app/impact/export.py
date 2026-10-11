@@ -19,6 +19,7 @@ def generate_printable_html(export_data: Dict[str, Any]) -> str:
     hazard = export_data.get("hazard", "-").upper()
     mode = export_data.get("mode", "auto")
     scenario_label = export_data.get("scenario_label", "-")
+    event_name = export_data.get("event_name") or "-"
     disclaimer = export_data.get("disclaimer", "")
     n_members = export_data.get("n_members", "-")
     horizon = export_data.get("horizon_hours", "-")
@@ -36,7 +37,7 @@ def generate_printable_html(export_data: Dict[str, Any]) -> str:
         return f"{m.get('min', 0):,.0f} &ndash; <strong>{m.get('median', 0):,.0f}</strong> &ndash; {m.get('max', 0):,.0f}"
 
     advisory = export_data.get("advisory", {})
-    alert_level = advisory.get("alert_level", "SIAGA TANGGAP DARURAT")
+    alert_level = advisory.get("alert_level", "HASIL SIMULASI")
     badge_bg = advisory.get("badge_bg", "#dc2626")
 
     # Ambil daftar RS rujukan aman terdekat jika tersedia
@@ -209,8 +210,8 @@ def generate_printable_html(export_data: Dict[str, Any]) -> str:
 
   <div class="meta-grid">
     <div class="meta-item"><strong>Jenis Bahaya:</strong> {hazard}</div>
-    <div class="meta-item"><strong>Skenario / Lokasi:</strong> {scenario_label}</div>
-    <div class="meta-item"><strong>Model Prediksi:</strong> {n_members} Skenario</div>
+    <div class="meta-item"><strong>Lokasi:</strong> {event_name} &middot; <strong>Mode:</strong> {"Uji Skenario" if mode == "experiment" else "Kondisi Nyata"} ({scenario_label})</div>
+    <div class="meta-item"><strong>Ensemble:</strong> {n_members} anggota ({members_source})</div>
     <div class="meta-item"><strong>Sumber Data:</strong> Satelit Cuaca &amp; Sensor PVMBG/BMKG</div>
   </div>
 

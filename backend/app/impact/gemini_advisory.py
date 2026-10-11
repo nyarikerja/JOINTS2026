@@ -2,13 +2,13 @@
 app/impact/gemini_advisory.py
 
 Modul Pengayaan Narasi Bencana Menggunakan Google Gemini API (Hybrid LLM Enhancer).
-Menghasilkan narasi resmi, berwibawa, dan berstandar otoritatif Pusdalops BNPB & Kemenkes RI:
+Menghasilkan draf ringkasan kesiapsiagaan dari hasil simulasi (bukan dokumen resmi lembaga mana pun):
 1. Siaran Pers Resmi Siaga Bencana BPBD (Pers Release Media)
 2. Pesan Siaran Darurat Warga (Format Buletin Resmi Tanpa Emoji Kasual)
 3. Rekomendasi Mitigasi Taktis & Perlindungan Organ
 
 Dilengkapi mekanisme fallback deterministik (Zero-Failure Architecture)
-berstandar Pusdalops BNPB jika jaringan offline atau kuota API terbatas.
+jika jaringan offline atau kuota API terbatas.
 """
 
 import json
@@ -42,7 +42,7 @@ def enrich_advisory_with_gemini(
 ) -> Dict[str, Any]:
     """
     Memanggil Google Gemini API untuk menghasilkan narasi siaran pers dan broadcast warga.
-    Jika offline/gagal, mengembalikan narasi terstruktur resmi berstandar Pusdalops BNPB secara deterministik.
+    Jika offline/gagal, mengembalikan draf template secara deterministik.
     """
     api_key = get_gemini_api_key()
     total_pop = population_summary.get("total_median", 0)
@@ -53,8 +53,9 @@ def enrich_advisory_with_gemini(
     hazard_label = "Erupsi Gunung Api (Hujan Abu Silika)" if hazard == "volcano" else "Kebakaran Hutan & Lahan (Asap PM2.5)"
 
     prompt_text = f"""
-Anda adalah Kepala Pusat Data, Informasi, dan Komunikasi Kebencanaan Badan Nasional Penanggulangan Bencana (BNPB) bekerja sama dengan Kementerian Kesehatan RI.
-Tugas: Buat dokumen peringatan taktis resmi dalam Bahasa Indonesia baku untuk media massa dan masyarakat terdampak.
+Anda adalah penulis ringkasan kesiapsiagaan untuk aplikasi simulasi UdaraSiaga (bukan lembaga pemerintah).
+Tugas: Buat DRAF ringkasan hasil simulasi dalam Bahasa Indonesia baku. Draf ini BUKAN siaran pers atau peringatan resmi;
+jangan mengatasnamakan BNPB, BPBD, Kemenkes, atau lembaga lain, dan jangan membuat nomor surat.
 
 DATA TELEMETRI DAN SITUASI AKTUAL:
 - Kejadian Bahaya: {hazard_label}
@@ -64,22 +65,22 @@ DATA TELEMETRI DAN SITUASI AKTUAL:
 - Infrastruktur Kritis di Koridor Risiko: {school_count} sekolah, {healthcare_count} fasilitas kesehatan
 
 PEDOMAN FORMAT DAN GAYA BAHASA (WAJIB DIPATUHI):
-1. GAYA BAHASA: Sangat resmi, profesional, tegas, berwibawa, dan berbasis data ilmiah kebencanaan (gaya bahasa resmi Pusdalops BNPB).
+1. GAYA BAHASA: Formal, tenang, dan hanya memakai angka dari data di atas. Sebutkan bahwa ini hasil simulasi, bukan peringatan resmi.
 2. DILARANG KERAS MENGGUNAKAN EMOJI APAPUN. DILARANG menggunakan bahasa santai atau kasual.
 3. KONTEN SIARAN PERS (press_release_body):
-   - Paragraf 1: Pengumuman situasi kedaruratan resmi, nama kejadian dan lokasinya, arah pergerakan trajektori atmosferik, dan rincian kuantitatif warga rentan terpapar.
+   - Paragraf 1: Ringkasan hasil simulasi, nama kejadian dan lokasinya, arah pergerakan trajektori atmosferik, dan rincian kuantitatif warga rentan terpapar.
    - Paragraf 2: Instruksi taktis multi-sektor: pengalihan KBM sekolah ke PJJ Daring (mandat SPAB Kemendikbud-BNPB), kesiapsiagaan ruang isolasi udara bersih di puskesmas/RSUD, serta pengamanan sumber air minum.
 4. KONTEN BROADCAST WARGA (whatsapp_broadcast):
-   - Format surat edaran / buletin telegram darurat resmi berstruktur (Nomor, Perihal, Wilayah, Poin Instruksi 1-5, Kontak Darurat).
+   - Pesan berstruktur (Perihal, Wilayah, Poin 1-5, Kontak Darurat). Tanpa nomor surat dan tanpa mengatasnamakan lembaga.
    - Tanpa emoji sama sekali. Gunakan penomoran rapi (1., 2., 3.).
    - Wajib cantumkan larangan keras pemakaian lensa kontak (softlens) karena mikro-kristal silika tajam (SiO2) berisiko abrasi kornea dan kebutaan permanen.
    - Wajib cantumkan spesifikasi respirator N95/KN95/KF94 (larangan masker kain dan masker bedah karena kebocoran samping 30-50%).
    - Wajib cantumkan penutupan tandon air minum/sumur gali dari pencemaran fluorida dan asam sulfur.
-   - Cantumkan nomor kontak resmi: Pusdalops BPBD (Call Center 112) dan Kegawatdaruratan Medis (SPGDT 119).
+   - Cantumkan nomor darurat nasional: 112 dan SPGDT 119.
 
 Kembalikan HANYA format JSON valid tanpa tanda pembungkus markdown (```json):
 {{
-  "press_release_title": "SIARAN PERS PUSDALOPS BPBD: PERINGATAN DINI KESIAPSIAGAAN ANCAMAN ...",
+  "press_release_title": "DRAF RINGKASAN SIMULASI (BUKAN SIARAN RESMI): ...",
   "press_release_body": "Teks resmi siaran pers 2 paragraf padat instruksi...",
   "whatsapp_broadcast": "Teks resmi buletin darurat warga bernomor 1 s.d. 5 tanpa emoji...",
   "key_callout": "Pernyataan kunci kedaruratan untuk pemangku kebijakan daerah"
@@ -88,7 +89,7 @@ Kembalikan HANYA format JSON valid tanpa tanda pembungkus markdown (```json):
 
     is_offline = os.getenv("UDARASIAGA_OFFLINE") == "1"
     if api_key and not is_offline:
-        models_to_try = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]
+        models_to_try = ["gemini-2.5-flash", "gemini-2.0-flash"]
         for model in models_to_try:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
             payload = {
@@ -116,7 +117,7 @@ Kembalikan HANYA format JSON valid tanpa tanda pembungkus markdown (```json):
                         return {
                             "engine": f"Google Gemini AI ({model})",
                             "status": "ai_generated",
-                            "press_release_title": parsed.get("press_release_title", "SIARAN PERS RESMI TANGGAP DARURAT PUSDALOPS BPBD"),
+                            "press_release_title": parsed.get("press_release_title", "DRAF RINGKASAN SIMULASI (BUKAN SIARAN RESMI)"),
                             "press_release_body": parsed.get("press_release_body", "").replace("🚨", "").replace("😷", "").replace("🚫", ""),
                             "whatsapp_broadcast": parsed.get("whatsapp_broadcast", "").replace("🚨", "").replace("😷", "").replace("🚫", ""),
                             "key_callout": parsed.get("key_callout", "Gunakan masker respirator N95, dilarang memakai lensa kontak, dan amankan sumber air minum."),
@@ -124,7 +125,39 @@ Kembalikan HANYA format JSON valid tanpa tanda pembungkus markdown (```json):
             except Exception:
                 continue
 
-    # Fallback Deterministik Cerdas (Standar Resmi Pusdalops BNPB / Kemenkes RI)
+    # LLM Featherless (OpenAI-compatible) bila Gemini tidak tersedia
+    fk = os.getenv("FEATHERLESS_API_KEY", "").strip()
+    if fk and not is_offline:
+        try:
+            import httpx
+
+            from app.llm.brief import FALLBACK_MODEL, PRIMARY_MODEL
+            base = os.getenv("FEATHERLESS_BASE_URL", "https://api.featherless.ai/v1").rstrip("/")
+            for model in (PRIMARY_MODEL, FALLBACK_MODEL):
+                r = httpx.post(f"{base}/chat/completions", headers={"Authorization": f"Bearer {fk}"}, timeout=30.0, json={
+                    "model": model, "max_tokens": 1200, "temperature": 0.2,
+                    "chat_template_kwargs": {"enable_thinking": False},
+                    "messages": [{"role": "user", "content": prompt_text}],
+                })
+                if r.status_code != 200:
+                    continue
+                raw_text = r.json()["choices"][0]["message"].get("content") or ""
+                i, j = raw_text.find("{"), raw_text.rfind("}")
+                if i < 0 or j <= i:
+                    continue
+                parsed = json.loads(raw_text[i:j + 1])
+                return {
+                    "engine": f"featherless ({model})",
+                    "status": "ai_generated",
+                    "press_release_title": parsed.get("press_release_title", "DRAF RINGKASAN SIMULASI (BUKAN SIARAN RESMI)"),
+                    "press_release_body": parsed.get("press_release_body", ""),
+                    "whatsapp_broadcast": parsed.get("whatsapp_broadcast", ""),
+                    "key_callout": parsed.get("key_callout", ""),
+                }
+        except Exception:
+            pass
+
+    # Fallback template deterministik bila LLM tidak tersedia
     if school_count > 0:
         school_action_text = (
             f"Menindaklanjuti potensi bahaya tersebut, sebanyak {school_count} satuan pendidikan di wilayah koridor terdampak "
@@ -149,18 +182,17 @@ Kembalikan HANYA format JSON valid tanpa tanda pembungkus markdown (```json):
             "untuk mengantisipasi potensi lonjakan keluhan pernapasan warga kelompok rentan."
         )
 
-    default_pr_title = f"SIARAN PERS PUSDALOPS BPBD: PERINGATAN DINI KESIAPSIAGAAN ANCAMAN {hazard_label.upper()} ({scenario_label})"
+    default_pr_title = f"DRAF RINGKASAN SIMULASI (BUKAN SIARAN RESMI): {hazard_label.upper()} ({scenario_label})"
     default_pr_body = (
-        f"Pusat Pengendalian Operasi Badan Penanggulangan Bencana Daerah (Pusdalops BPBD) bersama Dinas Kesehatan "
-        f"menerbitkan peringatan kesiapsiagaan dini menyusul dinamika aktivitas {hazard_label} pada skenario {scenario_label}. "
+        f"Ringkasan ini disusun otomatis oleh aplikasi simulasi UdaraSiaga untuk {hazard_label} ({scenario_label}) "
+        f"dan bukan peringatan resmi. "
         f"Berdasarkan hasil pemodelan dispersi partikulat atmosferik, sebaran partikel terdeteksi mengarah ke koridor "
         f"{districts_str} dengan estimasi populasi berisiko terpapar mencapai {total_pop:,.0f} jiwa, yang mencakup {children:,.0f} anak-anak "
         f"dan {elderly:,.0f} lansia berisiko tinggi.\n\n"
         f"{school_action_text}{health_action_text}"
     )
     default_wa = (
-        f"PEMBERITAHUAN RESMI PUSDALOPS BPBD & DINAS KESEHATAN\n"
-        f"Nomor: 360/PUSDALOPS/DARURAT/{scenario_label.replace(' ', '_').upper()}\n"
+        f"DRAF PESAN KESIAPSIAGAAN (HASIL SIMULASI, BUKAN PEMBERITAHUAN RESMI)\n"
         f"Perihal: Arahan Kesiapsiagaan Dini Paparan {hazard_label}\n\n"
         f"Wilayah Prioritas Pengawasan: {districts_str}\n"
         f"Estimasi Warga Terpapar: {total_pop:,.0f} jiwa (Mencakup {children:,.0f} anak-anak dan {elderly:,.0f} lansia)\n\n"
@@ -172,11 +204,11 @@ Kembalikan HANYA format JSON valid tanpa tanda pembungkus markdown (```json):
         f"{wa_school_point}\n\n"
         f"Pusat Bantuan & Komando Darurat:\n"
         f"- Layanan Gawat Darurat Medis: SPGDT 119\n"
-        f"- Posko Terpadu Pusdalops BPBD: Call Center 112"
+        f"- Nomor darurat nasional: 112"
     )
 
     return {
-        "engine": "UdaraSiaga Deterministic Expert AI Synthesizer (Standard BNPB/Kemenkes)",
+        "engine": "template",
         "status": "expert_fallback",
         "press_release_title": default_pr_title,
         "press_release_body": default_pr_body,

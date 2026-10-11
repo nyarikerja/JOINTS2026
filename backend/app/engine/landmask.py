@@ -7,7 +7,6 @@ Mencegah estimasi populasi, lahan sawah, dan fasilitas fiktif di tengah lautan/s
 """
 
 import json
-from pathlib import Path
 from typing import Optional
 
 import numpy as np
@@ -48,6 +47,31 @@ class LandMask:
 
         if polygons:
             cls._unified_land = unary_union(polygons)
+
+    @classmethod
+    def island_ids(cls, lats, lons, tolerance_deg: float = 0.05) -> np.ndarray:
+        """
+        Indeks pulau (poligon daratan) untuk tiap titik; -1 bila tidak ditemukan.
+        Titik pesisir di luar poligon kasar diberi pulau terdekat dalam `tolerance_deg`.
+        """
+        cls._init_land_geometry()
+        lats = np.atleast_1d(np.asarray(lats, dtype=float))
+        lons = np.atleast_1d(np.asarray(lons, dtype=float))
+        out = np.full(lats.shape, -1, dtype=int)
+        if cls._unified_land is None or lats.size == 0:
+            return out
+        if not hasattr(cls, "_islands"):
+            geoms = list(getattr(cls._unified_land, "geoms", [cls._unified_land]))
+            cls._islands = geoms
+            cls._island_tree = shapely.STRtree(geoms)
+        pts = shapely.points(lons, lats)
+        idx_pt, idx_geom = cls._island_tree.query(pts, predicate="within")
+        out[idx_pt] = idx_geom
+        missing = np.nonzero(out < 0)[0]
+        if missing.size:
+            near_pt, near_geom = cls._island_tree.query_nearest(pts[missing], max_distance=tolerance_deg, all_matches=False)
+            out[missing[near_pt]] = near_geom
+        return out
 
     @classmethod
     def is_point_on_land(cls, lat: float, lon: float) -> bool:

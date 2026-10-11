@@ -16,7 +16,7 @@ Aturan referensi: Temuan hasil `scripts/check_sources.py` di file ini **menang a
 | D19, D20 | https://overpass-api.de/api/interpreter | **B** | Overpass API HTTP 504: <?xml version="1.0" encoding="UTF-8"?> <!DOCTYPE html PUBLIC "-/... |
 | D05 | https://magma.esdm.go.id | **S** | MAGMA /vona merespons HTTP 200. Tipe konten: text/html; charset=UTF-8 |
 | D15 | https://peraturan.go.id/files/bn774-2020.pdf | **S** | PDF Permen LHK P.14/2020 tersedia di URL resmi (HTTP 200). |
-| D18 | https://hub.worldpop.org/geodata/summary?id=24798 | **V** | WorldPop Indonesia Age & Sex Structures 100m (2020) berlisensi CC BY 4.0. |
+| D18 | https://data.worldpop.org/GIS/Population/Global_2000_2020_1km_UNadj/2020/IDN/ | **V** | WorldPop Indonesia 2020, 1 km, UN-adjusted (total 273,5 juta jiwa), CC BY 4.0. Struktur umur memakai rasio nasional (`population_age_fractions`, status to_verify). |
 
 *Status: **V** = Terverifikasi langsung (panggilan API sukses / dokumen primer diperiksa), **S** = Sebagian/Sekunder, **B** = Belum terverifikasi / butuh kredensial.*
 
@@ -125,10 +125,23 @@ Bagian ini mencatat setiap temuan yang berbeda atau mengoreksi `SPEC.md`. Sesuai
 - **Status**: `V`
 - **Waktu Verifikasi**: `2026-10-05T13:22:08.720604+00:00`
 - **Catatan Temuan**:
-  - WorldPop Indonesia Age & Sex Structures 100m (2020) berlisensi CC BY 4.0.
+  - WorldPop Indonesia 2020 1 km UN-adjusted, CC BY 4.0.
   - Kelas umur: 00 (0-1 tahun), 01 (1-4 tahun), 05 (5-9 tahun), 10 (10-14 tahun), dst.
   - Anak < 15 tahun = agregasi kelas 00, 01, 05, 10.
   - Lansia >= 65 tahun = agregasi kelas 65, 70, 75, 80.
   - Data statis diunduh dan diproses ke grid GeoTIFF/Parquet lokal.
   - WorldPop portal merespons status 200.
 
+## Sumber langsung yang dipakai aplikasi (diverifikasi 2026-10-11)
+
+| Sumber | Endpoint | Catatan |
+| :--- | :--- | :--- |
+| MAGMA tingkat aktivitas | https://magma.esdm.go.id/v1/gunung-api/tingkat-aktivitas | 69 gunung terbaca; 6 gunung katalog lokal tidak ada di MAGMA (level ditandai `not_in_magma`) |
+| MAGMA VONA | https://magma.esdm.go.id/v1/vona?code={KODE} | tinggi puncak abu (m dpl) dan arah gerak abu |
+| NASA FIRMS area CSV | https://firms.modaps.eosdis.nasa.gov/api/area/csv/{MAP_KEY}/{SOURCE}/94,-12,142,7/{1..5}/{DATE} | DATE adalah tanggal awal; rentang hari dihitung maju |
+| Open-Meteo Ensemble | https://ensemble-api.open-meteo.com/v1/ensemble?models=ecmwf_ifs025 | 51 anggota tersedia untuk 10 m, 850, 700, 500, 300 hPa dan presipitasi |
+| Open-Meteo Elevation | https://api.open-meteo.com/v1/elevation | elevasi kawah untuk titik kustom |
+| Overpass API | overpass-api.de, overpass.kumi.systems, overpass.private.coffee | sering sibuk; tile 1° diunduh di latar |
+| Smithsonian GVP (Holocene eruptions) | https://webservices.volcano.si.edu/geoserver/GVP-VOTW/wfs (WFS 1.0, bbox 94,-12,142,7) | 1.483 erupsi; 68 dari 70 gunung katalog punya erupsi ber-VEI. Dipakai bila tidak ada VONA berabu |
+| NASA FIRMS arsip | VIIRS_SNPP_NRT (sejak 2026-07-01) dan VIIRS_SNPP_SP (2012 s.d. 2026-06-30) | penelusuran kebakaran terakhir hingga 2 tahun untuk kawasan tanpa api 7 hari |
+| Newhall & Self 1982 | doi:10.1029/JC087iC02p01231 | konversi VEI ke tinggi kolom (`vei_column_height_km`) |
