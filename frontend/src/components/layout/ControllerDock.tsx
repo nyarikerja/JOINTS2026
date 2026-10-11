@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Sliders, Printer, ChevronDown, ChevronUp, Play } from "lucide-react";
 import type { HazardType, ModelingMode, SimulationOverrides } from "../../types/api";
 import { api } from "../../services/api";
-import { CONFIG } from "../../config/constants";
 import BasicDropdown, { type DropdownItem } from "@/components/ui/accordion-2";
 
 interface ControllerDockProps {
@@ -17,6 +16,7 @@ interface ControllerDockProps {
   onOverridesChange: (overrides: SimulationOverrides) => void;
   onRunSimulation: () => void;
   onRunDemo?: () => void;
+  onOpenPrintReport?: () => void;
   isRunning: boolean;
   progressText: string;
   activeRunId?: string | null;
@@ -34,10 +34,11 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
   overrides,
   onOverridesChange,
   onRunSimulation,
+  onOpenPrintReport,
   isRunning,
-  progressText,
+  progressText: _progressText,
   activeRunId,
-  simulatedEventName
+  simulatedEventName: _simulatedEventName
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<string>("ALL");
@@ -168,30 +169,32 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
 
   return (
     <div
-      className="absolute top-3.5 left-3.5 w-72 backdrop-blur-md rounded-xl shadow-2xl z-[1000] flex flex-col font-sans text-[#140f0e] overflow-visible"
+      className="absolute top-3.5 left-3.5 w-72 backdrop-blur-md rounded-xl z-[1000] flex flex-col font-sans text-[#140f0e] overflow-visible"
       style={{
         background: "rgba(245, 239, 227, 0.95)",
-        border: "4px solid #EB895B"
+        boxShadow: "10px -8px 24px rgba(0, 0, 0, 0.45)"
       }}
     >
-      {/* Header Panel (Sesuai Style Card Lapisan Spasial Aktif) */}
+      {/* Header Panel (Background Putih Bersih Seperti Header Modal Panduan) */}
       <div
-        className="px-3.5 py-2.5 flex items-center justify-between shrink-0 select-none border-b"
-        style={{ borderColor: "rgba(0, 0, 0, 0.1)" }}
+        className={`px-4 py-3 flex items-center justify-between shrink-0 select-none bg-white transition-[border-radius] duration-300 ${
+          isCollapsed ? "rounded-xl" : "rounded-t-xl border-b"
+        }`}
+        style={{ borderColor: "rgba(43, 33, 30, 0.1)" }}
       >
         <span
-          className="font-serif text-[15px] font-bold tracking-tight leading-none"
-          style={{ color: "#EB895B" }}
+          className="font-heading text-[15px] leading-none tracking-wide"
+          style={{ color: "#140f0e", letterSpacing: "0.04em" }}
         >
           Pusat Kendali Simulasi
         </span>
         <button
           type="button"
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-1 rounded transition cursor-pointer hover:bg-black/5 text-[#EB895B] opacity-80 hover:opacity-100"
+          className="p-1 rounded transition cursor-pointer hover:bg-black/5 text-[#140f0e]/60 hover:text-[#140f0e]"
           title={isCollapsed ? "Buka Panel" : "Sembunyikan Panel"}
         >
-          {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+          {isCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
         </button>
       </div>
 
@@ -202,10 +205,10 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
         }`}
       >
         <div className={isCollapsed ? "overflow-hidden" : "overflow-visible"}>
-          <div className="p-3.5 space-y-2.5 overflow-visible">
+          <div className="p-3 space-y-2 overflow-visible">
             {/* 1. Pemilih Bahaya */}
             <div>
-              <span className="block text-[11px] text-[#140f0e]/75 mb-1 font-medium">
+              <span className="block text-[8.5px] text-[#140f0e]/85 mb-1 font-subheading tracking-wider uppercase">
                 Jenis Bencana
               </span>
               <div
@@ -214,7 +217,7 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
                 <button
                   type="button"
                   onClick={() => handleHazardSelect("volcano")}
-                  className={`py-1.5 px-2 rounded text-[11px] font-medium text-center transition cursor-pointer ${
+                  className={`py-1.5 px-2 rounded text-[11.5px] text-center transition cursor-pointer !font-body ${
                     hazard === "volcano"
                       ? "bg-[#EB895B] text-white font-semibold shadow-xs"
                       : "text-[#140f0e]/70 hover:text-[#140f0e]"
@@ -225,7 +228,7 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
                 <button
                   type="button"
                   onClick={() => handleHazardSelect("fire")}
-                  className={`py-1.5 px-2 rounded text-[11px] font-medium text-center transition cursor-pointer ${
+                  className={`py-1.5 px-2 rounded text-[11.5px] text-center transition cursor-pointer !font-body ${
                     hazard === "fire"
                       ? "bg-[#EB895B] text-white font-semibold shadow-xs"
                       : "text-[#140f0e]/70 hover:text-[#140f0e]"
@@ -238,7 +241,7 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
 
             {/* 2. Filter Wilayah */}
             <div>
-              <label className="block text-[11px] text-[#140f0e]/75 mb-1 font-medium">
+              <label className="block text-[8.5px] text-[#140f0e]/85 mb-1 font-subheading tracking-wider uppercase">
                 Pilih Wilayah
               </label>
               <BasicDropdown
@@ -253,10 +256,10 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
             {/* 3. Titik Kejadian */}
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block text-[11px] text-[#140f0e]/75 font-medium">
+                <label className="block text-[8.5px] text-[#140f0e]/85 font-subheading tracking-wider uppercase">
                   Titik Lokasi
                 </label>
-                <span className="text-[10px] text-[#140f0e]/50">
+                <span className="text-[10px] text-[#140f0e]/50 font-body">
                   {eventItems.length} lokasi
                 </span>
               </div>
@@ -273,7 +276,7 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
 
             {/* 4. Switcher Mode Pemodelan */}
             <div>
-              <span className="block text-[11px] text-[#140f0e]/75 mb-1 font-medium">
+              <span className="block text-[8.5px] text-[#140f0e]/85 mb-1 font-subheading tracking-wider uppercase">
                 Pilihan Mode
               </span>
               <div
@@ -282,7 +285,7 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
                 <button
                   type="button"
                   onClick={() => onModeChange("auto")}
-                  className={`py-1 rounded transition cursor-pointer text-[11px] text-center ${
+                  className={`py-1.5 rounded transition cursor-pointer text-[11.5px] text-center !font-body ${
                     mode === "auto"
                       ? "bg-[#EB895B] text-white font-semibold shadow-xs"
                       : "text-[#140f0e]/70 hover:text-[#140f0e]"
@@ -293,7 +296,7 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
                 <button
                   type="button"
                   onClick={() => onModeChange("experiment")}
-                  className={`py-1 rounded transition cursor-pointer text-[11px] text-center ${
+                  className={`py-1.5 rounded transition cursor-pointer text-[11.5px] text-center !font-body ${
                     mode === "experiment"
                       ? "bg-[#EB895B] text-white font-semibold shadow-xs"
                       : "text-[#140f0e]/70 hover:text-[#140f0e]"
@@ -307,16 +310,16 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
             {/* 5. Parameter Uji Skenario */}
             {mode === "experiment" && (
               <div
-                className="rounded p-2.5 space-y-2 text-xs border bg-white/60 border-[#EB895B]/40"
+                className="rounded p-2 space-y-1.5 text-xs border bg-white/60 border-[#EB895B]/40 font-body"
               >
-                <div className="flex items-center gap-1.5 text-[11px] text-[#EB895B] font-semibold">
+                <div className="flex items-center gap-1.5 text-[10.5px] text-[#EB895B] font-subheading">
                   <Sliders className="w-3 h-3" />
                   <span>Pengaturan Tambahan</span>
                 </div>
 
                 {hazard === "volcano" ? (
                   <div>
-                    <div className="flex justify-between text-[11px] mb-1 text-[#140f0e]/80">
+                    <div className="flex justify-between text-[10px] mb-0.5 text-[#140f0e]/80 font-body">
                       <span>Tinggi Letusan</span>
                       <strong className="text-[#140f0e] font-semibold">{overrides.column_height_km ?? 12} km</strong>
                     </div>
@@ -334,7 +337,7 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
                   </div>
                 ) : (
                   <div>
-                    <div className="flex justify-between text-[11px] mb-1 text-[#140f0e]/80">
+                    <div className="flex justify-between text-[10px] mb-0.5 text-[#140f0e]/80 font-body">
                       <span>Kekuatan Api (FRP)</span>
                       <strong className="text-[#140f0e] font-semibold">{overrides.frp_scale ? Math.round(overrides.frp_scale * 100) : 100}%</strong>
                     </div>
@@ -352,7 +355,7 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
                 )}
 
                 <div>
-                  <div className="flex justify-between text-[11px] mb-1 text-[#140f0e]/80">
+                  <div className="flex justify-between text-[10px] mb-0.5 text-[#140f0e]/80 font-body">
                     <span>Hujan di Lokasi</span>
                     <strong className="text-[#140f0e] font-semibold">{overrides.rain_scavenging_mm_h ?? 0} mm/jam</strong>
                   </div>
@@ -369,7 +372,7 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
                   />
                 </div>
 
-                <label className="flex items-center gap-2 text-[11px] cursor-pointer pt-0.5 text-[#140f0e]/85">
+                <label className="flex items-center gap-1.5 text-[10px] cursor-pointer pt-0.5 text-[#140f0e]/85 font-body">
                   <input
                     type="checkbox"
                     checked={overrides.wind_reverse_troposphere ?? false}
@@ -391,24 +394,24 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
                 onRunSimulation();
               }}
               disabled={isRunning || !eventId}
-              className="w-full py-2 px-3 rounded font-medium text-xs tracking-wide flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-white bg-[#EB895B] hover:bg-[#d97746] active:scale-[0.99] shadow-xs"
+              className="w-full py-2.5 px-3 rounded text-[10px] tracking-wider uppercase flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-white bg-[#EB895B] hover:bg-[#d97746] active:scale-[0.99] shadow-xs font-button"
             >
-              <Play className="w-3.5 h-3.5 fill-current" />
+              <Play className="w-3 h-3 fill-current" />
               <span>{isRunning ? "Menghitung Sebaran..." : "Mulai Simulasi"}</span>
             </button>
 
             {/* Tombol Ekspor Laporan */}
             <button
               type="button"
+              disabled={isRunning || !activeRunId}
               onClick={() => {
-                if (activeRunId) {
-                  const eventNameParam = simulatedEventName ? `&event_name=${encodeURIComponent(simulatedEventName)}` : "";
-                  window.open(`${CONFIG.API_BASE}/runs/${activeRunId}/export?format=html${eventNameParam}`, "_blank");
-                } else {
+                if (onOpenPrintReport) {
+                  onOpenPrintReport();
+                } else if (activeRunId) {
                   window.print();
                 }
               }}
-              className="w-full py-1.5 px-2 rounded text-[11px] font-normal flex items-center justify-center gap-1.5 transition cursor-pointer hover:bg-black/5 bg-white/70 border border-black/10 text-[#140f0e]/80 hover:text-[#140f0e]"
+              className="w-full py-1.5 px-2 rounded text-[9.5px] uppercase tracking-wider flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:bg-black/5 bg-white/70 border border-black/10 text-[#140f0e]/80 hover:text-[#140f0e] font-button"
             >
               <Printer className="w-3.5 h-3.5 text-[#140f0e]/60" />
               <span>Cetak Ringkasan</span>

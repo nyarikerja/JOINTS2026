@@ -1,71 +1,56 @@
 @import "tailwindcss";
 
 /* ============================================================
-   LOCAL CUSTOM FONT: BUTLER
+   LOCAL CUSTOM FONTS
+   1. Coolvetica (Judul, Header, Logo)
+   2. Dunkin (Button, Sub-Judul)
+   3. Louis George Cafe (Body, Keterangan kecil)
    ============================================================ */
 @font-face {
-  font-family: 'Butler';
-  src: url('./assets/font/Butler-Free-Lgt-St.woff2') format('woff2');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Butler';
-  src: url('./assets/font/Butler-Free-Rmn-St.woff2') format('woff2');
+  font-family: 'Coolvetica';
+  src: url('./assets/font/Coolvetica Rg.otf') format('opentype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Butler';
-  src: url('./assets/font/Butler-Free-Med-St.woff2') format('woff2');
-  font-weight: 500;
+  font-family: 'Dunkin';
+  src: url('./assets/font/Dunkin.otf') format('opentype');
+  font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Butler';
-  src: url('./assets/font/Butler-Free-SBd-St.woff2') format('woff2');
-  font-weight: 600;
+  font-family: 'Louis George Cafe';
+  src: url('./assets/font/Louis George Cafe Light.ttf') format('truetype');
+  font-weight: 300;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Butler';
-  src: url('./assets/font/Butler-Free-Bd-St.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Butler';
-  src: url('./assets/font/Butler-Free-XBd-St.woff2') format('woff2');
-  font-weight: 800;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Butler';
-  src: url('./assets/font/Butler-Free-Blk-St.woff2') format('woff2');
-  font-weight: 900;
+  font-family: 'Louis George Cafe';
+  src: url('./assets/font/Louis George Cafe.ttf') format('truetype');
+  font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 /* ============================================================
-   UDARA SIAGA — DESIGN SYSTEM TOKEN
+   HELALOKA — DESIGN SYSTEM TOKEN
    ============================================================ */
 
 @theme {
-  --font-serif: 'Butler', Georgia, serif;
-  --font-sans: 'Poppins', sans-serif;
+  --font-heading: 'Coolvetica', system-ui, -apple-system, sans-serif;
+  --font-subheading: 'Dunkin', cursive, sans-serif;
+  --font-button: 'Dunkin', cursive, sans-serif;
+  --font-body: 'Louis George Cafe', system-ui, -apple-system, sans-serif;
+
+  /* Aliases bawaan Tailwind */
+  --font-sans: 'Louis George Cafe', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Coolvetica', system-ui, -apple-system, sans-serif;
 
   /* Color Hunt Palette: #A14646, #DA6556, #EB895B, #FDB773 */
   --color-hunt-maroon: #A14646;
@@ -105,20 +90,40 @@
 
 /* ============================================================
    BASE RESET
+   1. Judul / Header -> Coolvetica
+   2. Sub-judul & Label Kategori -> Dunkin
+   3. Body, Konten Pilihan, Keterangan Kecil -> Louis George Cafe
    ============================================================ */
 @layer base {
   *, ::before, ::after {
-    font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+    font-family: 'Louis George Cafe', system-ui, -apple-system, sans-serif;
   }
 
   body {
     background-color: #140f0e;
     color: #FFF0C5;
-    font-family: 'Butler', Georgia, serif;
+    font-family: 'Louis George Cafe', system-ui, -apple-system, sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+  /* 1. Judul Utama & Header -> Coolvetica (Default Spacing Renggang Halus) */
+  h1, h2, h3, .font-heading, .title-lg {
+    font-family: 'Coolvetica', system-ui, -apple-system, sans-serif !important;
+    letter-spacing: 0.035em !important;
+  }
+
+  /* 2. Sub-Judul & Label Kategori Form -> Dunkin (Ukuran Sedang) */
+  h4, h5, h6, .font-subheading, .label-category {
+    font-family: 'Dunkin', cursive, sans-serif !important;
+  }
+
+  /* 3. Tombol Aksi Utama -> Dunkin */
+  .font-button, .btn-action {
+    font-family: 'Dunkin', cursive, sans-serif !important;
+  }
+
+  /* 4. Teks Isi, Tombol Opsi/Pilihan, Konten Dropdown, Keterangan Detail -> Louis George Cafe */
+  p, span, label, input, select, textarea, [role="menuitem"], .font-body, button, [role="button"] {
+    font-family: 'Louis George Cafe', system-ui, -apple-system, sans-serif;
   }
 
   /* Scrollbar taktis hangat */
@@ -260,8 +265,41 @@ header {
 }
 
 /* ============================================================
-   ANIMASI PULSE CINCIN BAHAYA GUNUNG
+   ANIMASI PULSE CINCIN BAHAYA GUNUNG & SEBARAN ATMOSFER
    ============================================================ */
+@keyframes atmospheric-breathe {
+  0% {
+    filter: drop-shadow(0 0 10px rgba(218, 101, 86, 0.45));
+    opacity: 0.85;
+  }
+  50% {
+    filter: drop-shadow(0 0 20px rgba(235, 137, 91, 0.65));
+    opacity: 0.95;
+  }
+  100% {
+    filter: drop-shadow(0 0 10px rgba(218, 101, 86, 0.45));
+    opacity: 0.85;
+  }
+}
+
+.plume-animated-layer {
+  animation: atmospheric-breathe 4s ease-in-out infinite;
+  transition: opacity 0.5s ease-in-out, transform 0.5s ease-out;
+}
+
+@keyframes plume-fade-enter {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0.95;
+  }
+}
+
+.plume-layer-transition {
+  animation: plume-fade-enter 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
 .volcano-pulse-ring {
   position: absolute;
   width: 32px;
@@ -311,6 +349,42 @@ header {
   will-change: transform;
 }
 
+@keyframes facility-impact-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes impact-pulse-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(218, 101, 86, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(218, 101, 86, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(218, 101, 86, 0);
+  }
+}
+
+.fac-impacted-marker {
+  animation: facility-impact-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.fac-impacted-glow {
+  border-radius: 9999px;
+  animation: impact-pulse-glow 1.8s infinite;
+}
+
 .volcano-div-icon {
   overflow: visible !important;
 }
@@ -323,15 +397,51 @@ header {
 }
 
 /* ============================================================
-   MEDIA PRINT
+   MEDIA PRINT (A4 PORTRAIT STANDAR RESMI & REPEAT HEADER)
    ============================================================ */
 @media print {
-  header, aside, .absolute {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    overflow: visible !important;
+    height: auto !important;
+    font-size: 10pt;
+  }
+
+  /* Sembunyikan seluruh UI web (navbar, dock, drawer, peta, dialog overlay) */
+  header, aside, .absolute, .print-hide {
     display: none !important;
   }
-  body {
-    background: #fff !important;
-    color: #000 !important;
-    overflow: visible !important;
+
+  /* Tampilkan area dokumen laporan cetak */
+  #printable-report {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+  }
+
+  /* Browser otomatis mengulang header thead di setiap halaman baru */
+  .print-page-header {
+    display: table-header-group !important;
+  }
+
+  .print-page-body {
+    display: table-row-group !important;
+  }
+
+  /* Hindari pemotongan baris tabel di tengah halaman */
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }

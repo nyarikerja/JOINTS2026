@@ -6,15 +6,25 @@ interface TimelinePlayerProps {
   currentHour: number;
   onHourChange: (hour: number) => void;
   isDrawerOpen?: boolean;
+  autoPlayTrigger?: number;
 }
 
 export const TimelinePlayer: React.FC<TimelinePlayerProps> = ({
   currentHour,
   onHourChange,
-  isDrawerOpen = false
+  isDrawerOpen = false,
+  autoPlayTrigger
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
+
+  // Otomatis putar animasi timeline ketika autoPlayTrigger terpicu (setelah simulasi selesai)
+  useEffect(() => {
+    if (autoPlayTrigger && autoPlayTrigger > 0) {
+      setIsPlaying(true);
+      setIsExpanded(true);
+    }
+  }, [autoPlayTrigger]);
 
   useEffect(() => {
     let interval: any = null;

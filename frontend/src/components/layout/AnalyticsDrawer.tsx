@@ -115,14 +115,14 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
       </div>
 
       {/* Content Body */}
-      <div className="flex-1 overflow-y-auto p-3.5 custom-scrollbar">
+      <div className={`flex-1 ${!impact ? "flex flex-col" : "overflow-y-auto p-3.5 custom-scrollbar"}`}>
         {!impact ? (
-          <div className="h-full flex flex-col items-center justify-center text-center p-6 opacity-80 mt-12">
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-6 opacity-80 -translate-y-8">
             <div className="w-16 h-16 bg-[#2b211e]/5 rounded-full flex items-center justify-center mb-4">
               <ShieldAlert className="w-8 h-8 text-[#2b211e]/40" />
             </div>
             <h3 className="font-bold text-[#2b211e] mb-1">Simulasi Belum Dijalankan</h3>
-            <p className="text-[11px] text-[#2b211e]/70 leading-relaxed">
+            <p className="text-[11px] text-[#2b211e]/70 leading-relaxed max-w-[260px]">
               Silakan pilih kejadian di Pusat Kendali lalu tekan <strong>Mulai Simulasi</strong> untuk melihat proyeksi dampak.
             </p>
           </div>

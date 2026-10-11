@@ -9,34 +9,44 @@ interface TacticalHeaderProps {
   isDrawerOpen: boolean;
   onToggleLegend?: () => void;
   isLegendOpen?: boolean;
+  isHelpOpen?: boolean;
+  onOpenHelp?: () => void;
+  onCloseHelp?: () => void;
 }
 
 export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
   onToggleDrawer,
   isDrawerOpen,
   onToggleLegend,
-  isLegendOpen = false
+  isLegendOpen = false,
+  isHelpOpen: controlledHelpOpen,
+  onOpenHelp,
+  onCloseHelp
 }) => {
   const [clockWib, setClockWib] = useState("--:--:-- WIB");
   const [clockUtc, setClockUtc] = useState("--:--:-- UTC");
   const [kpi, setKpi] = useState<SummaryKpiResponse | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [internalHelpOpen, setInternalHelpOpen] = useState(false);
 
-  useEffect(() => {
-    const hasSeenManual = localStorage.getItem("hasSeenManual");
-    if (!hasSeenManual) {
-      const timer = setTimeout(() => {
-        setIsHelpOpen(true);
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, []);
+  const isHelpOpen = controlledHelpOpen !== undefined ? controlledHelpOpen : internalHelpOpen;
 
   const closeHelp = () => {
-    setIsHelpOpen(false);
+    if (onCloseHelp) {
+      onCloseHelp();
+    } else {
+      setInternalHelpOpen(false);
+    }
     localStorage.setItem("hasSeenManual", "true");
+  };
+
+  const openHelp = () => {
+    if (onOpenHelp) {
+      onOpenHelp();
+    } else {
+      setInternalHelpOpen(true);
+    }
   };
 
   const volcanoAlertCount = kpi?.volcanoes
@@ -114,8 +124,8 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
           className="w-8 h-8 object-contain shrink-0 drop-shadow-sm select-none pointer-events-none"
         />
         <div className="flex items-center gap-1.5">
-          <span className="font-extrabold text-base tracking-tight" style={{ color: "#140f0e" }}>hELAlOKA</span>
-          <span className="font-bold text-[10px] px-1.5 py-0.5 rounded tracking-wider text-white shadow-xs" style={{ backgroundColor: "#A14646" }}>
+          <span className="font-heading text-lg tracking-tight" style={{ color: "#140f0e" }}>hELAlOKA</span>
+          <span className="font-subheading text-[10px] px-1.5 py-0.5 rounded tracking-wider text-white shadow-xs" style={{ backgroundColor: "#A14646" }}>
             INDONESIA
           </span>
         </div>
@@ -167,7 +177,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
         </div>
 
         <button
-          onClick={() => setIsHelpOpen(true)}
+          onClick={openHelp}
           className="flex items-center justify-center w-7 h-7 rounded-lg transition cursor-pointer shadow-xs hover:brightness-105 active:scale-95 bg-[#F5EFE3]"
           style={{
             border: "1px solid rgba(20, 15, 14, 0.12)",

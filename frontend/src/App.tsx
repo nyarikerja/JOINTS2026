@@ -1,11 +1,11 @@
-import React, { useState } from "react";
-import { Loader2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
 import { TacticalHeader } from "./components/layout/TacticalHeader";
 import { ControllerDock } from "./components/layout/ControllerDock";
 import { MapWorkspace } from "./components/layout/MapWorkspace";
 import { TimelinePlayer } from "./components/layout/TimelinePlayer";
 import { AnalyticsDrawer } from "./components/layout/AnalyticsDrawer";
 import { LegendModal } from "./components/layout/LegendModal";
+import { PrintReportModal } from "./components/layout/PrintReportModal";
 import { api } from "./services/api";
 import type {
   HazardType,
@@ -40,6 +40,7 @@ export const App: React.FC = () => {
 
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [isLegendOpen, setIsLegendOpen] = useState<boolean>(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [progressText, setProgressText] = useState<string>("");
   const [loadingProgress, setLoadingProgress] = useState<number>(0);
@@ -54,8 +55,17 @@ export const App: React.FC = () => {
 
   const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; _t: number } | null>(null);
   const [resetViewTrigger, setResetViewTrigger] = useState<number>(0);
-  const [isMapReady, setIsMapReady] = useState<boolean>(false);
+  const [autoPlayTrigger, setAutoPlayTrigger] = useState<number>(0);
   const [selectedEventName, setSelectedEventName] = useState<string>("G. Anak Krakatau");
+  const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    // Buka panduan simulasi secara otomatis saat user pertama kali membuka web
+    const hasSeenManual = localStorage.getItem("hasSeenManual");
+    if (!hasSeenManual) {
+      setIsHelpOpen(true);
+    }
+  }, []);
 
   // Pulihkan sesi simulasi terakhir dari localStorage saat pertama kali dimuat
   React.useEffect(() => {
@@ -135,17 +145,41 @@ export const App: React.FC = () => {
     if (targetEventId) setEventId(targetEventId);
 
     setIsRunning(true);
-    setLoadingProgress(0);
-    setProgressText("Mengkalkulasi parameter vulkanik & mensimulasikan sebaran abu...");
+    setLoadingProgress(1);
+    const isFire = activeHazard === "fire";
+    setProgressText(
+      isFire
+        ? "Memproses pemodelan sebaran asap & emisi PM2.5 karhutla..."
+        : "Memproses pemodelan erupsi & trayektori sebaran abu vulkanik..."
+    );
 
+    // Progress dinamis continuous melambat secara natural asimtotik mendekati 99%, tidak pernah berhenti total (stuck)
     const loadingInterval = setInterval(() => {
       setLoadingProgress((prev) => {
-        if (prev < 35) return prev + 2;
-        if (prev < 80) return prev + 1;
-        if (prev < 99) return prev + 0.5;
-        return 99;
+        if (prev >= 99) return 99;
+        // Makin tinggi persentase, penambahan makin halus sehingga tetap terasa berjalan
+        const remaining = 99 - prev;
+        const delta = Math.max(0.1, remaining * 0.04);
+        const next = prev + delta;
+
+        // Transisi teks fase secara dinamis dan mulus
+        if (next < 50) {
+          setProgressText(
+            isFire
+              ? "Memproses pemodelan sebaran asap & emisi PM2.5 karhutla..."
+              : "Memproses pemodelan erupsi & trayektori sebaran abu vulkanik..."
+          );
+        } else if (next < 99) {
+          setProgressText(
+            isFire
+              ? "Menganalisis dampak kabut asap pada populasi & fasilitas..."
+              : "Menganalisis proyeksi paparan abu vulkanik pada wilayah & faskes..."
+          );
+        }
+
+        return next;
       });
-    }, 100);
+    }, 60);
 
     // Samakan konstruksi overrides dengan standar backend (hanya mode experiment)
     let backendOverrides: Record<string, any> | null = null;
@@ -182,25 +216,19 @@ export const App: React.FC = () => {
       const runId = simRes.run_id;
       setActiveRunId(runId);
       
-      // Gunakan selectedEventName karena backend hanya mengembalikan "kejadian observasi" tanpa nama gunung
-      setSimulatedEventName(selectedEventName || simRes.scenario_label || activeEventId);
+      // Reset jam ke 0 lalu aktifkan auto-play agar animasi sebaran jam 0 s/d 48 langsung berjalan otomatis
+      setCurrentHour(0);
 
-      setProgressText("Menganalisis proyeksi dampak populasi & infrastruktur...");
-      setLoadingProgress(85);
-
-      // Set pratinjau jam ke 48 (akhir) agar pengguna tahu simulasi mencakup 48 jam penuh
-      setCurrentHour(48);
-
-      const [impact, facilities, validation, advisory, tier48] = await Promise.all([
+      const [impact, facilities, validation, advisory, tier0] = await Promise.all([
         api.getImpact(runId).catch(() => null),
         api.getFacilitiesImpacted(runId).catch(() => null),
         api.getValidation(activeEventId).catch(() => null),
         api.getEmergencyAdvisory(runId).catch(() => null),
-        api.getTiersAtHour(runId, 48).catch(() => null)
+        api.getTiersAtHour(runId, 0).catch(() => null)
       ]);
 
-      if (tier48) {
-        setHourlyTiersCache({ 48: tier48 });
+      if (tier0) {
+        setHourlyTiersCache({ 0: tier0 });
       }
 
       setImpactData(impact);
@@ -208,7 +236,16 @@ export const App: React.FC = () => {
       setValidationData(validation);
       setAdvisoryData(advisory);
       setIsDrawerOpen(true);
-      setProgressText(`Selesai: ${simRes.scenario_label || "15 anggota ensemble"}`);
+      setAutoPlayTrigger((prev) => prev + 1);
+
+      // Fase 3: 100% Selesai
+      clearInterval(loadingInterval);
+      setLoadingProgress(100);
+      setProgressText(
+        isFire
+          ? "Pemodelan sebaran asap karhutla siap ditampilkan"
+          : "Pemodelan sebaran abu vulkanik siap ditampilkan"
+      );
 
       // Simpan referensi run terakhir ke local storage
       localStorage.setItem("lastRunId", runId);
@@ -216,15 +253,15 @@ export const App: React.FC = () => {
       localStorage.setItem("lastEventName", selectedEventName || simRes.scenario_label || activeEventId);
       localStorage.setItem("lastHazard", activeHazard);
     } catch (err: any) {
+      clearInterval(loadingInterval);
       setProgressText(`Gagal: ${err.message || "Server offline"}`);
     } finally {
       clearInterval(loadingInterval);
-      setLoadingProgress(100);
       setTimeout(() => {
         setIsRunning(false);
         setProgressText("");
         setLoadingProgress(0);
-      }, 500);
+      }, 700);
     }
   };
 
@@ -322,6 +359,9 @@ export const App: React.FC = () => {
         isDrawerOpen={isDrawerOpen}
         onToggleLegend={() => setIsLegendOpen((prev) => !prev)}
         isLegendOpen={isLegendOpen}
+        isHelpOpen={isHelpOpen}
+        onOpenHelp={() => setIsHelpOpen(true)}
+        onCloseHelp={() => setIsHelpOpen(false)}
       />
 
       {/* Main Workspace (Zona B, C, dan D) */}
@@ -341,18 +381,7 @@ export const App: React.FC = () => {
           activeRunId={activeRunId}
           isDrawerOpen={isDrawerOpen}
           onToggleLegend={() => setIsLegendOpen((prev) => !prev)}
-          onLayersLoaded={() => setIsMapReady(true)}
         />
-
-        {/* Global Loading Overlay (Di bawah Navbar) */}
-        {!isMapReady && !isRunning && (
-          <div className="absolute inset-0 z-[1500] bg-[#140f0e] flex flex-col items-center justify-center gap-3 select-none pointer-events-none">
-            <Loader2 className="w-6 h-6 text-[#EB895B] animate-spin" />
-            <span className="font-mono text-xs uppercase tracking-wider text-[#FFF0C5]/80">
-              Memuat Data Spasial
-            </span>
-          </div>
-        )}
 
         {/* Loading Simulasi Center Screen */}
         {isRunning && (
@@ -425,6 +454,7 @@ export const App: React.FC = () => {
           onOverridesChange={setOverrides}
           onRunSimulation={handleRunSimulation}
           onRunDemo={handleRunDemo}
+          onOpenPrintReport={() => setIsPrintModalOpen(true)}
           isRunning={isRunning}
           progressText={progressText}
           activeRunId={activeRunId}
@@ -436,6 +466,7 @@ export const App: React.FC = () => {
           currentHour={currentHour}
           onHourChange={setCurrentHour}
           isDrawerOpen={isDrawerOpen}
+          autoPlayTrigger={autoPlayTrigger}
         />
 
         {/* Zona D: Tabbed Inspection Dock Melayang di Kanan */}
@@ -462,6 +493,18 @@ export const App: React.FC = () => {
         <LegendModal
           isOpen={isLegendOpen}
           onClose={() => setIsLegendOpen(false)}
+        />
+
+        {/* Modal Pratinjau Dokumen Ringkasan Eksekutif (A4 Portrait) */}
+        <PrintReportModal
+          isOpen={isPrintModalOpen}
+          onClose={() => setIsPrintModalOpen(false)}
+          hazard={hazard}
+          simulatedEventName={simulatedEventName}
+          activeRunId={activeRunId}
+          impact={impactData}
+          facilities={facilitiesData}
+          advisory={advisoryData}
         />
       </div>
     </div>

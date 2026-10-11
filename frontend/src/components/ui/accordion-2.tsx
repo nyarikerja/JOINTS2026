@@ -76,9 +76,9 @@ export default function BasicDropdown({
         onClick={() => setIsOpen(!isOpen)}
         aria-haspopup="menu"
         aria-expanded={isOpen}
-        className="flex w-full items-center justify-between gap-2 rounded border border-[rgba(235,137,91,0.35)] bg-white/80 px-2.5 py-1.5 text-xs text-[#140f0e] shadow-xs transition-colors hover:bg-white hover:border-[#EB895B] focus:outline-none focus:border-[#EB895B] cursor-pointer"
+        className="flex w-full items-center justify-between gap-2 rounded border border-[rgba(235,137,91,0.35)] bg-white/80 px-2.5 py-1.5 text-xs text-[#140f0e] shadow-xs transition-colors hover:bg-white hover:border-[#EB895B] focus:outline-none focus:border-[#EB895B] cursor-pointer !font-body"
       >
-        <span className="block truncate font-medium text-[11px] text-[#140f0e]">
+        <span className="block truncate font-normal text-[12px] text-[#140f0e] !font-body">
           {selectedItem ? selectedItem.label : label}
         </span>
         <motion.div
@@ -138,20 +138,20 @@ export default function BasicDropdown({
                         exit={{ opacity: 0, x: -3 }}
                         transition={{ type: "spring", stiffness: 380, damping: 30 }}
                       >
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={() => handleItemSelect(item)}
-                          className={[
-                            "flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[11px] transition-colors cursor-pointer",
-                            "focus:outline-none focus:bg-black/5",
-                            isSelected
-                              ? "bg-[#EB895B]/15 text-[#EB895B] font-semibold"
-                              : "text-[#140f0e] hover:bg-black/5"
-                          ].join(" ")}
-                        >
-                          {item.icon && <span className="shrink-0">{item.icon}</span>}
-                          <span className="truncate">{item.label}</span>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => handleItemSelect(item)}
+                      className={[
+                        "flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[12px] transition-colors cursor-pointer !font-body",
+                        "focus:outline-none focus:bg-black/5",
+                        isSelected
+                          ? "bg-[#EB895B]/15 text-[#EB895B] font-semibold"
+                          : "text-[#140f0e] hover:bg-black/5"
+                      ].join(" ")}
+                    >
+                      {item.icon && <span className="shrink-0">{item.icon}</span>}
+                      <span className="truncate !font-body font-normal">{item.label}</span>
 
                           {isSelected && (
                             <motion.span
