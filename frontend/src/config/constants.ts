@@ -7,10 +7,8 @@ function resolveApiBase(): string {
   if (fromEnv) return fromEnv.replace(/\/$/, "");
   if (typeof window === "undefined") return "http://127.0.0.1:8000";
   const { protocol, hostname, port, origin } = window.location;
-  if (hostname === "localhost" || hostname === "127.0.0.1") {
-    return "http://127.0.0.1:8000";
-  }
-  if (port && port !== "80" && port !== "443" && port !== "8000") {
+  // Saat pengembangan menggunakan Vite dev server (port 517x)
+  if (port && port.startsWith("517")) {
     return `${protocol}//${hostname}:8000`;
   }
   return origin;

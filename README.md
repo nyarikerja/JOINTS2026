@@ -1,3 +1,13 @@
+---
+title: Helaloka
+emoji: 🌋
+colorFrom: red
+colorTo: slate
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 <div align="center">
 
   <img src="frontend/public/gunung.png" width="130" alt="Logo UdaraSiaga Indonesia" />

@@ -17,7 +17,15 @@ COPY backend/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt python-dotenv gunicorn
 COPY backend/ ./
 COPY --from=web /web/dist /app/frontend/dist
-EXPOSE 8000
-# 2 worker: setiap worker punya cache FIRMS/MAGMA sendiri; simulasi dibatasi 2 per worker.
-# PORT dan WEB_CONCURRENCY bisa diatur oleh host (Render, Fly, dll).
-CMD ["sh", "-c", "exec gunicorn app.main:app -k uvicorn.workers.UvicornWorker -w ${WEB_CONCURRENCY:-2} -b 0.0.0.0:${PORT:-8000} --timeout 180"]
+# Siapkan user non-root (UID 1000) sesuai standar keamanan Hugging Face Spaces
+RUN useradd -m -u 1000 user && \
+    mkdir -p /app/backend/data/runs && \
+    chown -R user:user /app
+
+USER user
+ENV HOME=/home/user
+
+EXPOSE 7860
+# 1 worker default untuk efisiensi RAM di cloud container free tier (Hugging Face / Render)
+# PORT dan WEB_CONCURRENCY bisa dioverride via environment variables
+CMD ["sh", "-c", "exec gunicorn app.main:app -k uvicorn.workers.UvicornWorker -w ${WEB_CONCURRENCY:-1} -b 0.0.0.0:${PORT:-7860} --timeout 180"]
