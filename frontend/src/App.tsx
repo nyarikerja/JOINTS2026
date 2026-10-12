@@ -6,6 +6,7 @@ import { MapWorkspace } from "./components/layout/MapWorkspace";
 import { TimelinePlayer } from "./components/layout/TimelinePlayer";
 import { AnalyticsDrawer } from "./components/layout/AnalyticsDrawer";
 import { LegendModal } from "./components/layout/LegendModal";
+import { GpsAdvisoryModal } from "./components/layout/GpsAdvisoryModal";
 import { api } from "./services/api";
 import { isLoaderActive } from "./utils/bootProgress";
 import { useLocationWatch } from "./utils/locationWatch";
@@ -45,6 +46,7 @@ export const App: React.FC = () => {
 
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [isLegendOpen, setIsLegendOpen] = useState<boolean>(false);
+  const [isGpsModalOpen, setIsGpsModalOpen] = useState<boolean>(false);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [progressText, setProgressText] = useState<string>("");
   const [loadingProgress, setLoadingProgress] = useState<number>(0);
@@ -314,6 +316,33 @@ export const App: React.FC = () => {
 
 
 
+  const handleResetDefault = () => {
+    setActiveRunId(null);
+    setRunInfo(null);
+    setHourlyTiersCache(null);
+    setImpactData(null);
+    setFacilitiesData(null);
+    setAdvisoryData(null);
+    setEvacuationRoute(null);
+    setSelectedFacilityId(null);
+    setSelectedPlumeTier(null);
+    setIsDrawerOpen(false);
+    setSimError(null);
+    setCurrentHour(0);
+    setHazard("volcano");
+    setEventId("");
+    setSelectedEventName("G. Anak Krakatau");
+
+    // Hapus sesi tersimpan di localStorage & bersihkan URL parameter
+    ["lastRunId", "lastEventId", "lastEventName", "lastHazard"].forEach((k) => localStorage.removeItem(k));
+    const url = new URL(window.location.href);
+    url.searchParams.delete("run");
+    window.history.replaceState(null, "", url.toString());
+
+    // Kembalikan sudut pandang kamera ke seluruh Indonesia
+    setResetViewTrigger((t) => t + 1);
+  };
+
   const handleDrawRoute = async (s: SchoolItem) => {
     const facilityId = s.id || s.facility_id || s.name;
     if (evacuationRoute && evacuationRoute.facilityId === facilityId) {
@@ -371,10 +400,14 @@ export const App: React.FC = () => {
       {/* Zona A: Tactical Header */}
       <TacticalHeader
         onResetView={() => setResetViewTrigger((t) => t + 1)}
+        onResetDefault={handleResetDefault}
+        activeRunId={activeRunId}
         onToggleDrawer={() => setIsDrawerOpen(!isDrawerOpen)}
         isDrawerOpen={isDrawerOpen}
         onToggleLegend={() => setIsLegendOpen((prev) => !prev)}
         isLegendOpen={isLegendOpen}
+        onOpenGpsModal={() => setIsGpsModalOpen(true)}
+        isGpsModalOpen={isGpsModalOpen}
       />
 
 
@@ -389,12 +422,18 @@ export const App: React.FC = () => {
           impactedFacilities={facilitiesData}
           evacuationRoute={evacuationRoute}
           onSelectEvent={(newId) => {
+            if (newId.startsWith("hutan_") || newId.startsWith("karhutla_")) {
+              setHazard("fire");
+            } else {
+              setHazard("volcano");
+            }
             handleEventChange(newId);
           }}
           resetViewTrigger={resetViewTrigger}
           flyToTarget={flyToTarget}
           activeRunId={activeRunId}
           runCenter={runInfo?.center_coords ?? null}
+          runHotspots={runInfo?.hotspots}
           isDrawerOpen={isDrawerOpen}
           onToggleLegend={() => setIsLegendOpen((prev) => !prev)}
           onLayersLoaded={() => setIsMapReady(true)}
@@ -506,6 +545,7 @@ export const App: React.FC = () => {
           progressText={progressText}
           activeRunId={activeRunId}
           simulatedEventName={simulatedEventName}
+          onResetDefault={handleResetDefault}
         />
 
         {/* Zona C: Timeline Player Melayang di Bawah Peta */}
@@ -513,6 +553,7 @@ export const App: React.FC = () => {
           currentHour={currentHour}
           onHourChange={setCurrentHour}
           isDrawerOpen={isDrawerOpen}
+          onResetDefault={handleResetDefault}
         />
 
         {/* Zona D: Tabbed Inspection Dock Melayang di Kanan */}
@@ -546,6 +587,12 @@ export const App: React.FC = () => {
         <LegendModal
           isOpen={isLegendOpen}
           onClose={() => setIsLegendOpen(false)}
+        />
+
+        {/* Modal AI Siaga Lokasi Personal (GPS Saya) */}
+        <GpsAdvisoryModal
+          isOpen={isGpsModalOpen}
+          onClose={() => setIsGpsModalOpen(false)}
         />
       </div>
     </div>

@@ -147,6 +147,76 @@ export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => 
             </div>
           </div>
 
+          {/* Bagian Baru: Tingkat Bahaya Karhutla & Kawasan Hutan */}
+          <div
+            className="rounded-xl p-4 space-y-3"
+            style={{
+              background: "#F9F9F9",
+              border: "1px solid rgba(0, 0, 0, 0.05)"
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4" style={{ color: "#EB895B" }} />
+              <h3 className="font-bold text-sm tracking-wide" style={{ color: "#140f0e" }}>
+                Tingkat Bahaya Karhutla &amp; Kawasan Hutan (NASA FIRMS 24 Jam)
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Level IV */}
+              <div className="p-3 rounded-lg flex items-start gap-3 transition bg-white border border-red-100 shadow-sm">
+                <img src="/hutan_sangat_rawan.png" alt="Awas" className="w-8 h-8 shrink-0 object-contain" />
+                <div>
+                  <strong className="text-xs font-bold block text-red-600">
+                    Level IV (AWAS &bull; SANGAT RAWAN)
+                  </strong>
+                  <span className="text-[11px] leading-relaxed block text-slate-600 mt-0.5">
+                    &ge; 100 titik api aktif. Kebakaran masif gambut/hutan, darurat pelepasan asap PM2.5 pekat.
+                  </span>
+                </div>
+              </div>
+
+              {/* Level III */}
+              <div className="p-3 rounded-lg flex items-start gap-3 transition bg-white border border-orange-100 shadow-sm">
+                <img src="/hutan_rawan.png" alt="Siaga" className="w-8 h-8 shrink-0 object-contain" />
+                <div>
+                  <strong className="text-xs font-bold block text-orange-600">
+                    Level III (SIAGA &bull; RAWAN)
+                  </strong>
+                  <span className="text-[11px] leading-relaxed block text-slate-600 mt-0.5">
+                    10 &ndash; 99 titik api aktif. Klaster kebakaran berkembang, potensi ancaman asap antardaerah.
+                  </span>
+                </div>
+              </div>
+
+              {/* Level II */}
+              <div className="p-3 rounded-lg flex items-start gap-3 transition bg-white border border-amber-100 shadow-sm">
+                <img src="/hutan_rawan.png" alt="Waspada" className="w-8 h-8 shrink-0 object-contain" />
+                <div>
+                  <strong className="text-xs font-bold block text-amber-600">
+                    Level II (WASPADA)
+                  </strong>
+                  <span className="text-[11px] leading-relaxed block text-slate-600 mt-0.5">
+                    1 &ndash; 9 titik api aktif. Terdeteksi anomali panas awal, potensi rambatan lahan gambut.
+                  </span>
+                </div>
+              </div>
+
+              {/* Level I */}
+              <div className="p-3 rounded-lg flex items-start gap-3 transition bg-white border border-green-100 shadow-sm">
+                <img src="/hutan_waspada.png" alt="Normal" className="w-8 h-8 shrink-0 object-contain" />
+                <div>
+                  <strong className="text-xs font-bold block text-green-600">
+                    Level I (NORMAL &bull; BEBAS API)
+                  </strong>
+                  <span className="text-[11px] leading-relaxed block text-slate-600 mt-0.5">
+                    0 titik api. Tidak ada kebakaran aktif terdeteksi satelit dalam 24 jam terakhir. Kondisi aman.
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Bagian 2: Tingkat Peluang Dispersi Abu / Asap */}
           <div
             className="rounded-xl p-4 space-y-3"

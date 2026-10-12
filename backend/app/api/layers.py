@@ -64,17 +64,47 @@ def get_layer(
 
     elif name == "hotspots":
         from app.services import firms_live
+        from app.ingest.firms import event_area
         target_event = event_id if event_id and event_id not in ["all", "national", "indonesia"] else "national"
         hrs = float(hours or 24)
         if target_event == "national":
             hotspots = firms_live.query(hrs, s, n, w, e)
+            if not hotspots and bbox and hrs < 168:
+                # Bila 24 jam terakhir kosong di viewport yang di-zoom, fallback ke jendela 7 hari
+                hotspots = firms_live.query(168.0, s, n, w, e)
         else:
             hotspots = FirmsIngest.load_event_hotspots(target_event, hours=hrs)
+            if not hotspots:
+                # Fallback ke jendela 7 hari untuk kawasan event
+                area = event_area(target_event)
+                week = FirmsIngest.load_area_hotspots(area, hours=7 * 24)
+                if week:
+                    last_day = max(h["acq_date"] for h in week)
+                    hotspots = [h for h in week if h["acq_date"] == last_day]
+                if not hotspots and area.get("bbox"):
+                    try:
+                        from app.services import firms_history
+                        hist = firms_history.last_fire(area["bbox"], area.get("polygon"))
+                        if hist and hist.get("hotspots"):
+                            hotspots = hist["hotspots"]
+                    except Exception:
+                        pass
+            if not hotspots and bbox:
+                hotspots = firms_live.query(168.0, s, n, w, e)
+
         features = [{
             "type": "Feature",
-            "properties": {k: h[k] for k in ("id", "frp", "confidence", "acq_date", "acq_time", "acq_datetime_utc", "sensor")},
-            "geometry": {"type": "Point", "coordinates": [h["longitude"], h["latitude"]]},
-        } for h in hotspots]
+            "properties": {
+                "id": h.get("id"),
+                "frp": h.get("frp", 25.0),
+                "confidence": h.get("confidence", "nominal"),
+                "acq_date": h.get("acq_date"),
+                "acq_time": h.get("acq_time"),
+                "acq_datetime_utc": h.get("acq_datetime_utc"),
+                "sensor": h.get("sensor", "NASA FIRMS (VIIRS)")
+            },
+            "geometry": {"type": "Point", "coordinates": [float(h["longitude"]), float(h["latitude"])]},
+        } for h in hotspots if h.get("latitude") is not None and h.get("longitude") is not None]
         return {"type": "FeatureCollection", "metadata": {**firms_live.status(), "window_hours": hrs}, "features": features}
 
     elif name == "coastline":
@@ -146,12 +176,29 @@ def get_layer(
             forest_path = BACKEND_DIR / "data" / "layers" / "forests_indonesia.json"
             if forest_path.exists():
                 forests_data = json.loads(forest_path.read_text(encoding="utf-8-sig"))
-        # Jumlah titik api = deteksi FIRMS 24 jam terakhir di dalam batas kawasan (bukan angka katalog)
+        # Jumlah titik api & level status = deteksi FIRMS 24 jam terakhir (diselaraskan dengan sistem Level 1-4)
         for item in forests_data:
             area = event_area(item["id"], center=(item.get("lat"), item.get("lon")))
-            item["n_hotspots"] = len(FirmsIngest.load_area_hotspots(area, 24.0))
+            n_hot = len(FirmsIngest.load_area_hotspots(area, 24.0))
+            item["n_hotspots"] = n_hot
             item["n_hotspots_window_h"] = 24
             item["n_hotspots_area"] = area["kind"]
+            if n_hot >= 100:
+                item["level"] = 4
+                item["level_name"] = "Level IV (Awas)"
+                item["risk_status"] = "Sangat Rawan"
+            elif n_hot >= 10:
+                item["level"] = 3
+                item["level_name"] = "Level III (Siaga)"
+                item["risk_status"] = "Rawan"
+            elif n_hot >= 1:
+                item["level"] = 2
+                item["level_name"] = "Level II (Waspada)"
+                item["risk_status"] = "Waspada"
+            else:
+                item["level"] = 1
+                item["level_name"] = "Level I (Normal)"
+                item["risk_status"] = "Normal"
         return forests_data
 
     elif name in ["forest-boundaries", "forests-boundaries", "forest_boundaries"]:

@@ -119,16 +119,65 @@ def smoke_paths(hours: int, max_fire_sources: int = 15) -> Dict[str, Any]:
         },
     }
 
-    heat = fire_heatmap(days=1)  # klaster api aktif 24 jam terakhir
     paths: List[Dict[str, Any]] = []
-    for cell in heat.get("cells", [])[:max_fire_sources]:
-        paths.append({
-            "source_type": "fire",
-            "name": f"Klaster Karhutla ({cell['lat']:.2f}, {cell['lon']:.2f})",
-            "source": {"lat": cell["lat"], "lon": cell["lon"]},
-            "frp_sum": cell["frp_sum"],
-            "coords": _trace(sliced, "10m", cell["lat"], cell["lon"], hours),
-        })
+
+    # 1. Karhutla dari Kawasan Hutan & Konservasi Nasional berstatus Level II ke atas (titik api aktif >= 1)
+    from app.ingest.firms import FirmsIngest, event_area
+    forests_data = []
+    forest_path = DATA_DIR / "layers" / "forests_indonesia.json"
+    if forest_path.exists():
+        try:
+            forests_data = json.loads(forest_path.read_text(encoding="utf-8-sig"))
+        except Exception:
+            forests_data = []
+
+    active_forests = []
+    for f in forests_data:
+        f_lat = float(f.get("lat") or 0.0)
+        f_lon = float(f.get("lon") or 0.0)
+        area = event_area(f.get("id", ""), center=(f_lat, f_lon))
+        hotspots = FirmsIngest.load_area_hotspots(area, 24.0)
+        n_hot = len(hotspots)
+        if n_hot >= 1:
+            frp_sum = sum(h.get("frp", 15.0) for h in hotspots)
+            level = 4 if n_hot >= 100 else (3 if n_hot >= 10 else 2)
+            level_name = "Level IV (Awas)" if level == 4 else ("Level III (Siaga)" if level == 3 else "Level II (Waspada)")
+            clean_name = (f.get("name") or "Kawasan Hutan").strip()
+            active_forests.append({
+                "source_type": "fire",
+                "name": f"{clean_name} • {level_name}",
+                "level": level,
+                "n_hotspots": n_hot,
+                "source": {"lat": f_lat, "lon": f_lon},
+                "frp_sum": round(frp_sum, 1),
+                "coords": _trace(sliced, "10m", f_lat, f_lon, hours),
+            })
+
+    # Urutkan kawasan hutan aktif berdasarkan level bahaya tertinggi
+    active_forests.sort(key=lambda x: (-x["level"], -x["n_hotspots"]))
+    paths.extend(active_forests[:max_fire_sources])
+
+    # Jika kawasan hutan aktif masih sedikit, lengkapi dengan klaster api satelit bebas terkuat
+    heat = fire_heatmap(days=1)
+    if len(paths) < max_fire_sources:
+        used_coords = {(round(p["source"]["lat"], 1), round(p["source"]["lon"], 1)) for p in paths}
+        for cell in heat.get("cells", []):
+            if len(paths) >= max_fire_sources:
+                break
+            cell_coord = (round(cell["lat"], 1), round(cell["lon"], 1))
+            if cell_coord not in used_coords:
+                lvl = 3 if cell["count"] >= 10 else 2
+                lvl_name = "Level III (Siaga)" if lvl == 3 else "Level II (Waspada)"
+                paths.append({
+                    "source_type": "fire",
+                    "name": f"Klaster Api ({cell['lat']:.2f}, {cell['lon']:.2f}) • {lvl_name}",
+                    "level": lvl,
+                    "n_hotspots": cell["count"],
+                    "source": {"lat": cell["lat"], "lon": cell["lon"]},
+                    "frp_sum": cell["frp_sum"],
+                    "coords": _trace(sliced, "10m", cell["lat"], cell["lon"], hours),
+                })
+                used_coords.add(cell_coord)
 
     # Volcanoes at level II or higher
     volcanoes = []

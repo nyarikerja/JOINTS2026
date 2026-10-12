@@ -14,7 +14,7 @@ import { HeatLeafletLayer, HEAT_STOPS } from "../../simulation/heatLayer";
 import { CompassInstrument } from "../ui/CompassInstrument";
 
 export type NationalMode = "off" | "history" | "now" | "forecast";
-type Level = "10m" | "850hPa";
+type Level = "10m" | "850hPa" | "all";
 
 interface NationalModesProps {
   map: L.Map | null;
@@ -123,7 +123,8 @@ export const NationalModes: React.FC<NationalModesProps> = ({
         setHeat(h);
       });
     } else if (mode === "now") {
-      job = Promise.all([api.getWind(level, NOW_WIND_HOURS), api.getHeatmap(1).catch(() => null)]).then(([w, h]) => {
+      const windLvl: "10m" | "850hPa" = level === "850hPa" ? "850hPa" : "10m";
+      job = Promise.all([api.getWind(windLvl, NOW_WIND_HOURS), api.getHeatmap(1).catch(() => null)]).then(([w, h]) => {
         if (cancelled) return;
         if (!w.available) throw new Error(w.reason || "wind unavailable");
         setWind(w);
@@ -131,7 +132,8 @@ export const NationalModes: React.FC<NationalModesProps> = ({
         setTimeIdx(0);
       });
     } else {
-      job = Promise.all([api.getWind(level, FORECAST_HOURS), api.getSmokePaths(FORECAST_HOURS)]).then(([w, p]) => {
+      const windLvl: "10m" | "850hPa" = level === "850hPa" ? "850hPa" : "10m";
+      job = Promise.all([api.getWind(windLvl, FORECAST_HOURS), api.getSmokePaths(FORECAST_HOURS)]).then(([w, p]) => {
         if (cancelled) return;
         if (!w.available) throw new Error(w.reason || "wind unavailable");
         setWind(w);
@@ -178,7 +180,14 @@ export const NationalModes: React.FC<NationalModesProps> = ({
       const every = paths.marks_every_h ?? 24;
       const formattedTime = times[timeIdx] ? formatWib(times[timeIdx], lang) : "";
 
-      for (const p of paths.paths || []) {
+      const allPaths = paths.paths || [];
+      const visiblePaths = allPaths.filter((p: any) => {
+        if (level === "10m") return p.source_type === "fire";
+        if (level === "850hPa") return p.source_type === "volcano";
+        return true;
+      });
+
+      for (const p of visiblePaths) {
         const color = PATH_COLORS[p.source_type as keyof typeof PATH_COLORS] || "#c4b5fd";
         if (!p.coords || p.coords.length === 0) continue;
 
@@ -209,6 +218,11 @@ export const NationalModes: React.FC<NationalModesProps> = ({
         }
 
         // 3. Titik Sumber Awal (Gunung Api atau Pusat Karhutla)
+        const sourceLabel =
+          p.source_type === "fire"
+            ? (id ? "Pusat Karhutla" : "Fire Cluster")
+            : (id ? "Gunung Api" : "Volcano");
+
         L.circleMarker(p.coords[0], {
           radius: 5,
           color: "#0f172a",
@@ -216,7 +230,7 @@ export const NationalModes: React.FC<NationalModesProps> = ({
           fillColor: color,
           fillOpacity: 1
         })
-          .bindTooltip(textNode(`${p.name} (${id ? "Sumber Awal" : "Source"})`), { direction: "top" })
+          .bindTooltip(textNode(`${p.name} (${sourceLabel})`), { direction: "top" })
           .addTo(group);
 
         // 4. Milestone Waktu Terjadwal (+24j, +48j, +72j, dst.)
@@ -271,7 +285,7 @@ export const NationalModes: React.FC<NationalModesProps> = ({
     } else {
       group.remove();
     }
-  }, [map, mode, paths, windOn, timeIdx, leadH, lang, times, id]);
+  }, [map, mode, paths, windOn, timeIdx, leadH, lang, times, id, level]);
 
   useEffect(() => {
     const layer = heatLayerRef.current;
@@ -295,10 +309,30 @@ export const NationalModes: React.FC<NationalModesProps> = ({
         borderColor: "rgba(20, 15, 14, 0.12)"
       }}
     >
-      <legend className="sr-only">{id ? "Ketinggian angin" : "Wind level"}</legend>
-      {([["10m", id ? "Asap · 10 m" : "Smoke · 10 m"], ["850hPa", id ? "Abu · 1,5 km" : "Ash · 1.5 km"]] as const).map(([value, label]) => (
+      <legend className="sr-only">{id ? "Filter ketinggian dan sumber" : "Level and source filter"}</legend>
+      {(mode === "forecast"
+        ? ([
+          ["10m", id ? "Asap · 10 m" : "Smoke · 10 m"],
+          ["850hPa", id ? "Abu · 1,5 km" : "Ash · 1.5 km"],
+          ["all", id ? "Semua" : "All"]
+        ] as const)
+        : ([
+          ["10m", id ? "Angin · 10 m" : "Wind · 10 m"],
+          ["850hPa", id ? "Angin · 1,5 km" : "Wind · 1.5 km"]
+        ] as const)
+      ).map(([value, label]) => (
         <label key={value} className="cursor-pointer">
-          <input type="radio" name="wind-level" value={value} checked={level === value} onChange={() => { startLoading(); setLevel(value); }} className="sr-only peer" />
+          <input
+            type="radio"
+            name="wind-level"
+            value={value}
+            checked={level === value}
+            onChange={() => {
+              startLoading();
+              setLevel(value as Level);
+            }}
+            className="sr-only peer"
+          />
           <span className="block px-2.5 py-1 rounded-full text-[10px] font-bold text-[#140f0e]/75 peer-checked:bg-[#EB895B] peer-checked:text-white transition shadow-xs">
             {label}
           </span>
@@ -466,19 +500,52 @@ export const NationalModes: React.FC<NationalModesProps> = ({
 
               {paths && (
                 <div className="flex flex-col gap-1 text-[10px] text-[#140f0e]/80">
-                  <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1"><i className="inline-block w-4 border-t-2 border-dashed" style={{ borderColor: PATH_COLORS.fire }} />{id ? "Asap kebakaran" : "Fire smoke"}</span>
-                    <span className="flex items-center gap-1"><i className="inline-block w-4 border-t-2 border-dashed" style={{ borderColor: PATH_COLORS.volcano }} />{id ? "Abu gunung api" : "Volcanic ash"}</span>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {(level === "10m" || level === "all") && (
+                      <span className="flex items-center gap-1">
+                        <i className="inline-block w-4 border-t-2 border-dashed" style={{ borderColor: PATH_COLORS.fire }} />
+                        {id ? "Asap kebakaran (10 m)" : "Fire smoke (10m)"}
+                      </span>
+                    )}
+                    {(level === "850hPa" || level === "all") && (
+                      <span className="flex items-center gap-1">
+                        <i className="inline-block w-4 border-t-2 border-dashed" style={{ borderColor: PATH_COLORS.volcano }} />
+                        {id ? "Abu gunung api (1,5 km)" : "Volcanic ash (1.5km)"}
+                      </span>
+                    )}
                     <span className="text-[#140f0e]/60">● {id ? "Penanda tiap 24 jam" : "24h milestones"}</span>
                   </div>
                 </div>
               )}
 
+              {paths && level === "10m" && !(paths.paths || []).some((p: any) => p.source_type === "fire") && (
+                <p className="text-[10px] text-amber-800 bg-amber-500/10 border border-amber-500/20 rounded px-2 py-1">
+                  {id
+                    ? "Tidak ada klaster titik api aktif dalam 24 jam terakhir (NASA FIRMS). Asap hanya diproyeksikan dari kebakaran aktif."
+                    : "No active fire clusters detected in the last 24h (NASA FIRMS)."}
+                </p>
+              )}
+              {paths && level === "850hPa" && !(paths.paths || []).some((p: any) => p.source_type === "volcano") && (
+                <p className="text-[10px] text-amber-800 bg-amber-500/10 border border-amber-500/20 rounded px-2 py-1">
+                  {id
+                    ? "Tidak ada gunung api berstatus Level II ke atas (MAGMA) saat ini."
+                    : "No active Level II+ volcanoes currently recorded (MAGMA)."}
+                </p>
+              )}
+
               <p className="text-[#140f0e]/60 text-[10px]">{windSourceLine}</p>
               <p className="text-[#140f0e]/75 text-[10.5px]">
-                {id
-                  ? `Lintasan dari klaster api aktif 24 jam terakhir dan gunung api Level II ke atas (MAGMA), dengan asumsi emisi terus berlangsung. Garis tebal & titik kepala bergerak: posisi trajektori sebaran asap/abu pada +${leadH} jam (${times[timeIdx] ? formatWib(times[timeIdx], lang) : ""}). Garis tipis: lintasan proyeksi ke depan.`
-                  : `Bold line & moving plume head: smoke/ash drift at +${leadH} h (${times[timeIdx] ? formatWib(times[timeIdx], lang) : ""}). Faint line: future projected trajectory.`}
+                {level === "10m"
+                  ? (id
+                      ? `Lintasan sebaran asap dari klaster api aktif 24 jam terakhir (NASA FIRMS) pada angin permukaan 10 m. Garis tebal: posisi asap pada +${leadH} jam (${times[timeIdx] ? formatWib(times[timeIdx], lang) : ""}). Garis tipis: proyeksi ke depan.`
+                      : `Drift of smoke from active fire clusters (NASA FIRMS, last 24h) in 10 m surface wind. Bold line: position at +${leadH} h (${times[timeIdx] ? formatWib(times[timeIdx], lang) : ""}).`)
+                  : level === "850hPa"
+                  ? (id
+                      ? `Lintasan sebaran abu dari gunung api aktif Level II ke atas (MAGMA) pada angin atas 1,5 km. Garis tebal: posisi abu pada +${leadH} jam (${times[timeIdx] ? formatWib(times[timeIdx], lang) : ""}). Garis tipis: proyeksi ke depan.`
+                      : `Drift of volcanic ash from active Level II+ volcanoes (MAGMA) in 1.5 km upper wind. Bold line: position at +${leadH} h (${times[timeIdx] ? formatWib(times[timeIdx], lang) : ""}).`)
+                  : (id
+                      ? `Lintasan gabungan asap karhutla (10 m) dan abu gunung api (1,5 km). Garis tebal: posisi pada +${leadH} jam (${times[timeIdx] ? formatWib(times[timeIdx], lang) : ""}). Garis tipis: proyeksi ke depan.`
+                      : `Combined drift of fire smoke (10 m) and volcanic ash (1.5 km). Bold line: position at +${leadH} h (${times[timeIdx] ? formatWib(times[timeIdx], lang) : ""}).`)}
               </p>
             </div>
           )}

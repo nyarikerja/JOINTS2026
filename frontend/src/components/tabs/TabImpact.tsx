@@ -58,7 +58,8 @@ export const TabImpact: React.FC<TabImpactProps> = ({
       return;
     }
 
-    if (hazard === "fire") {
+    const effectiveHazard = runInfo?.hazard || hazard;
+    if (effectiveHazard === "fire") {
       api.getCarbonEmissions(activeRunId).then(setCarbonData).catch(() => {});
       api.getHotspotRanking(activeRunId).then(setRankingData).catch(() => {});
       setLaharData(null);
@@ -69,7 +70,7 @@ export const TabImpact: React.FC<TabImpactProps> = ({
     }
 
     api.getRainEffect(activeRunId).then(setRainEffectData).catch(() => {});
-  }, [activeRunId, hazard]);
+  }, [activeRunId, hazard, runInfo?.hazard]);
 
   const handleSimulateExtinguish = async (clusterId: number) => {
     if (!activeRunId) return;

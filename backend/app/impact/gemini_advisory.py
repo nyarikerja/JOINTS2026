@@ -89,7 +89,7 @@ Kembalikan HANYA format JSON valid tanpa tanda pembungkus markdown (```json):
 
     is_offline = os.getenv("UDARASIAGA_OFFLINE") == "1"
     if api_key and not is_offline:
-        models_to_try = ["gemini-2.5-flash", "gemini-2.0-flash"]
+        models_to_try = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash"]
         for model in models_to_try:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
             payload = {
@@ -102,7 +102,10 @@ Kembalikan HANYA format JSON valid tanpa tanda pembungkus markdown (```json):
             try:
                 req = urllib.request.Request(
                     url,
-                    headers={"Content-Type": "application/json"},
+                    headers={
+                        "Content-Type": "application/json",
+                        "x-goog-api-key": api_key
+                    },
                     data=json.dumps(payload).encode("utf-8")
                 )
                 with urllib.request.urlopen(req, timeout=8.0) as resp:

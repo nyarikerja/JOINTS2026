@@ -19,4 +19,5 @@ COPY backend/ ./
 COPY --from=web /web/dist /app/frontend/dist
 EXPOSE 8000
 # 2 worker: setiap worker punya cache FIRMS/MAGMA sendiri; simulasi dibatasi 2 per worker.
-CMD ["gunicorn", "app.main:app", "-k", "uvicorn.workers.UvicornWorker", "-w", "2", "-b", "0.0.0.0:8000", "--timeout", "180"]
+# PORT dan WEB_CONCURRENCY bisa diatur oleh host (Render, Fly, dll).
+CMD ["sh", "-c", "exec gunicorn app.main:app -k uvicorn.workers.UvicornWorker -w ${WEB_CONCURRENCY:-2} -b 0.0.0.0:${PORT:-8000} --timeout 180"]

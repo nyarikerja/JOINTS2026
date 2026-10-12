@@ -75,8 +75,21 @@ class SimulationRunner:
             grid = SimulationGrid.create_for_volcano(center_lat, center_lon, domain_km=900.0, res_deg=0.03)
         else:
             bbox = event_meta.get("bbox", [110.0, -4.0, 116.0, 1.0])
-            center_lat = (float(bbox[1]) + float(bbox[3])) / 2.0
-            center_lon = (float(bbox[0]) + float(bbox[2])) / 2.0
+            # Untuk kebakaran hutan, pusat kejadian adalah kluster titik api aktif (atau koordinat kawasan hutan riil)
+            if hotspots and len(hotspots) > 0:
+                total_frp = sum(float(h.get("frp", 1.0)) for h in hotspots)
+                if total_frp > 0:
+                    center_lat = sum(float(h["latitude"]) * float(h.get("frp", 1.0)) for h in hotspots) / total_frp
+                    center_lon = sum(float(h["longitude"]) * float(h.get("frp", 1.0)) for h in hotspots) / total_frp
+                else:
+                    center_lat = float(hotspots[0]["latitude"])
+                    center_lon = float(hotspots[0]["longitude"])
+            elif event_meta.get("coordinates") and event_meta["coordinates"].get("latitude") is not None:
+                center_lat = float(event_meta["coordinates"]["latitude"])
+                center_lon = float(event_meta["coordinates"]["longitude"])
+            else:
+                center_lat = (float(bbox[1]) + float(bbox[3])) / 2.0
+                center_lon = (float(bbox[0]) + float(bbox[2])) / 2.0
             grid = SimulationGrid.create_for_fire(bbox, buffer_km=350.0, res_deg=0.03)
 
         wind_u_arr = weather_data.get("wind_u")  # shape (n_members, n_weather_steps), titik pusat
@@ -250,12 +263,28 @@ class SimulationRunner:
                     eval_h = current_hour
                     if eval_h < horizon_hours:
                         if hazard == "volcano":
-                            # Beban endapan kumulatif (kg/m²)
+                            # 1. Beban endapan kumulatif di tanah (kg/m²)
                             load_grid = deposited_mass_grid / grid.cell_area_m2
-                            # Ambang terkena abu: >= 0.005 kg/m² (~0.005 mm tephra tipis teramati)
-                            exposed_mask = load_grid >= 0.005
+
+                            # 2. Konsentrasi awan abu aktif melayang di udara (µg/m³)
+                            act_idx = np.where(particles.active)[0]
+                            conc_grid = np.zeros((grid.n_lat, grid.n_lon), dtype=float)
+                            if len(act_idx) > 0:
+                                in_b = (
+                                    (particles.lat[act_idx] >= grid.lat_min) & (particles.lat[act_idx] <= grid.lat_max) &
+                                    (particles.lon[act_idx] >= grid.lon_min) & (particles.lon[act_idx] <= grid.lon_max)
+                                )
+                                valid_act = act_idx[in_b]
+                                if len(valid_act) > 0:
+                                    rows, cols = grid.coord_to_index(particles.lat[valid_act], particles.lon[valid_act])
+                                    np.add.at(conc_grid, (rows, cols), particles.mass[valid_act] * 1e9)
+                                    conc_grid /= (grid.cell_area_m2 * 1200.0)
+
+                            # Ambang terkena abu: endapan di tanah >= 0.001 kg/m² (~0.001 mm tephra)
+                            # ATAU awan abu melayang di udara >= 50.0 µg/m³
+                            exposed_mask = (load_grid >= 0.001) | (conc_grid >= 50.0)
                             hourly_exposure_masks[eval_h, m] = exposed_mask
-                            member_max_severity[m] = np.maximum(member_max_severity[m], load_grid)
+                            member_max_severity[m] = np.maximum(member_max_severity[m], load_grid + (conc_grid * 1e-6))
                         else:
                             # Konsentrasi PM2.5 di udara aktif (µg/m³)
                             act_idx = np.where(particles.active)[0]

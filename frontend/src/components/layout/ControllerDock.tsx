@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Sliders, Printer, ChevronDown, ChevronUp, Play } from "lucide-react";
+import { Sliders, Printer, ChevronDown, ChevronUp, Play, RotateCcw } from "lucide-react";
 import type { HazardType, ModelingMode, SimulationOverrides } from "../../types/api";
 import { api } from "../../services/api";
 import { CONFIG } from "../../config/constants";
@@ -20,6 +20,7 @@ interface ControllerDockProps {
   progressText: string;
   activeRunId?: string | null;
   simulatedEventName?: string;
+  onResetDefault?: () => void;
 }
 
 export const ControllerDock: React.FC<ControllerDockProps> = ({
@@ -36,7 +37,8 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
   isRunning,
   progressText,
   activeRunId,
-  simulatedEventName
+  simulatedEventName,
+  onResetDefault
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
   const [selectedRegion, setSelectedRegion] = useState<string>("ALL");
@@ -138,17 +140,37 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
       });
     } else {
       const targetRegions = selectedRegion === "ALL" ? Object.keys(currentGroups) : [selectedRegion];
+      const collected: any[] = [];
       targetRegions.forEach((reg) => {
         (currentGroups[reg] || []).forEach((k: any) => {
-          // Bersihkan detail lokasi di dalam kurung, hanya ambil nama kawasan utamanya
-          const cleanName = (k.name || "").replace(/\s*\(.*?\)\s*/g, "").trim();
-          if (k.id) {
-            items.push({
-              id: k.id,
-              label: cleanName || k.name
-            });
-          }
+          collected.push(k);
         });
+      });
+
+      // Urutkan: Titik api / Level tertinggi terlebih dahulu, lalu nama
+      collected.sort((a, b) => {
+        const nA = Number(a.n_hotspots ?? 0);
+        const nB = Number(b.n_hotspots ?? 0);
+        if (nB !== nA) return nB - nA;
+        return (a.name || "").localeCompare(b.name || "");
+      });
+
+      collected.forEach((k: any) => {
+        const nHot = Number(k.n_hotspots ?? 0);
+        let levelLabel = "Level I (Normal)";
+        if (nHot >= 100) levelLabel = "Level IV (Awas)";
+        else if (nHot >= 10) levelLabel = "Level III (Siaga)";
+        else if (nHot >= 1) levelLabel = "Level II (Waspada)";
+
+        const cleanName = (k.name || "").replace(/\s*\(.*?\)\s*/g, "").trim();
+        const fireSuffix = nHot > 0 ? ` • ${levelLabel} (${nHot} Titik Api)` : ` • ${levelLabel}`;
+
+        if (k.id) {
+          items.push({
+            id: k.id,
+            label: `${cleanName || k.name}${fireSuffix}`
+          });
+        }
       });
     }
 
@@ -167,16 +189,17 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
 
   return (
     <div
-      className="absolute top-3.5 left-3.5 w-[calc(100vw-1.75rem)] sm:w-72 max-h-[calc(100%-1.75rem)] overflow-y-auto sm:overflow-visible backdrop-blur-md rounded-xl shadow-2xl z-[1000] flex flex-col font-sans text-[#140f0e] overflow-visible"
+      className="absolute top-3.5 left-3.5 w-[calc(100vw-1.75rem)] sm:w-80 md:w-[324px] max-w-[calc(100vw-1.75rem)] max-h-[calc(100%-1.75rem)] overflow-y-auto sm:overflow-visible backdrop-blur-md rounded-2xl shadow-2xl z-[1000] flex flex-col font-sans text-[#140f0e] box-border"
       style={{
-        background: "rgba(245, 239, 227, 0.95)",
-        border: "4px solid #EB895B"
+        background: "rgba(245, 239, 227, 0.98)",
+        border: "2px solid #EB895B",
+        boxShadow: "0 10px 25px -3px rgba(0, 0, 0, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.05)"
       }}
     >
       {/* Header Panel (Sesuai Style Card Lapisan Spasial Aktif) */}
       <div
-        className="px-3.5 py-2.5 flex items-center justify-between shrink-0 select-none border-b"
-        style={{ borderColor: "rgba(0, 0, 0, 0.1)" }}
+        className="px-3.5 py-2.5 flex items-center justify-between shrink-0 select-none border-b min-w-0 w-full box-border"
+        style={{ borderColor: "rgba(0, 0, 0, 0.08)" }}
       >
         <span
           className="font-serif text-[15px] font-bold tracking-tight leading-none"
@@ -196,19 +219,19 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
 
       {/* Body Container dengan Animasi Expand/Collapse CSS Grid */}
       <div
-        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
+        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out min-w-0 w-full ${
           isCollapsed ? "grid-rows-[0fr] opacity-0 pointer-events-none" : "grid-rows-[1fr] opacity-100"
         }`}
       >
-        <div className={isCollapsed ? "overflow-hidden" : "overflow-visible"}>
-          <div className="p-3.5 space-y-2.5 overflow-visible">
+        <div className={`min-w-0 w-full ${isCollapsed ? "overflow-hidden" : "overflow-visible"}`}>
+          <div className="p-3.5 space-y-2.5 min-w-0 w-full box-border">
             {/* 1. Pemilih Bahaya */}
-            <div>
+            <div className="min-w-0 w-full">
               <span className="block text-[11px] text-[#140f0e]/75 mb-1 font-medium">
                 Jenis Bencana
               </span>
               <div
-                className="grid grid-cols-2 rounded p-0.5 bg-white/70 border border-black/10"
+                className="grid grid-cols-2 rounded p-0.5 bg-white/70 border border-black/10 w-full min-w-0 box-border"
               >
                 <button
                   type="button"
@@ -276,7 +299,7 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
                 Pilihan Mode
               </span>
               <div
-                className="grid grid-cols-2 rounded p-0.5 bg-white/70 border border-black/10"
+                className="grid grid-cols-2 rounded p-0.5 bg-white/70 border border-black/10 w-full min-w-0 box-border"
               >
                 <button
                   type="button"
@@ -419,6 +442,19 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
               <Printer className="w-3.5 h-3.5 text-[#140f0e]/60" />
               <span>Cetak Ringkasan</span>
             </button>
+
+            {/* Tombol Reset Default (Hapus Simulasi Aktif) */}
+            {activeRunId && (
+              <button
+                type="button"
+                onClick={onResetDefault}
+                className="w-full py-1.5 px-2 rounded text-[11px] font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer text-[#DA6556] bg-red-500/10 hover:bg-red-500/20 border border-[#DA6556]/30 active:scale-[0.99] shadow-xs"
+                title="Hapus simulasi aktif dan kembalikan ke pemantauan default"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset Default (Hapus Simulasi)</span>
+              </button>
+            )}
 
           </div>
         </div>

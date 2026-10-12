@@ -105,6 +105,7 @@ export interface SimulationResponse {
   source_info?: RunSourceInfo;
   weather?: RunWeatherSummary;
   hotspots_used?: { count: number; n_overpasses?: number; mean_instantaneous_frp_mw?: number; window_h?: number };
+  hotspots?: any[];
 }
 
 export interface ImpactRange {

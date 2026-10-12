@@ -119,7 +119,8 @@ def _volcano_source(name: str, lat: float, lon: float, elev_m: float, in_catalog
                 "url": vona.get("url"), "source": magma_status.SOURCE,
             }, None
         hist = magma_status.latest_ash_vona_any(name)
-        if hist and hist["ash_top_asl_m"] > elev_m + 10:
+        # Jika riwayat VONA memiliki tinggi kolom erupsi nyata (minimal 800m di atas kawah):
+        if hist and (hist["ash_top_asl_m"] - elev_m) >= 800:
             return hist["ash_top_asl_m"] / 1000.0, _now(), {
                 "type": "vona_history", "tier": 2,
                 "label": f"Erupsi terakhir teramati: VONA {hist['notice']} ({hist['issued_utc'][:10]})",
@@ -166,14 +167,16 @@ def _resolve_volcano(req: SimulationRequest, custom: bool) -> Dict[str, Any]:
     if elev is None:
         raise HTTPException(503, "Elevasi kawah tidak diketahui (layanan elevasi Open-Meteo tidak dapat diakses).")
 
-    duration_h = _assumption("volcanic_emission_duration_h", 6.0)
+    peak_phase_h = float(_assumption("volcanic_peak_phase_h", 6.0))
     scenario_label = None
     if req.mode == "auto":
         plume_top_km, start, source_info, scenario_label = _volcano_source(name, lat, lon, float(elev), volcano is not None)
+        duration_h = float(req.horizon_hours) if req.horizon_hours else 48.0
     else:
         ovr = req.overrides or {}
         plume_top_km = float(ovr.get("column_height_km") or 10.0)
-        duration_h = float(ovr.get("duration_h") or duration_h)
+        duration_h = float(ovr.get("duration_h") or (float(req.horizon_hours) if req.horizon_hours else 48.0))
+        peak_phase_h = min(6.0, duration_h)
         start = _now()
         source_info = {"type": "scenario", "label": "Tinggi kolom abu ditentukan pengguna (skenario hipotetis)"}
 
@@ -188,7 +191,7 @@ def _resolve_volcano(req: SimulationRequest, custom: bool) -> Dict[str, Any]:
         "vent_elevation_m": float(elev),
         "plume_top_asl_km": plume_top_km,
         "duration_h": duration_h,
-        "peak_phase_duration_h": duration_h,
+        "peak_phase_duration_h": peak_phase_h,
         "start_utc": start.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "source_info": source_info,
         "scenario_label": scenario_label,
@@ -300,7 +303,7 @@ def _resolve_fire(req: SimulationRequest, custom: bool) -> Dict[str, Any]:
         "name": name,
         "coordinates": {"latitude": lat, "longitude": lon},
         "bbox": bbox,
-        "duration_h": float(ovr.get("duration_h") or 24.0),
+        "duration_h": float(ovr.get("duration_h") or (float(req.horizon_hours) if req.horizon_hours else 48.0)),
         "start_utc": _now().strftime("%Y-%m-%dT%H:%M:%SZ"),
         "source_info": source_info,
         "hotspots_used": {
@@ -329,6 +332,14 @@ def start_simulation(req: SimulationRequest):
 
 
 def _run_simulation(req: SimulationRequest, custom: bool):
+    # Auto-sinkronisasi jenis bahaya jika event_id adalah kawasan hutan atau gunung api
+    if not custom and req.source.event_id:
+        eid = req.source.event_id.lower()
+        if eid.startswith("hutan_") or eid.startswith("karhutla_") or eid in NATIONAL_KARHUTLA:
+            req.hazard = "fire"
+        elif _find_volcano(req.source.event_id):
+            req.hazard = "volcano"
+
     src = _resolve_volcano(req, custom) if req.hazard == "volcano" else _resolve_fire(req, custom)
     meta = src["meta"]
 

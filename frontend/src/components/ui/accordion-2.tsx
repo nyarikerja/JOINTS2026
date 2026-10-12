@@ -69,20 +69,20 @@ export default function BasicDropdown({
   const buttonId = "dropdown-button"
 
   return (
-    <div ref={dropdownRef} className={`relative inline-block ${className}`}>
+    <div ref={dropdownRef} className={`relative block w-full min-w-0 ${className}`}>
       <button
         type="button"
         id={buttonId}
         onClick={() => setIsOpen(!isOpen)}
         aria-haspopup="menu"
         aria-expanded={isOpen}
-        className="flex w-full items-center justify-between gap-2 rounded border border-[rgba(235,137,91,0.35)] bg-white/80 px-2.5 py-1.5 text-xs text-[#140f0e] shadow-xs transition-colors hover:bg-white hover:border-[#EB895B] focus:outline-none focus:border-[#EB895B] cursor-pointer"
+        className="flex w-full min-w-0 items-center justify-between gap-2 rounded border border-[rgba(235,137,91,0.35)] bg-white/80 px-2.5 py-1.5 text-xs text-[#140f0e] shadow-xs transition-colors hover:bg-white hover:border-[#EB895B] focus:outline-none focus:border-[#EB895B] cursor-pointer"
       >
-        <span className="block truncate font-medium text-[11px] text-[#140f0e]">
+        <span className="block truncate font-medium text-[11px] text-[#140f0e] min-w-0 flex-1 text-left">
           {selectedItem ? selectedItem.label : label}
         </span>
         <motion.div
-          className="text-[#EB895B] shrink-0"
+          className="text-[#EB895B] shrink-0 ml-1"
           animate={{ rotate: isOpen ? 180 : 0 }}
           transition={{ duration: 0.18 }}
         >

@@ -68,6 +68,7 @@ interface MapWorkspaceProps {
   onSelectFacility?: (id: string | null) => void;
   onSelectPlumeTier?: (tier: string | null) => void;
   selectedPlumeTier?: string | null;
+  runHotspots?: any[];
 }
 
 const FACILITY_MIN_ZOOM = 11;
@@ -84,6 +85,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
   flyToTarget,
   activeRunId,
   runCenter,
+  runHotspots,
   isDrawerOpen: _isDrawerOpen = false,
   onToggleLegend: _onToggleLegend,
   onLayersLoaded,
@@ -131,6 +133,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
 
   const volcanoesLayerRef = useRef<L.GeoJSON | null>(null);
   const forestsLayerRef = useRef<L.GeoJSON | null>(null);
+  const selectedForestHotspotsLayerRef = useRef<L.GeoJSON | null>(null);
   const hotspotsLayerRef = useRef<L.GeoJSON | null>(null);
   const hotspotsHeatmapRef = useRef<HeatLeafletLayer | null>(null);
   const heatmapDataRef = useRef<{ cells: any[]; maxFrp: number; cellDeg: number } | null>(null);
@@ -495,6 +498,36 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
         CONFIG.DEFAULT_MAP_VIEW.zoom,
         { duration: 1.2 }
       );
+      // Kembalikan checkbox titik api ke default (TIDAK DICENTANG)
+      setShowHotspots(false);
+      showHotspotsRef.current = false;
+      if (hotspotsLayerRef.current) {
+        mapRef.current.removeLayer(hotspotsLayerRef.current);
+        hotspotsLayerRef.current = null;
+      }
+      if (hotspotsHeatmapRef.current) {
+        hotspotsHeatmapRef.current.setVisible(false);
+      }
+      setShowSchools(false);
+      setShowHospitals(false);
+      setShowAirports(false);
+      setShowPlume(false);
+      if (plumeLayerRef.current) {
+        mapRef.current.removeLayer(plumeLayerRef.current);
+        plumeLayerRef.current = null;
+      }
+      if (windVectorMarkerRef.current) {
+        mapRef.current.removeLayer(windVectorMarkerRef.current);
+        windVectorMarkerRef.current = null;
+      }
+      if (krbCircleRef.current) {
+        mapRef.current.removeLayer(krbCircleRef.current);
+        krbCircleRef.current = null;
+      }
+      if (selectedForestHotspotsLayerRef.current) {
+        mapRef.current.removeLayer(selectedForestHotspotsLayerRef.current);
+        selectedForestHotspotsLayerRef.current = null;
+      }
     }
   }, [resetViewTrigger]);
 
@@ -664,61 +697,77 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
 
     if (!currentWindInfo) return;
 
-    // Resolusi koordinat pusat kejadian (mendukung gunung api, titik karhutla, dan seluruh kawasan hutan)
+    // Resolusi koordinat pusat kejadian: TEPAT MENEMPEL PADA LOGO POHON / TITIK API / GUNUNG API
     let cLat: number | undefined;
     let cLng: number | undefined;
 
-    // 1. Pusat sumber dari run aktif
-    if (runCenter) {
-      cLat = Number(runCenter.latitude);
-      cLng = Number(runCenter.longitude);
-    }
-    const hourKey = `hour_${currentHour}`;
-    const curGeo = hourlyTiersCache
-      ? (hourlyTiersCache[hourKey] || hourlyTiersCache[currentHour] || hourlyTiersCache[String(currentHour)] || (hourlyTiersCache.features ? hourlyTiersCache : null))
-      : null;
-    const src = curGeo?.properties?.source;
-    if (src && (cLat === undefined || cLng === undefined)) {
-      if (src.lat !== undefined && src.lon !== undefined) {
-        cLat = Number(src.lat);
-        cLng = Number(src.lon);
-      } else if (src.latitude !== undefined && src.longitude !== undefined) {
-        cLat = Number(src.latitude);
-        cLng = Number(src.longitude);
-      }
-    }
-
-    // 2. Cek dari katalog hutan jika mode karhutla
-    if ((cLat === undefined || cLng === undefined) && hazard === "fire") {
+    if (hazard === "fire") {
+      // 1. Prioritaskan koordinat pohon kawasan hutan terpilih agar panah menempel tepat di logo pohon
       const fireObj = (forestsDataRef.current || []).find((f: any) =>
         f.id === eventId || f.name === eventId || (f.properties && (f.properties.id === eventId || f.properties.name === eventId))
       );
       if (fireObj) {
         cLat = Number(fireObj.lat ?? fireObj.latitude ?? fireObj.geometry?.coordinates?.[1]);
         cLng = Number(fireObj.lon ?? fireObj.longitude ?? fireObj.geometry?.coordinates?.[0]);
+      } else if (runHotspots && runHotspots.length > 0) {
+        // 2. Jika tidak ada objek pohon di katalog, ambil titik api terkuat (FRP terbesar)
+        const sortedHs = [...runHotspots].sort((a, b) => (Number(b.frp) || 0) - (Number(a.frp) || 0));
+        cLat = Number(sortedHs[0].latitude);
+        cLng = Number(sortedHs[0].longitude);
+      } else if (EVENT_COORDS[eventId]) {
+        cLat = EVENT_COORDS[eventId][0];
+        cLng = EVENT_COORDS[eventId][1];
+      } else if (runCenter) {
+        cLat = Number(runCenter.latitude);
+        cLng = Number(runCenter.longitude);
       }
-    }
-
-    // 3. Cek dari katalog gunung api jika mode gunung api
-    if ((cLat === undefined || cLng === undefined) && hazard === "volcano") {
+    } else {
+      // Mode gunung api: pasang panah tepat di koordinat kawah gunung api terpilih
       const feat = (volcanoesDataRef.current || []).find(
         (f: any) => (f.properties?.event_id || f.properties?.id || f.id) === eventId
       );
       if (feat?.geometry?.coordinates) {
         cLat = feat.geometry.coordinates[1];
         cLng = feat.geometry.coordinates[0];
+      } else if (EVENT_COORDS[eventId]) {
+        cLat = EVENT_COORDS[eventId][0];
+        cLng = EVENT_COORDS[eventId][1];
+      } else if (runCenter) {
+        cLat = Number(runCenter.latitude);
+        cLng = Number(runCenter.longitude);
       }
     }
 
-    // 4. Cek dari kamus statis EVENT_COORDS
-    if ((cLat === undefined || cLng === undefined) && EVENT_COORDS[eventId]) {
-      cLat = EVENT_COORDS[eventId][0];
-      cLng = EVENT_COORDS[eventId][1];
-    }
-
-    // 5. Tanpa koordinat sumber yang diketahui, panah tidak digambar
+    // Tanpa koordinat sumber yang diketahui, panah tidak digambar
     if (cLat === undefined || cLng === undefined || isNaN(cLat) || isNaN(cLng)) {
       return;
+    }
+
+    // Resolusi warna level simbol aktif (Level I: Hijau, Level II: Kuning, Level III: Oranye, Level IV: Merah)
+    let symbolColor = "#f97316"; // Default siaga
+
+    if (hazard === "fire") {
+      const fireObj = (forestsDataRef.current || []).find((f: any) =>
+        f.id === eventId || f.name === eventId || (f.properties && (f.properties.id === eventId || f.properties.name === eventId))
+      );
+      const p = fireObj?.properties || fireObj;
+      const nHot = Number(p?.n_hotspots || (runHotspots ? runHotspots.length : 0));
+      const lvl = Number(p?.level || (nHot >= 100 ? 4 : nHot >= 10 ? 3 : nHot >= 1 ? 2 : 1));
+      if (lvl === 4) symbolColor = "#ef4444"; // Level IV (Awas / Merah)
+      else if (lvl === 3) symbolColor = "#f97316"; // Level III (Siaga / Oranye)
+      else if (lvl === 2) symbolColor = "#eab308"; // Level II (Waspada / Kuning)
+      else symbolColor = "#10b981"; // Level I (Normal / Hijau)
+    } else {
+      const feat = (volcanoesDataRef.current || []).find(
+        (f: any) => (f.properties?.event_id || f.properties?.id || f.id) === eventId
+      );
+      const p = feat?.properties || feat;
+      const lvl = Number(p?.level || p?.status_level || 3);
+      if (lvl === 4) symbolColor = "#ef4444"; // Level 4 (Awas / Merah)
+      else if (lvl === 3) symbolColor = "#f97316"; // Level 3 (Siaga / Oranye)
+      else if (lvl === 2) symbolColor = "#eab308"; // Level 2 (Waspada / Kuning)
+      else if (lvl === 1) symbolColor = "#10b981"; // Level 1 (Normal / Hijau)
+      else if (p?.color) symbolColor = p.color;
     }
 
     const bearing = currentWindInfo.bearing_motion_deg;
@@ -729,20 +778,63 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
       className: "epicenter-wind-arrow-marker",
       html: `
         <div style="position: relative; width: 0; height: 0; pointer-events: none;">
-          <!-- Panah Vektor Menembus dari Episentrum ke Arah Sebaran Plume -->
+          <!-- Panah Vektor Menembus dari Episentrum ke Arah Sebaran Plume (Warna Selaras Simbol) -->
           <div style="position: absolute; top: 0; left: 0; transform: rotate(${bearing}deg); transform-origin: 0 0;">
             <div style="position: absolute; bottom: 20px; left: -12px; width: 24px; height: 54px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;">
-              <svg width="24" height="26" viewBox="0 0 24 26" fill="none" style="filter: drop-shadow(0 2px 6px rgba(0,0,0,0.85));">
-                <path d="M12 0 L23 18 L15 15 L12 26 L9 15 L1 18 Z" fill="#EB895B" stroke="#FFF0C5" stroke-width="1.6" stroke-linejoin="round" />
+              <svg width="24" height="26" viewBox="0 0 24 26" fill="none" style="filter: drop-shadow(0 2px 8px rgba(0,0,0,0.85));">
+                <path d="M12 0 L23 18 L15 15 L12 26 L9 15 L1 18 Z" fill="${symbolColor}" stroke="#FFF0C5" stroke-width="1.6" stroke-linejoin="round" />
               </svg>
-              <div style="width: 2px; height: 26px; background: linear-gradient(to top, rgba(235,137,91,0.2), #EB895B); box-shadow: 0 0 8px #EB895B;"></div>
-              <div style="width: 5px; height: 5px; border-radius: 50%; background: #FFF0C5; box-shadow: 0 0 6px #FFF;"></div>
+              <div style="width: 2.5px; height: 26px; background: linear-gradient(to top, rgba(0,0,0,0), ${symbolColor}); box-shadow: 0 0 8px ${symbolColor};"></div>
+              <div style="width: 6px; height: 6px; border-radius: 50%; background: #FFF0C5; box-shadow: 0 0 8px ${symbolColor}; border: 1.5px solid ${symbolColor};"></div>
             </div>
           </div>
-          <!-- Label Frosted Pill Vektor Angin Episentrum -->
-          <div style="position: absolute; top: 22px; left: 50%; transform: translateX(-50%); background: rgba(18, 14, 13, 0.92); border: 1px solid rgba(235, 137, 91, 0.55); border-radius: 9999px; padding: 2.5px 8px; white-space: nowrap; font-size: 9.5px; font-weight: 700; color: #FFF0C5; box-shadow: 0 4px 14px rgba(0,0,0,0.7); backdrop-filter: blur(8px); display: flex; align-items: center; gap: 4px; pointer-events: auto;">
-            <span style="color: #EB895B;">▶</span>
-            <span>Sebaran: <strong>${toCard}</strong> (${Math.round(bearing)}°) • ${speed} m/s</span>
+          <!-- Label Telemetri Arah Sebaran Vektor (Modern Tactile Chip) -->
+          <div style="
+            position: absolute;
+            top: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(18, 14, 13, 0.90);
+            border: 1px solid ${symbolColor}55;
+            border-radius: 9999px;
+            padding: 3px 10px;
+            white-space: nowrap;
+            color: #FFF0C5;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            pointer-events: auto;
+            user-select: none;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          ">
+            <!-- Dynamic rotating wind vector arrow icon matching bearing and symbol color -->
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${symbolColor}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(${bearing}deg); flex-shrink: 0; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));">
+              <line x1="12" y1="19" x2="12" y2="5"></line>
+              <polyline points="5 12 12 5 19 12"></polyline>
+            </svg>
+
+            <!-- Arah Sebaran & Derajat -->
+            <span style="font-size: 10px; font-weight: 500; color: rgba(255, 240, 197, 0.75);">Sebaran:</span>
+            <strong style="font-size: 10.5px; font-weight: 700; color: #FFFFFF; letter-spacing: -0.01em;">${toCard}</strong>
+            <span style="font-size: 9.5px; color: rgba(255, 240, 197, 0.6); font-family: monospace;">(${Math.round(bearing)}°)</span>
+
+            <!-- Hairline Divider -->
+            <span style="width: 1px; height: 10px; background: rgba(255, 255, 255, 0.2);"></span>
+
+            <!-- Speed Chip -->
+            <span style="
+              background: ${symbolColor}22;
+              color: ${symbolColor};
+              border: 1px solid ${symbolColor}44;
+              padding: 0.5px 5px;
+              border-radius: 4px;
+              font-family: ui-monospace, monospace;
+              font-size: 9.5px;
+              font-weight: 700;
+            ">${speed} m/s</span>
           </div>
         </div>
       `,
@@ -762,7 +854,108 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
         windVectorMarkerRef.current = null;
       }
     };
-  }, [currentWindInfo, eventId, hazard, hourlyTiersCache, currentHour, runCenter]);
+  }, [currentWindInfo, eventId, hazard, hourlyTiersCache, currentHour, runCenter, runHotspots]);
+
+  // Render titik api eksklusif di wilayah kawasan hutan terpilih (Point-in-Area Hutan, TANPA menceklis toggle nasional)
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+
+    if (selectedForestHotspotsLayerRef.current) {
+      map.removeLayer(selectedForestHotspotsLayerRef.current);
+      selectedForestHotspotsLayerRef.current = null;
+    }
+
+    const isForestEvent = Boolean(
+      eventId && (
+        eventId.startsWith("hutan_") ||
+        eventId.startsWith("karhutla_") ||
+        hazard === "fire" ||
+        (forestsDataRef.current || []).some((f: any) => f.id === eventId || f.name === eventId)
+      )
+    );
+
+    if (!isForestEvent || !eventId) return;
+
+    api.getHotspots(eventId)
+      .then((geo) => {
+        if (!mapRef.current) return;
+        const baseFeatures = geo?.features || [];
+
+        // Gabungkan titik api dari simulasi aktif jika ada
+        const simHs = (runHotspots || []).map((h: any, idx: number) => ({
+          type: "Feature",
+          properties: {
+            id: h.id || `sim_${idx}`,
+            frp: h.frp || 25,
+            confidence: h.confidence || "Tinggi",
+            sensor: h.sensor || "NASA FIRMS (VIIRS)",
+            acq_date: h.acq_date || "",
+            acq_time: h.acq_time || "",
+            acq_datetime_utc: h.acq_datetime_utc || ""
+          },
+          geometry: {
+            type: "Point",
+            coordinates: [Number(h.longitude), Number(h.latitude)]
+          }
+        }));
+
+        const combined = [...baseFeatures, ...simHs];
+        if (combined.length === 0) return;
+
+        if (selectedForestHotspotsLayerRef.current) {
+          map.removeLayer(selectedForestHotspotsLayerRef.current);
+        }
+
+        selectedForestHotspotsLayerRef.current = L.geoJSON(
+          { type: "FeatureCollection", features: combined } as any,
+          {
+            pointToLayer: (_feat: any, latlng) => {
+              const icon = L.divIcon({
+                className: "forest-selected-hotspot-icon",
+                html: `<img src="/titik_api.png" class="w-5 h-5 object-contain pointer-events-auto filter drop-shadow hover:scale-125 transition-transform" />`,
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+              });
+              return L.marker(latlng, { icon, zIndexOffset: 2500 });
+            },
+            onEachFeature: (feature: any, layer) => {
+              const p = feature.properties;
+              layer.bindTooltip(
+                `<div style="min-width: 170px; line-height: 1.45; font-family: ui-sans-serif, system-ui, sans-serif; padding: 2px;">
+                  <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                    <img src="/titik_api.png" style="width: 16px; height: 16px; object-fit: contain;" />
+                    <strong style="color: #FFF0C5; font-size: 12px; font-weight: 700;">Titik Api ${p.sensor || "NASA FIRMS"}</strong>
+                  </div>
+                  <div style="color: #FDB773; font-size: 11px; margin-bottom: 2px;">
+                    Radiasi Energi (FRP): <strong style="color: #FFEDD5;">${p.frp ? `${p.frp} MW` : '-'}</strong>
+                  </div>
+                  ${p.confidence ? `
+                    <div style="color: #cbd5e1; font-size: 10.5px;">
+                      Keyakinan Deteksi: <strong style="color: #f1f5f9;">${p.confidence}</strong>
+                    </div>
+                  ` : ''}
+                  ${p.acq_date ? `
+                    <div style="color: #94a3b8; font-size: 9.5px; margin-top: 3px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 3px;">
+                      Terdeteksi: ${p.acq_datetime_utc ? new Date(p.acq_datetime_utc).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) + " WIB" : `${p.acq_date} ${p.acq_time || ""} UTC`}
+                    </div>
+                  ` : ''}
+                </div>`,
+                { direction: "top", offset: [0, -10] }
+              );
+            }
+          }
+        ).addTo(map);
+      })
+      .catch(() => {});
+
+    return () => {
+      if (selectedForestHotspotsLayerRef.current && mapRef.current) {
+        mapRef.current.removeLayer(selectedForestHotspotsLayerRef.current);
+        selectedForestHotspotsLayerRef.current = null;
+      }
+    };
+  }, [eventId, hazard, runHotspots]);
 
   const prevEventIdRef = useRef<string>(eventId);
 
@@ -1058,18 +1251,20 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
         pointToLayer: (feature: any, latlng) => {
           const p = feature.properties;
           const nHot = Number(p.n_hotspots || 0);
-          const isSangatRawan = nHot >= 100;
-          const isRawan = !isSangatRawan && nHot > 0;
 
-          let imageSrc = "/hutan_waspada.png";
+          // Sistem Level 1-4 Karhutla Berbasis Titik Api Aktif (Selaras Gunung Api)
+          let imageSrc = "/hutan_waspada.png"; // Level I: Normal
           let pulseClass = "";
 
-          if (isSangatRawan) {
-            imageSrc = "/hutan_sangat_rawan.png";
+          if (nHot >= 100) {
+            imageSrc = "/hutan_sangat_rawan.png"; // Level IV: Awas
             pulseClass = "ring-red";
-          } else if (isRawan) {
-            imageSrc = "/hutan_rawan.png";
+          } else if (nHot >= 10) {
+            imageSrc = "/hutan_rawan.png"; // Level III: Siaga
             pulseClass = "ring-orange";
+          } else if (nHot >= 1) {
+            imageSrc = "/hutan_rawan.png"; // Level II: Waspada
+            pulseClass = "";
           }
 
           const pulseHtml = pulseClass
@@ -1094,13 +1289,28 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
         onEachFeature: (feature: any, layer) => {
           const p = feature.properties;
           const coords = feature.geometry.coordinates;
-          const risk = p.risk_level || p.risk || "Waspada";
-          const riskColor = risk === "Sangat Rawan" ? "#ef4444" : risk === "Rawan" ? "#f59e0b" : "#10b981";
+          const nHot = Number(p.n_hotspots || 0);
+
+          // Status Bahaya Level 1-4 Selaras Gunung Api
+          let levelBadge = "Level I (Normal)";
+          let statusColor = "#10b981"; // Hijau
+
+          if (nHot >= 100) {
+            levelBadge = "Level IV (Awas - Sangat Rawan)";
+            statusColor = "#ef4444"; // Merah
+          } else if (nHot >= 10) {
+            levelBadge = "Level III (Siaga - Rawan)";
+            statusColor = "#f97316"; // Oranye
+          } else if (nHot >= 1) {
+            levelBadge = "Level II (Waspada)";
+            statusColor = "#f59e0b"; // Kuning
+          }
+
           const location = [p.province, p.region].filter(Boolean).join(" &bull; ");
           const area = p.area_ha ? `${p.area_ha.toLocaleString("id-ID")} ha` : "";
 
           layer.bindTooltip(
-            `<div style="min-width: 175px; line-height: 1.45;">
+            `<div style="min-width: 185px; line-height: 1.45;">
               <strong style="font-size: 13px; color: #FFF0C5; display: block; margin-bottom: 2px;">${p.name}</strong>
               <div style="color: #a7f3d0; font-size: 10.5px; margin-bottom: 2px;">
                 🌲 ${p.forest_type || 'Kawasan Hutan'}${area ? ` &bull; <strong>${area}</strong>` : ''}
@@ -1111,11 +1321,11 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
                 </div>
               ` : ''}
               <div style="font-size: 11px; margin-bottom: 2px;">
-                Kerawanan (katalog): <strong style="color: ${riskColor}">${risk}</strong>
+                Status Bahaya (Live): <strong style="color: ${statusColor}">${levelBadge}</strong>
               </div>
-              <div style="display: flex; align-items: center; gap: 4px; color: ${p.n_hotspots ? '#f87171' : '#a7f3d0'}; font-size: 11px; border-top: 1px solid rgba(235,137,91,0.25); padding-top: 3px; margin-top: 3px;">
+              <div style="display: flex; align-items: center; gap: 4px; color: ${nHot > 0 ? '#f87171' : '#a7f3d0'}; font-size: 11px; border-top: 1px solid rgba(235,137,91,0.25); padding-top: 3px; margin-top: 3px;">
                 <img src="/titik_api.png" style="width: 14px; height: 14px; object-fit: contain;" />
-                <strong>${p.n_hotspots ? `${p.n_hotspots} titik api` : 'Tidak ada titik api'}</strong>&nbsp;<span style="color:#cbd5e1;">(NASA FIRMS, 24 jam)</span>
+                <strong>${nHot > 0 ? `${nHot} titik api aktif` : '0 titik api (Bebas Api)'}</strong>&nbsp;<span style="color:#cbd5e1;">(NASA FIRMS, 24 jam)</span>
               </div>
             </div>`,
             { direction: "top", offset: [0, -12] }

@@ -6,12 +6,14 @@ interface TimelinePlayerProps {
   currentHour: number;
   onHourChange: (hour: number) => void;
   isDrawerOpen?: boolean;
+  onResetDefault?: () => void;
 }
 
 export const TimelinePlayer: React.FC<TimelinePlayerProps> = ({
   currentHour,
   onHourChange,
-  isDrawerOpen = false
+  isDrawerOpen = false,
+  onResetDefault
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
@@ -93,6 +95,15 @@ export const TimelinePlayer: React.FC<TimelinePlayerProps> = ({
                 H+{step}
               </button>
             ))}
+            {onResetDefault && (
+              <button
+                onClick={onResetDefault}
+                className="text-[10px] px-2 py-0.5 rounded border transition cursor-pointer shadow-sm text-[#DA6556] bg-red-500/10 hover:bg-red-500/20 border-[#DA6556]/30 flex items-center gap-1 font-semibold ml-0.5"
+                title="Hapus simulasi aktif dan kembalikan ke pemantauan default"
+              >
+                Reset
+              </button>
+            )}
           </div>
         </div>
 

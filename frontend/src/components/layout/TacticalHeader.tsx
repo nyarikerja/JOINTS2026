@@ -1,21 +1,29 @@
 import React, { useEffect, useState } from "react";
-import { RefreshCw, PanelRight, Layers, HelpCircle, X, Home } from "lucide-react";
+import { RefreshCw, PanelRight, Layers, HelpCircle, X, Home, RotateCcw, LocateFixed } from "lucide-react";
 import { api } from "../../services/api";
 import type { SummaryKpiResponse } from "../../types/api";
 
 interface TacticalHeaderProps {
   onResetView?: () => void;
+  onResetDefault?: () => void;
+  activeRunId?: string | null;
   onToggleDrawer: () => void;
   isDrawerOpen: boolean;
   onToggleLegend?: () => void;
   isLegendOpen?: boolean;
+  onOpenGpsModal?: () => void;
+  isGpsModalOpen?: boolean;
 }
 
 export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
+  onResetDefault,
+  activeRunId,
   onToggleDrawer,
   isDrawerOpen,
   onToggleLegend,
-  isLegendOpen = false
+  isLegendOpen = false,
+  onOpenGpsModal,
+  isGpsModalOpen = false
 }) => {
   const [clockWib, setClockWib] = useState("--:--:-- WIB");
   const [clockUtc, setClockUtc] = useState("--:--:-- UTC");
@@ -238,6 +246,48 @@ Deteksi terbaru: ${fmtWib(kpi.wildfire_hotspots.latest_detection_utc)} · diundu
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} style={{ color: isSyncing ? "#DA6556" : "#A14646" }} />
           <span className="hidden lg:inline">{syncStatus || "Sinkronisasi"}</span>
+        </button>
+
+        {/* Tombol Reset Default (Menghilangkan simulasi & mengembalikan ke peta awal) */}
+        <button
+          onClick={onResetDefault}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs hover:brightness-105 active:scale-95"
+          style={activeRunId ? {
+            background: "#F5EFE3",
+            border: "1px solid rgba(218, 101, 86, 0.5)",
+            color: "#DA6556",
+            boxShadow: "0 1px 4px rgba(218, 101, 86, 0.2)"
+          } : {
+            background: "#F5EFE3",
+            border: "1px solid rgba(20, 15, 14, 0.12)",
+            color: "#140f0e",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.08)"
+          }}
+          title={activeRunId ? "Hapus simulasi yang sedang aktif dan kembalikan ke pemantauan default" : "Kembalikan peta ke tampilan awal seluruh Indonesia"}
+        >
+          <RotateCcw className="w-3.5 h-3.5" style={{ color: activeRunId ? "#DA6556" : "#A14646" }} />
+          <span className="hidden sm:inline">Reset Default</span>
+        </button>
+
+        {/* Tombol AI GPS Saya (Pemeriksaan Personal Warga) */}
+        <button
+          onClick={onOpenGpsModal}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs hover:brightness-105 active:scale-95"
+          style={isGpsModalOpen ? {
+            background: "#140f0e",
+            color: "#F5EFE3",
+            border: "1px solid #140f0e",
+            boxShadow: "0 2px 10px rgba(20, 15, 14, 0.35)"
+          } : {
+            background: "#F5EFE3",
+            border: "1px solid rgba(16, 185, 129, 0.35)",
+            color: "#065f46",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.08)"
+          }}
+          title="Buka AI Siaga Lokasi Personal berdasarkan sensor GPS perangkat Anda"
+        >
+          <LocateFixed className="w-3.5 h-3.5" style={{ color: isGpsModalOpen ? "#8AD6D1" : "#059669" }} />
+          <span className="hidden sm:inline">AI GPS Saya</span>
         </button>
 
         {/* Tombol Legenda */}
