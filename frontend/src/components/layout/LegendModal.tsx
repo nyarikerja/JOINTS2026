@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { X, Layers, Flame, ShieldAlert, Info } from "lucide-react";
+import { X, Stack, Flame, ShieldWarning, Info } from "@phosphor-icons/react";
 
 interface LegendModalProps {
   isOpen: boolean;
@@ -50,7 +50,7 @@ export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => 
                 color: "#FFFFFF"
               }}
             >
-              <Layers className="w-5 h-5" />
+              <Stack size={20} weight="duotone" />
             </div>
             <div>
               <h2 className="text-base font-extrabold tracking-tight" style={{ color: "#140f0e" }}>
@@ -70,7 +70,7 @@ export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => 
             }}
             title="Tutup (Esc)"
           >
-            <X className="w-4 h-4" />
+            <X size={16} weight="bold" />
           </button>
         </div>
 
@@ -85,7 +85,7 @@ export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => 
             }}
           >
             <div className="flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4" style={{ color: "#EB895B" }} />
+              <ShieldWarning size={16} weight="duotone" style={{ color: "#EB895B" }} />
               <h3 className="font-bold text-sm tracking-wide" style={{ color: "#140f0e" }}>
                 Tingkat Aktivitas Gunungapi (PVMBG ESDM)
               </h3>
@@ -155,7 +155,7 @@ export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => 
             }}
           >
             <div className="flex items-center gap-2">
-              <Flame className="w-4 h-4" style={{ color: "#EB895B" }} />
+              <Flame size={16} weight="duotone" style={{ color: "#EB895B" }} />
               <h3 className="font-bold text-sm tracking-wide" style={{ color: "#140f0e" }}>
                 Tingkat Peluang Dispersi Abu / Asap
               </h3>
@@ -165,20 +165,20 @@ export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => 
               {/* P90 */}
               <div className="p-3 rounded-lg flex items-start gap-3 transition bg-white border border-red-100 shadow-sm">
                 <div
-                  className="w-4 h-4 rounded-md shrink-0 mt-0.5 shadow-sm"
-                  style={{ background: "#DA6556" }}
+                  className="w-4 h-4 rounded-md shrink-0 mt-0.5 shadow-sm border border-red-700"
+                  style={{ background: "#dc2626" }}
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-0.5">
                     <strong className="text-xs font-bold text-red-600">
-                      P90 (Inti Bahaya)
+                      P90 (Inti Bahaya - Merah)
                     </strong>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold text-white" style={{ background: "#A14646" }}>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold text-white" style={{ background: "#991b1b" }}>
                       ≥ 90%
                     </span>
                   </div>
                   <span className="text-[11px] leading-relaxed block text-slate-600">
-                    Peluang terdampak ≥ 90%. Sangat berbahaya bagi pernapasan. Wajib gunakan masker N95 atau segera evakuasi.
+                    Peluang terdampak ≥ 90%. Konsentrasi partikel sangat tinggi & pekat.
                   </span>
                 </div>
               </div>
@@ -186,20 +186,20 @@ export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => 
               {/* P50 */}
               <div className="p-3 rounded-lg flex items-start gap-3 transition bg-white border border-orange-100 shadow-sm">
                 <div
-                  className="w-4 h-4 rounded-md shrink-0 mt-0.5 shadow-sm"
-                  style={{ background: "#EB895B" }}
+                  className="w-4 h-4 rounded-md shrink-0 mt-0.5 shadow-sm border border-orange-700"
+                  style={{ background: "#f97316" }}
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <strong className="text-xs font-bold text-orange-500">
-                      P50 (Area Waspada)
+                    <strong className="text-xs font-bold text-orange-600">
+                      P50 (Area Waspada - Oranye)
                     </strong>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold" style={{ background: "rgba(235, 137, 91, 0.15)", color: "#c25e2d" }}>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold text-white" style={{ background: "#c2410c" }}>
                       50% – 89%
                     </span>
                   </div>
                   <span className="text-[11px] leading-relaxed block text-slate-600">
-                    Peluang terdampak 50%–89%. Waspada hujan abu tebal dan udara kotor.
+                    Peluang terdampak 50%–89%. Area sebaran sedang paling mungkin terjadi.
                   </span>
                 </div>
               </div>
@@ -207,20 +207,20 @@ export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => 
               {/* P5 */}
               <div className="p-3 rounded-lg flex items-start gap-3 transition bg-white border border-yellow-100 shadow-sm">
                 <div
-                  className="w-4 h-4 rounded-md shrink-0 mt-0.5 shadow-sm"
-                  style={{ background: "#FDB773" }}
+                  className="w-4 h-4 rounded-md shrink-0 mt-0.5 shadow-sm border border-yellow-700"
+                  style={{ background: "#eab308" }}
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <strong className="text-xs font-bold text-yellow-500">
-                      P5 (Jangkauan Maksimum)
+                    <strong className="text-xs font-bold text-yellow-600">
+                      P05 (Jangkauan Luas - Kuning)
                     </strong>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold" style={{ background: "rgba(253, 183, 115, 0.2)", color: "#b97a31" }}>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold text-white" style={{ background: "#a16207" }}>
                       5% – 49%
                     </span>
                   </div>
                   <span className="text-[11px] leading-relaxed block text-slate-600">
-                    Peluang terdampak 5%–49%. Batas terjauh sebaran abu tipis yang terbawa angin.
+                    Peluang terdampak 5%–49%. Batas terjauh partikel debu/asap tipis tertiup angin.
                   </span>
                 </div>
               </div>
@@ -236,7 +236,7 @@ export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => 
             }}
           >
             <div className="flex items-center gap-2">
-              <Flame className="w-4 h-4" style={{ color: "#EB895B" }} />
+              <Flame size={16} weight="duotone" style={{ color: "#EB895B" }} />
               <h3 className="font-bold text-sm tracking-wide" style={{ color: "#140f0e" }}>
                 Titik Api NASA FIRMS (Anomali Termal)
               </h3>
@@ -264,7 +264,7 @@ export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => 
             }}
           >
             <div className="flex items-center gap-2">
-              <Info className="w-4 h-4" style={{ color: "#359FA0" }} />
+              <Info size={16} weight="duotone" style={{ color: "#359FA0" }} />
               <h3 className="font-bold text-sm tracking-wide" style={{ color: "#140f0e" }}>
                 Simbol Fasilitas Publik
               </h3>

@@ -1,0 +1,30 @@
+{
+  "event_id": "sorikmarapi",
+  "hazard": "volcano",
+  "name": "Erupsi G. Sorikmarapi (Mandailing Natal, Sumatera Utara)",
+  "start_utc": "2026-10-10T13:12:48.849197+00:00",
+  "duration_h": 24.0,
+  "alert_level_at_event": "Level I (Normal)",
+  "restricted_radius_km": 1.5,
+  "column_height_km": 8.0,
+  "plume_top_asl_km": 12.0,
+  "vent_elevation_m": 2145.0,
+  "coordinates": {
+    "latitude": 0.686,
+    "longitude": 99.622
+  },
+  "bbox": [
+    98.922,
+    -0.013999999999999901,
+    100.322,
+    1.3860000000000001
+  ],
+  "source": "PVMBG Badan Geologi ESDM RI (Katalog 70 Gunung Api Nasional)",
+  "members_source": "open_meteo_live_forecast_api",
+  "n_members": 15,
+  "data_status": {
+    "weather": "open_meteo_live_or_ensemble",
+    "vona": "pvmbg_national_catalog",
+    "column_height": "estimated_standard"
+  }
+}

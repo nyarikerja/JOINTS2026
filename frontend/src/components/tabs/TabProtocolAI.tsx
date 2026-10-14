@@ -1,157 +1,347 @@
-import React, { useState } from "react";
-import { Copy, Check, ShieldAlert, Bot, FileText, MessageSquare } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  Sparkle,
+  ArrowClockwise,
+  Crosshair,
+  Copy,
+  Check,
+  Printer,
+  ShieldWarning,
+  CheckCircle,
+  FileText,
+  ChatCircleDots,
+  Warning,
+  CrosshairSimple
+} from "@phosphor-icons/react";
+import { api } from "../../services/api";
 import type { HazardType } from "../../types/api";
 
 interface TabProtocolAIProps {
   hazard: HazardType;
   advisory?: any;
+  currentCoords?: { lat: number; lng: number } | null;
+  eventId?: string;
+  placeName?: string;
+  onOpenGpsModal?: () => void;
 }
 
-export const TabProtocolAI: React.FC<TabProtocolAIProps> = ({ hazard, advisory }) => {
-  const [docType, setDocType] = useState<"press" | "whatsapp">("whatsapp");
-  const [copied, setCopied] = useState(false);
-  const isVolcano = hazard === "volcano";
+type Scenario = "ash_threat" | "smoke_threat" | "prevention" | "clear";
 
-  const defaultPrMessage = `SIARAN PERS RESMI TANGGAP DARURAT PUSDALOPS BNPB/BPBD\n\nBerdasarkan pantauan model dispersi atmosferik 15 anggota ensemble, erupsi aktif memicu sebaran abu vulkanik berisiko tinggi. Pusdalops menginstruksikan:\n1. Evakuasi bertahap pada zona bahaya KRB terdekat.\n2. Mandat pembelajaran jarak jauh (PJJ) daring bagi sekolah dalam lintasan.\n3. Rujukan fasilitas kesehatan dialihkan ke rumah sakit koridor aman bebas abu.`;
+const SCENARIO_STYLE: Record<Scenario, { id: string; en: string; cls: string; borderCls: string }> = {
+  ash_threat: {
+    id: "Ancaman Abu Vulkanik",
+    en: "Ash Threat",
+    cls: "bg-rose-500/20 text-rose-700 border-rose-400/40",
+    borderCls: "border-rose-400/50"
+  },
+  smoke_threat: {
+    id: "Ancaman Asap Karhutla",
+    en: "Smoke Threat",
+    cls: "bg-orange-500/20 text-orange-800 border-orange-400/40",
+    borderCls: "border-orange-400/50"
+  },
+  prevention: {
+    id: "Pencegahan Dini",
+    en: "Prevention",
+    cls: "bg-emerald-500/20 text-emerald-800 border-emerald-400/40",
+    borderCls: "border-emerald-400/50"
+  },
+  clear: {
+    id: "Kondisi Aman",
+    en: "All Clear",
+    cls: "bg-sky-500/20 text-sky-800 border-sky-400/40",
+    borderCls: "border-sky-400/50"
+  }
+};
 
-  const defaultWaMessage = isVolcano
-    ? `[PERINGATAN DINI PVMBG/BPBD]\nTerjadi peningkatan aktivitas vulkanik. Warga dalam radius KRB dihimbau:\n1. DILARANG menggunakan lensa kontak (softlens) karena abu silika tajam dapat merobek kornea mata.\n2. Wajib memakai kacamata pelindung dan masker N95/KN95 saat keluar rumah.\n3. Jangan mendekati bantaran sungai aliran lahar dingin.\nInformasi resmi hubungi SPGDT 119.`
-    : `[PERINGATAN KABUT ASAP KARHUTLA]\nIndeks partikel udara PM2.5 meningkat berbahaya. Himbauan warga:\n1. Tutup rapat ventilasi rumah & nyalakan penyaring udara (HEPA).\n2. Wajib menggunakan respirator N95 jika harus beraktivitas di luar.\n3. Anak-anak dan lansia dilarang beraktivitas luar ruang.\nHubungi posko darurat 119 bila mengalami sesak napas.`;
+export const TabProtocolAI: React.FC<TabProtocolAIProps> = ({
+  advisory,
+  currentCoords,
+  placeName,
+  onOpenGpsModal
+}) => {
+  const center = currentCoords ? { lat: currentCoords.lat, lon: currentCoords.lng } : null;
+  const [point, setPoint] = useState<{ lat: number; lon: number } | null>(center);
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [copiedPr, setCopiedPr] = useState(false);
+  const [copiedWa, setCopiedWa] = useState(false);
 
-  const prText = advisory?.gemini_briefing?.press_release_body || advisory?.press_release || defaultPrMessage;
-  const waText = advisory?.gemini_briefing?.whatsapp_broadcast || advisory?.wa_broadcast || advisory?.broadcast_text || defaultWaMessage;
+  // Titik episentrum mengikuti pusat simulasi yang sedang aktif
+  useEffect(() => {
+    if (currentCoords) {
+      setPoint({ lat: currentCoords.lat, lon: currentCoords.lng });
+    }
+  }, [currentCoords?.lat, currentCoords?.lng]);
 
-  const currentText = docType === "press" ? prText : waText;
+  const loadAdvice = useCallback(async (lat: number, lon: number) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.getNearbyAdvice(lat, lon, "id");
+      setData(res);
+    } catch (err: any) {
+      setData(null);
+      setError(`Ringkasan taktis tidak dapat dimuat: ${err?.message || "server offline"}.`);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(currentText);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
+  useEffect(() => {
+    if (point) loadAdvice(point.lat, point.lon);
+  }, [point, loadAdvice]);
+
+  const brief = data?.brief;
+  const facts = data?.facts;
+  const scenarioKey: Scenario = (data?.scenario as Scenario) || "clear";
+  const scStyle = SCENARIO_STYLE[scenarioKey] || SCENARIO_STYLE.ash_threat;
+
+  const handleCopyPr = () => {
+    if (!advisory) return;
+    const text = `${advisory.press_release_body || advisory.gemini_briefing?.press_release_body || ""}\n\nCatatan Penting: ${advisory.key_callout || ""}`;
+    navigator.clipboard.writeText(text);
+    setCopiedPr(true);
+    setTimeout(() => setCopiedPr(false), 2000);
   };
 
-  const priorityDistricts: string[] = advisory?.population_summary?.priority_districts || [];
-  const alertLevel = advisory?.alert_level || "SIAGA TANGGAP DARURAT";
+  const handleCopyWa = () => {
+    if (!advisory) return;
+    navigator.clipboard.writeText(advisory.whatsapp_broadcast || advisory.gemini_briefing?.whatsapp_broadcast || advisory.broadcast_text || "");
+    setCopiedWa(true);
+    setTimeout(() => setCopiedWa(false), 2000);
+  };
+
+  const prBody = advisory?.press_release_body || advisory?.gemini_briefing?.press_release_body;
+  const waBody = advisory?.whatsapp_broadcast || advisory?.gemini_briefing?.whatsapp_broadcast || advisory?.broadcast_text;
 
   return (
     <div className="space-y-3.5 text-xs text-[#2b211e]">
-      {/* 1. Incident Command Header */}
-      <div>
-        <h3 className="font-sans text-[11px] font-bold uppercase tracking-wider text-[#A14646] mb-0.5">
-          TANGGAP DARURAT &amp; EDUKASI
-        </h3>
-        <span className="text-[10px] text-[#d97706] font-bold uppercase block mb-1.5">
-          {alertLevel}
-        </span>
-        <p className="text-[11px] text-[#2b211e]/70 leading-relaxed mb-2">
-          Instruksi keselamatan warga dan diseminasi komunikasi darurat multi-kanal.
-        </p>
+      {/* 0. Banner AI GPS Siaga Personal Warga (Pemeriksaan Personal Berbasis Sensor Lokasi Perangkat) */}
+      <div
+        className="rounded-xl p-3 shadow-xs flex items-center justify-between border"
+        style={{
+          background: "linear-gradient(135deg, rgba(6, 95, 70, 0.08) 0%, rgba(245, 239, 227, 0.95) 100%)",
+          borderColor: "rgba(16, 185, 129, 0.35)"
+        }}
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-emerald-600/15 flex items-center justify-center text-emerald-800 shrink-0">
+            <CrosshairSimple size={16} weight="bold" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-[#140f0e]">AI GPS Saya</h4>
+            <p className="text-[10px] text-[#2b211e]/70">Periksa zonasi bahaya abu/karhutla di lokasi Anda saat ini</p>
+          </div>
+        </div>
+        {onOpenGpsModal && (
+          <button
+            type="button"
+            onClick={onOpenGpsModal}
+            className="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-[11px] transition shadow-xs cursor-pointer flex items-center gap-1.5 shrink-0 active:scale-95"
+          >
+            <CrosshairSimple size={14} weight="bold" />
+            <span>Cek GPS</span>
+          </button>
+        )}
       </div>
 
-      {/* 2. Wilayah Prioritas Pengawasan (Jika Ada) */}
-      {priorityDistricts.length > 0 && (
-        <div className="bg-white border border-[#2b211e]/10 rounded-lg p-2.5 shadow-xs">
-          <span className="text-[10px] font-bold text-[#2b211e]/60 uppercase tracking-wider block mb-1.5">
-            Wilayah Prioritas Terdampak
-          </span>
-          <div className="flex flex-wrap gap-1">
-            {priorityDistricts.map((d) => (
-              <span
-                key={d}
-                className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#EB895B]/15 text-[#A14646] border border-[#EB895B]/30"
-              >
-                Kec./Kab. {d}
-              </span>
-            ))}
+      {/* 1. Header Informasi Episentrum Simulasi */}
+      <div className="bg-white border border-[#2b211e]/10 rounded-xl p-3 shadow-xs">
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-[#EB895B] text-white tracking-wider">
+              SIMULASI
+            </span>
+            <div className="flex items-center gap-1 text-[#140f0e] font-bold text-xs">
+              <Crosshair size={14} weight="duotone" className="text-[#A14646]" />
+              <span>Episentrum: {placeName || "Sumber Kejadian"}</span>
+            </div>
           </div>
+
+          <button
+            type="button"
+            onClick={() => point && loadAdvice(point.lat, point.lon)}
+            disabled={loading || !point}
+            className="flex items-center gap-1 px-2 py-0.5 rounded-full border border-[#2b211e]/20 text-[#2b211e]/70 hover:bg-[#2b211e]/5 text-[10px] font-bold cursor-pointer transition"
+            title="Muat Ulang AI"
+          >
+            <ArrowClockwise size={12} weight="bold" className={loading ? "animate-spin text-[#EB895B]" : ""} />
+            <span>Segarkan</span>
+          </button>
+        </div>
+
+        <div className="text-[10px] text-[#2b211e]/60 font-mono">
+          Koordinat Pusat: {point ? `${point.lat.toFixed(4)}°, ${point.lon.toFixed(4)}°` : "-"}
+          {loading && <span className="ml-2 text-[#EB895B] animate-pulse">· Menganalisis...</span>}
+        </div>
+      </div>
+
+      {error && (
+        <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-[11px]">
+          {error}
         </div>
       )}
 
-      {/* 3. Box Peringatan Kritis Kemenkes (Anti-Softlens / PM2.5) */}
-      <div className="bg-white border border-[#2b211e]/10 rounded-lg p-2.5 shadow-xs text-[#2b211e]">
-        <div className="flex items-center gap-1.5 text-[#A14646] font-bold text-[11px] mb-1.5">
-          <ShieldAlert className="w-3.5 h-3.5 text-[#A14646] shrink-0" />
-          <span>{isVolcano ? "Peringatan Bahaya Lensa Kontak (Softlens)" : "Peringatan Bahaya Partikel PM2.5"}</span>
-        </div>
-        <p className="text-[10px] leading-relaxed text-[#2b211e]/75">
-          {isVolcano ? (
-            <>
-              Abu vulkanik mengandung pecahan kaca silika mikroskopis tajam. Penggunaan <strong>lensa kontak (softlens)</strong> dapat menjebak kristal silika dan mengikis kornea saat berkedip, memicu abrasi kornea permanen.
-            </>
-          ) : (
-            <>
-              Asap gambut membawa partikel halus PM2.5 dan karbon monoksida yang menembus kantung udara paru-paru terdalam, memicu hipoksia dan serangan ISPA akut pada anak dan lansia.
-            </>
-          )}
-        </p>
-        <div className="mt-2 text-[10px] font-semibold text-[#A14646] bg-[#DA6556]/10 py-1 px-1.5 rounded border border-[#DA6556]/20">
-          Mandat: {isVolcano ? "Lepas softlens, gunakan kacamata pelindung & masker N95." : "Tutup ventilasi, nyalakan air purifier & pakai masker N95."}
-        </div>
-      </div>
-
-      {/* 4. Draf Siaran Darurat AI (Switcher: Siaran Pers vs WhatsApp Warga) */}
-      <div className="bg-white border border-[#2b211e]/10 rounded-lg p-2.5 shadow-xs">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1.5">
-            <Bot className="w-3.5 h-3.5 text-[#EB895B]" />
-            <span className="font-bold text-[11px] text-[#2b211e]">Draf Komunikasi Darurat AI</span>
+      {/* 2. Draf Siaran Pers Resmi & Buletin Darurat (Google Gemini AI) */}
+      {advisory && (
+        <div className="bg-white border border-[#2b211e]/15 rounded-xl p-3.5 shadow-xs space-y-3">
+          <div className="flex items-center justify-between border-b border-[#2b211e]/10 pb-2">
+            <div className="flex items-center gap-1.5 text-[#140f0e] font-bold text-xs">
+              <Sparkle size={16} weight="duotone" className="text-amber-500" />
+              <span>Draf Siaran Pers &amp; Buletin (Gemini AI)</span>
+            </div>
+            <span className="text-[9.5px] font-mono text-[#2b211e]/60">
+              {advisory.engine || "Google Gemini"}
+            </span>
           </div>
-          <button
-            type="button"
-            onClick={handleCopy}
-            className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-[#EB895B] hover:bg-[#DA6556] text-white transition cursor-pointer shadow-xs"
-          >
-            {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-            <span>{copied ? "Tersalin" : "Salin Dokumen"}</span>
-          </button>
-        </div>
 
-        {/* Switcher Tabs */}
-        <div className="grid grid-cols-2 gap-1 p-0.5 rounded bg-[#f7f3ed] border border-[#2b211e]/10 text-[10px] mb-2 font-medium">
-          <button
-            type="button"
-            onClick={() => setDocType("whatsapp")}
-            className={`py-1 px-1.5 rounded flex items-center justify-center gap-1 transition cursor-pointer ${
-              docType === "whatsapp"
-                ? "bg-[#EB895B] text-white font-semibold shadow-xs"
-                : "text-[#2b211e]/70 hover:text-[#2b211e]"
-            }`}
-          >
-            <MessageSquare className="w-3 h-3" />
-            <span>Pesan WA Warga</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setDocType("press")}
-            className={`py-1 px-1.5 rounded flex items-center justify-center gap-1 transition cursor-pointer ${
-              docType === "press"
-                ? "bg-[#EB895B] text-white font-semibold shadow-xs"
-                : "text-[#2b211e]/70 hover:text-[#2b211e]"
-            }`}
-          >
-            <FileText className="w-3 h-3" />
-            <span>Siaran Pers Media</span>
-          </button>
-        </div>
+          {/* Pernyataan Kunci Kedudukan Kebijakan */}
+          {advisory.key_callout && (
+            <div className="bg-amber-50 border border-amber-200/80 rounded-lg p-2.5 flex items-start gap-2">
+              <Warning size={15} weight="duotone" className="text-amber-700 shrink-0 mt-0.5" />
+              <div className="text-[11px] text-amber-900 leading-snug font-medium">
+                <strong>Fokus Kebijakan:</strong> {advisory.key_callout}
+              </div>
+            </div>
+          )}
 
-        <pre className="text-[10px] leading-relaxed text-[#2b211e]/80 whitespace-pre-wrap font-sans bg-[#f7f3ed] p-2 rounded border border-[#2b211e]/10 max-h-48 overflow-y-auto custom-scrollbar">
-          {currentText}
-        </pre>
+          {/* Siaran Pers Resmi Media */}
+          {prBody && (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1 text-[11px] font-bold text-[#A14646]">
+                  <FileText size={14} weight="duotone" />
+                  <span>Siaran Pers Resmi Media (BPBD)</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyPr}
+                  className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-[#EB895B] hover:bg-[#DA6556] text-white transition cursor-pointer shadow-xs"
+                >
+                  {copiedPr ? <Check size={12} weight="bold" /> : <Copy size={12} weight="duotone" className="text-white" />}
+                  <span>{copiedPr ? "Tersalin" : "Salin Siaran Pers"}</span>
+                </button>
+              </div>
+              <p className="text-[10.5px] text-[#2b211e]/85 leading-relaxed bg-[#f7f3ed] p-2.5 rounded-lg border border-[#2b211e]/10 whitespace-pre-line font-sans">
+                {prBody}
+              </p>
+            </div>
+          )}
+
+          {/* Pesan Siaran Darurat Warga WhatsApp */}
+          {waBody && (
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-800">
+                  <ChatCircleDots size={14} weight="duotone" />
+                  <span>Buletin Siaran Darurat Warga (WhatsApp)</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyWa}
+                  className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-700 hover:bg-emerald-800 text-white transition cursor-pointer shadow-xs"
+                >
+                  {copiedWa ? <Check size={12} weight="bold" /> : <Copy size={12} weight="duotone" className="text-white" />}
+                  <span>{copiedWa ? "Tersalin" : "Salin Buletin"}</span>
+                </button>
+              </div>
+              <pre className="text-[10px] text-[#2b211e]/85 leading-relaxed bg-emerald-50/50 p-2.5 rounded-lg border border-emerald-200/60 whitespace-pre-wrap font-sans">
+                {waBody}
+              </pre>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 3. Kartu Protokol Taktis di Zona Episentrum */}
+      {brief && (
+        <div className={`bg-white border rounded-xl p-3 shadow-xs space-y-2.5 ${scStyle.borderCls}`}>
+          <div className="flex items-center justify-between">
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider ${scStyle.cls}`}>
+              {scStyle.id}
+            </span>
+            <span className="text-[9.5px] text-[#2b211e]/50 font-mono">
+              Zona Episentrum Kejadian
+            </span>
+          </div>
+
+          <h4 className="text-[12px] font-bold text-[#140f0e] leading-snug">
+            {brief.headline}
+          </h4>
+
+          <p className="text-[10.5px] text-[#2b211e]/80 leading-relaxed bg-[#f7f3ed] p-2 rounded-lg border border-[#2b211e]/10">
+            {brief.summary}
+          </p>
+
+          <div className="pt-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#A14646] block mb-1.5">
+              Tindakan Taktis di Zona Kejadian:
+            </span>
+            <ul className="space-y-1.5 text-[10.5px]">
+              {(brief.actions || []).map((action: string, idx: number) => (
+                <li key={idx} className="flex items-start gap-1.5 leading-snug">
+                  <CheckCircle size={15} weight="duotone" className="text-emerald-600 shrink-0 mt-0.5" />
+                  <span className="text-[#2b211e]/90">{action}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {facts && (
+            <div className="pt-2 border-t border-[#2b211e]/10 space-y-1 text-[10px] text-[#2b211e]/70">
+              <span className="font-bold uppercase tracking-wider text-[9px] text-[#2b211e]/60 block mb-0.5">
+                Telemetri Berbasis Fakta:
+              </span>
+              {facts.volcanoes_nearby?.[0] && (
+                <div>• Gunung Terdekat: <strong>{facts.volcanoes_nearby[0].name}</strong> (Level {facts.volcanoes_nearby[0].level}) · {facts.volcanoes_nearby[0].distance_km} km</div>
+              )}
+              {facts.hotspots && (
+                <div>• Deteksi Titik Api Satelit: <strong>{facts.hotspots.within_50km}</strong> titik api dalam 50 km</div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 4. Standar Efektivitas Masker Resmi Kemenkes RI */}
+      <div className="bg-white border border-[#2b211e]/10 rounded-xl p-3 shadow-xs space-y-2">
+        <div className="flex items-center gap-1.5 text-[#A14646] font-bold text-[11px]">
+          <ShieldWarning size={15} weight="duotone" />
+          <span>Standar Masker &amp; Respirator (Kemenkes RI)</span>
+        </div>
+        <div className="grid grid-cols-2 gap-1.5 text-[10px]">
+          <div className="p-2 rounded bg-rose-50 border border-rose-200">
+            <span className="font-bold text-rose-800 block text-[10.5px]">Masker Bedah &amp; Kain</span>
+            <span className="text-rose-700/80 text-[9px] leading-tight block mt-0.5">
+              Kebocoran samping 30-50%. Tidak mampu menyaring abu silika tajam.
+            </span>
+            <span className="inline-block mt-1 px-1.5 py-0.2 bg-rose-200 text-rose-900 rounded text-[8.5px] font-bold uppercase">
+              Tidak Disarankan
+            </span>
+          </div>
+          <div className="p-2 rounded bg-emerald-50 border border-emerald-200">
+            <span className="font-bold text-emerald-800 block text-[10.5px]">N95 / KN95 / KF94</span>
+            <span className="text-emerald-700/80 text-[9px] leading-tight block mt-0.5">
+              Filtrasi partikel &ge;95%. Mencegah silikosis &amp; ISPA akut.
+            </span>
+            <span className="inline-block mt-1 px-1.5 py-0.2 bg-emerald-200 text-emerald-900 rounded text-[8.5px] font-bold uppercase">
+              Wajib Resmi
+            </span>
+          </div>
+        </div>
       </div>
 
-      {/* 5. Standar Efektivitas Masker */}
-      <div className="bg-white border border-[#2b211e]/10 rounded-lg p-2.5 shadow-xs space-y-1.5">
-        <span className="text-[10px] font-bold text-[#2b211e]/60 uppercase tracking-wider block">
-          Standar Efektivitas Masker (Kemenkes)
-        </span>
-        <div className="flex justify-between items-center text-[11px] p-1.5 bg-[#DA6556]/10 rounded">
-          <span className="text-[#A14646] font-medium">Masker Kain &amp; Bedah</span>
-          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white text-[#A14646]">Tidak Efektif</span>
-        </div>
-        <div className="flex justify-between items-center text-[11px] p-1.5 bg-[#2a8485]/10 rounded">
-          <span className="text-[#1f6667] font-semibold">Respirator N95 / KN95 / FFP2</span>
-          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white text-[#1f6667]">Standar Medis</span>
-        </div>
-      </div>
+      {/* Tombol Cetak / PDF */}
+      <button
+        type="button"
+        onClick={() => window.print()}
+        className="w-full py-2 px-3 rounded-lg bg-[#EB895B] hover:bg-[#DA6556] text-white font-bold text-xs transition cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
+      >
+        <Printer size={15} weight="duotone" />
+        <span>CETAK DOKUMEN MITIGASI (PDF / A4)</span>
+      </button>
     </div>
   );
 };

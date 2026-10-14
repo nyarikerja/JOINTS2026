@@ -1,0 +1,30 @@
+{
+  "event_id": "lamongan",
+  "hazard": "volcano",
+  "name": "Erupsi G. Lamongan (Lumajang, Jawa Timur)",
+  "start_utc": "2026-10-11T00:02:00.726221+00:00",
+  "duration_h": 24.0,
+  "alert_level_at_event": "Level I (Normal)",
+  "restricted_radius_km": 1.0,
+  "column_height_km": 8.0,
+  "plume_top_asl_km": 12.0,
+  "vent_elevation_m": 1651.0,
+  "coordinates": {
+    "latitude": -7.979,
+    "longitude": 113.342
+  },
+  "bbox": [
+    112.642,
+    -8.679,
+    114.042,
+    -7.279
+  ],
+  "source": "PVMBG Badan Geologi ESDM RI (Katalog 70 Gunung Api Nasional)",
+  "members_source": "open_meteo_live_forecast_api",
+  "n_members": 15,
+  "data_status": {
+    "weather": "open_meteo_live_or_ensemble",
+    "vona": "pvmbg_national_catalog",
+    "column_height": "estimated_standard"
+  }
+}

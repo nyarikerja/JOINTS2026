@@ -10,8 +10,11 @@ from pathlib import Path
 from typing import Any, Dict
 
 import yaml
+from dotenv import load_dotenv
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent.parent
+# Muat backend/.env sebelum Settings dibaca (variabel lingkungan yang sudah ada tidak ditimpa)
+load_dotenv(BACKEND_DIR / ".env", override=False)
 CONFIG_DIR = BACKEND_DIR / "config"
 DATA_DIR = BACKEND_DIR / "data"
 EVENTS_DIR = DATA_DIR / "events"

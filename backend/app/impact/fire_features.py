@@ -20,7 +20,7 @@ def rank_hotspot_clusters(
     hotspots: List[Dict[str, Any]],
     run_output: Dict[str, Any],
     grid: SimulationGrid,
-    eps_deg: float = 0.25
+    eps_deg: float = 0.05
 ) -> List[Dict[str, Any]]:
     """
     Mengelompokkan titik api menggunakan cKDTree spasial dan memberi peringkat
@@ -110,7 +110,7 @@ def rank_hotspot_clusters(
             "hotspot_count": len(cinfo["hotspot_indices"]),
             "total_frp_mw": round(cinfo["frp_total"], 1),
             "exposure_contribution_score": round(exposure_score, 1),
-            "hotspot_ids": [hotspots[i]["id"] for i in cinfo["hotspot_indices"]],
+            "hotspot_ids": [hotspots[i]["id"] for i in cinfo["hotspot_indices"][:50]],
         })
 
     # Urutkan dari kontribusi terbesar
@@ -125,7 +125,8 @@ def simulate_extinguish_delta(
     run_output: Dict[str, Any],
     extinguish_cluster_ids: List[int],
     grid: SimulationGrid,
-    hotspots: List[Dict[str, Any]]
+    hotspots: List[Dict[str, Any]],
+    peat_fraction: float = 0.40,
 ) -> Dict[str, Any]:
     """
     Menghitung penurunan dampak jika klaster titik api tertentu dipadamkan.
@@ -157,7 +158,8 @@ def simulate_extinguish_delta(
     schools_saved = scale_range(base_impact["schools_exposed"], reduction_fraction)
 
     # Penurunan emisi karbon
-    carbon_base = calculate_carbon_emissions(hotspots, duration_hours=48.0)
+    carbon_base = calculate_carbon_emissions(hotspots, duration_hours=float(run_output.get("emission_duration_h") or 24.0),
+                                             peat_fraction=peat_fraction)
     carbon_reduced = scale_range(carbon_base["total_co2e_tonnes"], reduction_fraction)
 
     return {
@@ -183,7 +185,10 @@ def calculate_carbon_emissions(
     Emisi karbon: ~0.47 fraksi C dalam biomassa kering * (44/12) faktor konversi ke CO2.
     Gambut memiliki densitas karbon dan faktor emisi lebih tinggi (pengali ~1.6).
     """
-    total_frp = sum(float(h.get("frp", 25.0)) for h in hotspots if h.get("is_active", True))
+    from app.ingest.firms import mean_instantaneous_frp_scale, overpass_count
+
+    frp_sum = sum(float(h.get("frp") or 0.0) for h in hotspots if h.get("is_active", True))
+    total_frp = frp_sum * mean_instantaneous_frp_scale(hotspots)
     duration_s = duration_hours * 3600.0
 
     # Faktor Wooster (0.27 / 0.37 / 0.45 kg/MJ)
@@ -217,5 +222,13 @@ def calculate_carbon_emissions(
         "unit": "metric_tonnes_co2e",
         "duration_hours": duration_hours,
         "source": "Wooster dkk. 2005 & Li dkk. 2018 (D13)",
-        "caveat": "Rentang dihitung dari variasi faktor FRP-ke-biomassa 0.27-0.45 kg/MJ dan fraksi gambut."
+        "caveat": (
+            "Rentang dihitung dari variasi faktor FRP-ke-biomassa 0.27-0.45 kg/MJ dengan rata-rata FRP sesaat per lintasan satelit "
+            "yang dianggap konstan "
+            f"selama {duration_hours:.0f} jam. Fraksi gambut {peat_fraction:.0%} (lihat peat_basis)."
+        ),
+        "peat_fraction_assumed": peat_fraction,
+        "n_hotspots": len(hotspots),
+        "mean_instantaneous_frp_mw": round(total_frp, 1),
+        "n_overpasses": overpass_count(hotspots),
     }

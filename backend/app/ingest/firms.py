@@ -1,98 +1,92 @@
 """
 app/ingest/firms.py
 
-Modul ingest untuk titik api dan FRP dari NASA FIRMS (D09).
-Mendukung pemuatan CSV lokal dan penyesuaian (tambah/hapus) di mode experiment.
+Titik api NASA FIRMS (D09) per wilayah, di atas cache near-real-time app/services/firms_live.py.
+
+Wilayah sebuah event:
+- kawasan hutan dengan batas poligon -> titik di dalam poligon;
+- kawasan hutan/zona karhutla tanpa poligon -> kotak +-AREA_HALF_DEG di sekitar pusat;
+- titik kustom -> kotak +-CUSTOM_HALF_DEG.
 """
 
-from typing import Any, Dict, List
+import json
+from typing import Any, Dict, List, Optional
 
-import pandas as pd
+from app.core.config import BACKEND_DIR, EVENTS_DIR
+from app.services import firms_live
 
-from app.core.config import EVENTS_DIR
+ACTIVE_WINDOW_H = 24.0
+AREA_HALF_DEG = 0.5
+CUSTOM_HALF_DEG = 0.25
+
+
+def _forest_geometry(event_id: str) -> Optional[Dict[str, Any]]:
+    try:
+        from app.db.repositories.forest_repo import ForestRepository
+        f = ForestRepository.get_by_id(event_id)
+        if f and f.get("geometry"):
+            return f["geometry"]
+    except Exception:
+        pass
+    path = BACKEND_DIR / "data" / "layers" / "forest_boundaries.geojson"
+    if path.exists():
+        try:
+            data = json.loads(path.read_text(encoding="utf-8-sig"))
+            feat = next((x for x in data.get("features", []) if x.get("id") == event_id
+                         or (x.get("properties") or {}).get("id") == event_id), None)
+            if feat:
+                return feat["geometry"]
+        except Exception:
+            pass
+    return None
+
+
+def event_area(event_id: str, center: Optional[tuple] = None, custom: bool = False) -> Dict[str, Any]:
+    """Batas wilayah pencarian titik api untuk satu event."""
+    geom = None if custom else _forest_geometry(event_id)
+    if geom:
+        from shapely.geometry import shape
+        poly = shape(geom)
+        w, s, e, n = poly.bounds
+        return {"kind": "polygon", "polygon": poly, "bbox": [w, s, e, n]}
+    if center is None:
+        meta = EVENTS_DIR / event_id / "meta.json"
+        if meta.exists():
+            c = json.loads(meta.read_text(encoding="utf-8-sig")).get("coordinates", {})
+            center = (c.get("latitude"), c.get("longitude"))
+    if center is None or center[0] is None:
+        return {"kind": "none", "polygon": None, "bbox": None}
+    half = CUSTOM_HALF_DEG if custom else AREA_HALF_DEG
+    lat, lon = float(center[0]), float(center[1])
+    return {"kind": "bbox", "polygon": None, "bbox": [lon - half, lat - half, lon + half, lat + half]}
 
 
 class FirmsIngest:
     @staticmethod
-    def load_event_hotspots(event_id: str | None = None, overrides: Dict[str, Any] | None = None) -> List[Dict[str, Any]]:
-        # Mode Nasional: Kumpulkan titik api dari seluruh kawasan karhutla se-Indonesia
-        if not event_id or event_id in ["national", "all", "indonesia"]:
-            records = []
-            for d in sorted(EVENTS_DIR.iterdir()):
-                if d.is_dir() and (d.name.startswith("karhutla_") or d.name.startswith("hutan_") or d.name == "live_kalimantan"):
-                    csv_path = d / "hotspots.csv"
-                    if csv_path.exists() and csv_path.stat().st_size > 0:
-                        try:
-                            df = pd.read_csv(csv_path)
-                            for idx, row in df.iterrows():
-                                lat = row.get("latitude")
-                                lon = row.get("longitude")
-                                if pd.isna(lat) or pd.isna(lon):
-                                    continue
-                                frp_val = row.get("frp", 25.0)
-                                frp_float = float(frp_val) if not pd.isna(frp_val) else 25.0
-                                records.append({
-                                    "id": f"{d.name}_{idx}",
-                                    "latitude": float(lat),
-                                    "longitude": float(lon),
-                                    "frp": frp_float,
-                                    "confidence": str(row.get("confidence", "nominal")),
-                                    "acq_date": str(row.get("acq_date", "")),
-                                    "acq_time": str(row.get("acq_time", "")),
-                                    "is_active": True,
-                                })
-                        except Exception:
-                            continue
-            return records
-
-        csv_path = EVENTS_DIR / event_id / "hotspots.csv"
-        if not csv_path.exists() or csv_path.stat().st_size == 0:
+    def load_area_hotspots(area: Dict[str, Any], hours: float = ACTIVE_WINDOW_H) -> List[Dict[str, Any]]:
+        if not area.get("bbox"):
             return []
+        w, s, e, n = area["bbox"]
+        return firms_live.query(hours, s, n, w, e, polygon=area.get("polygon"))
 
-        try:
-            df = pd.read_csv(csv_path)
-            if df.empty:
-                return []
-        except Exception:
-            return []
-        # Standarisasi kolom
-        records = []
-        for idx, row in df.iterrows():
-            lat = row.get("latitude")
-            lon = row.get("longitude")
-            if pd.isna(lat) or pd.isna(lon):
-                continue
-            frp_val = row.get("frp", 25.0)
-            frp_float = float(frp_val) if not pd.isna(frp_val) else 25.0
-            rec = {
-                "id": f"hotspot_{idx}",
-                "latitude": float(lat),
-                "longitude": float(lon),
-                "frp": frp_float,
-                "confidence": str(row.get("confidence", "nominal")),
-                "acq_date": str(row.get("acq_date", "")),
-                "acq_time": str(row.get("acq_time", "")),
-                "is_active": True,
-            }
-            records.append(rec)
+    @staticmethod
+    def load_event_hotspots(event_id: str | None = None, hours: float = ACTIVE_WINDOW_H) -> List[Dict[str, Any]]:
+        if not event_id or event_id in ("national", "all", "indonesia"):
+            return firms_live.query(hours)
+        return FirmsIngest.load_area_hotspots(event_area(event_id), hours)
 
-        # Proses overrides (tambah / padamkan titik api)
-        if overrides and "hotspots" in overrides and overrides["hotspots"]:
-            h_ovr = overrides["hotspots"]
-            remove_ids = set(h_ovr.get("remove", []))
-            if remove_ids:
-                records = [r for r in records if r["id"] not in remove_ids]
 
-            for new_pt in h_ovr.get("add", []):
-                records.append({
-                    "id": f"added_{len(records)}",
-                    "latitude": float(new_pt["latitude"]),
-                    "longitude": float(new_pt["longitude"]),
-                    "frp": float(new_pt.get("frp", 30.0)),
-                    "confidence": "high",
-                    "acq_date": "experiment",
-                    "acq_time": "0000",
-                    "is_active": True,
-                })
+def overpass_count(hotspots: List[Dict[str, Any]]) -> int:
+    """Jumlah lintasan satelit unik (sensor + waktu akuisisi 10 menit) dalam daftar deteksi."""
+    keys = {(h.get("sensor"), str(h.get("acq_datetime_utc") or h.get("acq_date"))[:15]) for h in hotspots}
+    return max(1, len(keys))
 
-        return records
+
+def mean_instantaneous_frp_scale(hotspots: List[Dict[str, Any]]) -> float:
+    """
+    FRP adalah daya sesaat saat satelit melintas. Menjumlahkan FRP dari banyak lintasan lalu
+    menganggapnya konstan sepanjang hari menghitung api yang sama berkali-kali. Faktor ini
+    mengubah jumlah FRP menjadi rata-rata FRP sesaat per lintasan.
+    """
+    return 1.0 / overpass_count(hotspots)
+

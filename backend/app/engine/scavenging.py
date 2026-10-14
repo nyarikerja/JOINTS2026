@@ -13,7 +13,7 @@ from app.engine.particles import ParticleArray
 
 def apply_rain_scavenging(
     p: ParticleArray,
-    rain_rate_mm_h: float,
+    rain_rate_mm_h,
     dt_s: float,
     a: float = 1.0e-4,
     b: float = 0.8
@@ -22,15 +22,16 @@ def apply_rain_scavenging(
     Menerapkan pencucian hujan pada partikel aktif.
     Mengembalikan array massa yang tercuci (kg) per partikel aktif.
     """
-    if rain_rate_mm_h <= 0.01:
+    rain = np.asarray(rain_rate_mm_h, dtype=float)
+    if np.all(rain <= 0.01):
         return np.zeros(0, dtype=float)
 
     active_idx = np.where(p.active)[0]
     if len(active_idx) == 0:
         return np.zeros(0, dtype=float)
 
-    # Koefisien pencucian L (1/s)
-    L = a * (rain_rate_mm_h ** b)
+    # Koefisien pencucian L (1/s); hujan bisa skalar atau per partikel aktif
+    L = a * (np.maximum(rain, 0.0) ** b)
     loss_fraction = 1.0 - np.exp(-L * dt_s)
     loss_fraction = np.clip(loss_fraction, 0.0, 1.0)
 

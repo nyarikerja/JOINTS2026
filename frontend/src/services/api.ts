@@ -49,7 +49,7 @@ export const api = {
 
   getCoastline: () => request<any>("/layers/coastline"),
   getNationalVolcanoes: () => request<any>("/layers/volcanoes-national"),
-  getHotspots: (eventId = "live_kalimantan") => request<any>(`/layers/hotspots?event_id=${eventId}`),
+  getHotspots: (eventId = "national") => request<any>(`/layers/hotspots?event_id=${eventId || "national"}`),
   getFacilities: () => request<any>("/layers/facilities"),
 
   runSimulation: (payload: SimulationPayload) =>
@@ -68,5 +68,12 @@ export const api = {
     request<any>(`/runs/${runId}/evacuation-route?from_lat=${fromLat}&from_lon=${fromLon}&to_lat=${toLat}&to_lon=${toLon}&from_name=${encodeURIComponent(fromName)}&to_name=${encodeURIComponent(toName)}`),
   getEvents: () => request<any>("/events"),
   getNationalForests: () => request<any>("/layers/forests"),
+  getForestBoundaries: () => request<any>("/layers/forest-boundaries"),
+  getWind: (level: "10m" | "850hPa" = "10m", hours = 72) => request<any>(`/layers/wind?level=${level}&hours=${hours}`),
+  getSmokePaths: (hours = 72) => request<any>(`/layers/smoke-paths?hours=${hours}`),
+  getHeatmap: (days = 7) => request<any>(`/layers/heatmap?days=${days}`),
+  getNearbyAdvice: (lat: number, lon: number, lang = "id") => request<any>(`/advice/nearby?lat=${lat}&lon=${lon}&lang=${lang}`),
+  getWindAtHour: (runId: string, hour: number) => request<any>(`/runs/${runId}/wind?t=${hour}`),
+  getBrief: (body: any) => request<any>("/api/v1/brief", { method: "POST", body: JSON.stringify(body) }),
   playDemo: (eventId: string) => request<any>(`/demo/play/${eventId}`)
 };

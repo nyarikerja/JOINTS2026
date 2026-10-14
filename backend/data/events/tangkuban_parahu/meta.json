@@ -1,0 +1,30 @@
+{
+  "event_id": "tangkuban_parahu",
+  "hazard": "volcano",
+  "name": "Erupsi G. Tangkuban Parahu (Bandung Barat, Jawa Barat)",
+  "start_utc": "2026-10-11T01:24:35.747855+00:00",
+  "duration_h": 24.0,
+  "alert_level_at_event": "Level I (Normal)",
+  "restricted_radius_km": 1.5,
+  "column_height_km": 8.0,
+  "plume_top_asl_km": 12.0,
+  "vent_elevation_m": 2084.0,
+  "coordinates": {
+    "latitude": -6.77,
+    "longitude": 107.6
+  },
+  "bbox": [
+    106.89999999999999,
+    -7.47,
+    108.3,
+    -6.069999999999999
+  ],
+  "source": "PVMBG Badan Geologi ESDM RI (Katalog 70 Gunung Api Nasional)",
+  "members_source": "open_meteo_live_forecast_api",
+  "n_members": 15,
+  "data_status": {
+    "weather": "open_meteo_live_or_ensemble",
+    "vona": "pvmbg_national_catalog",
+    "column_height": "estimated_standard"
+  }
+}

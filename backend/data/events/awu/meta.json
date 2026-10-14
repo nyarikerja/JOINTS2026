@@ -1,0 +1,30 @@
+{
+  "event_id": "awu",
+  "hazard": "volcano",
+  "name": "Erupsi G. Awu (Kep. Sangihe, Sulawesi Utara)",
+  "start_utc": "2026-10-10T11:56:21.051397+00:00",
+  "duration_h": 24.0,
+  "alert_level_at_event": "Level III (Siaga)",
+  "restricted_radius_km": 5.0,
+  "column_height_km": 8.0,
+  "plume_top_asl_km": 12.0,
+  "vent_elevation_m": 1320.0,
+  "coordinates": {
+    "latitude": 3.67,
+    "longitude": 125.45
+  },
+  "bbox": [
+    124.75,
+    2.9699999999999998,
+    126.15,
+    4.37
+  ],
+  "source": "PVMBG Badan Geologi ESDM RI (Katalog 70 Gunung Api Nasional)",
+  "members_source": "open_meteo_live_forecast_api",
+  "n_members": 15,
+  "data_status": {
+    "weather": "open_meteo_live_or_ensemble",
+    "vona": "pvmbg_national_catalog",
+    "column_height": "estimated_standard"
+  }
+}

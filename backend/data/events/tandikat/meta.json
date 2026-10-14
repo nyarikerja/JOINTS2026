@@ -1,0 +1,30 @@
+{
+  "event_id": "tandikat",
+  "hazard": "volcano",
+  "name": "Erupsi G. Tandikat (Padang Pariaman, Sumatera Barat)",
+  "start_utc": "2026-10-11T01:29:51.447842+00:00",
+  "duration_h": 24.0,
+  "alert_level_at_event": "Level I (Normal)",
+  "restricted_radius_km": 1.5,
+  "column_height_km": 8.0,
+  "plume_top_asl_km": 12.0,
+  "vent_elevation_m": 2438.0,
+  "coordinates": {
+    "latitude": -0.433,
+    "longitude": 100.317
+  },
+  "bbox": [
+    99.61699999999999,
+    -1.133,
+    101.017,
+    0.26699999999999996
+  ],
+  "source": "PVMBG Badan Geologi ESDM RI (Katalog 70 Gunung Api Nasional)",
+  "members_source": "open_meteo_live_forecast_api",
+  "n_members": 15,
+  "data_status": {
+    "weather": "open_meteo_live_or_ensemble",
+    "vona": "pvmbg_national_catalog",
+    "column_height": "estimated_standard"
+  }
+}

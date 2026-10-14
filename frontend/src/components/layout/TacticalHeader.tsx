@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { RefreshCw, PanelRight, Layers, HelpCircle, X, Home } from "lucide-react";
+import { ArrowClockwise, SidebarSimple, Stack, Question, X } from "@phosphor-icons/react";
+import { Home } from "lucide-react";
 import { api } from "../../services/api";
 import type { SummaryKpiResponse } from "../../types/api";
 
@@ -9,34 +10,44 @@ interface TacticalHeaderProps {
   isDrawerOpen: boolean;
   onToggleLegend?: () => void;
   isLegendOpen?: boolean;
+  isHelpOpen?: boolean;
+  onOpenHelp?: () => void;
+  onCloseHelp?: () => void;
 }
 
 export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
   onToggleDrawer,
   isDrawerOpen,
   onToggleLegend,
-  isLegendOpen = false
+  isLegendOpen = false,
+  isHelpOpen: controlledHelpOpen,
+  onOpenHelp,
+  onCloseHelp
 }) => {
   const [clockWib, setClockWib] = useState("--:--:-- WIB");
   const [clockUtc, setClockUtc] = useState("--:--:-- UTC");
   const [kpi, setKpi] = useState<SummaryKpiResponse | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [internalHelpOpen, setInternalHelpOpen] = useState(false);
 
-  useEffect(() => {
-    const hasSeenManual = localStorage.getItem("hasSeenManual");
-    if (!hasSeenManual) {
-      const timer = setTimeout(() => {
-        setIsHelpOpen(true);
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, []);
+  const isHelpOpen = controlledHelpOpen !== undefined ? controlledHelpOpen : internalHelpOpen;
 
   const closeHelp = () => {
-    setIsHelpOpen(false);
+    if (onCloseHelp) {
+      onCloseHelp();
+    } else {
+      setInternalHelpOpen(false);
+    }
     localStorage.setItem("hasSeenManual", "true");
+  };
+
+  const openHelp = () => {
+    if (onOpenHelp) {
+      onOpenHelp();
+    } else {
+      setInternalHelpOpen(true);
+    }
   };
 
   const volcanoAlertCount = kpi?.volcanoes
@@ -125,8 +136,8 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
           className="w-8 h-8 object-contain shrink-0 drop-shadow-sm select-none pointer-events-none group-hover:scale-105 transition-transform"
         />
         <div className="flex items-center gap-1.5">
-          <span className="font-extrabold text-base tracking-tight" style={{ color: "#140f0e" }}>hELAlOKA</span>
-          <span className="font-bold text-[10px] px-1.5 py-0.5 rounded tracking-wider text-white shadow-xs" style={{ backgroundColor: "#dc2626" }}>
+          <span className="font-heading text-lg tracking-tight" style={{ color: "#140f0e" }}>hELAlOKA</span>
+          <span className="font-subheading text-[10px] px-1.5 py-0.5 rounded tracking-wider text-white shadow-xs" style={{ backgroundColor: "#A14646" }}>
             INDONESIA
           </span>
         </div>
@@ -193,7 +204,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
         </a>
 
         <button
-          onClick={() => setIsHelpOpen(true)}
+          onClick={openHelp}
           className="flex items-center justify-center w-7 h-7 rounded-lg transition cursor-pointer shadow-xs hover:brightness-105 active:scale-95 bg-[#F5EFE3]"
           style={{
             border: "1px solid rgba(20, 15, 14, 0.12)",
@@ -202,7 +213,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
           }}
           title="Panduan Penggunaan"
         >
-          <HelpCircle className="w-4 h-4" />
+          <Question size={16} weight="bold" />
         </button>
 
         <button
@@ -217,7 +228,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
           }}
           title="Sinkronisasi sensor NASA & Open-Meteo"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} style={{ color: isSyncing ? "#DA6556" : "#A14646" }} />
+          <ArrowClockwise size={15} weight="bold" className={isSyncing ? "animate-spin" : ""} style={{ color: isSyncing ? "#DA6556" : "#A14646" }} />
           <span>{syncStatus || "Live Sync"}</span>
         </button>
 
@@ -238,7 +249,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
           }}
           title="Buka / Tutup Keterangan Peta Status Gunung & Ancaman Udara"
         >
-          <Layers className="w-3.5 h-3.5" style={{ color: isLegendOpen ? "#F5EFE3" : "#DA6556" }} />
+          <Stack size={15} weight={isLegendOpen ? "fill" : "duotone"} style={{ color: isLegendOpen ? "#F5EFE3" : "#DA6556" }} />
           <span>Legenda</span>
         </button>
 
@@ -258,7 +269,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
           }}
           title="Buka / Tutup Proyeksi Dampak"
         >
-          <PanelRight className="w-3.5 h-3.5" style={{ color: isDrawerOpen ? "#F5EFE3" : "#140f0e" }} />
+          <SidebarSimple size={15} weight={isDrawerOpen ? "fill" : "duotone"} style={{ color: isDrawerOpen ? "#F5EFE3" : "#140f0e" }} />
           <span>Proyeksi Dampak</span>
         </button>
       </div>
@@ -271,14 +282,14 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
             {/* Header Modal */}
             <div className="bg-white px-4 py-3 border-b border-[#2b211e]/10 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <HelpCircle className="w-5 h-5 text-[#A14646]" />
+                <Question size={20} weight="bold" className="text-[#A14646]" />
                 <h3 className="font-sans text-sm font-bold tracking-wide">Panduan Simulasi</h3>
               </div>
               <button 
                 onClick={closeHelp}
                 className="text-[#2b211e]/50 hover:text-[#2b211e] transition cursor-pointer p-1 rounded hover:bg-[#2b211e]/5"
               >
-                <X className="w-4 h-4" />
+                <X size={16} weight="bold" />
               </button>
             </div>
 

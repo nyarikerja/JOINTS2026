@@ -14,6 +14,8 @@ Pengujian endpoint dan fitur pembuktian kepercayaan Lapis 3:
 import pytest
 from fastapi.testclient import TestClient
 
+pytestmark = pytest.mark.network
+
 from app.main import app
 
 client = TestClient(app)
@@ -23,8 +25,9 @@ client = TestClient(app)
 def sample_volcano_run():
     payload = {
         "hazard": "volcano",
-        "mode": "auto",
+        "mode": "experiment",
         "source": {"event_id": "anak_krakatau_2026_09"},
+        "overrides": {"column_height_km": 10.0},
         "horizon_hours": 6,
         "n_members": 5,
         "seed": 42,
@@ -34,36 +37,25 @@ def sample_volcano_run():
     return resp.json()["run_id"]
 
 
-def test_volcano_validation():
+def test_volcano_validation(sample_volcano_run):
     """
-    SPEC.md Bagian 14:
-    Validasi gunung terhadap reported_impact.geojson, bandara terpisah,
-    dan arah abu terhadap VONA.
+    SPEC.md Bagian 14: metrik validasi hanya dihitung dari run nyata terhadap laporan lapangan.
+    Tanpa run, tidak ada skor tetap yang dikembalikan.
     """
     resp = client.get("/validation/anak_krakatau_2026_09")
     assert resp.status_code == 200
     data = resp.json()
     assert data["hazard"] == "volcano"
-    assert data["resolution"] == "district"
-    assert data["district_hit_rate"] >= 0.5
-    assert data["fractions_skill_score"] is not None
+    assert data["accuracy_claim"] == "none"
+    assert "fractions_skill_score" not in data
+    assert data["status"] in ("not_evaluated", "not_testable")
 
-    # Dampak penerbangan harus berlabel khusus
-    aviation = data.get("aviation_impact", {})
-    assert aviation.get("label") == "dampak penerbangan"
-    assert "Bandara Radin Inten II" in aviation.get("airport_name")
-
-    # Arah vertikal terhadap D05b VONA
-    v_check = data.get("vertical_dispersion_directional_check", {})
-    assert "upper_layer_status" in v_check
-    assert "mid_layer_status" in v_check
-
-    # Grid search 1D spread_inflation
-    gs = data.get("grid_search_spread_inflation", [])
-    assert len(gs) >= 3
-
-    # Caveat wajib
-    assert "confidence_caveat" in data
+    resp = client.get(f"/validation/anak_krakatau_2026_09?run_id={sample_volcano_run}")
+    assert resp.status_code == 200
+    data = resp.json()
+    if data["status"] == "evaluated":
+        assert 0.0 <= data["district_hit_rate"] <= 1.0
+        assert data["run_id"] == sample_volcano_run
 
 
 def test_fire_validation_not_testable():
@@ -127,8 +119,9 @@ def test_demo_playback_endpoint():
     assert resp.status_code == 200
     data = resp.json()
     assert data["event_id"] == "anak_krakatau_2026_09"
-    assert len(data["steps"]) >= 5
-    assert data["total_duration_hours"] == 48
+    # Pemutaran berisi angka tetap dihapus; demo harus dari simulasi nyata
+    assert data["available"] is False
+    assert "steps" not in data
 
 
 def test_run_export_json_and_html(sample_volcano_run):
@@ -164,9 +157,11 @@ def test_lahar_warning(sample_volcano_run):
     assert resp.status_code == 200
     data = resp.json()
     assert data["hazard"] == "volcano"
-    assert data["lahar_risk_level"] in ["waspada", "siaga", "rendah"]
+    assert data["lahar_risk_level"] in ["rendah", "waspada", "tinggi"]
     assert "rainfall_threshold_trigger_mm_h" in data
-    assert len(data.get("vulnerable_drainage_basins", [])) > 0
+    assert 0.0 <= data["prob_rain_above_trigger"] <= 1.0
+    # Tanpa data sungai, tidak ada daftar DAS karangan
+    assert data["vulnerable_drainage_basins"] == []
 
 
 def test_landmask_and_land_water_integrity(sample_volcano_run):
@@ -187,17 +182,8 @@ def test_landmask_and_land_water_integrity(sample_volcano_run):
     resp = client.get(f"/runs/{sample_volcano_run}/land-water")
     assert resp.status_code == 200
     data = resp.json()
-    assert "cropland_exposed_ha" in data
-    assert "water_sources_exposed_count" in data
-
-    crop = data["cropland_exposed_ha"]
-    assert crop["min"] <= crop["median"] <= crop["max"]
-
-    water = data["water_sources_exposed_count"]
-    assert isinstance(water["min"], int)
-    assert isinstance(water["median"], int)
-    assert isinstance(water["max"], int)
-    assert water["min"] <= water["median"] <= water["max"]
+    assert data["available"] is False
+    assert "cropland_exposed_ha" not in data
 
 
 def test_evacuation_route_endpoint(sample_volcano_run):
@@ -237,11 +223,9 @@ def test_facilities_island_contiguity_and_no_ocean_facilities(sample_volcano_run
     for sch in schools:
         sch_region = get_landmass_region(sch)
         target_h = sch.get("nearest_safe_hospital")
-        if target_h:
+        if target_h and sch_region >= 0:
             h_region = get_landmass_region(target_h)
-            # Jika sekolah di Sumatera, rujukan RS wajib di Sumatera
-            if sch_region == "sumatera":
-                assert h_region == "sumatera", f"Sekolah {sch['name']} dirujuk melintasi laut ke {target_h['name']}"
-            elif sch_region == "jawa":
-                assert h_region == "jawa", f"Sekolah {sch['name']} dirujuk melintasi laut ke {target_h['name']}"
+            # Rujukan darat tidak boleh menyeberang laut ke pulau lain
+            if h_region >= 0:
+                assert h_region == sch_region, f"Sekolah {sch['name']} dirujuk melintasi laut ke {target_h['name']}"
 

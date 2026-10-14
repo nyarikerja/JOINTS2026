@@ -14,6 +14,8 @@ Pengujian integritas data dan kepatuhan prinsip AGENTS.md:
 import pytest
 from fastapi.testclient import TestClient
 
+pytestmark = pytest.mark.network
+
 from app.core.offline import OfflineGuardException, assert_online_allowed
 from app.main import app
 
@@ -104,8 +106,9 @@ def test_impact_range_and_ispu_status():
     # Jalankan simulasi singkat
     payload = {
         "hazard": "volcano",
-        "mode": "auto",
+        "mode": "experiment",
         "source": {"event_id": "anak_krakatau_2026_09"},
+        "overrides": {"column_height_km": 10.0},
         "horizon_hours": 6,
         "n_members": 5
     }

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { School, Hospital, Navigation, MapPin, Search } from "lucide-react";
+import { GraduationCap, FirstAid, NavigationArrow, MapPin, MagnifyingGlass } from "@phosphor-icons/react";
 import type { SchoolItem, HospitalItem } from "../../types/api";
 
 interface TabFacilitiesProps {
@@ -106,7 +106,7 @@ export const TabFacilities: React.FC<TabFacilitiesProps> = ({
           placeholder="Cari nama fasilitas..."
           className="w-full bg-white border border-[#2b211e]/15 rounded-lg p-2 pl-7 text-[10px] focus:outline-none focus:border-[#EB895B] focus:ring-1 focus:ring-[#EB895B]"
         />
-        <Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-[#2b211e]/40" />
+        <MagnifyingGlass size={14} weight="bold" className="absolute left-2 top-1/2 -translate-y-1/2 text-[#2b211e]/40" />
       </div>
 
       {/* List Fasilitas */}
@@ -128,7 +128,7 @@ export const TabFacilities: React.FC<TabFacilitiesProps> = ({
               >
                 <div className="flex items-start justify-between gap-1.5 mb-1">
                   <div className="flex items-start gap-1.5 min-w-0 pt-0.5">
-                    <School className="w-3.5 h-3.5 text-[#DA6556] shrink-0" />
+                    <GraduationCap size={15} weight="duotone" className="text-[#DA6556] shrink-0" />
                     <h4 className="font-bold text-[11px] leading-tight pr-1">{s.name}</h4>
                   </div>
                   <span
@@ -158,7 +158,7 @@ export const TabFacilities: React.FC<TabFacilitiesProps> = ({
                       className="px-1.5 py-0.5 bg-white hover:bg-neutral-100 border border-[#2b211e]/15 rounded text-[10px] cursor-pointer"
                       title="Pusatkan di peta"
                     >
-                      <MapPin className="w-3 h-3 text-[#2b211e]/70" />
+                      <MapPin size={12} weight="duotone" className="text-[#2b211e]/70" />
                     </button>
                     <button
                       type="button"
@@ -170,7 +170,7 @@ export const TabFacilities: React.FC<TabFacilitiesProps> = ({
                       }`}
                       title={activeRouteId === (s.id || s.facility_id || s.name) ? "Tutup rute evakuasi" : "Lihat rute evakuasi"}
                     >
-                      <Navigation className="w-2.5 h-2.5" />
+                      <NavigationArrow size={11} weight="fill" />
                       <span>{activeRouteId === (s.id || s.facility_id || s.name) ? "Tutup" : "Rute"}</span>
                     </button>
                   </div>
@@ -194,7 +194,7 @@ export const TabFacilities: React.FC<TabFacilitiesProps> = ({
               >
                 <div className="flex items-start justify-between gap-1.5 mb-1">
                   <div className="flex items-start gap-1.5 min-w-0 pt-0.5">
-                    <Hospital className="w-3.5 h-3.5 text-[#2a8485] shrink-0" />
+                    <FirstAid size={15} weight="duotone" className="text-[#2a8485] shrink-0" />
                     <h4 className="font-bold text-[11px] leading-tight pr-1">{h.name}</h4>
                   </div>
                   <span
@@ -219,7 +219,7 @@ export const TabFacilities: React.FC<TabFacilitiesProps> = ({
                     onClick={() => onFlyTo(hLat, hLng)}
                     className="px-2 py-0.5 bg-white hover:bg-neutral-100 border border-[#2b211e]/15 rounded text-[10px] cursor-pointer flex items-center gap-1 text-[#2b211e]/80"
                   >
-                    <MapPin className="w-3 h-3" />
+                    <MapPin size={12} weight="duotone" />
                     <span>Pusatkan</span>
                   </button>
                 </div>

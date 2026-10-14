@@ -16,42 +16,34 @@ def calculate_rain_effect(
     grid: SimulationGrid
 ) -> Dict[str, Any]:
     """
-    Menghitung pengaruh hujan pada sebaran abu atau asap.
-    Membandingkan kondisi saat hujan turun vs tanpa pencucian hujan.
+    Pengaruh hujan prakiraan pada partikel: fraksi massa yang tercuci hujan selama simulasi
+    (keluaran model per anggota ensemble) dan ringkasan hujan prakiraan di sumber.
     """
     hazard = run_output["hazard"]
-    base_impact = calculate_impact_ranges(run_output, grid)
+    ws = run_output.get("weather_summary") or {}
+    if not ws.get("scavenged_mass_fraction"):
+        return {"run_id": run_output["run_id"], "hazard": hazard, "available": False,
+                "reason": "Run ini tidak menyimpan ringkasan hujan; jalankan ulang simulasi."}
 
-    # Estimasi fraksi pencucian rata-rata (hujan menurunkan area jangkauan jauh ~15-30%)
-    scavenging_reduction_pct = 0.22
-
-    def scale_delta(range_metric: Dict[str, float], factor: float) -> Dict[str, float]:
-        return {
-            "min": round(range_metric["min"] * factor, 1),
-            "median": round(range_metric["median"] * factor, 1),
-            "max": round(range_metric["max"] * factor, 1),
-        }
-
-    pop_reduced = scale_delta(base_impact["population_exposed"], scavenging_reduction_pct)
-    area_reduced = scale_delta(base_impact["area_exposed_km2"], scavenging_reduction_pct)
-
+    frac = ws["scavenged_mass_fraction"]
     if hazard == "volcano":
         caveat_text = (
-            "Hujan pencuci mempercepat jatuhnya partikel abu halus lebih dekat ke kawah. "
-            "PERINGATAN: Abu basah jauh lebih berat di atap bangunan dan dapat memicu aliran lahar dingin di sungai."
+            "Hujan mempercepat jatuhnya abu lebih dekat ke kawah. Abu basah jauh lebih berat di atap "
+            "dan endapan di lereng dapat terbawa hujan menjadi lahar."
         )
     else:
         caveat_text = (
-            "Hujan ringan hanya membersihkan partikel PM2.5 di udara untuk sementara. "
-            "Api gambut di bawah permukaan tanah memerlukan hujan deras berdurasi panjang agar benar-benar padam."
+            "Hujan hanya membersihkan partikel asap di udara sementara. Api gambut di bawah permukaan "
+            "memerlukan hujan lebat berkepanjangan agar padam."
         )
-
     return {
         "run_id": run_output["run_id"],
         "hazard": hazard,
-        "population_exposure_reduced": pop_reduced,
-        "area_footprint_reduced_km2": area_reduced,
-        "scavenging_reduction_percentage": round(scavenging_reduction_pct * 100.0, 1),
+        "available": True,
+        "scavenged_mass_pct": {k: round(v * 100.0, 1) for k, v in frac.items()},
+        "precip_max_mm_h": ws.get("precip_max_mm_h"),
+        "precip_total_mm": ws.get("precip_total_mm"),
+        "weather_model": ws.get("model"),
         "hazard_specific_warning": caveat_text,
         "scenario_label": run_output["scenario_label"],
         "disclaimer": run_output["disclaimer"]
@@ -115,47 +107,17 @@ def run_parameter_sensitivity(
     param_name: str,
     grid: SimulationGrid
 ) -> Dict[str, Any]:
-    """
-    Menghasilkan sapuan kurva sensitivitas parameter (mis. tinggi kolom 5 s/d 18 km).
-    """
-    base_impact = calculate_impact_ranges(base_run_output, grid)
-    base_median_pop = base_impact["population_exposed"]["median"]
-    base_median_area = base_impact["area_exposed_km2"]["median"]
-
-    sweep_curve = []
-    if param_name == "column_height_km":
-        steps = [5.0, 8.0, 10.0, 12.0, 15.0, 18.0]
-        # Mengikuti laju Mastin H^4.15 secara proporsional
-        for h in steps:
-            factor = (h / 10.0) ** 1.8  # Skala dispersi area terhadap laju emisi
-            sweep_curve.append({
-                "parameter_value": h,
-                "unit": "km",
-                "median_population_exposed": round(base_median_pop * factor, 1),
-                "median_area_km2": round(base_median_area * factor, 1),
-            })
-    elif param_name == "rain_intensity_mm_h":
-        steps = [0.0, 5.0, 10.0, 20.0, 30.0]
-        for r_int in steps:
-            # Pengurangan area akibat pencucian hujan L = a * P^0.8
-            reduction = min(0.6, (r_int ** 0.8) * 0.04)
-            sweep_curve.append({
-                "parameter_value": r_int,
-                "unit": "mm/h",
-                "median_population_exposed": round(base_median_pop * (1.0 - reduction), 1),
-                "median_area_km2": round(base_median_area * (1.0 - reduction), 1),
-            })
-    else:
-        # Kurva baseline untuk parameter tunggal
-        sweep_curve = [{"parameter_value": 1.0, "median_population_exposed": base_median_pop, "median_area_km2": base_median_area}]
-
+    """Kurva sensitivitas membutuhkan simulasi ulang per nilai parameter; belum dijalankan otomatis."""
     return {
         "run_id": base_run_output["run_id"],
         "parameter_swept": param_name,
-        "sensitivity_curve": sweep_curve,
-        "sweep_results": sweep_curve,
-        "caveat": "Kurva sensitivitas menunjukkan elastisitas dampak terhadap perubahan satu parameter.",
-        "disclaimer": base_run_output["disclaimer"]
+        "available": False,
+        "reason": (
+            "Kurva sensitivitas tidak diperkirakan dengan rumus skala. Jalankan mode Uji Skenario dengan nilai "
+            "parameter berbeda lalu bandingkan hasilnya lewat POST /runs/compare."
+        ),
+        "sensitivity_curve": [],
+        "disclaimer": base_run_output["disclaimer"],
     }
 
 

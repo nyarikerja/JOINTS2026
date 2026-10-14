@@ -7,12 +7,13 @@ Mendukung 50-100 anggota ensemble, deterministik berbasis seed, dan output per j
 
 import datetime
 import json
+import math
 import uuid
 from typing import Any, Dict, List
 
 import numpy as np
 
-from app.core.config import RUNS_DIR, get_assumptions_used, settings
+from app.core.config import RUNS_DIR, get_assumptions, get_assumptions_used, settings
 from app.core.rng import get_rng
 from app.engine.aggregation import aggregate_tiers_for_hour, compute_arrival_time_grid
 from app.engine.fire import generate_fire_particles_per_step, sample_frp_conversion_factor
@@ -21,6 +22,25 @@ from app.engine.particles import advect_particles_rk2, create_empty_particles
 from app.engine.scavenging import apply_rain_scavenging
 from app.engine.volcano import calculate_mer_mastin, generate_volcano_particles_per_step
 from app.schemas.simulation import SimulationRequest
+
+
+def _bilinear(field3: np.ndarray, fi: np.ndarray, fj: np.ndarray) -> np.ndarray:
+    """Interpolasi bilinear pada grid 3x3 dengan indeks pecahan fi (lintang) dan fj (bujur) di [0, 2]."""
+    i0 = np.minimum(np.floor(fi).astype(int), 1)
+    j0 = np.minimum(np.floor(fj).astype(int), 1)
+    di, dj = fi - i0, fj - j0
+    return (field3[i0, j0] * (1 - di) * (1 - dj) + field3[i0, j0 + 1] * (1 - di) * dj
+            + field3[i0 + 1, j0] * di * (1 - dj) + field3[i0 + 1, j0 + 1] * di * dj)
+
+
+FINE_N = 25
+_FINE_AX = np.linspace(0.0, 2.0, FINE_N)
+_FI, _FJ = np.meshgrid(_FINE_AX, _FINE_AX, indexing="ij")
+
+
+def _refine(field3: np.ndarray) -> np.ndarray:
+    """Grid 3x3 -> tabel 25x25 hasil interpolasi bilinear (dibaca per partikel dengan indeks terdekat)."""
+    return _bilinear(field3, _FI, _FJ)
 
 
 class SimulationRunner:
@@ -55,11 +75,31 @@ class SimulationRunner:
             grid = SimulationGrid.create_for_volcano(center_lat, center_lon, domain_km=900.0, res_deg=0.03)
         else:
             bbox = event_meta.get("bbox", [110.0, -4.0, 116.0, 1.0])
-            center_lat = (float(bbox[1]) + float(bbox[3])) / 2.0
-            center_lon = (float(bbox[0]) + float(bbox[2])) / 2.0
+            # Untuk kebakaran hutan, pusat kejadian adalah kluster titik api aktif (atau koordinat kawasan hutan riil)
+            if hotspots and len(hotspots) > 0:
+                total_frp = sum(float(h.get("frp", 1.0)) for h in hotspots)
+                if total_frp > 0:
+                    center_lat = sum(float(h["latitude"]) * float(h.get("frp", 1.0)) for h in hotspots) / total_frp
+                    center_lon = sum(float(h["longitude"]) * float(h.get("frp", 1.0)) for h in hotspots) / total_frp
+                else:
+                    center_lat = float(hotspots[0]["latitude"])
+                    center_lon = float(hotspots[0]["longitude"])
+            elif event_meta.get("coordinates") and event_meta["coordinates"].get("latitude") is not None:
+                center_lat = float(event_meta["coordinates"]["latitude"])
+                center_lon = float(event_meta["coordinates"]["longitude"])
+            else:
+                center_lat = (float(bbox[1]) + float(bbox[3])) / 2.0
+                center_lon = (float(bbox[0]) + float(bbox[2])) / 2.0
             grid = SimulationGrid.create_for_fire(bbox, buffer_km=350.0, res_deg=0.03)
 
-        wind_u_arr = weather_data.get("wind_u")  # shape (n_members, n_weather_steps)
+        wind_u_arr = weather_data.get("wind_u")  # shape (n_members, n_weather_steps), titik pusat
+        # medan angin/hujan spasial 3x3 (anggota, langkah, 3, 3) bila tersedia
+        u_field = weather_data.get("wind_u_field")
+        v_field = weather_data.get("wind_v_field")
+        p_field = weather_data.get("precip_field")
+        wgrid = weather_data.get("grid")
+        fine_cache: Dict[tuple, tuple] = {}
+        fine_scale = (FINE_N - 1) / (2.0 * wgrid["d"]) if wgrid else 0.0
         wind_v_arr = weather_data.get("wind_v")
         precip_arr = weather_data.get("precip")
 
@@ -94,6 +134,8 @@ class SimulationRunner:
 
         particles_per_step = 40  # Keseimbangan performa & resolusi
         max_particles_capacity = 25000
+        emitted_mass = np.zeros(n_members, dtype=float)
+        scavenged_mass_total = np.zeros(n_members, dtype=float)
 
         # 3. Loop per Anggota Ensemble
         for m in range(n_members):
@@ -127,6 +169,7 @@ class SimulationRunner:
                         # Skala fase puncak vs background
                         phase_scale = 1.0 if current_time_s < (peak_phase_h * 3600.0) else 0.15
                         step_mass = mer_member * phase_scale * dt_s
+                        slot0 = particle_cursor
                         inserted = generate_volcano_particles_per_step(
                             p=particles,
                             start_slot=particle_cursor,
@@ -138,9 +181,11 @@ class SimulationRunner:
                             total_mass_step_kg=step_mass,
                             rng=member_rng,
                         )
+                        emitted_mass[m] += float(particles.mass[slot0:slot0 + inserted].sum())
                         particle_cursor = (particle_cursor + inserted) % (max_particles_capacity - particles_per_step)
                 else:
                     if hotspots and (current_time_s < duration_h * 3600.0):
+                        slot0 = particle_cursor
                         inserted = generate_fire_particles_per_step(
                             p=particles,
                             start_slot=particle_cursor,
@@ -150,11 +195,27 @@ class SimulationRunner:
                             frp_factor_kg_mj=frp_factor,
                             rng=member_rng,
                         )
+                        emitted_mass[m] += float(particles.mass[slot0:slot0 + inserted].sum())
                         particle_cursor = (particle_cursor + inserted) % (max_particles_capacity - 200)
 
+                # Angin dan hujan per partikel (interpolasi bilinear dari grid 3x3), atau nilai titik pusat
+                if u_field is not None:
+                    act_now = np.where(particles.active)[0]
+                    if len(act_now):
+                        key = (m, weather_step_idx)
+                        if key not in fine_cache:
+                            fine_cache.clear()
+                            fine_cache[key] = (_refine(u_field[m, weather_step_idx]), _refine(v_field[m, weather_step_idx]),
+                                               _refine(p_field[m, weather_step_idx]))
+                        U, V, R = fine_cache[key]
+                        ii = np.clip(((particles.lat[act_now] - wgrid["lat0"]) * fine_scale + 0.5).astype(np.int32), 0, FINE_N - 1)
+                        jj = np.clip(((particles.lon[act_now] - wgrid["lon0"]) * fine_scale + 0.5).astype(np.int32), 0, FINE_N - 1)
+                        u_cur, v_cur, rain_cur = U[ii, jj], V[ii, jj], R[ii, jj]
+
                 # 3b. Pencucian oleh Hujan
-                if rain_cur > 0.05:
+                if np.any(np.asarray(rain_cur) > 0.05):
                     scavenged_mass = apply_rain_scavenging(particles, rain_cur, dt_s)
+                    scavenged_mass_total[m] += float(np.sum(scavenged_mass))
                     if len(scavenged_mass) > 0:
                         act_idx = np.where(particles.active)[0][:len(scavenged_mass)]
                         in_b = (
@@ -202,12 +263,28 @@ class SimulationRunner:
                     eval_h = current_hour
                     if eval_h < horizon_hours:
                         if hazard == "volcano":
-                            # Beban endapan kumulatif (kg/m²)
+                            # 1. Beban endapan kumulatif di tanah (kg/m²)
                             load_grid = deposited_mass_grid / grid.cell_area_m2
-                            # Ambang terkena abu: >= 0.005 kg/m² (~0.005 mm tephra tipis teramati)
-                            exposed_mask = load_grid >= 0.005
+
+                            # 2. Konsentrasi awan abu aktif melayang di udara (µg/m³)
+                            act_idx = np.where(particles.active)[0]
+                            conc_grid = np.zeros((grid.n_lat, grid.n_lon), dtype=float)
+                            if len(act_idx) > 0:
+                                in_b = (
+                                    (particles.lat[act_idx] >= grid.lat_min) & (particles.lat[act_idx] <= grid.lat_max) &
+                                    (particles.lon[act_idx] >= grid.lon_min) & (particles.lon[act_idx] <= grid.lon_max)
+                                )
+                                valid_act = act_idx[in_b]
+                                if len(valid_act) > 0:
+                                    rows, cols = grid.coord_to_index(particles.lat[valid_act], particles.lon[valid_act])
+                                    np.add.at(conc_grid, (rows, cols), particles.mass[valid_act] * 1e9)
+                                    conc_grid /= (grid.cell_area_m2 * 1200.0)
+
+                            # Ambang terkena abu: endapan di tanah >= 0.001 kg/m² (~0.001 mm tephra)
+                            # ATAU awan abu melayang di udara >= 50.0 µg/m³
+                            exposed_mask = (load_grid >= 0.001) | (conc_grid >= 50.0)
                             hourly_exposure_masks[eval_h, m] = exposed_mask
-                            member_max_severity[m] = np.maximum(member_max_severity[m], load_grid)
+                            member_max_severity[m] = np.maximum(member_max_severity[m], load_grid + (conc_grid * 1e-6))
                         else:
                             # Konsentrasi PM2.5 di udara aktif (µg/m³)
                             act_idx = np.where(particles.active)[0]
@@ -255,13 +332,85 @@ class SimulationRunner:
                 feat["properties"]["hour"] = horizon_hours
             hourly_tiers_geojson[horizon_hours] = h_end
 
+        # 4b. Hitung ringkasan vektor angin per langkah jam dari data ensemble cuaca
+        cardinal_names = ["Utara", "Timur Laut", "Timur", "Tenggara", "Selatan", "Barat Daya", "Barat", "Barat Laut"]
+        hourly_wind_summary = {}
+        for h in range(horizon_hours + 1):
+            w_idx = min(h, wind_u_arr.shape[1] - 1) if wind_u_arr is not None else 0
+            u_mean = float(np.mean(wind_u_arr[:, w_idx])) if wind_u_arr is not None else 4.0
+            v_mean = float(np.mean(wind_v_arr[:, w_idx])) if wind_v_arr is not None else 2.0
+            spd = float(math.hypot(u_mean, v_mean))
+            bearing_motion = (math.degrees(math.atan2(u_mean, v_mean)) + 360.0) % 360.0
+            dir_from = (math.degrees(math.atan2(-u_mean, -v_mean)) + 360.0) % 360.0
+            card_from_idx = int(round(dir_from / 45.0)) % 8
+            card_to_idx = int(round(bearing_motion / 45.0)) % 8
+            card_from = cardinal_names[card_from_idx]
+            card_to = cardinal_names[card_to_idx]
+
+            w_info = {
+                "u": round(u_mean, 2),
+                "v": round(v_mean, 2),
+                "speed_ms": round(spd, 1),
+                "speed_kmh": round(spd * 3.6, 1),
+                "direction_deg": round(dir_from, 1),
+                "bearing_motion_deg": round(bearing_motion, 1),
+                "cardinal": card_to,
+                "cardinal_from": card_from,
+                "cardinal_to": card_to,
+                "description": f"Angin {round(spd, 1)} m/s dari {card_from} (Sebaran menuju {card_to})"
+            }
+            hourly_wind_summary[h] = w_info
+            if h in hourly_tiers_geojson and "properties" in hourly_tiers_geojson[h]:
+                hourly_tiers_geojson[h]["properties"]["wind"] = w_info
+
         earliest_arr, likely_arr = compute_arrival_time_grid(hourly_exposure_masks)
 
         # 5. Susun Metadata Hasil & Simpan
         scenario_label = (
-            "skenario hipotetis" if self.request.mode == "experiment" else "kejadian observasi"
+            "skenario hipotetis" if self.request.mode == "experiment"
+            else (event_meta.get("scenario_label") or "kejadian observasi")
         )
         members_source = weather_data.get("members_source", "open_meteo_ensemble")
+
+        start_utc = event_meta.get("start_utc") or self.created_at_utc
+        try:
+            t0 = datetime.datetime.fromisoformat(str(start_utc).replace("Z", "+00:00"))
+        except ValueError:
+            t0 = datetime.datetime.now(datetime.timezone.utc)
+        for h, geo in hourly_tiers_geojson.items():
+            geo.setdefault("properties", {})["time_utc"] = (t0 + datetime.timedelta(hours=int(h))).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        # Ringkasan hujan prakiraan & pencucian partikel (keluaran model, bukan konstanta)
+        n_used = min(horizon_hours + 1, precip_arr.shape[1]) if precip_arr is not None else 0
+        pr = precip_arr[:, :n_used] if precip_arr is not None else np.zeros((n_members, 0))
+        lahar_thr = float((get_assumptions().get("lahar_rain_trigger_mm_h") or {}).get("value", 20.0))
+        scav_frac = np.divide(scavenged_mass_total, emitted_mass, out=np.zeros_like(emitted_mass), where=emitted_mass > 0)
+
+        def _rng3(arr):
+            arr = np.asarray(arr, dtype=float)
+            return {k: round(float(np.percentile(arr, q)), 2) for k, q in (("min", 5), ("median", 50), ("max", 95))}
+
+        weather_summary = {
+            "model": weather_data.get("model"),
+            "level": weather_data.get("level"),
+            "spatial_grid": "3x3 titik ensemble, interpolasi bilinear" if wgrid else "satu titik di sumber",
+            "fetched_at": weather_data.get("fetched_at"),
+            "valid_from": weather_data.get("valid_from"),
+            "stale": bool(weather_data.get("stale")),
+            "precip_max_mm_h": _rng3(pr.max(axis=1)) if pr.size else None,
+            "precip_total_mm": _rng3(pr.sum(axis=1)) if pr.size else None,
+            "lahar_trigger_mm_h": lahar_thr,
+            "prob_rain_above_lahar_trigger": round(float(np.mean(pr.max(axis=1) >= lahar_thr)), 2) if pr.size else 0.0,
+            "scavenged_mass_fraction": _rng3(scav_frac),
+        }
+        severity_summary = {
+            "metric": "ash_load_kg_m2" if hazard == "volcano" else "pm25_relative_ug_m3",
+            "domain_max": _rng3(member_max_severity.reshape(n_members, -1).max(axis=1)),
+            "caveat": (
+                "Nilai maksimum domain selama horizon per anggota ensemble." if hazard == "volcano" else
+                "Konsentrasi relatif: faktor emisi PM2.5 masih placeholder, jangan dibaca sebagai ISPU."
+            ),
+        }
 
         def _clean_arrival_matrix(matrix: np.ndarray) -> list:
             clean = []
@@ -283,6 +432,14 @@ class SimulationRunner:
             "completed_at_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "disclaimer": settings.DISCLAIMER,
             "center_coords": {"latitude": center_lat, "longitude": center_lon},
+            "event_name": event_meta.get("name"),
+            "start_utc": t0.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "horizon_hours": horizon_hours,
+            "emission_duration_h": duration_h,
+            "source_info": event_meta.get("source_info"),
+            "weather_summary": weather_summary,
+            "severity_summary": severity_summary,
+            "hotspots_used": event_meta.get("hotspots_used"),
             "assumptions_used": get_assumptions_used(),
             "grid": {
                 "lat_min": grid.lat_min,
@@ -292,6 +449,7 @@ class SimulationRunner:
                 "resolution_deg": grid.resolution_deg,
             },
             "hourly_tiers": hourly_tiers_geojson,
+            "hourly_wind": hourly_wind_summary,
             "member_max_severity": member_max_severity,
             "hourly_exposure_masks": hourly_exposure_masks,
             "arrival_time": {
@@ -312,7 +470,20 @@ class SimulationRunner:
         # Simpan ke data/runs/{run_id}.json
         save_path = RUNS_DIR / f"{self.run_id}.json"
         # Buat representasi json yang ringan tanpa array numpy raksasa
-        json_summary = {k: v for k, v in run_output.items() if k not in ["hourly_exposure_masks", "member_max_severity"]}
+        json_summary = {
+            k: v for k, v in run_output.items()
+            if k not in ["hourly_exposure_masks", "member_max_severity"] and not k.startswith("_")
+        }
         save_path.write_text(json.dumps(json_summary, default=str), encoding="utf-8")
+        # Larik penuh (masker paparan & keparahan) agar run tetap lengkap setelah server dimulai ulang
+        try:
+            np.savez_compressed(
+                RUNS_DIR / f"{self.run_id}.npz",
+                masks=np.packbits(hourly_exposure_masks, axis=None),
+                shape=np.array(hourly_exposure_masks.shape),
+                severity=member_max_severity.astype(np.float32),
+            )
+        except Exception as e:
+            print(f"Warning: gagal menyimpan larik run: {e}")
 
         return run_output
