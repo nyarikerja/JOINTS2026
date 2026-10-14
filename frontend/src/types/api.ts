@@ -65,6 +65,8 @@ export interface SimulationResponse {
   run_id: string;
   hazard: HazardType;
   status: string;
+  event_id?: string;
+  event_name?: string;
   n_members: number;
   scenario_label: string;
   hourly_tiers?: Record<string, any>;

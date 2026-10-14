@@ -243,6 +243,20 @@ export const App: React.FC = () => {
       setActiveRunId(runId);
       setRunInfo(simRes);
       
+      const resolvedEventName = simRes.event_name || selectedEventName || activeEventId;
+      setSimulatedEventName(resolvedEventName);
+      setSelectedEventName(resolvedEventName);
+
+      // Fokuskan kamera peta ke pusat koordinat kejadian yang baru disimulasikan
+      if (simRes.center_coords?.latitude && simRes.center_coords?.longitude) {
+        setFlyToTarget({
+          lat: simRes.center_coords.latitude,
+          lng: simRes.center_coords.longitude,
+          _t: Date.now()
+        });
+      }
+      setEventFocusTrigger((prev) => prev + 1);
+      
       // Fase 3: Pemodelan selesai, beralih ke analisis dampak & rekomendasi mitigasi
       targetCap = 94;
       setLoadingProgress((p) => Math.max(p, 76));
@@ -293,7 +307,7 @@ export const App: React.FC = () => {
       // Simpan referensi run terakhir ke local storage
       localStorage.setItem("lastRunId", runId);
       localStorage.setItem("lastEventId", activeEventId);
-      localStorage.setItem("lastEventName", selectedEventName || simRes.scenario_label || activeEventId);
+      localStorage.setItem("lastEventName", resolvedEventName);
       localStorage.setItem("lastHazard", activeHazard);
     } catch (err: any) {
       clearInterval(loadingInterval);
