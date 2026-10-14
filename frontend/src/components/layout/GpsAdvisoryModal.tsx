@@ -2,8 +2,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   X,
   ArrowClockwise,
-  Copy,
-  Check,
   ShieldWarning,
   CheckCircle,
   MapPin,
@@ -52,7 +50,6 @@ export const GpsAdvisoryModal: React.FC<GpsAdvisoryModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [gpsDetecting, setGpsDetecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
 
   // Ambil lokasi GPS secara otomatis saat modal pertama kali dibuka
   const detectGps = useCallback(() => {
@@ -115,15 +112,6 @@ export const GpsAdvisoryModal: React.FC<GpsAdvisoryModalProps> = ({
   const facts = data?.facts;
   const scenarioKey: Scenario = (data?.scenario as Scenario) || "clear";
   const scStyle = SCENARIO_STYLE[scenarioKey] || SCENARIO_STYLE.clear;
-
-  const handleCopy = () => {
-    if (!brief) return;
-    const author = brief.engine === "featherless" ? `AI ${brief.model}` : "HELALOKA AI Intelligence";
-    const text = `[REKOMENDASI SIAGA WARGA LOKASI GPS]\n${brief.headline}\n\n${brief.summary}\n\nLANGKAH TAKTIS:\n${(brief.actions || []).map((a: string) => `• ${a}`).join("\n")}\n\n[Dianalisis oleh ${author}. Tetap utamakan instruksi otoritatif PVMBG, BMKG, dan BPBD.]`;
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   return (
     <div className="fixed inset-0 z-[2200] flex items-center justify-center bg-black/55 backdrop-blur-sm p-4 font-sans animate-fade-in">
@@ -285,17 +273,6 @@ export const GpsAdvisoryModal: React.FC<GpsAdvisoryModalProps> = ({
                 </div>
               </div>
 
-              {/* 7. Tombol Aksi Utama di Bawah (Pill Button Hijau Olive seperti di Referensi) */}
-              <div className="pt-2 flex justify-center">
-                <button
-                  type="button"
-                  onClick={handleCopy}
-                  className="w-full max-w-xs py-3 px-6 rounded-2xl bg-[#5e7136] hover:bg-[#4d5e2c] text-white font-bold text-xs shadow-md hover:shadow-lg transition cursor-pointer flex items-center justify-center gap-2 font-button active:scale-98"
-                >
-                  {copied ? <Check size={16} weight="bold" /> : <Copy size={16} weight="bold" />}
-                  <span>{copied ? "Langkah Taktis Tersalin!" : "Salin Langkah Taktis"}</span>
-                </button>
-              </div>
             </>
           ) : (
             <div className="py-8 text-center text-[#2b211e]/60">
