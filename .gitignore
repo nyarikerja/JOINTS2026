@@ -76,3 +76,7 @@ backend/data/layers/worldpop/
 backend/data/events/*/weather_live.json
 backend/data/layers/gvp_eruptions.json
 backend/data/layers/firms_history/
+
+demo-video/
+*.bak
+*.backup_*

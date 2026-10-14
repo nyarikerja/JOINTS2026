@@ -53,10 +53,12 @@ const SCENARIO_STYLE: Record<Scenario, { id: string; en: string; cls: string; bo
 };
 
 export const TabProtocolAI: React.FC<TabProtocolAIProps> = ({
-  advisory,
+  advisory: advisoryRaw,
   currentCoords,
   placeName
 }) => {
+  // Endpoint emergency-advisory menaruh draf LLM di `gemini_briefing`
+  const advisory = advisoryRaw?.gemini_briefing ?? advisoryRaw;
   const center = currentCoords ? { lat: currentCoords.lat, lon: currentCoords.lng } : null;
   const [point, setPoint] = useState<{ lat: number; lon: number } | null>(center);
   const [data, setData] = useState<any>(null);

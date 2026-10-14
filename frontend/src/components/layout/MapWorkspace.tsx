@@ -435,6 +435,8 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
     if (baseTileLayerRef.current) trackTileLayer(baseTileLayerRef.current);
 
     mapRef.current = map;
+    // Hanya di dev: akses peta untuk skrip perekaman video demo (demo-video/capture)
+    if (import.meta.env.DEV) (window as unknown as { __hlMap?: L.Map }).__hlMap = map;
 
     // Pasang Kanvas Peta Panas (Heatmap) Titik Api Skala Makro
     hotspotsHeatmapRef.current = new HeatLeafletLayer(map);

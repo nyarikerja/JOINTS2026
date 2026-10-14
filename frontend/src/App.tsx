@@ -244,7 +244,7 @@ export const App: React.FC = () => {
           }
         : { event_id: activeEventId },
       horizon_hours: 48,
-      n_members: 15,
+      n_members: activeEventId === "anak_krakatau_2026_09" ? 51 : 15,
       seed: 42,
       thresholds: { min: 0.9, mid: 0.5, max: 0.05 },
       overrides: backendOverrides
