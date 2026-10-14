@@ -270,29 +270,27 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
 
   return (
     <div
-      className="absolute top-3.5 left-3.5 w-[316px] max-w-[calc(100vw-1.75rem)] box-border backdrop-blur-md rounded-xl z-[1000] flex flex-col font-sans text-[#140f0e] overflow-visible"
+      className="absolute top-3.5 left-3.5 w-[316px] max-w-[calc(100vw-1.75rem)] box-border backdrop-blur-md rounded-2xl z-[1000] flex flex-col font-sans text-[#2b211e] overflow-visible border border-[#2b211e]/15 shadow-2xl"
       style={{
-        background: "rgba(245, 239, 227, 0.95)",
-        boxShadow: "10px -8px 24px rgba(0, 0, 0, 0.45)"
+        background: "#f7f3ed",
+        boxShadow: "0 25px 60px -15px rgba(20, 15, 14, 0.45)"
       }}
     >
-      {/* Header Panel (Background Putih Bersih Seperti Header Modal Panduan) */}
+      {/* Header Panel (Style Selaras dengan Popup Legenda, GPS, & Manual: #f7f3ed) */}
       <div
-        className={`px-4 py-3 flex items-center justify-between shrink-0 select-none bg-white transition-[border-radius] duration-300 ${
-          isCollapsed ? "rounded-xl" : "rounded-t-xl border-b"
+        className={`px-4 py-3 flex items-center justify-between shrink-0 select-none bg-[#f7f3ed] transition-[border-radius] duration-300 ${
+          isCollapsed ? "rounded-2xl" : "rounded-t-2xl border-b border-[#2b211e]/10"
         }`}
-        style={{ borderColor: "rgba(43, 33, 30, 0.1)" }}
       >
         <span
-          className="font-heading text-[13px] leading-tight tracking-normal font-semibold"
-          style={{ color: "#140f0e" }}
+          className="font-heading text-[13px] leading-tight tracking-normal font-bold text-[#140f0e]"
         >
           Pusat Kendali Simulasi
         </span>
         <button
           type="button"
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-1 rounded transition cursor-pointer hover:bg-black/5 text-[#140f0e]/60 hover:text-[#140f0e]"
+          className="w-6 h-6 rounded-full flex items-center justify-center transition cursor-pointer hover:bg-[#2b211e]/10 text-[#2b211e]/60 hover:text-[#2b211e]"
           title={isCollapsed ? "Buka Panel" : "Sembunyikan Panel"}
         >
           {isCollapsed ? <CaretDown size={14} weight="bold" /> : <CaretUp size={14} weight="bold" />}
