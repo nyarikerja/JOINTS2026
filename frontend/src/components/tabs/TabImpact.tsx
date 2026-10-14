@@ -32,7 +32,7 @@ const IspuBadge: React.FC<{ cat?: string | null }> = ({ cat }) => {
   const key = cat.toLowerCase().replace(/\s+/g, "_");
   const c = ISPU_CONFIG[key] || { label: cat.toUpperCase(), cls: "bg-slate-100 text-slate-700 border-slate-300" };
   return (
-    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase ${c.cls}`}>
+    <span className={`text-[9px] font-bold px-2 py-0.5 rounded border uppercase inline-block max-w-full truncate text-center tracking-wider leading-tight ${c.cls}`}>
       {c.label}
     </span>
   );
@@ -206,7 +206,9 @@ export const TabImpact: React.FC<TabImpactProps> = ({
 
           {/* Luas Footprint */}
           <div className="bg-white border border-[#2b211e]/10 rounded-lg p-2.5 shadow-xs relative group cursor-help">
-            <span className="text-[10px] text-[#2b211e]/60 block mb-0.5">Luas Area Footprint (km²)</span>
+            <span className="text-[10px] text-[#2b211e]/60 block mb-0.5">
+              Luas Area Footprint (km<sup className="text-[8px] font-semibold">2</sup>)
+            </span>
             <div className="font-sans text-xs font-bold text-[#2b211e]">
               {formatCompactRange(area?.min, area?.median, area?.max)}
             </div>
@@ -231,32 +233,36 @@ export const TabImpact: React.FC<TabImpactProps> = ({
 
               {/* 2 Infographic Stat Tiles */}
               <div className="grid grid-cols-2 gap-2">
-                <div className="bg-[#f7f3ed] p-2 rounded-lg border border-[#2b211e]/10 space-y-1">
-                  <span className="text-[9px] text-[#2b211e]/60 font-semibold block uppercase tracking-wider">
+                <div className="bg-[#f7f3ed] p-2.5 rounded-lg border border-[#2b211e]/10 flex flex-col justify-between gap-1.5 min-w-0">
+                  <span className="text-[9px] text-[#2b211e]/60 font-semibold block uppercase tracking-wider truncate">
                     24 Jam Terakhir
                   </span>
-                  <div className="flex items-baseline justify-between gap-1">
-                    <div className="flex items-baseline gap-1">
-                      <span className="font-mono text-base font-bold text-[#2b211e]">
-                        {airQualityData.center?.pm25_24h_now != null ? airQualityData.center.pm25_24h_now : "-"}
-                      </span>
-                      <span className="text-[9px] text-[#2b211e]/60">µg/m³</span>
-                    </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="font-mono text-base font-bold text-[#2b211e]">
+                      {airQualityData.center?.pm25_24h_now != null ? airQualityData.center.pm25_24h_now : "-"}
+                    </span>
+                    <span className="text-[9px] text-[#2b211e]/60">
+                      µg/m<sup className="text-[7px]">3</sup>
+                    </span>
+                  </div>
+                  <div className="pt-0.5">
                     <IspuBadge cat={airQualityData.center?.ispu_now} />
                   </div>
                 </div>
 
-                <div className="bg-[#f7f3ed] p-2 rounded-lg border border-[#2b211e]/10 space-y-1">
-                  <span className="text-[9px] text-[#2b211e]/60 font-semibold block uppercase tracking-wider">
+                <div className="bg-[#f7f3ed] p-2.5 rounded-lg border border-[#2b211e]/10 flex flex-col justify-between gap-1.5 min-w-0">
+                  <span className="text-[9px] text-[#2b211e]/60 font-semibold block uppercase tracking-wider truncate">
                     Terburuk 48 Jam
                   </span>
-                  <div className="flex items-baseline justify-between gap-1">
-                    <div className="flex items-baseline gap-1">
-                      <span className="font-mono text-base font-bold text-[#2b211e]">
-                        {airQualityData.center?.pm25_24h_max_forecast != null ? airQualityData.center.pm25_24h_max_forecast : "-"}
-                      </span>
-                      <span className="text-[9px] text-[#2b211e]/60">µg/m³</span>
-                    </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="font-mono text-base font-bold text-[#2b211e]">
+                      {airQualityData.center?.pm25_24h_max_forecast != null ? airQualityData.center.pm25_24h_max_forecast : "-"}
+                    </span>
+                    <span className="text-[9px] text-[#2b211e]/60">
+                      µg/m<sup className="text-[7px]">3</sup>
+                    </span>
+                  </div>
+                  <div className="pt-0.5">
                     <IspuBadge cat={airQualityData.center?.ispu_max_forecast} />
                   </div>
                 </div>
