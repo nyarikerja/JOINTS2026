@@ -6,7 +6,17 @@ interface TabEvacProps {
   onFlyTo: (lat: number, lng: number) => void;
 }
 
-export const TabEvac: React.FC<TabEvacProps> = ({ healthcare, onFlyTo }) => {
+export const TabEvac: React.FC<TabEvacProps> = ({ healthcare: rawHealthcare, onFlyTo }) => {
+  // Filter dan deduplikasi fasilitas kesehatan
+  const cleanHealthcare = rawHealthcare.filter((h) => {
+    const n = (h.name || "").toLowerCase().trim();
+    return n && !n.includes("tanpa nama") && n !== "fasilitas kesehatan";
+  });
+  const validHealthcare = cleanHealthcare.length > 0 ? cleanHealthcare : rawHealthcare;
+  const healthcare = Array.from(
+    new Map(validHealthcare.map(h => [h.name.trim().toLowerCase(), h])).values()
+  );
+
   const safeCount = healthcare.filter((h) => {
     const prob = h.exposure_pct ?? h.exposure_prob_pct ?? (h.exposure_probability ? h.exposure_probability * 100 : 0);
     return h.is_safe !== undefined ? h.is_safe : prob < 10;
@@ -67,7 +77,7 @@ export const TabEvac: React.FC<TabEvacProps> = ({ healthcare, onFlyTo }) => {
               <div key={h.facility_id || h.id || h.name} className="border border-black/10 bg-white rounded-lg p-2.5 text-[#140f0e] shadow-xs">
                 <div className="flex items-start justify-between gap-2 mb-1">
                   <div>
-                    <h4 className="font-bold text-[#140f0e] text-xs">🏥 {h.name}</h4>
+                    <h4 className="font-bold text-[#140f0e] text-xs font-sans tracking-tight" style={{ fontFamily: "'Poppins', 'Manrope', system-ui, -apple-system, sans-serif" }}>🏥 {h.name}</h4>
                     <div className="text-slate-500 text-[10px]">
                       {h.district || "Fasilitas Rujukan"} {dist ? `• ${dist} km dari pusat` : ""}
                     </div>

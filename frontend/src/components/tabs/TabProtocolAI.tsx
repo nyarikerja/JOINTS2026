@@ -1,17 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
-  Sparkle,
   ArrowClockwise,
-  Crosshair,
-  Copy,
-  Check,
-  Printer,
   ShieldWarning,
-  CheckCircle,
-  FileText,
-  ChatCircleDots,
-  Warning,
-  CrosshairSimple
+  CheckCircle
 } from "@phosphor-icons/react";
 import { api } from "../../services/api";
 import type { HazardType } from "../../types/api";
@@ -54,26 +45,112 @@ const SCENARIO_STYLE: Record<Scenario, { id: string; en: string; cls: string; bo
   }
 };
 
+const EVENT_FALLBACK_COORDS: Record<string, [number, number]> = {
+  anak_krakatau_2026_09: [-6.102, 105.423],
+  merapi_yogyakarta: [-7.540, 110.446],
+  lewotobi_laki_laki: [-8.538, 122.768],
+  marapi_sumatera: [-0.381, 100.473],
+  semeru: [-8.108, 112.922],
+  agung: [-8.343, 115.508],
+  rinjani: [-8.420, 116.470],
+  sinabung: [3.170, 98.392],
+  tambora: [-8.250, 118.000],
+  hutan_tambora: [-8.250, 118.000],
+  kelud: [-7.930, 112.308],
+  bromo: [-7.942, 112.953],
+  dukono: [1.693, 127.894],
+  ibu: [1.488, 127.630],
+  ruang: [2.300, 125.370],
+  iya: [-8.897, 121.645],
+  awu: [3.682, 125.456],
+  arjuno_welirang: [-7.732, 112.580],
+  dempo: [-4.030, 103.130],
+  lamongan: [-7.979, 113.342],
+  papandayan: [-7.320, 107.730],
+  sorikmarapi: [0.686, 99.622],
+  tandikat: [-0.433, 100.317],
+  tangkuban_parahu: [-6.770, 107.600],
+  live_kalimantan: [-2.200, 113.900],
+  karhutla_sumsel: [-3.250, 104.750],
+  karhutla_riau: [1.250, 101.500],
+  karhutla_jambi: [-1.600, 103.600],
+  karhutla_kalbar: [-0.050, 109.350],
+  karhutla_kalsel: [-3.300, 114.600],
+  karhutla_papua: [-8.500, 140.400],
+  hutan_sebangau: [-2.450, 113.800],
+  hutan_tanjung_puting: [-2.950, 111.950],
+  hutan_bukit_tigapuluh: [-0.950, 102.550],
+  hutan_tesso_nilo: [-0.150, 101.600],
+  hutan_kerinci_seblat: [-2.400, 101.500],
+  hutan_padang_sugihan: [-3.050, 104.950],
+  hutan_meratus: [-2.750, 115.650],
+  hutan_eks_plg: [-2.850, 114.250],
+  hutan_giam_siak: [1.150, 101.850],
+  hutan_meranti_pesisir: [0.950, 102.750],
+  hutan_kubu_raya: [-0.550, 109.550],
+  hutan_gunung_palung: [-1.200, 110.150],
+  hutan_danau_sentarum: [0.850, 112.150],
+  hutan_kutai: [0.250, 117.250],
+  hutan_sungai_wain: [-1.150, 116.850],
+  hutan_lore_lindu: [-1.350, 120.150],
+  hutan_bogani: [0.550, 123.950],
+  hutan_maros: [-5.000, 119.750],
+  hutan_rawa_aopa: [-4.450, 121.950],
+  hutan_way_kambas: [-5.050, 105.750],
+  hutan_berbak: [-1.450, 104.350],
+  hutan_alas_purwo: [-8.650, 114.450],
+  hutan_baluran: [-7.850, 114.350],
+  hutan_bromo: [-7.940, 112.950],
+  hutan_gunung_lawu: [-7.630, 111.190],
+  hutan_merbabu: [-7.450, 110.430],
+  hutan_ciremai: [-6.890, 108.400],
+  hutan_bali_barat: [-8.150, 114.450],
+  hutan_rinjani: [-8.420, 116.470],
+  hutan_komodo: [-8.550, 119.450],
+  hutan_manupeu_sumba: [-9.750, 119.750],
+  hutan_wasur: [-8.550, 140.650],
+  hutan_mappi_asmat: [-6.250, 139.550],
+  hutan_bintuni: [-2.150, 133.550]
+};
+
 export const TabProtocolAI: React.FC<TabProtocolAIProps> = ({
-  advisory,
+  hazard,
   currentCoords,
-  placeName,
-  onOpenGpsModal
+  eventId,
+  placeName
 }) => {
-  const center = currentCoords ? { lat: currentCoords.lat, lon: currentCoords.lng } : null;
-  const [point, setPoint] = useState<{ lat: number; lon: number } | null>(center);
+  const [point, setPoint] = useState<{ lat: number; lon: number } | null>(null);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [copiedPr, setCopiedPr] = useState(false);
-  const [copiedWa, setCopiedWa] = useState(false);
 
-  // Titik episentrum mengikuti pusat simulasi yang sedang aktif
+  // Bersihkan teks nama kejadian: hilangkan "Episentrum:", "Kejadian Observasi -", dll
+  const cleanPlaceName = (placeName || "")
+    .replace(/^(Episentrum|Kejadian Observasi|Skenario Hipotetis|Simulasi)(\s*[:-]\s*)?/i, "")
+    .trim();
+
+  // Sinkronisasi koordinat pusat secara otomatis
   useEffect(() => {
     if (currentCoords) {
       setPoint({ lat: currentCoords.lat, lon: currentCoords.lng });
+      return;
     }
-  }, [currentCoords?.lat, currentCoords?.lng]);
+    if (eventId && EVENT_FALLBACK_COORDS[eventId]) {
+      const [lat, lon] = EVENT_FALLBACK_COORDS[eventId];
+      setPoint({ lat, lon });
+      return;
+    }
+    if (cleanPlaceName) {
+      const lower = cleanPlaceName.toLowerCase();
+      for (const [key, coords] of Object.entries(EVENT_FALLBACK_COORDS)) {
+        const cleanKey = key.replace(/^(hutan_|karhutla_)/, "").replace(/_/g, " ");
+        if (lower.includes(cleanKey)) {
+          setPoint({ lat: coords[0], lon: coords[1] });
+          return;
+        }
+      }
+    }
+  }, [currentCoords, eventId, cleanPlaceName]);
 
   const loadAdvice = useCallback(async (lat: number, lon: number) => {
     setLoading(true);
@@ -95,76 +172,44 @@ export const TabProtocolAI: React.FC<TabProtocolAIProps> = ({
 
   const brief = data?.brief;
   const facts = data?.facts;
-  const scenarioKey: Scenario = (data?.scenario as Scenario) || "clear";
+  const scenarioKey: Scenario = (data?.scenario as Scenario) || (hazard === "volcano" ? "ash_threat" : "prevention");
   const scStyle = SCENARIO_STYLE[scenarioKey] || SCENARIO_STYLE.ash_threat;
 
-  const handleCopyPr = () => {
-    if (!advisory) return;
-    const text = `${advisory.press_release_body || advisory.gemini_briefing?.press_release_body || ""}\n\nCatatan Penting: ${advisory.key_callout || ""}`;
-    navigator.clipboard.writeText(text);
-    setCopiedPr(true);
-    setTimeout(() => setCopiedPr(false), 2000);
-  };
-
-  const handleCopyWa = () => {
-    if (!advisory) return;
-    navigator.clipboard.writeText(advisory.whatsapp_broadcast || advisory.gemini_briefing?.whatsapp_broadcast || advisory.broadcast_text || "");
-    setCopiedWa(true);
-    setTimeout(() => setCopiedWa(false), 2000);
-  };
-
-  const prBody = advisory?.press_release_body || advisory?.gemini_briefing?.press_release_body;
-  const waBody = advisory?.whatsapp_broadcast || advisory?.gemini_briefing?.whatsapp_broadcast || advisory?.broadcast_text;
+  // Fallback brief cerdas jika API sedang memuat atau server offline
+  const activeBrief = brief || (point ? {
+    headline: hazard === "volcano"
+      ? `Panduan mitigasi taktis keselamatan di sekitar ${cleanPlaceName || "kawasan gunung"}`
+      : `Panduan pencegahan kebakaran untuk keluarga di dekat ${cleanPlaceName || "kawasan hutan"}`,
+    summary: hazard === "volcano"
+      ? `Aktivitas di ${cleanPlaceName || "pusat erupsi"} dalam pantauan siaga. Kualitas udara di sumber menunjukkan peningkatan partikulat abu halus. Warga diimbau mematuhi rekomendasi otoritatif PVMBG dan BPBD.`
+      : `Kawasan ${cleanPlaceName || "sumber api"} berpotensi memicu lonjakan asap dan emisi termal. Diimbau meningkatkan kewaspadaan sekat bakar dan membatasi kegiatan luar ruang.`,
+    actions: hazard === "volcano" ? [
+      "Gunakan masker N95/KN95/KF94 saat beraktivitas di luar ruangan untuk mencegah iritasi saluran napas.",
+      "Tutup rapat tempat penampungan air bersih dan makanan dari endapan abu vulkanik tajam.",
+      "Bersihkan atap bangunan secara berkala dari akumulasi abu basah guna mencegah risiko keruntuhan struktur.",
+      "Patuhi radius aman yang ditetapkan PVMBG dan ikuti jalur evakuasi resmi BPBD."
+    ] : [
+      "Siram tanah dan tanaman di sekitar rumah dan kebun, terutama saat siang hingga sore yang kering.",
+      "Bersihkan daun kering, rumput, dan sampah dalam radius sekitar 10 m dari bangunan.",
+      "Jangan membakar sampah atau membuka lahan dengan api, gambut bisa membara di bawah tanah berminggu-minggu.",
+      "Bantu jaga sekat bakar (jalur bersih tanpa vegetasi) antara kebun, lahan gambut, dan rumah."
+    ]
+  } : null);
 
   return (
     <div className="space-y-3.5 text-xs text-[#2b211e]">
-      {/* 0. Banner AI GPS Siaga Personal Warga (Pemeriksaan Personal Berbasis Sensor Lokasi Perangkat) */}
-      <div
-        className="rounded-xl p-3 shadow-xs flex items-center justify-between border"
-        style={{
-          background: "linear-gradient(135deg, rgba(6, 95, 70, 0.08) 0%, rgba(245, 239, 227, 0.95) 100%)",
-          borderColor: "rgba(16, 185, 129, 0.35)"
-        }}
-      >
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-emerald-600/15 flex items-center justify-center text-emerald-800 shrink-0">
-            <CrosshairSimple size={16} weight="bold" />
-          </div>
-          <div>
-            <h4 className="text-xs font-bold text-[#140f0e]">AI GPS Saya</h4>
-            <p className="text-[10px] text-[#2b211e]/70">Periksa zonasi bahaya abu/karhutla di lokasi Anda saat ini</p>
-          </div>
-        </div>
-        {onOpenGpsModal && (
-          <button
-            type="button"
-            onClick={onOpenGpsModal}
-            className="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-[11px] transition shadow-xs cursor-pointer flex items-center gap-1.5 shrink-0 active:scale-95"
-          >
-            <CrosshairSimple size={14} weight="bold" />
-            <span>Cek GPS</span>
-          </button>
-        )}
-      </div>
-
-      {/* 1. Header Informasi Episentrum Simulasi */}
+      {/* 1. Header Informasi Kejadian (Nama langsung tanpa awalan "Episentrum:") */}
       <div className="bg-white border border-[#2b211e]/10 rounded-xl p-3 shadow-xs">
-        <div className="flex items-center justify-between mb-1.5">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-[#EB895B] text-white tracking-wider">
-              SIMULASI
-            </span>
-            <div className="flex items-center gap-1 text-[#140f0e] font-bold text-xs">
-              <Crosshair size={14} weight="duotone" className="text-[#A14646]" />
-              <span>Episentrum: {placeName || "Sumber Kejadian"}</span>
-            </div>
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <div className="text-[#140f0e] font-bold text-xs truncate flex-1 min-w-0" title={cleanPlaceName || "Sumber Kejadian"}>
+            <span className="truncate block">{cleanPlaceName || "Sumber Kejadian"}</span>
           </div>
 
           <button
             type="button"
             onClick={() => point && loadAdvice(point.lat, point.lon)}
             disabled={loading || !point}
-            className="flex items-center gap-1 px-2 py-0.5 rounded-full border border-[#2b211e]/20 text-[#2b211e]/70 hover:bg-[#2b211e]/5 text-[10px] font-bold cursor-pointer transition"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-[#2b211e]/20 text-[#2b211e]/80 hover:bg-[#2b211e]/5 text-[10px] font-bold cursor-pointer transition shrink-0"
             title="Muat Ulang AI"
           >
             <ArrowClockwise size={12} weight="bold" className={loading ? "animate-spin text-[#EB895B]" : ""} />
@@ -178,109 +223,35 @@ export const TabProtocolAI: React.FC<TabProtocolAIProps> = ({
         </div>
       </div>
 
-      {error && (
+      {error && !activeBrief && (
         <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-[11px]">
           {error}
         </div>
       )}
 
-      {/* 2. Draf Siaran Pers Resmi & Buletin Darurat (Google Gemini AI) */}
-      {advisory && (
-        <div className="bg-white border border-[#2b211e]/15 rounded-xl p-3.5 shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-[#2b211e]/10 pb-2">
-            <div className="flex items-center gap-1.5 text-[#140f0e] font-bold text-xs">
-              <Sparkle size={16} weight="duotone" className="text-amber-500" />
-              <span>Draf Siaran Pers &amp; Buletin (Gemini AI)</span>
-            </div>
-            <span className="text-[9.5px] font-mono text-[#2b211e]/60">
-              {advisory.engine || "Google Gemini"}
-            </span>
-          </div>
-
-          {/* Pernyataan Kunci Kedudukan Kebijakan */}
-          {advisory.key_callout && (
-            <div className="bg-amber-50 border border-amber-200/80 rounded-lg p-2.5 flex items-start gap-2">
-              <Warning size={15} weight="duotone" className="text-amber-700 shrink-0 mt-0.5" />
-              <div className="text-[11px] text-amber-900 leading-snug font-medium">
-                <strong>Fokus Kebijakan:</strong> {advisory.key_callout}
-              </div>
-            </div>
-          )}
-
-          {/* Siaran Pers Resmi Media */}
-          {prBody && (
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1 text-[11px] font-bold text-[#A14646]">
-                  <FileText size={14} weight="duotone" />
-                  <span>Siaran Pers Resmi Media (BPBD)</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleCopyPr}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-[#EB895B] hover:bg-[#DA6556] text-white transition cursor-pointer shadow-xs"
-                >
-                  {copiedPr ? <Check size={12} weight="bold" /> : <Copy size={12} weight="duotone" className="text-white" />}
-                  <span>{copiedPr ? "Tersalin" : "Salin Siaran Pers"}</span>
-                </button>
-              </div>
-              <p className="text-[10.5px] text-[#2b211e]/85 leading-relaxed bg-[#f7f3ed] p-2.5 rounded-lg border border-[#2b211e]/10 whitespace-pre-line font-sans">
-                {prBody}
-              </p>
-            </div>
-          )}
-
-          {/* Pesan Siaran Darurat Warga WhatsApp */}
-          {waBody && (
-            <div className="space-y-1.5 pt-1">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-800">
-                  <ChatCircleDots size={14} weight="duotone" />
-                  <span>Buletin Siaran Darurat Warga (WhatsApp)</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleCopyWa}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-700 hover:bg-emerald-800 text-white transition cursor-pointer shadow-xs"
-                >
-                  {copiedWa ? <Check size={12} weight="bold" /> : <Copy size={12} weight="duotone" className="text-white" />}
-                  <span>{copiedWa ? "Tersalin" : "Salin Buletin"}</span>
-                </button>
-              </div>
-              <pre className="text-[10px] text-[#2b211e]/85 leading-relaxed bg-emerald-50/50 p-2.5 rounded-lg border border-emerald-200/60 whitespace-pre-wrap font-sans">
-                {waBody}
-              </pre>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* 3. Kartu Protokol Taktis di Zona Episentrum */}
-      {brief && (
+      {/* 2. Kartu Hasil AI: Protokol Taktis di Zona Episentrum (Menggantikan Draf Siaran Pers & Buletin) */}
+      {activeBrief && (
         <div className={`bg-white border rounded-xl p-3 shadow-xs space-y-2.5 ${scStyle.borderCls}`}>
           <div className="flex items-center justify-between">
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider ${scStyle.cls}`}>
               {scStyle.id}
             </span>
-            <span className="text-[9.5px] text-[#2b211e]/50 font-mono">
-              Zona Episentrum Kejadian
-            </span>
           </div>
 
           <h4 className="text-[12px] font-bold text-[#140f0e] leading-snug">
-            {brief.headline}
+            {activeBrief.headline}
           </h4>
 
-          <p className="text-[10.5px] text-[#2b211e]/80 leading-relaxed bg-[#f7f3ed] p-2 rounded-lg border border-[#2b211e]/10">
-            {brief.summary}
+          <p className="text-[10.5px] text-[#2b211e]/80 leading-relaxed bg-[#f7f3ed] p-2.5 rounded-lg border border-[#2b211e]/10">
+            {activeBrief.summary}
           </p>
 
           <div className="pt-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#A14646] block mb-1.5">
-              Tindakan Taktis di Zona Kejadian:
+              TINDAKAN TAKTIS DI ZONA KEJADIAN:
             </span>
             <ul className="space-y-1.5 text-[10.5px]">
-              {(brief.actions || []).map((action: string, idx: number) => (
+              {(activeBrief.actions || []).map((action: string, idx: number) => (
                 <li key={idx} className="flex items-start gap-1.5 leading-snug">
                   <CheckCircle size={15} weight="duotone" className="text-emerald-600 shrink-0 mt-0.5" />
                   <span className="text-[#2b211e]/90">{action}</span>
@@ -292,7 +263,7 @@ export const TabProtocolAI: React.FC<TabProtocolAIProps> = ({
           {facts && (
             <div className="pt-2 border-t border-[#2b211e]/10 space-y-1 text-[10px] text-[#2b211e]/70">
               <span className="font-bold uppercase tracking-wider text-[9px] text-[#2b211e]/60 block mb-0.5">
-                Telemetri Berbasis Fakta:
+                TELEMETRI BERBASIS FAKTA:
               </span>
               {facts.volcanoes_nearby?.[0] && (
                 <div>• Gunung Terdekat: <strong>{facts.volcanoes_nearby[0].name}</strong> (Level {facts.volcanoes_nearby[0].level}) · {facts.volcanoes_nearby[0].distance_km} km</div>
@@ -305,7 +276,7 @@ export const TabProtocolAI: React.FC<TabProtocolAIProps> = ({
         </div>
       )}
 
-      {/* 4. Standar Efektivitas Masker Resmi Kemenkes RI */}
+      {/* 3. Standar Efektivitas Masker Resmi Kemenkes RI */}
       <div className="bg-white border border-[#2b211e]/10 rounded-xl p-3 shadow-xs space-y-2">
         <div className="flex items-center gap-1.5 text-[#A14646] font-bold text-[11px]">
           <ShieldWarning size={15} weight="duotone" />
@@ -332,16 +303,7 @@ export const TabProtocolAI: React.FC<TabProtocolAIProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Tombol Cetak / PDF */}
-      <button
-        type="button"
-        onClick={() => window.print()}
-        className="w-full py-2 px-3 rounded-lg bg-[#EB895B] hover:bg-[#DA6556] text-white font-bold text-xs transition cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
-      >
-        <Printer size={15} weight="duotone" />
-        <span>CETAK DOKUMEN MITIGASI (PDF / A4)</span>
-      </button>
     </div>
   );
 };
+

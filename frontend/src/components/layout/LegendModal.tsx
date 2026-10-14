@@ -4,9 +4,24 @@ import { X, Stack, Flame, ShieldWarning, Info } from "@phosphor-icons/react";
 interface LegendModalProps {
   isOpen: boolean;
   onClose: () => void;
+  showSchools?: boolean;
+  onToggleSchools?: (val: boolean) => void;
+  showHospitals?: boolean;
+  onToggleHospitals?: (val: boolean) => void;
+  showAirports?: boolean;
+  onToggleAirports?: (val: boolean) => void;
 }
 
-export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => {
+export const LegendModal: React.FC<LegendModalProps> = ({
+  isOpen,
+  onClose,
+  showSchools = false,
+  onToggleSchools,
+  showHospitals = false,
+  onToggleHospitals,
+  showAirports = false,
+  onToggleAirports
+}) => {
   // Tutup dengan tombol Escape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -146,6 +161,76 @@ export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => 
             </div>
           </div>
 
+          {/* Bagian Baru: Tingkat Bahaya Karhutla & Kawasan Hutan (Icon Pohon) */}
+          <div
+            className="rounded-xl p-4 space-y-3"
+            style={{
+              background: "#F9F9F9",
+              border: "1px solid rgba(0, 0, 0, 0.05)"
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <ShieldWarning size={16} weight="duotone" style={{ color: "#EB895B" }} />
+              <h3 className="font-bold text-sm tracking-wide" style={{ color: "#140f0e" }}>
+                Tingkat Bahaya Karhutla &amp; Kawasan Hutan (NASA FIRMS 24 Jam)
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Level IV */}
+              <div className="p-3 rounded-lg flex items-start gap-3 transition bg-white border border-red-100 shadow-sm">
+                <img src="/hutan_sangat_rawan.png" alt="Awas" className="w-8 h-8 shrink-0 object-contain" />
+                <div>
+                  <strong className="text-xs font-bold block text-red-600">
+                    Level IV (AWAS &bull; SANGAT RAWAN)
+                  </strong>
+                  <span className="text-[11px] leading-relaxed block text-slate-600 mt-0.5">
+                    &ge; 100 titik api aktif. Kebakaran masif gambut/hutan, darurat pelepasan asap PM2.5 pekat.
+                  </span>
+                </div>
+              </div>
+
+              {/* Level III */}
+              <div className="p-3 rounded-lg flex items-start gap-3 transition bg-white border border-orange-100 shadow-sm">
+                <img src="/hutan_rawan.png" alt="Siaga" className="w-8 h-8 shrink-0 object-contain" />
+                <div>
+                  <strong className="text-xs font-bold block text-orange-600">
+                    Level III (SIAGA &bull; RAWAN)
+                  </strong>
+                  <span className="text-[11px] leading-relaxed block text-slate-600 mt-0.5">
+                    10 &ndash; 99 titik api aktif. Klaster kebakaran berkembang, potensi ancaman asap antardaerah.
+                  </span>
+                </div>
+              </div>
+
+              {/* Level II */}
+              <div className="p-3 rounded-lg flex items-start gap-3 transition bg-white border border-amber-100 shadow-sm">
+                <img src="/hutan_waspada.png" alt="Waspada" className="w-8 h-8 shrink-0 object-contain" />
+                <div>
+                  <strong className="text-xs font-bold block text-amber-600">
+                    Level II (WASPADA)
+                  </strong>
+                  <span className="text-[11px] leading-relaxed block text-slate-600 mt-0.5">
+                    1 &ndash; 9 titik api aktif. Terdeteksi anomali panas awal, potensi rambatan lahan gambut.
+                  </span>
+                </div>
+              </div>
+
+              {/* Level I */}
+              <div className="p-3 rounded-lg flex items-start gap-3 transition bg-white border border-green-100 shadow-sm">
+                <img src="/hutan.png" alt="Normal" className="w-8 h-8 shrink-0 object-contain" />
+                <div>
+                  <strong className="text-xs font-bold block text-green-600">
+                    Level I (NORMAL &bull; BEBAS API)
+                  </strong>
+                  <span className="text-[11px] leading-relaxed block text-slate-600 mt-0.5">
+                    0 titik api. Tidak ada kebakaran aktif terdeteksi satelit dalam 24 jam terakhir. Kondisi aman.
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Bagian 2: Tingkat Peluang Dispersi Abu / Asap */}
           <div
             className="rounded-xl p-4 space-y-3"
@@ -227,7 +312,7 @@ export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => 
             </div>
           </div>
 
-          {/* Bagian Baru: Titik Api NASA FIRMS */}
+          {/* Bagian Baru: Titik Api NASA FIRMS (Hybrid LOD Heatmap & Presisi) */}
           <div
             className="rounded-xl p-4 space-y-3"
             style={{
@@ -236,21 +321,39 @@ export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => 
             }}
           >
             <div className="flex items-center gap-2">
-              <Flame size={16} weight="duotone" style={{ color: "#EB895B" }} />
+              <img src="/titik_api.png" alt="Titik Api" className="w-4 h-4 object-contain shrink-0" />
               <h3 className="font-bold text-sm tracking-wide" style={{ color: "#140f0e" }}>
-                Titik Api NASA FIRMS (Anomali Termal)
+                Titik Api NASA FIRMS (Anomali Termal Hybrid LOD)
               </h3>
             </div>
 
-            <div className="p-3 rounded-lg flex items-start gap-3 transition bg-white border border-orange-100 shadow-sm">
-              <img src="/titik_api.png" alt="Titik Api" className="w-8 h-8 shrink-0 object-contain" />
-              <div className="flex-1">
-                <strong className="text-xs font-bold block text-orange-600 mb-0.5">
-                  Titik Panas (Hotspot) Aktif
-                </strong>
-                <span className="text-[11px] leading-relaxed block text-slate-600">
-                  Titik api yang terdeteksi satelit. Semakin besar lingkaran merah, semakin besar energi api (dalam Megawatt) yang menyala.
-                </span>
+            <div className="space-y-2.5">
+              {/* Skala Makro: Heatmap */}
+              <div className="p-3 rounded-lg flex items-start gap-3 transition bg-white border border-orange-100 shadow-sm">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-yellow-300 via-orange-500 to-red-700 shrink-0 shadow-inner flex items-center justify-center text-[10px] font-bold text-white">
+                  &lt; 9
+                </div>
+                <div className="flex-1">
+                  <strong className="text-xs font-bold block text-orange-600 mb-0.5">
+                    Peta Panas / Heatmap (Skala Makro Zoom &lt; 9)
+                  </strong>
+                  <span className="text-[11px] leading-relaxed block text-slate-600">
+                    Kepadatan daya radiasi api (FRP) deteksi NASA FIRMS 24 jam terakhir seluruh Indonesia.
+                  </span>
+                </div>
+              </div>
+
+              {/* Skala Mikro: Titik Api Presisi */}
+              <div className="p-3 rounded-lg flex items-start gap-3 transition bg-white border border-orange-100 shadow-sm">
+                <img src="/titik_api.png" alt="Titik Api" className="w-8 h-8 shrink-0 object-contain" />
+                <div className="flex-1">
+                  <strong className="text-xs font-bold block text-red-600 mb-0.5">
+                    Titik Api Presisi (Skala Mikro Zoom &ge; 9)
+                  </strong>
+                  <span className="text-[11px] leading-relaxed block text-slate-600">
+                    Setiap deteksi FIRMS individual di area tampilan peta beserta sensor (VIIRS/MODIS), radiasi FRP (MW), tingkat keyakinan, dan jam deteksi.
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -272,43 +375,73 @@ export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => 
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {/* Sekolah */}
-              <div className="p-3 rounded-lg flex flex-col gap-1.5 transition bg-white border border-teal-100 shadow-sm">
-                <div className="flex items-center gap-2">
-                  <img src="/school.png" alt="Sekolah" className="w-6 h-6 object-contain" />
-                  <strong className="text-xs font-bold" style={{ color: "#2a8485" }}>
-                    Sekolah
-                  </strong>
+              <label className="p-3 rounded-lg flex flex-col gap-1.5 transition bg-white border border-teal-100 hover:border-teal-300 shadow-sm cursor-pointer select-none">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <img src="/school.png" alt="Sekolah" className="w-6 h-6 object-contain" />
+                    <strong className="text-xs font-bold" style={{ color: "#2a8485" }}>
+                      Sekolah
+                    </strong>
+                  </div>
+                  {onToggleSchools && (
+                    <input
+                      type="checkbox"
+                      checked={showSchools}
+                      onChange={(e) => onToggleSchools(e.target.checked)}
+                      className="w-4 h-4 accent-[#EB895B] rounded cursor-pointer"
+                    />
+                  )}
                 </div>
                 <span className="text-[11px] leading-relaxed text-slate-600">
-                  Lokasi sekolah. Jika masuk zona bahaya, sekolah direkomendasikan libur atau belajar dari rumah (PJJ).
+                  Titik fasilitas sekolah. Centang untuk menampilkan titik sebaran sekolah di peta.
                 </span>
-              </div>
+              </label>
 
               {/* Faskes */}
-              <div className="p-3 rounded-lg flex flex-col gap-1.5 transition bg-white border border-cyan-100 shadow-sm">
-                <div className="flex items-center gap-2">
-                  <img src="/hospital.png" alt="Hospital" className="w-6 h-6 object-contain" />
-                  <strong className="text-xs font-bold" style={{ color: "#1e6263" }}>
-                    Fasilitas Kesehatan
-                  </strong>
+              <label className="p-3 rounded-lg flex flex-col gap-1.5 transition bg-white border border-cyan-100 hover:border-cyan-300 shadow-sm cursor-pointer select-none">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <img src="/hospital.png" alt="Hospital" className="w-6 h-6 object-contain" />
+                    <strong className="text-xs font-bold" style={{ color: "#1e6263" }}>
+                      Fasilitas Kesehatan
+                    </strong>
+                  </div>
+                  {onToggleHospitals && (
+                    <input
+                      type="checkbox"
+                      checked={showHospitals}
+                      onChange={(e) => onToggleHospitals(e.target.checked)}
+                      className="w-4 h-4 accent-[#EB895B] rounded cursor-pointer"
+                    />
+                  )}
                 </div>
                 <span className="text-[11px] leading-relaxed text-slate-600">
-                  Rumah Sakit dan Puskesmas. Menjadi tujuan evakuasi warga yang sesak napas di area yang aman dari abu.
+                  Rumah Sakit dan Puskesmas. Centang untuk menampilkan titik faskes di peta.
                 </span>
-              </div>
+              </label>
 
               {/* Bandara */}
-              <div className="p-3 rounded-lg flex flex-col gap-1.5 transition bg-white border border-orange-100 shadow-sm">
-                <div className="flex items-center gap-2">
-                  <img src="/plane.png" alt="Bandara" className="w-6 h-6 object-contain" />
-                  <strong className="text-xs font-bold" style={{ color: "#c25e2d" }}>
-                    Bandara
-                  </strong>
+              <label className="p-3 rounded-lg flex flex-col gap-1.5 transition bg-white border border-orange-100 hover:border-orange-300 shadow-sm cursor-pointer select-none">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <img src="/plane.png" alt="Bandara" className="w-6 h-6 object-contain" />
+                    <strong className="text-xs font-bold" style={{ color: "#c25e2d" }}>
+                      Bandara
+                    </strong>
+                  </div>
+                  {onToggleAirports && (
+                    <input
+                      type="checkbox"
+                      checked={showAirports}
+                      onChange={(e) => onToggleAirports(e.target.checked)}
+                      className="w-4 h-4 accent-[#EB895B] rounded cursor-pointer"
+                    />
+                  )}
                 </div>
                 <span className="text-[11px] leading-relaxed text-slate-600">
-                  Lokasi bandara. Sangat rawan jika terkena abu karena dapat merusak mesin pesawat.
+                  Bandar udara nasional. Centang untuk menampilkan titik bandara di peta.
                 </span>
-              </div>
+              </label>
             </div>
           </div>
         </div>

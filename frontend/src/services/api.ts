@@ -49,8 +49,17 @@ export const api = {
 
   getCoastline: () => request<any>("/layers/coastline"),
   getNationalVolcanoes: () => request<any>("/layers/volcanoes-national"),
-  getHotspots: (eventId = "national") => request<any>(`/layers/hotspots?event_id=${eventId || "national"}`),
-  getFacilities: () => request<any>("/layers/facilities"),
+  getHotspots: (eventId = "national", bbox?: string) =>
+    request<any>(`/layers/hotspots?event_id=${eventId || "national"}${bbox ? `&bbox=${bbox}` : ""}`),
+  getFacilities: (query?: { bbox?: string; zoom?: number; facilityType?: string; limit?: number }) => {
+    const params = new URLSearchParams();
+    if (query?.bbox) params.set("bbox", query.bbox);
+    if (query?.zoom !== undefined) params.set("zoom", String(query.zoom));
+    if (query?.facilityType) params.set("facility_type", query.facilityType);
+    if (query?.limit) params.set("limit", String(query.limit));
+    const qs = params.toString();
+    return request<any>(`/layers/facilities${qs ? `?${qs}` : ""}`);
+  },
 
   runSimulation: (payload: SimulationPayload) =>
     request<SimulationResponse>("/simulate", {
@@ -75,5 +84,8 @@ export const api = {
   getNearbyAdvice: (lat: number, lon: number, lang = "id") => request<any>(`/advice/nearby?lat=${lat}&lon=${lon}&lang=${lang}`),
   getWindAtHour: (runId: string, hour: number) => request<any>(`/runs/${runId}/wind?t=${hour}`),
   getBrief: (body: any) => request<any>("/api/v1/brief", { method: "POST", body: JSON.stringify(body) }),
-  playDemo: (eventId: string) => request<any>(`/demo/play/${eventId}`)
+  playDemo: (eventId: string) => request<any>(`/demo/play/${eventId}`),
+  getRunAirQuality: (runId: string) => request<any>(`/runs/${runId}/air-quality`),
+  getLaharWarning: (runId: string) => request<any>(`/runs/${runId}/lahar-warning`),
+  getRainEffect: (runId: string) => request<any>(`/runs/${runId}/rain-effect`)
 };

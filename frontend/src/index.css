@@ -111,8 +111,13 @@
     letter-spacing: 0.035em !important;
   }
 
-  /* 2. Sub-Judul & Label Kategori Form -> Dunkin (Ukuran Sedang) */
-  h4, h5, h6, .font-subheading, .label-category {
+  /* 2. Sub-Judul & Heading Kecil -> Bersih, Modern, dan Terbaca Jelas (Poppins / Manrope) */
+  h4, h5, h6 {
+    font-family: 'Poppins', 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  .font-subheading, .label-category {
     font-family: 'Dunkin', cursive, sans-serif !important;
   }
 
@@ -155,27 +160,107 @@
     background: #FDB773;
   }
 
-  /* Leaflet popup dark override */
+  /* === LEAFLET POPUP & TOOLTIP OVERRIDES (Gaya Modern F7FAF4) === */
   .leaflet-popup-content-wrapper {
-    background: #1c1513 !important;
-    color: #FFF0C5 !important;
-    border: 1px solid rgba(235, 137, 91, 0.35) !important;
-    border-radius: 8px !important;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+    background: #F7FAF4 !important;
+    color: #16241b !important;
+    border: 1px solid rgba(22, 38, 28, 0.12) !important;
+    border-radius: 16px !important;
+    font-family: 'Poppins', 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    box-shadow: 0 16px 36px -4px rgba(22, 38, 28, 0.22), 0 6px 14px -2px rgba(22, 38, 28, 0.08) !important;
   }
   .leaflet-popup-tip {
-    background: #1c1513 !important;
+    background: #F7FAF4 !important;
   }
-  .leaflet-tooltip {
-    background: #1c1513 !important;
-    color: #FFF0C5 !important;
-    border: 1px solid rgba(235, 137, 91, 0.4) !important;
-    border-radius: 6px !important;
-    font-size: 11px !important;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important;
+
+  .leaflet-tooltip,
+  .leaflet-tooltip.tactical-tooltip-f7faf4,
+  .leaflet-tooltip.plume-global-tooltip {
+    background: #F7FAF4 !important;
+    color: #16241b !important;
+    border: 1px solid rgba(22, 38, 28, 0.12) !important;
+    border-radius: 14px !important;
+    padding: 8px 14px !important;
+    font-family: 'Poppins', 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    box-shadow: 0 16px 36px -4px rgba(22, 38, 28, 0.22), 0 6px 14px -2px rgba(22, 38, 28, 0.08) !important;
+    line-height: 1.45 !important;
+    white-space: nowrap !important;
+    width: max-content !important;
+    min-width: 190px !important;
+    max-width: 340px !important;
+    display: inline-block !important;
+    pointer-events: none !important;
+    box-sizing: border-box !important;
   }
-  .leaflet-tooltip::before {
-    border-top-color: rgba(235, 137, 91, 0.4) !important;
+
+  .leaflet-tooltip-top::before,
+  .leaflet-tooltip-top:before,
+  .leaflet-tooltip-top.tactical-tooltip-f7faf4::before,
+  .leaflet-tooltip-top.tactical-tooltip-f7faf4:before,
+  .leaflet-tooltip-top.plume-global-tooltip::before,
+  .leaflet-tooltip-top.plume-global-tooltip:before {
+    border-top-color: #F7FAF4 !important;
+    border-bottom-color: transparent !important;
+    border-left-color: transparent !important;
+    border-right-color: transparent !important;
+    border-width: 9px 8px 0 8px !important;
+    left: 50% !important;
+    margin-left: -8px !important;
+    bottom: 0 !important;
+    margin-bottom: -9px !important;
+    top: auto !important;
+  }
+
+  .leaflet-tooltip-bottom::before,
+  .leaflet-tooltip-bottom:before,
+  .leaflet-tooltip-bottom.tactical-tooltip-f7faf4::before,
+  .leaflet-tooltip-bottom.tactical-tooltip-f7faf4:before,
+  .leaflet-tooltip-bottom.plume-global-tooltip::before,
+  .leaflet-tooltip-bottom.plume-global-tooltip:before {
+    border-bottom-color: #F7FAF4 !important;
+    border-top-color: transparent !important;
+    border-left-color: transparent !important;
+    border-right-color: transparent !important;
+    border-width: 0 8px 9px 8px !important;
+    left: 50% !important;
+    margin-left: -8px !important;
+    top: 0 !important;
+    margin-top: -9px !important;
+    bottom: auto !important;
+  }
+
+  .leaflet-tooltip-left::before,
+  .leaflet-tooltip-left:before,
+  .leaflet-tooltip-left.tactical-tooltip-f7faf4::before,
+  .leaflet-tooltip-left.tactical-tooltip-f7faf4:before,
+  .leaflet-tooltip-left.plume-global-tooltip::before,
+  .leaflet-tooltip-left.plume-global-tooltip:before {
+    border-left-color: #F7FAF4 !important;
+    border-right-color: transparent !important;
+    border-top-color: transparent !important;
+    border-bottom-color: transparent !important;
+    border-width: 8px 0 8px 9px !important;
+    right: 0 !important;
+    margin-right: -9px !important;
+    top: 50% !important;
+    margin-top: -8px !important;
+  }
+
+  .leaflet-tooltip-right::before,
+  .leaflet-tooltip-right:before,
+  .leaflet-tooltip-right.tactical-tooltip-f7faf4::before,
+  .leaflet-tooltip-right.tactical-tooltip-f7faf4:before,
+  .leaflet-tooltip-right.plume-global-tooltip::before,
+  .leaflet-tooltip-right.plume-global-tooltip:before {
+    border-right-color: #F7FAF4 !important;
+    border-left-color: transparent !important;
+    border-top-color: transparent !important;
+    border-bottom-color: transparent !important;
+    border-width: 8px 9px 8px 0 !important;
+    left: 0 !important;
+    margin-left: -9px !important;
+    top: 50% !important;
+    margin-top: -8px !important;
   }
 }
 
@@ -415,7 +500,12 @@ header {
 @media print {
   @page {
     size: A4 portrait;
-    margin: 12mm 15mm;
+    margin: 10mm 12mm;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   html, body {
@@ -426,30 +516,82 @@ header {
     font-size: 10pt;
   }
 
-  /* Sembunyikan seluruh UI web (navbar, dock, drawer, peta, dialog overlay) */
-  header, aside, .absolute, .print-hide {
+  /* Sembunyikan seluruh UI web (navbar, dock, drawer, peta, dialog overlay, buttons) */
+  header, aside, .absolute:not(.print-include), .print-hide {
     display: none !important;
   }
 
-  /* Tampilkan area dokumen laporan cetak */
-  #printable-report {
+  /* Peta Hasil Simulasi di Lembar Cetak */
+  #report-simulation-map,
+  #report-simulation-map .leaflet-container {
+    width: 100% !important;
+    height: 220px !important;
+    max-height: 220px !important;
+    position: relative !important;
+    overflow: hidden !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  #report-simulation-map .leaflet-pane,
+  #report-simulation-map .leaflet-tile-pane,
+  #report-simulation-map .leaflet-layer,
+  #report-simulation-map .leaflet-tile-container,
+  #report-simulation-map .leaflet-overlay-pane,
+  #report-simulation-map .leaflet-marker-pane {
+    position: absolute !important;
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  #report-simulation-map .leaflet-tile {
+    max-width: none !important;
+    visibility: visible !important;
+    display: block !important;
+  }
+
+  #report-simulation-map svg,
+  #report-simulation-map path {
+    display: block !important;
+    visibility: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Container wrapper dokumen cetak */
+  #printable-report-container {
     display: block !important;
     width: 100% !important;
-    max-width: 100% !important;
     padding: 0 !important;
     margin: 0 !important;
-    box-shadow: none !important;
-    border: none !important;
     background: #ffffff !important;
   }
 
-  /* Browser otomatis mengulang header thead di setiap halaman baru */
-  .print-page-header {
-    display: table-header-group !important;
+  /* Lembar Halaman Cetak Mandiri (2 Lembar A4) */
+  .print-page-sheet {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    height: 275mm !important;
+    max-height: 275mm !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    overflow: hidden !important;
   }
 
-  .print-page-body {
-    display: table-row-group !important;
+  .print-page-sheet:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  #printable-report-page-2 {
+    page-break-before: always !important;
+    break-before: page !important;
   }
 
   /* Hindari pemotongan baris tabel di tengah halaman */
@@ -458,3 +600,14 @@ header {
     break-inside: avoid !important;
   }
 }
+
+/* === Peta Kertas Taktis (Paper Tiles) === */
+.leaflet-container.map-paper {
+  background: linear-gradient(#F4EEDC, #D6E8D8) !important;
+}
+
+.paper-tiles {
+  filter: grayscale(1) sepia(.25) contrast(.8) brightness(1.12);
+  opacity: .55;
+}
+

@@ -7,13 +7,15 @@ interface TimelinePlayerProps {
   onHourChange: (hour: number) => void;
   isDrawerOpen?: boolean;
   autoPlayTrigger?: number;
+  simulatedEventName?: string;
 }
 
 export const TimelinePlayer: React.FC<TimelinePlayerProps> = ({
   currentHour,
   onHourChange,
   isDrawerOpen: _isDrawerOpen = false,
-  autoPlayTrigger
+  autoPlayTrigger,
+  simulatedEventName
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
@@ -40,9 +42,13 @@ export const TimelinePlayer: React.FC<TimelinePlayerProps> = ({
 
   const quickSteps = [0, 6, 12, 24, 36, 48];
 
+  const cleanEventName = simulatedEventName
+    ? simulatedEventName.replace(/^(Kejadian Observasi|Skenario Hipotetis|Simulasi)(\s*[:-]\s*)?/i, "").trim()
+    : "";
+
   return (
     <div 
-      className={`absolute left-1/2 -translate-x-1/2 transition-all duration-300 ease-out z-[1000] w-[min(560px,calc(100vw-2rem))] ${
+      className={`absolute left-1/2 -translate-x-1/2 transition-all duration-300 ease-out z-[1000] w-[min(660px,calc(100vw-2rem))] ${
         isExpanded ? "bottom-3 translate-y-0" : "bottom-0 translate-y-full"
       }`}
     >
@@ -91,17 +97,28 @@ export const TimelinePlayer: React.FC<TimelinePlayerProps> = ({
               )}
             </button>
 
-            {/* Label Horizon Waktu */}
-            <span className="font-subheading text-[8.5px] tracking-wider uppercase text-[#140f0e]/70 truncate">
+            {/* Label Horizon Waktu (Tidak terpotong lagi) */}
+            <span className="font-sans text-[10px] font-bold tracking-wider uppercase text-[#140f0e] shrink-0 whitespace-nowrap">
               Horizon Waktu
             </span>
 
             {/* Readout T+... */}
             <span 
-              className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded shadow-2xs tabular-nums bg-white/85 text-[#A14646] border border-black/10 shrink-0"
+              className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded shadow-2xs tabular-nums bg-white/90 text-[#A14646] border border-black/10 shrink-0"
             >
               {formatHour(currentHour)}
             </span>
+
+            {/* Keterangan Lokasi Kejadian (Langsung nama lokasi tanpa kata 'Simulasi:') */}
+            {cleanEventName && (
+              <span 
+                className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#EB895B]/15 border border-[#EB895B]/30 text-[9.5px] font-bold text-[#140f0e] truncate max-w-[200px] sm:max-w-[280px] shrink-0" 
+                title={cleanEventName}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                <span className="truncate font-bold text-[#A14646] font-sans">{cleanEventName}</span>
+              </span>
+            )}
           </div>
 
           {/* Segmented Quick Step Buttons */}

@@ -12,6 +12,16 @@ export const TabSchools: React.FC<TabSchoolsProps> = ({
   onFlyTo,
   onDrawRoute
 }) => {
+  // Filter & deduplikasi fasilitas sekolah agar tidak ada baris ganda
+  const cleanSchools = schools.filter((s) => {
+    const n = (s.name || "").toLowerCase().trim();
+    return n && !n.includes("tanpa nama") && n !== "sekolah" && n !== "sdn" && n !== "sd";
+  });
+  const candidateSchools = cleanSchools.length > 0 ? cleanSchools : schools;
+  const uniqueSchools = Array.from(
+    new Map(candidateSchools.map((s) => [s.name.trim().toLowerCase(), s])).values()
+  );
+
   return (
     <div className="space-y-3 text-xs text-[#140f0e]">
       <div>
@@ -24,13 +34,13 @@ export const TabSchools: React.FC<TabSchoolsProps> = ({
         </p>
       </div>
 
-      {schools.length === 0 ? (
+      {uniqueSchools.length === 0 ? (
         <div className="p-4 text-center text-slate-600 bg-white/80 rounded-lg border border-black/10 text-xs shadow-xs">
           ✅ Tidak ada sekolah terdeteksi di dalam batas ambang bahaya pada kejadian ini.
         </div>
       ) : (
         <div className="space-y-2.5">
-          {schools.map((s) => {
+          {uniqueSchools.map((s) => {
             const prob = s.exposure_pct ?? s.exposure_prob_pct ?? (s.exposure_probability ? Math.round(s.exposure_probability * 100) : 0);
             const isAwas = prob >= 40;
             const isWaspada = prob >= 15 && prob < 40;
@@ -66,7 +76,7 @@ export const TabSchools: React.FC<TabSchoolsProps> = ({
               <div key={s.facility_id || s.id || s.name} className={`border rounded-lg p-3 text-[#140f0e] shadow-xs ${borderClass}`}>
                 <div className="flex items-start justify-between gap-2 mb-1.5">
                   <div>
-                    <h4 className="font-bold text-[#140f0e] text-xs">🏫 {s.name}</h4>
+                    <h4 className="font-bold text-[#140f0e] text-xs font-sans tracking-tight" style={{ fontFamily: "'Poppins', 'Manrope', system-ui, -apple-system, sans-serif" }}>🏫 {s.name}</h4>
                     <div className="text-slate-500 text-[10px]">{s.district || "Kecamatan Terpapar"} &bull; {s.province || ""}</div>
                   </div>
                   <span className={`px-2 py-0.5 rounded text-[9px] font-bold shrink-0 shadow-xs ${badgeColor}`}>

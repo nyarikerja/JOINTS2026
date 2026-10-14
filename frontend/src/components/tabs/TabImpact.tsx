@@ -1,6 +1,13 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { AlertOctagon } from "lucide-react";
 import { formatCompactRange } from "../../utils/formatters";
-import type { ImpactResponse, HazardType } from "../../types/api";
+import type { 
+  ImpactResponse, 
+  HazardType, 
+  LaharWarningResponse, 
+  RainEffectResponse 
+} from "../../types/api";
+import { api } from "../../services/api";
 
 interface TabImpactProps {
   impact: ImpactResponse | null;
@@ -9,16 +16,60 @@ interface TabImpactProps {
   currentHour?: number;
   onOpenLegend?: () => void;
   simulatedEventName?: string;
+  activeRunId?: string | null;
 }
+
+const ISPU_CONFIG: Record<string, { label: string; cls: string }> = {
+  baik: { label: "Baik", cls: "bg-emerald-500/15 text-emerald-800 border-emerald-500/30" },
+  sedang: { label: "Sedang", cls: "bg-sky-500/15 text-sky-800 border-sky-500/30" },
+  tidak_sehat: { label: "Tidak Sehat", cls: "bg-amber-500/20 text-amber-900 border-amber-500/40" },
+  sangat_tidak_sehat: { label: "Sangat Tidak Sehat", cls: "bg-red-500/15 text-red-800 border-red-500/30" },
+  berbahaya: { label: "Berbahaya", cls: "bg-purple-500/15 text-purple-900 border-purple-500/30" }
+};
+
+const IspuBadge: React.FC<{ cat?: string | null }> = ({ cat }) => {
+  if (!cat) return <span className="text-[10px] text-[#2b211e]/50">-</span>;
+  const key = cat.toLowerCase().replace(/\s+/g, "_");
+  const c = ISPU_CONFIG[key] || { label: cat.toUpperCase(), cls: "bg-slate-100 text-slate-700 border-slate-300" };
+  return (
+    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase ${c.cls}`}>
+      {c.label}
+    </span>
+  );
+};
 
 export const TabImpact: React.FC<TabImpactProps> = ({
   impact,
-  hazard: _hazard,
+  hazard,
   rainMm: _rainMm,
   currentHour = 12,
   onOpenLegend: _onOpenLegend,
-  simulatedEventName
+  simulatedEventName,
+  activeRunId
 }) => {
+  const [airQualityData, setAirQualityData] = useState<any>(null);
+  const [laharData, setLaharData] = useState<LaharWarningResponse | null>(null);
+  const [rainEffectData, setRainEffectData] = useState<RainEffectResponse | null>(null);
+
+  useEffect(() => {
+    if (!activeRunId) {
+      setAirQualityData(null);
+      setLaharData(null);
+      setRainEffectData(null);
+      return;
+    }
+
+    api.getRunAirQuality(activeRunId).then(setAirQualityData).catch(() => setAirQualityData(null));
+
+    if (hazard === "volcano") {
+      api.getLaharWarning(activeRunId).then(setLaharData).catch(() => setLaharData(null));
+    } else {
+      setLaharData(null);
+    }
+
+    api.getRainEffect(activeRunId).then(setRainEffectData).catch(() => setRainEffectData(null));
+  }, [activeRunId, hazard]);
+
   // Ambil metrik dinamis jam aktif dari backend (hourly_series) atau fallback ke akumulasi
   const cur: any = (impact?.hourly_series && (impact.hourly_series[String(currentHour)] || impact.hourly_series[currentHour])) || impact;
 
@@ -29,6 +80,10 @@ export const TabImpact: React.FC<TabImpactProps> = ({
   const schools = cur?.schools_exposed;
   const health = cur?.healthcare_exposed;
 
+  const cleanEventName = simulatedEventName
+    ? simulatedEventName.replace(/^(Kejadian Observasi|Skenario Hipotetis|Simulasi)(\s*[:-]\s*)?/i, "")
+    : "";
+
   return (
     <div className="space-y-3.5 text-xs text-[#2b211e]">
       {/* 1. Metrik Populasi & Wilayah */}
@@ -36,9 +91,7 @@ export const TabImpact: React.FC<TabImpactProps> = ({
         <div className="flex items-start justify-between mb-1">
           <div className="flex flex-col">
             <h3 className="font-sans text-[12px] font-bold uppercase tracking-wider text-[#2b211e] truncate max-w-[200px]" title={simulatedEventName || "METRIK POPULASI"}>
-              {simulatedEventName 
-                ? simulatedEventName.replace(/^(Kejadian Observasi|Skenario Hipotetis|Simulasi)(\s*[:-]\s*)?/i, "") 
-                : "METRIK POPULASI"}
+              {cleanEventName || "METRIK POPULASI"}
             </h3>
             {simulatedEventName && (
               <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[#A14646] mt-0.5">
@@ -50,6 +103,7 @@ export const TabImpact: React.FC<TabImpactProps> = ({
             Jam T+{currentHour < 10 ? `0${currentHour}` : currentHour}:00
           </span>
         </div>
+
         {/* Kotak Panduan Format P5 / P50 / P95 & Keterangan Legenda */}
         <div className="mt-2 p-2.5 rounded-lg bg-white/80 border border-[#2b211e]/15 text-[#2b211e] space-y-1.5 shadow-xs">
           <div className="flex items-center justify-between text-[10px]">
@@ -160,9 +214,259 @@ export const TabImpact: React.FC<TabImpactProps> = ({
               Total estimasi luasan wilayah yang tercakup dalam area dampak material.
             </div>
           </div>
+
+          {/* ======================================================== */}
+          {/* CARD 1: KUALITAS UDARA (ISPU PM2.5) - INFOGRAFIS SIMPLE   */}
+          {/* ======================================================== */}
+          {airQualityData?.available && (
+            <div className="bg-white border border-[#2b211e]/15 rounded-xl p-3 shadow-xs space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[#2b211e]">
+                  Kualitas Udara (ISPU PM2.5)
+                </span>
+                <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-[#f7f3ed] text-[#2b211e]/70 border border-[#2b211e]/10">
+                  Episentrum Sumber
+                </span>
+              </div>
+
+              {/* 2 Infographic Stat Tiles */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-[#f7f3ed] p-2 rounded-lg border border-[#2b211e]/10 space-y-1">
+                  <span className="text-[9px] text-[#2b211e]/60 font-semibold block uppercase tracking-wider">
+                    24 Jam Terakhir
+                  </span>
+                  <div className="flex items-baseline justify-between gap-1">
+                    <div className="flex items-baseline gap-1">
+                      <span className="font-mono text-base font-bold text-[#2b211e]">
+                        {airQualityData.center?.pm25_24h_now != null ? airQualityData.center.pm25_24h_now : "-"}
+                      </span>
+                      <span className="text-[9px] text-[#2b211e]/60">µg/m³</span>
+                    </div>
+                    <IspuBadge cat={airQualityData.center?.ispu_now} />
+                  </div>
+                </div>
+
+                <div className="bg-[#f7f3ed] p-2 rounded-lg border border-[#2b211e]/10 space-y-1">
+                  <span className="text-[9px] text-[#2b211e]/60 font-semibold block uppercase tracking-wider">
+                    Terburuk 48 Jam
+                  </span>
+                  <div className="flex items-baseline justify-between gap-1">
+                    <div className="flex items-baseline gap-1">
+                      <span className="font-mono text-base font-bold text-[#2b211e]">
+                        {airQualityData.center?.pm25_24h_max_forecast != null ? airQualityData.center.pm25_24h_max_forecast : "-"}
+                      </span>
+                      <span className="text-[9px] text-[#2b211e]/60">µg/m³</span>
+                    </div>
+                    <IspuBadge cat={airQualityData.center?.ispu_max_forecast} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Infographic Micro Footer: Source tags & nearest station */}
+              <div className="flex items-center justify-between pt-1 border-t border-[#2b211e]/10 text-[9px] text-[#2b211e]/60">
+                <span className="truncate">Copernicus CAMS &bull; Stasiun OpenAQ</span>
+                {airQualityData.stations && airQualityData.stations.length > 0 && (
+                  <span className="shrink-0 font-medium text-[#2a8485]">
+                    {airQualityData.stations[0].name} ({airQualityData.stations[0].distance_km} km)
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* CARD 2: POTENSI LAHAR HUJAN - INFOGRAFIS SIMPLE          */}
+          {/* ======================================================== */}
+          {hazard === "volcano" && laharData?.available && laharData.lahar_risk_level !== "none" && (
+            <div className="bg-white border border-[#DA6556]/30 rounded-xl p-3 shadow-xs space-y-2.5">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <AlertOctagon className="w-4 h-4 text-[#DA6556]" />
+                  <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[#DA6556]">
+                    POTENSI LAHAR HUJAN
+                  </span>
+                </div>
+                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider font-mono ${
+                  laharData.lahar_risk_level === "tinggi"
+                    ? "bg-red-500/15 text-red-800 border-red-500/30"
+                    : laharData.lahar_risk_level === "waspada"
+                    ? "bg-amber-500/15 text-amber-800 border-amber-500/30"
+                    : "bg-emerald-500/15 text-emerald-800 border-emerald-500/30"
+                }`}>
+                  {laharData.lahar_risk_level}
+                </span>
+              </div>
+
+              {/* 2 Infographic Stat Tiles */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-[#f7f3ed] p-2 rounded-lg border border-[#2b211e]/10 space-y-1">
+                  <span className="text-[9px] text-[#2b211e]/60 font-semibold block uppercase tracking-wider">
+                    Hujan Maks 48 Jam
+                  </span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="font-mono text-base font-bold text-[#2b211e]">
+                      {laharData.forecast_precip_max_mm_h?.median ?? 0}
+                    </span>
+                    <span className="text-[9px] text-[#2b211e]/60">mm/jam</span>
+                  </div>
+                  <div className="text-[9px] text-[#2b211e]/60 truncate">
+                    Rentang: {laharData.forecast_precip_max_mm_h?.min ?? 0} – {laharData.forecast_precip_max_mm_h?.max ?? 0} mm/j
+                  </div>
+                </div>
+
+                <div className="bg-[#f7f3ed] p-2 rounded-lg border border-[#2b211e]/10 space-y-1">
+                  <span className="text-[9px] text-[#2b211e]/60 font-semibold block uppercase tracking-wider truncate">
+                    Peluang Picu (&ge;{laharData.rainfall_threshold_trigger_mm_h || 20} mm/j)
+                  </span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="font-mono text-base font-bold text-[#DA6556]">
+                      {Math.round((laharData.prob_rain_above_trigger || 0) * 100)}%
+                    </span>
+                  </div>
+                  <div className="text-[9px] text-[#2b211e]/60 truncate">
+                    Ambang Lahar Dingin
+                  </div>
+                </div>
+              </div>
+
+              {/* Infographic Visual Gauge Bar */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-[9px] text-[#2b211e]/70 font-medium">
+                  <span>Probabilitas Pemicu Lahar</span>
+                  <span className="font-mono font-bold text-[#DA6556]">
+                    {Math.round((laharData.prob_rain_above_trigger || 0) * 100)}%
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-[#2b211e]/10 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.max(6, Math.min(100, (laharData.prob_rain_above_trigger || 0) * 100))}%`,
+                      background: (laharData.prob_rain_above_trigger || 0) >= 0.5 
+                        ? "#ef4444" 
+                        : (laharData.prob_rain_above_trigger || 0) >= 0.2 
+                        ? "#f59e0b" 
+                        : "#10b981"
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Infographic Quick Chips (No paragraphs!) */}
+              <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-[#2b211e]/10 text-[9px]">
+                <div className="bg-[#f7f3ed] px-2 py-1 rounded text-[#2b211e]/75 border border-[#2b211e]/5 truncate flex items-center gap-1">
+                  <span>📍</span>
+                  <span className="truncate">{cleanEventName || "Puncak Gunung"}</span>
+                </div>
+                <div className="bg-[#f7f3ed] px-2 py-1 rounded text-[#2b211e]/75 border border-[#2b211e]/5 truncate flex items-center gap-1">
+                  <span>🛡️</span>
+                  <span className="truncate">Rujukan: PVMBG &amp; BPBD</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* CARD 3: EFEK PENCUCIAN HUJAN - INFOGRAFIS SIMPLE         */}
+          {/* ======================================================== */}
+          {rainEffectData?.available && (
+            <div className="bg-white border border-[#2b211e]/15 rounded-xl p-3 shadow-xs space-y-2.5">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[#2b211e]">
+                  EFEK PENCUCIAN HUJAN
+                </span>
+                {rainEffectData.scavenged_mass_pct && (
+                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-800 border border-emerald-500/20">
+                    {rainEffectData.scavenged_mass_pct.median}% massa tercuci
+                  </span>
+                )}
+              </div>
+
+              {/* 2 Infographic Stat Tiles */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-[#f7f3ed] p-2 rounded-lg border border-[#2b211e]/10 space-y-1">
+                  <span className="text-[9px] text-[#2b211e]/60 font-semibold block uppercase tracking-wider">
+                    Massa Tercuci
+                  </span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="font-mono text-base font-bold text-emerald-700">
+                      {rainEffectData.scavenged_mass_pct?.median ?? 0}%
+                    </span>
+                  </div>
+                  <div className="text-[9px] text-[#2b211e]/60 truncate">
+                    P5–P95: {rainEffectData.scavenged_mass_pct?.min ?? 0}% – {rainEffectData.scavenged_mass_pct?.max ?? 0}%
+                  </div>
+                </div>
+
+                <div className="bg-[#f7f3ed] p-2 rounded-lg border border-[#2b211e]/10 space-y-1">
+                  <span className="text-[9px] text-[#2b211e]/60 font-semibold block uppercase tracking-wider">
+                    Hujan Maks Sumber
+                  </span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="font-mono text-base font-bold text-[#2b211e]">
+                      {rainEffectData.precip_max_mm_h?.median ?? 0}
+                    </span>
+                    <span className="text-[9px] text-[#2b211e]/60">mm/jam</span>
+                  </div>
+                  <div className="text-[9px] text-[#2b211e]/60 truncate">
+                    Rentang: {rainEffectData.precip_max_mm_h?.min ?? 0} – {rainEffectData.precip_max_mm_h?.max ?? 0} mm/j
+                  </div>
+                </div>
+              </div>
+
+              {/* Infographic Visual Progress Bar */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-[9px] text-[#2b211e]/70 font-medium">
+                  <span>Pembersihan Partikel Atmosferik</span>
+                  <span className="font-mono font-bold text-emerald-700">
+                    {rainEffectData.scavenged_mass_pct?.median ?? 0}%
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-[#2b211e]/10 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-[#2a8485] transition-all duration-500"
+                    style={{
+                      width: `${Math.max(5, Math.min(100, rainEffectData.scavenged_mass_pct?.median ?? 0))}%`
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Infographic Action/Impact Chips (No paragraphs!) */}
+              <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-[#2b211e]/10 text-[9px]">
+                {hazard === "volcano" ? (
+                  <>
+                    <div className="bg-emerald-500/10 px-2 py-1 rounded text-emerald-800 border border-emerald-500/20 truncate flex items-center gap-1">
+                      <span>🌧️</span>
+                      <span className="truncate">Abu Jatuh Dekat Kawah</span>
+                    </div>
+                    <div className="bg-amber-500/10 px-2 py-1 rounded text-amber-900 border border-amber-500/20 truncate flex items-center gap-1">
+                      <span>⚠️</span>
+                      <span className="truncate">Waspada Beban Atap</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="bg-emerald-500/10 px-2 py-1 rounded text-emerald-800 border border-emerald-500/20 truncate flex items-center gap-1">
+                      <span>🌧️</span>
+                      <span className="truncate">Asap Udara Berkurang</span>
+                    </div>
+                    <div className="bg-amber-500/10 px-2 py-1 rounded text-amber-900 border border-amber-500/20 truncate flex items-center gap-1">
+                      <span>🔥</span>
+                      <span className="truncate">Api Gambut Tetap Aktif</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
     </div>
   );
 };
+
 

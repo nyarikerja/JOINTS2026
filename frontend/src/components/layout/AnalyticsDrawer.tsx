@@ -26,6 +26,9 @@ interface AnalyticsDrawerProps {
   onDrawRoute: (s: SchoolItem) => void;
   activeRouteId?: string;
   simulatedEventName?: string;
+  activeRunId?: string | null;
+  eventId?: string;
+  currentCoords?: { lat: number; lng: number } | null;
   onOpenGpsModal?: () => void;
 }
 
@@ -45,7 +48,10 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
   onDrawRoute,
   activeRouteId,
   simulatedEventName,
-  onOpenGpsModal
+  activeRunId,
+  eventId,
+  currentCoords,
+  onOpenGpsModal: _onOpenGpsModal
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>("region");
 
@@ -138,6 +144,7 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
                 currentHour={currentHour}
                 onOpenLegend={onOpenLegend}
                 simulatedEventName={simulatedEventName}
+                activeRunId={activeRunId}
               />
             )}
             {activeTab === "facilities" && (
@@ -155,7 +162,8 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
                 hazard={hazard}
                 advisory={advisory}
                 placeName={simulatedEventName}
-                onOpenGpsModal={onOpenGpsModal}
+                eventId={eventId}
+                currentCoords={currentCoords}
               />
             )}
           </>

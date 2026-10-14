@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ArrowClockwise, SidebarSimple, Stack, Question, X } from "@phosphor-icons/react";
+import { ArrowClockwise, SidebarSimple, Stack, Question, X, CrosshairSimple } from "@phosphor-icons/react";
 import { Home } from "lucide-react";
 import { api } from "../../services/api";
 import type { SummaryKpiResponse } from "../../types/api";
@@ -13,6 +13,7 @@ interface TacticalHeaderProps {
   isHelpOpen?: boolean;
   onOpenHelp?: () => void;
   onCloseHelp?: () => void;
+  onOpenGpsModal?: () => void;
 }
 
 export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
@@ -22,7 +23,8 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
   isLegendOpen = false,
   isHelpOpen: controlledHelpOpen,
   onOpenHelp,
-  onCloseHelp
+  onCloseHelp,
+  onOpenGpsModal
 }) => {
   const [clockWib, setClockWib] = useState("--:--:-- WIB");
   const [clockUtc, setClockUtc] = useState("--:--:-- UTC");
@@ -132,11 +134,11 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
       >
         <img
           src="/gunung_black.png"
-          alt="Logo hELAlOKA"
+          alt="Logo HELALOKA"
           className="w-8 h-8 object-contain shrink-0 drop-shadow-sm select-none pointer-events-none group-hover:scale-105 transition-transform"
         />
         <div className="flex items-center gap-1.5">
-          <span className="font-heading text-lg tracking-tight" style={{ color: "#140f0e" }}>hELAlOKA</span>
+          <span className="font-heading text-lg tracking-tight" style={{ color: "#140f0e" }}>HELALOKA</span>
           <span className="font-subheading text-[10px] px-1.5 py-0.5 rounded tracking-wider text-white shadow-xs" style={{ backgroundColor: "#A14646" }}>
             INDONESIA
           </span>
@@ -219,17 +221,16 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
         <button
           onClick={handleSync}
           disabled={isSyncing}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-50 shadow-xs hover:brightness-105 active:scale-95"
+          className="flex items-center justify-center w-7 h-7 rounded-lg transition cursor-pointer disabled:opacity-50 shadow-xs hover:brightness-105 active:scale-95 bg-[#F5EFE3]"
           style={{
-            background: "#F5EFE3",
             border: "1px solid rgba(20, 15, 14, 0.12)",
             color: "#140f0e",
             boxShadow: "0 1px 3px rgba(0, 0, 0, 0.08)"
           }}
-          title="Sinkronisasi sensor NASA & Open-Meteo"
+          title={syncStatus ? `Sinkronisasi: ${syncStatus}` : "Sinkronisasi sensor NASA & Open-Meteo"}
+          aria-label="Live Sync"
         >
           <ArrowClockwise size={15} weight="bold" className={isSyncing ? "animate-spin" : ""} style={{ color: isSyncing ? "#DA6556" : "#A14646" }} />
-          <span>{syncStatus || "Live Sync"}</span>
         </button>
 
         {/* Tombol Legenda */}
@@ -253,6 +254,25 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
           <span>Legenda</span>
         </button>
 
+        {/* Tombol AI Cek GPS (Pindah ke tengah antara Legenda dan Proyeksi) */}
+        {onOpenGpsModal && (
+          <button
+            onClick={onOpenGpsModal}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs hover:brightness-105 active:scale-95"
+            style={{
+              background: "#F5EFE3",
+              border: "1px solid rgba(20, 15, 14, 0.12)",
+              color: "#065f46",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.08)"
+            }}
+            title="Periksa zonasi bahaya abu/karhutla di lokasi Anda saat ini (AI GPS)"
+          >
+            <CrosshairSimple size={15} weight="bold" className="text-emerald-700" />
+            <span>GPS</span>
+          </button>
+        )}
+
+        {/* Tombol Proyeksi */}
         <button
           onClick={onToggleDrawer}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs hover:brightness-105 active:scale-95"
@@ -267,10 +287,10 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
             color: "#140f0e",
             boxShadow: "0 1px 3px rgba(0, 0, 0, 0.08)"
           }}
-          title="Buka / Tutup Proyeksi Dampak"
+          title="Buka / Tutup Proyeksi"
         >
           <SidebarSimple size={15} weight={isDrawerOpen ? "fill" : "duotone"} style={{ color: isDrawerOpen ? "#F5EFE3" : "#140f0e" }} />
-          <span>Proyeksi Dampak</span>
+          <span>Proyeksi</span>
         </button>
       </div>
     </header>
