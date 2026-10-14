@@ -24,12 +24,12 @@ interface LegendModalProps {
 export const LegendModal: React.FC<LegendModalProps> = ({
   isOpen,
   onClose,
-  showSchools = false,
-  onToggleSchools,
-  showHospitals = false,
-  onToggleHospitals,
-  showAirports = false,
-  onToggleAirports
+  showSchools: _showSchools = false,
+  onToggleSchools: _onToggleSchools,
+  showHospitals: _showHospitals = false,
+  onToggleHospitals: _onToggleHospitals,
+  showAirports: _showAirports = false,
+  onToggleAirports: _onToggleAirports
 }) => {
   // Tutup dengan tombol Escape
   useEffect(() => {
@@ -331,78 +331,48 @@ export const LegendModal: React.FC<LegendModalProps> = ({
           <div className="rounded-2xl p-4 bg-white/75 border border-[#2b211e]/12 shadow-2xs space-y-3">
             <div className="flex items-center gap-2 text-[#2a8485] text-[11px] font-extrabold uppercase tracking-wider">
               <Info size={16} weight="bold" />
-              <span>Simbol Fasilitas Publik &amp; Kontrol Layer</span>
+              <span>Simbol Fasilitas Publik</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
               {/* Sekolah */}
-              <label className="p-3 rounded-xl flex flex-col gap-1.5 bg-white border border-teal-200/80 hover:border-teal-400 shadow-2xs cursor-pointer select-none transition">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <img src="/school.png" alt="Sekolah" className="w-6 h-6 object-contain" />
-                    <strong className="text-xs font-bold text-[#2a8485]">
-                      Sekolah
-                    </strong>
-                  </div>
-                  {onToggleSchools && (
-                    <input
-                      type="checkbox"
-                      checked={showSchools}
-                      onChange={(e) => onToggleSchools(e.target.checked)}
-                      className="w-4 h-4 accent-[#EB895B] rounded cursor-pointer"
-                    />
-                  )}
+              <div className="p-3 rounded-xl flex flex-col gap-1.5 bg-white border border-teal-200/80 shadow-2xs transition">
+                <div className="flex items-center gap-2">
+                  <img src="/school.png" alt="Sekolah" className="w-6 h-6 object-contain" />
+                  <strong className="text-xs font-bold text-[#2a8485]">
+                    Sekolah
+                  </strong>
                 </div>
                 <span className="text-[11px] leading-relaxed text-[#2b211e]/75">
-                  Titik fasilitas sekolah. Centang untuk menampilkan sebaran sekolah di peta.
+                  Titik fasilitas pendidikan dan sekolah terdaftar dari basis data OpenStreetMap (OSM).
                 </span>
-              </label>
+              </div>
 
               {/* Faskes */}
-              <label className="p-3 rounded-xl flex flex-col gap-1.5 bg-white border border-cyan-200/80 hover:border-cyan-400 shadow-2xs cursor-pointer select-none transition">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <img src="/hospital.png" alt="Hospital" className="w-6 h-6 object-contain" />
-                    <strong className="text-xs font-bold text-[#1e6263]">
-                      Fasilitas Kesehatan
-                    </strong>
-                  </div>
-                  {onToggleHospitals && (
-                    <input
-                      type="checkbox"
-                      checked={showHospitals}
-                      onChange={(e) => onToggleHospitals(e.target.checked)}
-                      className="w-4 h-4 accent-[#EB895B] rounded cursor-pointer"
-                    />
-                  )}
+              <div className="p-3 rounded-xl flex flex-col gap-1.5 bg-white border border-cyan-200/80 shadow-2xs transition">
+                <div className="flex items-center gap-2">
+                  <img src="/hospital.png" alt="Hospital" className="w-6 h-6 object-contain" />
+                  <strong className="text-xs font-bold text-[#1e6263]">
+                    Fasilitas Kesehatan
+                  </strong>
                 </div>
                 <span className="text-[11px] leading-relaxed text-[#2b211e]/75">
-                  Rumah Sakit dan Puskesmas. Centang untuk menampilkan titik faskes di peta.
+                  Rumah sakit rujukan, puskesmas, dan pos layanan kesehatan tanggap darurat.
                 </span>
-              </label>
+              </div>
 
               {/* Bandara */}
-              <label className="p-3 rounded-xl flex flex-col gap-1.5 bg-white border border-orange-200/80 hover:border-orange-400 shadow-2xs cursor-pointer select-none transition">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <img src="/plane.png" alt="Bandara" className="w-6 h-6 object-contain" />
-                    <strong className="text-xs font-bold text-[#c25e2d]">
-                      Bandara
-                    </strong>
-                  </div>
-                  {onToggleAirports && (
-                    <input
-                      type="checkbox"
-                      checked={showAirports}
-                      onChange={(e) => onToggleAirports(e.target.checked)}
-                      className="w-4 h-4 accent-[#EB895B] rounded cursor-pointer"
-                    />
-                  )}
+              <div className="p-3 rounded-xl flex flex-col gap-1.5 bg-white border border-orange-200/80 shadow-2xs transition">
+                <div className="flex items-center gap-2">
+                  <img src="/plane.png" alt="Bandara" className="w-6 h-6 object-contain" />
+                  <strong className="text-xs font-bold text-[#c25e2d]">
+                    Bandara
+                  </strong>
                 </div>
                 <span className="text-[11px] leading-relaxed text-[#2b211e]/75">
-                  Bandar udara nasional. Centang untuk menampilkan titik bandara di peta.
+                  Bandar udara nasional yang dipantau terhadap risiko sebaran abu vulkanik.
                 </span>
-              </label>
+              </div>
             </div>
           </div>
 
