@@ -31,16 +31,85 @@
   vbtn.addEventListener('click',function(){if(window.HLAudio)window.HLAudio.playClick();setFocus(!document.body.classList.contains('focus'));});
   addEventListener('keydown',function(e){if(e.key==='Escape')setFocus(false);});
 
-  /* ---------- kontrol audio suasana ---------- */
+  /* ---------- kontrol audio suasana (default aktif) ---------- */
   var aBtn=$('#audioBtn');
+  var soundPref=null;
+  try{soundPref=localStorage.getItem('hl-sound');}catch(e){}
+  var soundActive=(soundPref!=='off');
+
+  function syncAudioBtn(on){
+    if(!aBtn)return;
+    var live = !!(window.HLAudio && window.HLAudio.isLive && window.HLAudio.isLive());
+    aBtn.setAttribute('aria-pressed',on?'true':'false');
+    aBtn.classList.toggle('playing',on && live);
+    aBtn.classList.toggle('waiting',on && !live);
+    aBtn.setAttribute('aria-label',on?'Matikan suara suasana alam':'Nyalakan suara suasana alam');
+    aBtn.title=on?(live?'Matikan suara alam':'Klik untuk mengaktifkan suara alam'):'Nyalakan suara alam';
+  }
+
   if(aBtn){
+    if(soundActive){
+      syncAudioBtn(true);
+      if(window.HLAudio)window.HLAudio.start();
+    }else{
+      syncAudioBtn(false);
+    }
+
+    /* Dengarkan perubahan status AudioContext (mis. running setelah user gesture) */
+    window.addEventListener('hlaudio:state', function(){
+      var sp=null;
+      try{sp=localStorage.getItem('hl-sound');}catch(e){}
+      syncAudioBtn(sp!=='off');
+    });
+
+    /* Auto-unlock audio saat interaksi pengguna pertama kali */
+    function unlockSound(e){
+      if(e && e.target && e.target.closest && e.target.closest('#audioBtn')) return;
+      var sp=null;
+      try{sp=localStorage.getItem('hl-sound');}catch(e){}
+      if(sp!=='off'){
+        if(window.HLAudio) window.HLAudio.resume();
+        syncAudioBtn(true);
+      }
+    }
+    ['pointerdown','click','keydown','touchstart','touchend','wheel'].forEach(function(ev){
+      addEventListener(ev,unlockSound,{capture:true,passive:true});
+    });
+
+    /* Pulihkan audio saat kembali dari app via tombol Back (BFCache) atau reload */
+    addEventListener('pageshow',function(){
+      var sp=null;
+      try{sp=localStorage.getItem('hl-sound');}catch(e){}
+      if(sp!=='off'){
+        syncAudioBtn(true);
+        if(window.HLAudio) window.HLAudio.resume();
+      }
+    });
+
+    /* Pulihkan saat tab aktif kembali */
+    document.addEventListener('visibilitychange',function(){
+      if(!document.hidden){
+        var sp=null;
+        try{sp=localStorage.getItem('hl-sound');}catch(e){}
+        if(sp!=='off'&&window.HLAudio){
+          window.HLAudio.resume();
+        }
+      }
+    });
+
     aBtn.addEventListener('click',function(){
       if(!window.HLAudio)return;
-      var on=window.HLAudio.toggle();
-      aBtn.setAttribute('aria-pressed',on?'true':'false');
-      aBtn.classList.toggle('playing',on);
-      aBtn.setAttribute('aria-label',on?'Matikan suara suasana alam':'Nyalakan suara suasana alam');
-      aBtn.title=on?'Matikan suara alam':'Nyalakan suara alam';
+      var live = !!(window.HLAudio.isLive && window.HLAudio.isLive());
+      if(!live){
+        window.HLAudio.start();
+        if(window.HLAudio.resume) window.HLAudio.resume();
+        try{localStorage.setItem('hl-sound','on');}catch(e){}
+        syncAudioBtn(true);
+      }else{
+        window.HLAudio.stop();
+        try{localStorage.setItem('hl-sound','off');}catch(e){}
+        syncAudioBtn(false);
+      }
     });
   }
 
@@ -71,8 +140,10 @@
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&mNav.classList.contains('open')){menu(false);mBtn.focus();}});
 
   /* tautan luar: isi LINKS, tombolnya otomatis tampil */
-  var LINKS={app:'',repo:'',email:''};
+  var LINKS={app:'/app/',repo:'https://github.com/nyarikerja/JOINTS2026',email:''};
   $$('[data-link]').forEach(function(a){var k=a.getAttribute('data-link'),v=LINKS[k];if(v){a.href=(k==='email'?'mailto:':'')+v;a.hidden=false;}});
+
+  /* tombol menuju aplikasi ditangani js/portal.js (gerbang dimensi ke /app/, tempat loader sungai berjalan) */
 
   /* ---------- gulir halus (Lenis). Lompatan lewat menu jadi time-lapse sinematik ---------- */
   var lenis=null;

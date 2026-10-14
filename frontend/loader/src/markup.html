@@ -1,0 +1,27 @@
+<div id="hlLoader" class="hl-loader" aria-busy="true" role="dialog" aria-label="Menyiapkan ruang simulasi HelaLoka">
+  <div id="ldScene" class="ld-scene">
+    <canvas id="ldGl" aria-hidden="true"></canvas>
+    <div id="ldFb" class="ld-fb" hidden></div>
+    <div class="ld-shade" aria-hidden="true"></div>
+    <div class="ld-brand" aria-hidden="true"><span class="ld-brand-icon"></span><span class="ld-brand-name">hELAlOKA</span><span class="ld-brand-badge">INDONESIA</span></div>
+    <div class="ld-tools">
+      <span class="ld-hint" id="ldHint" aria-hidden="true">Ketuk di mana saja untuk suara</span>
+      <button type="button" id="ldSound" class="ld-ic" aria-pressed="false" aria-label="Nyalakan suara" title="Suara"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="spk" d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path class="wv" d="M15.5 9.2a4 4 0 0 1 0 5.6M18.2 6.6a7.6 7.6 0 0 1 0 10.8"/><path class="mute" d="M15.5 9.5l5 5M20.5 9.5l-5 5"/></svg></button>
+      <button type="button" id="ldSkip" class="ld-skip" title="Lewati animasi (Esc)">Lewati<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l6 6-6 6M13 6l6 6-6 6"/></svg></button>
+    </div>
+    <div class="ld-head">
+      <p class="ld-kicker">Peringatan aksi dini multi-bahaya</p>
+      <div class="ld-title" id="ldTitle" role="heading" aria-level="1" aria-label="hELAlOKA Indonesia"><span style="--i:0">h</span><span style="--i:1">E</span><span style="--i:2">L</span><span style="--i:3">A</span><span style="--i:4">l</span><span style="--i:5">O</span><span style="--i:6">K</span><span style="--i:7">A</span><b style="--i:8">INDONESIA</b></div>
+      <p class="ld-sub">menyusuri sungai menuju ruang simulasi</p>
+    </div>
+    <div class="ld-foot">
+      <div class="ld-status" aria-hidden="true">
+        <svg class="ld-river" viewBox="0 0 168 26"><path id="ldPath" d="M4 17C24 4 40 24 62 13S100 4 118 15 150 20 164 9"/><path class="ld-river-done" pathLength="1" d="M4 17C24 4 40 24 62 13S100 4 118 15 150 20 164 9"/><circle id="ldDot" cx="4" cy="17" r="3.4"/></svg>
+        <span class="ld-pct" id="ldPct">0%</span>
+        <span class="ld-msg" id="ldMsg">Menyiapkan ruang kendali</span>
+      </div>
+    </div>
+    <p class="ld-tip" id="ldTip"><b>Tahukah kamu?</b><span id="ldTipT"></span></p>
+    <p class="ld-sr" id="ldSr" aria-live="polite"></p>
+  </div>
+</div>

@@ -36,7 +36,7 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
   onRunSimulation,
   onOpenPrintReport,
   isRunning,
-  progressText: _progressText,
+  progressText,
   activeRunId,
   simulatedEventName: _simulatedEventName
 }) => {
@@ -500,7 +500,7 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
                 className="w-full py-2.5 px-4 rounded-full text-[10px] tracking-wider uppercase flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none text-white bg-[#EB895B] hover:bg-[#d97746] hover:scale-[1.02] hover:shadow-md active:scale-[0.98] shadow-xs font-button"
               >
                 <Play size={13} weight="fill" />
-                <span>{isRunning ? "Menghitung Sebaran..." : "Mulai Simulasi"}</span>
+                <span>{isRunning ? (progressText || "Menghitung Sebaran...") : "Mulai Simulasi"}</span>
               </button>
 
               {/* Tombol Ekspor Laporan */}

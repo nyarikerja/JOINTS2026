@@ -66,7 +66,21 @@
     if(ctx)return;
     var AC=window.AudioContext||window.webkitAudioContext;
     if(!AC)return;
-    try{ctx=new AC();}catch(e){return;}
+    try{
+      ctx=new AC();
+      ctx.onstatechange=function(){
+        if(ctx.state==='running'&&isPlaying){
+          var t=ctx.currentTime;
+          master.gain.cancelScheduledValues(t);
+          master.gain.setValueAtTime(master.gain.value, t);
+          master.gain.setTargetAtTime(.85,t,.35);
+          sent={};
+          if(window.US&&window.US.T)update(window.US.T);
+          if(!timer)timer=setInterval(tick,50);
+        }
+        window.dispatchEvent(new CustomEvent('hlaudio:state', { detail: { state: ctx.state } }));
+      };
+    }catch(e){return;}
 
     var comp=ctx.createDynamicsCompressor();
     comp.threshold.value=-18;comp.knee.value=12;comp.ratio.value=4;comp.attack.value=.01;comp.release.value=.3;
@@ -207,27 +221,72 @@
     setLevel('roar',MIX.roar*lv.fire,1);
   }
 
-  function toggle(){
+  function start(){
     init();
     if(!ctx)return false;
-    isPlaying=!isPlaying;
+    isPlaying=true;
     clearTimeout(sleepT);
-    var now=ctx.currentTime;
-    if(isPlaying){
-      ctx.resume();
-      master.gain.cancelScheduledValues(now);
-      master.gain.setTargetAtTime(.85,now,.5);
-      sent={};
-      if(window.US&&window.US.T)update(window.US.T);
-      if(!timer)timer=setInterval(tick,50);
+    sent={};
+    function onStart(){
+      if(ctx.state==='running'){
+        var t=ctx.currentTime;
+        master.gain.cancelScheduledValues(t);
+        master.gain.setValueAtTime(master.gain.value, t);
+        master.gain.setTargetAtTime(.85,t,.35);
+        sent={};
+        if(window.US&&window.US.T)update(window.US.T);
+        if(!timer)timer=setInterval(tick,50);
+      }
+    }
+    if(ctx.state!=='running'){
+      ctx.resume().then(onStart).catch(function(){});
     }else{
-      master.gain.cancelScheduledValues(now);
-      master.gain.setTargetAtTime(0,now,.25);
-      clearInterval(timer);timer=0;
-      /* hentikan mesin audio setelah fade agar tidak membebani CPU */
-      sleepT=setTimeout(function(){if(!isPlaying)ctx.suspend();},1200);
+      onStart();
     }
     return isPlaying;
+  }
+
+  function resume(){
+    if(!ctx)init();
+    if(!ctx)return;
+    isPlaying=true;
+    clearTimeout(sleepT);
+    sent={};
+    function onResume(){
+      if(ctx.state==='running'){
+        var t=ctx.currentTime;
+        master.gain.cancelScheduledValues(t);
+        master.gain.setValueAtTime(master.gain.value, t);
+        master.gain.setTargetAtTime(.85,t,.35);
+        sent={};
+        if(window.US&&window.US.T)update(window.US.T);
+        if(!timer)timer=setInterval(tick,50);
+      }
+    }
+    if(ctx.state!=='running'){
+      ctx.resume().then(onResume).catch(function(){});
+    }else{
+      onResume();
+    }
+  }
+
+  function stop(){
+    if(!ctx||!isPlaying)return false;
+    isPlaying=false;
+    clearTimeout(sleepT);
+    var now=ctx.currentTime;
+    master.gain.cancelScheduledValues(now);
+    master.gain.setTargetAtTime(0,now,.25);
+    clearInterval(timer);timer=0;
+    sleepT=setTimeout(function(){if(!isPlaying&&ctx)ctx.suspend().catch(function(){});},1200);
+    return false;
+  }
+
+  function toggle(){
+    if(!isPlaying||!ctx||ctx.state!=='running'){
+      return start();
+    }
+    return stop();
   }
 
   /* dipanggil js/scene.js tiap kali petir menyambar: guntur menyusul kilatan sesuai jarak.
@@ -250,5 +309,16 @@
     burst(t,.012,'bandpass',2600,3,.04,0,false);
   }
 
-  window.HLAudio={init:init,toggle:toggle,update:update,playClick:playClick,thunder:strike,isPlaying:function(){return isPlaying;}};
+  /* kecilkan suasana alam saat narasi tur otomatis berbicara (js/autoscroll.js) */
+  var ducked=false;
+  function duck(on){
+    ducked=!!on;
+    if(!ctx||!isPlaying||!master)return;
+    master.gain.cancelScheduledValues(ctx.currentTime);
+    master.gain.setTargetAtTime(ducked?.22:.85,ctx.currentTime,.3);
+  }
+
+  function isLive(){return isPlaying&&!!ctx&&ctx.state==='running';}
+  function getState(){return ctx?ctx.state:'uninitialized';}
+  window.HLAudio={init:init,start:start,resume:resume,stop:stop,toggle:toggle,update:update,playClick:playClick,thunder:strike,duck:duck,isPlaying:function(){return isPlaying;},isLive:isLive,getState:getState};
 })();

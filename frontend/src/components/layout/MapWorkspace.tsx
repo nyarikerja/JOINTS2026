@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 import { Plus, Minus, Stack, X, Crosshair, User } from "@phosphor-icons/react";
 import { CONFIG } from "../../config/constants";
 import { api } from "../../services/api";
+import { reportBoot, trackTileLayer } from "../../utils/bootProgress";
 import { formatHour } from "../../utils/formatters";
 import { NationalModes } from "./NationalModes";
 import { CameraReadout } from "./MapReadouts";
@@ -353,6 +354,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
 
     // Pasang Basemap Default (Satelit Esri + Labels)
     applyBasemap(map, "satellite");
+    if (baseTileLayerRef.current) trackTileLayer(baseTileLayerRef.current);
 
     mapRef.current = map;
 
@@ -452,8 +454,9 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
     map.on("mousemove", onMouseMove);
     map.on("mouseout", onMouseOut);
 
-    // Load semua layer secara paralel
-    Promise.allSettled([
+    // Load semua layer secara paralel (progres tiap layer dilaporkan ke loader sungai)
+    let layersDone = 0;
+    const layerJobs = [
       loadVolcanoes(map),
       loadForests(map),
       api.getForestBoundaries().then((res) => {
@@ -461,7 +464,11 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
       }).catch(() => {}),
       loadHotspots(map),
       loadFacilities(map)
-    ]).finally(() => {
+    ];
+    const tickLayer = () => reportBoot("peta", ++layersDone / layerJobs.length);
+    layerJobs.forEach((job) => job.then(tickLayer, tickLayer));
+    Promise.allSettled(layerJobs).finally(() => {
+      reportBoot("peta", 1);
       if (eventIdRef.current) {
         focusEventRef.current(map, eventIdRef.current, hazardRef.current);
       }

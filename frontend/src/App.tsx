@@ -9,6 +9,8 @@ import { PrintReportModal } from "./components/layout/PrintReportModal";
 import { GpsAdvisoryModal } from "./components/layout/GpsAdvisoryModal";
 import { useLocationWatch } from "./utils/locationWatch";
 import { api } from "./services/api";
+import { isLoaderActive } from "./utils/bootProgress";
+import { Loader2 } from "lucide-react";
 import type {
   HazardType,
   ModelingMode,
@@ -61,6 +63,15 @@ export const App: React.FC = () => {
   const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; _t: number } | null>(null);
   const [resetViewTrigger, setResetViewTrigger] = useState<number>(0);
   const [autoPlayTrigger, setAutoPlayTrigger] = useState<number>(0);
+  const [isMapReady, setIsMapReady] = useState<boolean>(false);
+  // Loader sungai (public/loader) menggantikan overlay "Memuat Data Spasial" selama masih tampil
+  const [riverLoaderOn, setRiverLoaderOn] = useState<boolean>(() => isLoaderActive());
+  React.useEffect(() => {
+    if (!riverLoaderOn) return;
+    const off = () => setRiverLoaderOn(false);
+    window.addEventListener("loader:done", off);
+    return () => window.removeEventListener("loader:done", off);
+  }, [riverLoaderOn]);
   const [selectedEventName, setSelectedEventName] = useState<string>("G. Anak Krakatau");
   const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
   const [eventFocusTrigger, setEventFocusTrigger] = useState<number>(0);
@@ -403,8 +414,18 @@ export const App: React.FC = () => {
           isDrawerOpen={isDrawerOpen}
           onToggleLegend={() => setIsLegendOpen((prev) => !prev)}
           focusEventTrigger={eventFocusTrigger}
+          onLayersLoaded={() => setIsMapReady(true)}
         />
 
+        {/* Global Loading Overlay (Di bawah Navbar): cadangan jika loader sungai dilewati sebelum peta siap */}
+        {!isMapReady && !isRunning && !riverLoaderOn && (
+          <div className="absolute inset-0 z-[1500] bg-[#140f0e] flex flex-col items-center justify-center gap-3 select-none pointer-events-none">
+            <Loader2 className="w-6 h-6 text-[#EB895B] animate-spin" />
+            <span className="font-mono text-xs uppercase tracking-wider text-[#FFF0C5]/80">
+              Memuat Data Spasial
+            </span>
+          </div>
+        )}
         {/* Loading Simulasi Center Screen */}
         {isRunning && (
           <div className="absolute inset-0 z-[2000] bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center select-none">

@@ -1,0 +1,114 @@
+/* HelaLoka river loader. Pola tampilan loader dari sakura-fantasy src/ui/ui.css (MIT, (c) 2026 Bill Chan):
+   judul muncul bertahap (blur ke fokus), reveal lewat kabut. */
+@property --rot { syntax: '<angle>'; inherits: true; initial-value: 0deg; }
+.hl-loader{
+  --paper:#fff7ec;--paper-dim:rgba(255,247,236,.8);--gold:#f4c27a;--red:#dc2626;
+  --font-d:'Fraunces','Iowan Old Style','Palatino Linotype',Georgia,serif;
+  --font-b:'Manrope','Poppins','Segoe UI',system-ui,sans-serif;--font-m:'DM Mono',ui-monospace,'Cascadia Mono',Consolas,monospace;
+  --rot:0deg;
+  position:fixed;inset:0;z-index:100000;color:var(--paper);font-family:var(--font-b);
+  -webkit-font-smoothing:antialiased;
+}
+html.hl-loading,html.hl-loading body{overflow:hidden}
+.ld-scene{position:absolute;inset:0;overflow:hidden;
+  /* warna kabut, sama dengan akhir transisi landing page, jadi perpindahan halaman tidak berkedip */
+  background:#d4dbe1}
+.ld-scene canvas{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;transition:opacity 1.1s ease}
+.hl-loader.live .ld-scene canvas{opacity:1}
+.ld-fb{position:absolute;inset:0;background:#140e1e;overflow:hidden}
+.ld-fb svg{width:100%;height:100%;display:block;filter:drop-shadow(0 0 40px rgba(0,0,0,.6))}
+.fb-petals{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.fb-petals i{position:absolute;top:-4%;left:var(--x);width:9px;height:6px;border-radius:50% 50% 50% 0;background:var(--pc,#f6b7c9);opacity:.85;filter:drop-shadow(0 0 6px rgba(255,180,200,.75));animation:ldFall var(--d) linear var(--l) infinite}
+.fb-petals i.firefly{width:4px;height:4px;border-radius:50%;background:#ffe082;box-shadow:0 0 8px #ffb300,0 0 16px #ff8f00;opacity:.8;animation:ldFloat var(--d) ease-in-out var(--l) infinite}
+@keyframes ldFall{to{transform:translate(40px,110vh) rotate(540deg)}}
+@keyframes ldFloat{
+  0%,100%{transform:translate(0, 0) scale(0.8);opacity:0.35}
+  50%{transform:translate(20px, -24px) scale(1.2);opacity:0.95}
+}
+.ld-shade{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(to bottom,rgba(22,16,26,.5) 0%,rgba(22,16,26,.16) 28%,rgba(22,16,26,0) 46%,rgba(22,16,26,0) 64%,rgba(16,14,18,.6) 100%)}
+
+.ld-brand{position:absolute;top:calc(env(safe-area-inset-top,0px) + 18px);left:max(20px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:9px;transition:opacity .8s ease}
+.ld-brand-icon{width:30px;height:30px;background-color:#FFF0C5;-webkit-mask:url(/gunung.png) no-repeat center/contain;mask:url(/gunung.png) no-repeat center/contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
+.ld-brand-name{font:800 17px/1 var(--font-b);letter-spacing:-.02em;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.55)}
+.ld-brand-badge{font:700 9px/1 var(--font-b);letter-spacing:.08em;color:#fff;background:var(--red);padding:3px 6px;border-radius:4px;box-shadow:0 1px 6px rgba(220,38,38,.5)}
+
+.ld-tools{position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);right:max(16px,env(safe-area-inset-right,0px));display:flex;align-items:center;gap:10px}
+.ld-ic,.ld-skip{height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px;color:var(--paper);background:rgba(28,20,30,.34);
+  border:1px solid rgba(255,236,226,.34);border-radius:999px;cursor:pointer;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  transition:background .25s,border-color .25s,opacity .25s;font:600 13px/1 var(--font-b);letter-spacing:.02em}
+.ld-ic{width:44px;padding:0}
+.ld-skip{padding:0 14px 0 16px}
+.ld-ic:hover,.ld-skip:hover{background:rgba(28,20,30,.58);border-color:rgba(255,236,226,.72)}
+.ld-ic:focus-visible,.ld-skip:focus-visible,.ld-enter:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.ld-ic svg,.ld-skip svg{width:18px;height:18px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ld-ic .spk{fill:currentColor;stroke:none}
+.ld-ic .wv{display:none}.ld-ic.on .wv{display:block}.ld-ic.on .mute{display:none}
+.ld-hint{font:500 12px/1.2 var(--font-b);color:var(--paper);background:rgba(28,20,30,.45);padding:7px 11px;border-radius:999px;opacity:0;transform:translateX(6px);
+  transition:opacity .6s ease,transform .6s ease;pointer-events:none;white-space:nowrap}
+.ld-hint.on{opacity:1;transform:none}
+
+.ld-head{position:absolute;left:50%;top:clamp(76px,12vh,150px);transform:translateX(-50%);text-align:center;width:min(92vw,980px);pointer-events:none}
+.ld-kicker{margin:0 0 12px;font:500 11px/1 var(--font-m);letter-spacing:.32em;text-transform:uppercase;color:var(--paper-dim);opacity:0;animation:ldIn 1.6s ease .2s forwards;text-shadow:0 1px 10px rgba(0,0,0,.4)}
+.ld-title{margin:0;display:flex;justify-content:center;align-items:flex-start;flex-wrap:wrap;font:800 clamp(46px,9vw,112px)/.92 var(--font-b);letter-spacing:-.035em;
+  color:#fffaf2;text-shadow:0 2px 2px rgba(60,30,20,.2),0 10px 40px rgba(40,20,30,.42)}
+.ld-title span,.ld-title b{display:inline-block;opacity:0;filter:blur(14px);transform:translateY(-.16em) scale(1.06);
+  transition:opacity 1.5s cubic-bezier(.2,.7,.2,1),filter 1.7s cubic-bezier(.2,.7,.2,1),transform 1.7s cubic-bezier(.2,.7,.2,1);transition-delay:calc(var(--i) * 90ms + 150ms)}
+.ld-title b{font:700 clamp(9px,1.1vw,13px)/1 var(--font-b);letter-spacing:.1em;background:var(--red);color:#fff;padding:5px 8px;border-radius:5px;margin:.55em 0 0 .7em;text-shadow:none;box-shadow:0 3px 14px rgba(220,38,38,.45)}
+.ld-title.in span,.ld-title.in b{opacity:1;filter:blur(0);transform:none}
+.ld-sub{margin:14px 0 0;font:italic 400 clamp(15px,1.7vw,20px)/1.3 var(--font-d);color:var(--paper-dim);letter-spacing:.02em;opacity:0;animation:ldIn 1.8s ease 1.1s forwards;text-shadow:0 2px 14px rgba(30,20,30,.45)}
+@keyframes ldIn{from{opacity:0;filter:blur(8px)}to{opacity:1;filter:blur(0)}}
+
+.ld-foot{position:absolute;left:50%;bottom:max(26px,calc(env(safe-area-inset-bottom,0px) + 18px));transform:translateX(-50%);display:grid;place-items:center;width:min(92vw,560px)}
+.ld-status{grid-area:1/1;display:flex;align-items:center;gap:12px;transition:opacity .8s ease,transform .8s ease;text-shadow:0 1px 10px rgba(0,0,0,.5)}
+.ld-river{width:112px;height:18px;overflow:visible;flex:none}
+.ld-river path{fill:none;stroke:rgba(255,247,236,.3);stroke-width:1.6;stroke-linecap:round}
+.ld-river .ld-river-done{stroke:var(--gold);stroke-dasharray:var(--p,0) 1}
+.ld-river circle{fill:#fff7ec;filter:drop-shadow(0 0 4px rgba(255,210,140,.9))}
+.ld-pct{font:500 13px/1 var(--font-m);color:var(--paper);min-width:3.2em;text-align:right;font-variant-numeric:tabular-nums}
+.ld-msg{font:500 13px/1.3 var(--font-b);color:var(--paper-dim);max-width:min(62vw,380px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ld-enter{grid-area:1/1;display:flex;align-items:center;gap:14px;padding:10px 14px 10px 10px;border:1px solid rgba(255,236,226,.42);border-radius:999px;
+  background:rgba(26,18,28,.52);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:var(--paper);cursor:pointer;font-family:var(--font-b);
+  opacity:0;transform:translateY(12px);transition:opacity 1s cubic-bezier(.2,.7,.2,1),transform 1s cubic-bezier(.2,.7,.2,1),background .3s,border-color .3s;
+  box-shadow:0 18px 50px rgba(20,10,20,.35)}
+.ld-enter.on{opacity:1;transform:none}
+.ld-enter:hover{background:rgba(26,18,28,.72);border-color:rgba(255,236,226,.85)}
+.ld-seal{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;flex:none;
+  background:conic-gradient(from var(--rot),#ffd27a,#ff8fb8,#8fd8ff,#c4a2ff,#ffd27a);animation:ldSpin 6s linear infinite;box-shadow:0 0 22px rgba(255,200,170,.55)}
+.ld-seal i{width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 50% 45%,#fff8ec,#f4c9a7 55%,#8c6f9c)}
+@keyframes ldSpin{to{--rot:360deg}}
+.ld-lbl{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left}
+.ld-lbl b{font:700 17px/1 var(--font-b);letter-spacing:.04em}
+.ld-lbl i{font:italic 400 13px/1.2 var(--font-d);color:var(--paper-dim)}
+.ld-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* kartu "Tahukah kamu?" selama memuat */
+.ld-tip{position:absolute;left:50%;bottom:max(78px,calc(env(safe-area-inset-bottom,0px) + 70px));transform:translateX(-50%);width:min(88vw,460px);margin:0;
+  display:flex;flex-direction:column;gap:5px;padding:12px 18px 13px;background:rgba(28,20,30,.36);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:1px solid rgba(255,236,226,.22);border-radius:6px 22px 6px 22px;text-align:left;opacity:0;transition:opacity .8s ease,transform .8s ease;pointer-events:none}
+.ld-tip.on{opacity:1}
+.ld-tip b{font:600 10px/1 var(--font-m);letter-spacing:.22em;text-transform:uppercase;color:var(--gold)}
+.ld-tip span{font:400 14px/1.45 var(--font-b);color:var(--paper);text-shadow:0 1px 8px rgba(0,0,0,.35)}
+@media (max-height:560px){.ld-tip{display:none}}
+
+/* reveal: perahu lenyap di kabut gerbang; lapisan kabut (js/fog.js) menutup layar lalu menipis memperlihatkan aplikasi */
+.hl-loader.revealing{pointer-events:none}
+.hl-loader.through .ld-scene{visibility:hidden}
+.hl-loader.revealing .ld-foot,.hl-loader.revealing .ld-tools,.hl-loader.revealing .ld-brand,.hl-loader.revealing .ld-tip{opacity:0;transition:opacity .7s ease}
+.hl-loader.revealing .ld-head{opacity:0;transform:translateX(-50%) scale(1.12);filter:blur(6px);transition:opacity .9s ease,transform 1.4s ease,filter 1.2s ease}
+
+@media (max-width:640px){
+  .ld-skip{padding:0 12px;font-size:12px}
+  .ld-hint{display:none}
+  .ld-brand-name{font-size:15px}
+  .ld-msg{max-width:46vw}
+  .ld-lbl i{display:none}
+  .ld-enter kbd{display:none}
+  .ld-title b{margin:.3em 0 0 .5em}
+}
+@media (prefers-reduced-motion:reduce){
+  .fb-petals i{animation:none}
+  .ld-title span,.ld-title b{transition-duration:.01s;transition-delay:0s;filter:none;transform:none}
+  .ld-seal{animation:none}
+  .ld-kicker,.ld-sub{animation-duration:.01s;animation-delay:0s}
+}
