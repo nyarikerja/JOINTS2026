@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   ArrowClockwise,
   ShieldWarning,
@@ -123,44 +123,62 @@ export const TabProtocolAI: React.FC<TabProtocolAIProps> = ({
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const lastFetchedPointRef = useRef<string | null>(null);
 
   // Bersihkan teks nama kejadian: hilangkan "Episentrum:", "Kejadian Observasi -", dll
   const cleanPlaceName = (placeName || "")
     .replace(/^(Episentrum|Kejadian Observasi|Skenario Hipotetis|Simulasi)(\s*[:-]\s*)?/i, "")
     .trim();
 
-  // Sinkronisasi koordinat pusat secara otomatis
+  // Sinkronisasi koordinat pusat secara otomatis tanpa loop / re-render berlebihan
   useEffect(() => {
+    let targetLat: number | null = null;
+    let targetLon: number | null = null;
+
     if (currentCoords) {
-      setPoint({ lat: currentCoords.lat, lon: currentCoords.lng });
-      return;
-    }
-    if (eventId && EVENT_FALLBACK_COORDS[eventId]) {
+      targetLat = currentCoords.lat;
+      targetLon = currentCoords.lng;
+    } else if (eventId && EVENT_FALLBACK_COORDS[eventId]) {
       const [lat, lon] = EVENT_FALLBACK_COORDS[eventId];
-      setPoint({ lat, lon });
-      return;
-    }
-    if (cleanPlaceName) {
+      targetLat = lat;
+      targetLon = lon;
+    } else if (cleanPlaceName) {
       const lower = cleanPlaceName.toLowerCase();
       for (const [key, coords] of Object.entries(EVENT_FALLBACK_COORDS)) {
         const cleanKey = key.replace(/^(hutan_|karhutla_)/, "").replace(/_/g, " ");
         if (lower.includes(cleanKey)) {
-          setPoint({ lat: coords[0], lon: coords[1] });
-          return;
+          targetLat = coords[0];
+          targetLon = coords[1];
+          break;
         }
       }
     }
+
+    if (targetLat !== null && targetLon !== null) {
+      setPoint((prev) => {
+        if (prev && Math.abs(prev.lat - targetLat!) < 0.0001 && Math.abs(prev.lon - targetLon!) < 0.0001) {
+          return prev;
+        }
+        return { lat: targetLat!, lon: targetLon! };
+      });
+    }
   }, [currentCoords, eventId, cleanPlaceName]);
 
-  const loadAdvice = useCallback(async (lat: number, lon: number) => {
+  const loadAdvice = useCallback(async (lat: number, lon: number, force = false) => {
+    const key = `${lat.toFixed(3)}_${lon.toFixed(3)}`;
+    if (!force && lastFetchedPointRef.current === key) return;
+    lastFetchedPointRef.current = key;
+
     setLoading(true);
     setError(null);
     try {
       const res = await api.getNearbyAdvice(lat, lon, "id");
       setData(res);
     } catch (err: any) {
-      setData(null);
-      setError(`Ringkasan taktis tidak dapat dimuat: ${err?.message || "server offline"}.`);
+      if (err?.message && !err.message.includes("429")) {
+        setData(null);
+      }
+      setError(`Ringkasan taktis: ${err?.message || "server offline"}.`);
     } finally {
       setLoading(false);
     }
@@ -207,7 +225,7 @@ export const TabProtocolAI: React.FC<TabProtocolAIProps> = ({
 
           <button
             type="button"
-            onClick={() => point && loadAdvice(point.lat, point.lon)}
+            onClick={() => point && loadAdvice(point.lat, point.lon, true)}
             disabled={loading || !point}
             className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-[#2b211e]/20 text-[#2b211e]/80 hover:bg-[#2b211e]/5 text-[10px] font-bold cursor-pointer transition shrink-0"
             title="Muat Ulang AI"

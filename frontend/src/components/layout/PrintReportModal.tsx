@@ -210,16 +210,22 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
   );
   const displaySchools = uniqueSchools.slice(0, 8); // Tampilkan hingga 8 fasilitas prioritas tanpa duplikat
 
-  // Wilayah Prioritas
-  const priorityDistricts = advisory?.affected_districts && advisory.affected_districts.length > 0
-    ? advisory.affected_districts.slice(0, 3).map((d: any) => d.district || d).join(", ")
-    : (rawSchools.length > 0 ? Array.from(new Set(rawSchools.map(s => s.district).filter(Boolean))).slice(0, 3).join(", ") : "Bima, Dompu, Sumbawa");
+  const isFire = hazard === "fire";
+  const hazardName = isFire ? "Kebakaran Hutan & Lahan" : "Erupsi Gunung Api";
 
-  const hazardName = hazard === "fire" ? "Kebakaran Hutan & Lahan" : "Erupsi Gunung Api";
-
-  const cleanLocationName = (simulatedEventName || "G. Tambora")
+  const cleanLocationName = (
+    simulatedEventName || (isFire ? "Kawasan Hutan Terdampak" : "Pusat Erupsi Gunung Api")
+  )
     .replace(/^(Kejadian Observasi|Skenario Hipotetis|Simulasi)(\s*[:-]\s*)?/i, "")
     .trim();
+
+  // Wilayah Prioritas dinamis berdasarkan advisory atau faskes/sekolah riil
+  const priorityDistricts = advisory?.affected_districts && advisory.affected_districts.length > 0
+    ? advisory.affected_districts.slice(0, 3).map((d: any) => d.district || d).join(", ")
+    : (rawSchools.length > 0 
+        ? Array.from(new Set(rawSchools.map(s => s.district).filter(Boolean))).slice(0, 3).join(", ") 
+        : (isFire ? "Wilayah & Pemukiman Terdampak Asap" : "Kawasan Rawan Bencana (KRB) Terdekat")
+      );
 
   return (
     <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto print:fixed print:inset-0 print:p-0 print:m-0 print:bg-white print:z-[999999] print:block print:overflow-visible">
@@ -538,7 +544,7 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
                           <tr key={s.facility_id || s.id || s.name} className="hover:bg-slate-50">
                             <td className="py-2 px-3 align-middle">
                               <strong className="text-slate-900 block text-[10px] font-semibold">{s.name}</strong>
-                              <span className="text-slate-500 block text-[8.5px] mt-0.5">{s.district || "Kabupaten Bima/Dompu"}</span>
+                              <span className="text-slate-500 block text-[8.5px] mt-0.5">{s.district || (isFire ? "Wilayah Terdampak Asap" : "KRB Terdekat")}</span>
                             </td>
                             <td className="py-2 px-3 align-middle">
                               <div>Paparan: <strong className="text-slate-900">{prob}%</strong></div>
@@ -577,7 +583,7 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
                 </table>
               </div>
 
-              {/* Box Kontak Darurat Terpadu */}
+              {/* Box Kontak Darurat Terpadu Dinamis */}
               <div className="rounded-xl border border-slate-200 bg-[#f8fafc] p-3 text-left">
                 <div className="flex items-center gap-1.5 text-slate-800 text-[9.5px] font-bold uppercase tracking-wider mb-2">
                   <PhoneCall size={14} weight="bold" className="text-[#A14646]" />
@@ -590,19 +596,31 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
                     <span className="text-slate-600 block mt-0.5">SPGDT Nasional &amp; Ambulans</span>
                   </div>
                   <div className="p-2 rounded bg-white border border-slate-200">
-                    <span className="text-slate-500 block text-[7.5px] font-bold uppercase">POSKO PENGAMATAN</span>
-                    <strong className="text-slate-900 text-[10.5px] block mt-0.5">PVMBG Pos PGA</strong>
-                    <span className="text-slate-600 block mt-0.5">Saluran Radio Siaga VHF</span>
+                    <span className="text-slate-500 block text-[7.5px] font-bold uppercase">
+                      {isFire ? "POSKO PENGENDALIAN" : "POSKO PENGAMATAN"}
+                    </span>
+                    <strong className="text-slate-900 text-[10.5px] block mt-0.5">
+                      {isFire ? "Manggala Agni / KPH" : "PVMBG Pos PGA"}
+                    </strong>
+                    <span className="text-slate-600 block mt-0.5">
+                      {isFire ? "Brigade Karhutla KLHK" : "Saluran Radio Siaga VHF"}
+                    </span>
                   </div>
                   <div className="p-2 rounded bg-white border border-slate-200">
                     <span className="text-slate-500 block text-[7.5px] font-bold uppercase">PUSDALOPS BPBD</span>
-                    <strong className="text-slate-900 text-[10.5px] block mt-0.5">117 / Posko Kab.</strong>
+                    <strong className="text-slate-900 text-[10.5px] block mt-0.5">117 / Posko Daerah</strong>
                     <span className="text-slate-600 block mt-0.5">Komando Evakuasi Darurat</span>
                   </div>
                   <div className="p-2 rounded bg-white border border-slate-200">
-                    <span className="text-slate-500 block text-[7.5px] font-bold uppercase">BMKG SEBARAN ABU</span>
-                    <strong className="text-slate-900 text-[10.5px] block mt-0.5">196 / VAAC</strong>
-                    <span className="text-slate-600 block mt-0.5">Peringatan Navigasi Udara</span>
+                    <span className="text-slate-500 block text-[7.5px] font-bold uppercase">
+                      {isFire ? "BMKG SEBARAN ASAP" : "BMKG SEBARAN ABU"}
+                    </span>
+                    <strong className="text-slate-900 text-[10.5px] block mt-0.5">
+                      {isFire ? "196 / Stasiun Iklim" : "196 / VAAC"}
+                    </strong>
+                    <span className="text-slate-600 block mt-0.5">
+                      {isFire ? "Pemantauan ISPU & Asap" : "Peringatan Navigasi Udara"}
+                    </span>
                   </div>
                 </div>
               </div>

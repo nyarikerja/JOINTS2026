@@ -67,6 +67,7 @@ export const api = {
       body: JSON.stringify(payload)
     }),
 
+  getRunStatus: (runId: string) => request<SimulationResponse>(`/runs/${runId}`),
   getImpact: (runId: string) => request<ImpactResponse>(`/runs/${runId}/impact`),
   getFacilitiesImpacted: (runId: string) => request<FacilitiesImpactResponse>(`/runs/${runId}/facilities-impacted`),
   getValidation: (eventId: string) => request<ValidationResponse>(`/validation/${eventId}`),

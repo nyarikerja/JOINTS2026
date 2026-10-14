@@ -88,7 +88,7 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  // Pulihkan sesi simulasi terakhir dari localStorage saat pertama kali dimuat
+  // Pulihkan sesi simulasi terakhir dari backend / localStorage saat pertama kali dimuat
   React.useEffect(() => {
     const restoreLastSession = async () => {
       const savedRunId = localStorage.getItem("lastRunId");
@@ -96,20 +96,32 @@ export const App: React.FC = () => {
       const savedEventName = localStorage.getItem("lastEventName");
       const savedHazard = localStorage.getItem("lastHazard") as HazardType;
       
-      if (savedRunId && savedEventId) {
-        setEventId(savedEventId);
-        if (savedHazard) setHazard(savedHazard);
-        if (savedEventName) setSelectedEventName(savedEventName);
-        
-        setActiveRunId(savedRunId);
-        setSimulatedEventName(savedEventName || savedEventId);
-        setCurrentHour(48);
-        
+      if (savedRunId) {
         try {
+          // Ambil metadata run langsung dari backend untuk menjamin akurasi nama kejadian, hazard, koordinat (bukan hardcode)
+          const runStatus = await api.getRunStatus(savedRunId).catch(() => null);
+          const effectiveHazard = runStatus?.hazard || savedHazard || "volcano";
+          const effectiveEventId = runStatus?.event_id || savedEventId || "";
+          const effectiveEventName = runStatus?.event_name || savedEventName || effectiveEventId;
+
+          if (runStatus) setRunInfo(runStatus);
+          setHazard(effectiveHazard);
+          if (effectiveEventId) setEventId(effectiveEventId);
+          setSelectedEventName(effectiveEventName);
+          setActiveRunId(savedRunId);
+          setSimulatedEventName(effectiveEventName);
+          setCurrentHour(48);
+
+          // Perbarui localStorage dengan data valid yang terkonfirmasi dari backend
+          localStorage.setItem("lastRunId", savedRunId);
+          if (effectiveEventId) localStorage.setItem("lastEventId", effectiveEventId);
+          localStorage.setItem("lastEventName", effectiveEventName);
+          localStorage.setItem("lastHazard", effectiveHazard);
+
           const [impact, facilities, validation, advisory, tier48] = await Promise.all([
             api.getImpact(savedRunId).catch(() => null),
             api.getFacilitiesImpacted(savedRunId).catch(() => null),
-            api.getValidation(savedEventId).catch(() => null),
+            effectiveEventId ? api.getValidation(effectiveEventId).catch(() => null) : null,
             api.getEmergencyAdvisory(savedRunId).catch(() => null),
             api.getTiersAtHour(savedRunId, 48).catch(() => null)
           ]);
@@ -228,7 +240,10 @@ export const App: React.FC = () => {
     const payload: SimulationPayload = {
       hazard: activeHazard,
       mode,
-      source: { event_id: activeEventId },
+      source: { 
+        event_id: activeEventId,
+        name: selectedEventName
+      },
       horizon_hours: 48,
       n_members: 15,
       seed: 42,
@@ -407,6 +422,14 @@ export const App: React.FC = () => {
     }
   };
 
+  const currentCoords = React.useMemo(() => {
+    if (!runInfo?.center_coords?.latitude || !runInfo?.center_coords?.longitude) return null;
+    return {
+      lat: Number(runInfo.center_coords.latitude),
+      lng: Number(runInfo.center_coords.longitude)
+    };
+  }, [runInfo?.center_coords?.latitude, runInfo?.center_coords?.longitude]);
+
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#080c0e] text-slate-100 font-sans">
       {/* Zona A: Tactical Header */}
@@ -551,7 +574,7 @@ export const App: React.FC = () => {
           simulatedEventName={simulatedEventName}
           activeRunId={activeRunId}
           eventId={eventId}
-          currentCoords={runInfo?.center_coords ? { lat: runInfo.center_coords.latitude, lng: runInfo.center_coords.longitude } : null}
+          currentCoords={currentCoords}
           onOpenGpsModal={() => setIsGpsModalOpen(true)}
         />
 

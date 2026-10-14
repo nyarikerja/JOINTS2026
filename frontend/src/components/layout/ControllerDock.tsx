@@ -14,7 +14,7 @@ interface ControllerDockProps {
   onModeChange: (mode: ModelingMode) => void;
   overrides: SimulationOverrides;
   onOverridesChange: (overrides: SimulationOverrides) => void;
-  onRunSimulation: () => void;
+  onRunSimulation: (targetHazard?: HazardType, targetEventId?: string) => void;
   onRunDemo?: () => void;
   onOpenPrintReport?: () => void;
   isRunning: boolean;
@@ -492,7 +492,7 @@ export const ControllerDock: React.FC<ControllerDockProps> = ({
                 type="button"
                 onClick={() => {
                   console.log("Tombol Mulai Simulasi diklik! Hazard:", hazard, "EventId:", eventId);
-                  onRunSimulation();
+                  onRunSimulation(hazard, eventId);
                 }}
                 disabled={isRunning || !eventId}
                 className="w-full py-2.5 px-4 rounded-full text-[10px] tracking-wider uppercase flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none text-white bg-[#EB895B] hover:bg-[#d97746] hover:scale-[1.02] hover:shadow-md active:scale-[0.98] shadow-xs font-button"
