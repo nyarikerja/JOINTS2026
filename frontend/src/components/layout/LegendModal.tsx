@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { X, Layers, Flame, ShieldAlert, Info } from "lucide-react";
+import { X, Stack, Flame, ShieldWarning, Info } from "@phosphor-icons/react";
 
 interface LegendModalProps {
   isOpen: boolean;
@@ -50,7 +50,7 @@ export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => 
                 color: "#FFFFFF"
               }}
             >
-              <Layers className="w-5 h-5" />
+              <Stack size={20} weight="duotone" />
             </div>
             <div>
               <h2 className="text-base font-extrabold tracking-tight" style={{ color: "#140f0e" }}>
@@ -70,7 +70,7 @@ export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => 
             }}
             title="Tutup (Esc)"
           >
-            <X className="w-4 h-4" />
+            <X size={16} weight="bold" />
           </button>
         </div>
 
@@ -85,7 +85,7 @@ export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => 
             }}
           >
             <div className="flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4" style={{ color: "#EB895B" }} />
+              <ShieldWarning size={16} weight="duotone" style={{ color: "#EB895B" }} />
               <h3 className="font-bold text-sm tracking-wide" style={{ color: "#140f0e" }}>
                 Tingkat Aktivitas Gunungapi (PVMBG ESDM)
               </h3>
@@ -155,7 +155,7 @@ export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => 
             }}
           >
             <div className="flex items-center gap-2">
-              <Flame className="w-4 h-4" style={{ color: "#EB895B" }} />
+              <Flame size={16} weight="duotone" style={{ color: "#EB895B" }} />
               <h3 className="font-bold text-sm tracking-wide" style={{ color: "#140f0e" }}>
                 Tingkat Peluang Dispersi Abu / Asap
               </h3>
@@ -236,7 +236,7 @@ export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => 
             }}
           >
             <div className="flex items-center gap-2">
-              <Flame className="w-4 h-4" style={{ color: "#EB895B" }} />
+              <Flame size={16} weight="duotone" style={{ color: "#EB895B" }} />
               <h3 className="font-bold text-sm tracking-wide" style={{ color: "#140f0e" }}>
                 Titik Api NASA FIRMS (Anomali Termal)
               </h3>
@@ -264,7 +264,7 @@ export const LegendModal: React.FC<LegendModalProps> = ({ isOpen, onClose }) => 
             }}
           >
             <div className="flex items-center gap-2">
-              <Info className="w-4 h-4" style={{ color: "#359FA0" }} />
+              <Info size={16} weight="duotone" style={{ color: "#359FA0" }} />
               <h3 className="font-bold text-sm tracking-wide" style={{ color: "#140f0e" }}>
                 Simbol Fasilitas Publik
               </h3>

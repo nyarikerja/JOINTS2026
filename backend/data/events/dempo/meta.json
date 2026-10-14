@@ -1,0 +1,30 @@
+{
+  "event_id": "dempo",
+  "hazard": "volcano",
+  "name": "Erupsi G. Dempo (Pagar Alam, Sumatera Selatan)",
+  "start_utc": "2026-10-10T13:58:17.432631+00:00",
+  "duration_h": 24.0,
+  "alert_level_at_event": "Level II (Waspada)",
+  "restricted_radius_km": 2.5,
+  "column_height_km": 8.0,
+  "plume_top_asl_km": 12.0,
+  "vent_elevation_m": 3173.0,
+  "coordinates": {
+    "latitude": -4.03,
+    "longitude": 103.13
+  },
+  "bbox": [
+    102.42999999999999,
+    -4.73,
+    103.83,
+    -3.33
+  ],
+  "source": "PVMBG Badan Geologi ESDM RI (Katalog 70 Gunung Api Nasional)",
+  "members_source": "open_meteo_live_forecast_api",
+  "n_members": 15,
+  "data_status": {
+    "weather": "open_meteo_live_or_ensemble",
+    "vona": "pvmbg_national_catalog",
+    "column_height": "estimated_standard"
+  }
+}

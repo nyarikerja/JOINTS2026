@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, MapPin, Building2, ShieldAlert } from "lucide-react";
+import { X, MapPin, Buildings, ShieldWarning } from "@phosphor-icons/react";
 import { TabImpact } from "../tabs/TabImpact";
 import { TabFacilities } from "../tabs/TabFacilities";
 import { TabProtocolAI } from "../tabs/TabProtocolAI";
@@ -26,6 +26,7 @@ interface AnalyticsDrawerProps {
   onDrawRoute: (s: SchoolItem) => void;
   activeRouteId?: string;
   simulatedEventName?: string;
+  onOpenGpsModal?: () => void;
 }
 
 type TabType = "region" | "facilities" | "protocol";
@@ -43,14 +44,15 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
   onFlyTo,
   onDrawRoute,
   activeRouteId,
-  simulatedEventName
+  simulatedEventName,
+  onOpenGpsModal
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>("region");
 
   const tabs = [
     { id: "region", label: "Wilayah", icon: MapPin },
-    { id: "facilities", label: "Fasilitas", icon: Building2 },
-    { id: "protocol", label: "Protokol & AI", icon: ShieldAlert }
+    { id: "facilities", label: "Fasilitas", icon: Buildings },
+    { id: "protocol", label: "Protokol & AI", icon: ShieldWarning }
   ] as const;
 
   return (
@@ -96,7 +98,7 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
                       }
                 }
               >
-                <Icon className="w-3.5 h-3.5" />
+                <Icon size={16} weight={isActive ? "duotone" : "regular"} />
                 <span>{t.label}</span>
               </button>
             );
@@ -110,7 +112,7 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
           className="w-10 flex items-center justify-center transition cursor-pointer hover:bg-black/10 text-[#2b211e]/70 hover:text-[#2b211e] border-l border-black/10"
           title="Tutup Panel"
         >
-          <X className="w-4 h-4" />
+          <X size={16} weight="bold" />
         </button>
       </div>
 
@@ -119,7 +121,7 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
         {!impact ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-6 opacity-80 -translate-y-8">
             <div className="w-16 h-16 bg-[#2b211e]/5 rounded-full flex items-center justify-center mb-4">
-              <ShieldAlert className="w-8 h-8 text-[#2b211e]/40" />
+              <ShieldWarning size={32} weight="duotone" className="text-[#2b211e]/40" />
             </div>
             <h3 className="font-bold text-[#2b211e] mb-1">Simulasi Belum Dijalankan</h3>
             <p className="text-[11px] text-[#2b211e]/70 leading-relaxed max-w-[260px]">
@@ -149,7 +151,12 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
               />
             )}
             {activeTab === "protocol" && (
-              <TabProtocolAI hazard={hazard} advisory={advisory} />
+              <TabProtocolAI
+                hazard={hazard}
+                advisory={advisory}
+                placeName={simulatedEventName}
+                onOpenGpsModal={onOpenGpsModal}
+              />
             )}
           </>
         )}

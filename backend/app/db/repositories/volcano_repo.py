@@ -11,6 +11,14 @@ from typing import Any, Dict, List, Optional
 from app.db.session import get_db, get_db_connection
 
 
+def _refresh_levels() -> None:
+    try:
+        from app.services import magma_status
+        magma_status.ensure_fresh()
+    except Exception:
+        pass
+
+
 class VolcanoRepository:
     @staticmethod
     def get_all(
@@ -23,7 +31,9 @@ class VolcanoRepository:
         """
         Mengambil daftar gunung api. Jika koordinat batas (BBOX) disediakan,
         kueri dieksekusi secara instan menggunakan indeks spasial volcanoes_rtree.
+        Level disegarkan dari MAGMA (PVMBG) bila cache sudah kedaluwarsa.
         """
+        _refresh_levels()
         conn = get_db_connection()
         try:
             if None not in (lat_min, lat_max, lon_min, lon_max):
@@ -77,6 +87,7 @@ class VolcanoRepository:
     @staticmethod
     def get_by_id(volcano_id: str) -> Optional[Dict[str, Any]]:
         """Mengambil data gunung api spesifik berdasarkan ID."""
+        _refresh_levels()
         conn = get_db_connection()
         try:
             cursor = conn.execute("SELECT * FROM volcanoes WHERE id = ?", (volcano_id,))
@@ -121,7 +132,12 @@ class VolcanoRepository:
                     "level_name": v.get("level_name", "Level I (Normal)"),
                     "color": v.get("color", "#22c55e"),
                     "radius_bahaya_km": v.get("radius_bahaya_km", 3.0),
-                    "last_vona": v.get("last_vona", "Aktivitas Normal"),
+                    "last_vona": v.get("last_vona"),
+                    "level_source": v.get("level_source"),
+                    "level_updated_at": v.get("level_updated_at"),
+                    "magma_report_url": v.get("magma_report_url"),
+                    "radius_source": v.get("radius_source", "catalog"),
+                    "radius_recommendation": v.get("radius_recommendation"),
                     "has_event": v.get("has_event", False),
                     "event_id": v.get("event_id")
                 },
@@ -133,7 +149,8 @@ class VolcanoRepository:
         return {
             "type": "FeatureCollection",
             "metadata": {
-                "source": "Pusat Vulkanologi dan Mitigasi Bencana Geologi (PVMBG) - Badan Geologi Kementerian ESDM RI",
+                "source": "Level aktivitas: MAGMA Indonesia - PVMBG Badan Geologi (magma.esdm.go.id)",
+                "levels": __import__("app.services.magma_status", fromlist=["level_status"]).level_status(),
                 "total_volcanoes": len(features)
             },
             "features": features

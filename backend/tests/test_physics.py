@@ -1,6 +1,8 @@
 """
 tests/test_physics.py
 
+pytestmark = pytest.mark.network
+
 Pengujian prinsip fisika dan numerik sesuai skill udarasiaga-simulation-testing:
 1. Adveksi: Angin konstan u selama T menggeser partikel sejauh u*T.
 2. Kecepatan jatuh: Butir besar mendarat lebih cepat/dekat dibanding butir halus.
@@ -150,7 +152,12 @@ def test_determinism_with_seed():
     from app.ingest.openmeteo import OpenMeteoIngest
 
     event_meta = json.loads((EVENTS_DIR / "anak_krakatau_2026_09" / "meta.json").read_text(encoding="utf-8"))
-    weather = OpenMeteoIngest.get_weather_for_simulation("anak_krakatau_2026_09", n_members=5, seed=12345)
+    import datetime
+
+    weather = OpenMeteoIngest.get_weather_for_simulation(
+        "anak_krakatau_2026_09", -6.102, 105.423, datetime.datetime.now(datetime.timezone.utc),
+        hours=6, level="500hPa", n_members=5, seed=12345,
+    )
 
     runner1 = SimulationRunner(req1)
     res1 = runner1.run(event_meta, weather)

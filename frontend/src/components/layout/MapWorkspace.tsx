@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Compass, Plus, Minus, Layers, X } from "lucide-react";
+import { Plus, Minus, Stack, X, Crosshair, User } from "@phosphor-icons/react";
 import { CONFIG } from "../../config/constants";
 import { api } from "../../services/api";
 import { formatHour } from "../../utils/formatters";
+import { NationalModes } from "./NationalModes";
+import { CameraReadout } from "./MapReadouts";
 import type { HazardType } from "../../types/api";
 
 // Algoritma Ray-Casting untuk deteksi titik di dalam poligon
@@ -41,13 +43,14 @@ interface MapWorkspaceProps {
   currentHour: number;
   hourlyTiersCache: Record<string | number, any> | null;
   evacuationRoute: { geometry: [number, number][]; label: string; distanceKm?: number; durationMin?: number } | null;
-  onSelectEvent: (eventId: string, lat: number, lng: number, radiusKm: number) => void;
+  onSelectEvent: (eventId: string, lat: number, lng: number, radiusKm: number, hazardType?: HazardType) => void;
   resetViewTrigger: number;
   flyToTarget?: { lat: number; lng: number; _t: number } | null;
   activeRunId?: string | null;
   isDrawerOpen?: boolean;
   onToggleLegend?: () => void;
   onLayersLoaded?: () => void;
+  focusEventTrigger?: number;
 }
 
 export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
@@ -62,25 +65,37 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
   activeRunId,
   isDrawerOpen: _isDrawerOpen = false,
   onToggleLegend: _onToggleLegend,
-  onLayersLoaded
+  onLayersLoaded,
+  focusEventTrigger = 0
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
+
+  const hazardRef = useRef<HazardType>(hazard);
+  hazardRef.current = hazard;
+  const eventIdRef = useRef<string>(eventId);
+  eventIdRef.current = eventId;
 
   const baseTileLayerRef = useRef<L.TileLayer | null>(null);
   const labelsTileLayerRef = useRef<L.TileLayer | null>(null);
 
   const [showVolcanoes, setShowVolcanoes] = useState(true);
+  const [showForests, setShowForests] = useState(true);
   const [showHotspots, setShowHotspots] = useState(true);
   const [showPlume, setShowPlume] = useState(true);
   const [showSchools, setShowSchools] = useState(false);
   const [showHospitals, setShowHospitals] = useState(false);
   const [showAirports, setShowAirports] = useState(false);
-  const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(true);
+  const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(false);
 
   const volcanoesLayerRef = useRef<L.GeoJSON | null>(null);
+  const forestsLayerRef = useRef<L.GeoJSON | null>(null);
   const hotspotsLayerRef = useRef<L.GeoJSON | null>(null);
   const rawHotspotsRef = useRef<any[]>([]);
+  const showHotspotsRef = useRef<boolean>(showHotspots);
+  showHotspotsRef.current = showHotspots;
+  const updateHotspotsViewportRef = useRef<(map: L.Map) => void>(() => {});
+  const focusEventRef = useRef<(map: L.Map, id: string, h: HazardType) => void>(() => {});
   const schoolsLayerRef = useRef<L.GeoJSON | null>(null);
   const hospitalsLayerRef = useRef<L.GeoJSON | null>(null);
   const airportsLayerRef = useRef<L.GeoJSON | null>(null);
@@ -89,6 +104,8 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
   const evacHospitalMarkerRef = useRef<L.Marker | null>(null);
   const plumeLayerRef = useRef<L.GeoJSON | null>(null);
   const krbCircleRef = useRef<L.Circle | null>(null);
+  const forestBoundaryLayerRef = useRef<L.GeoJSON | null>(null);
+  const forestBoundariesRef = useRef<any[]>([]);
   const evacRouteLineRef = useRef<L.Polyline | null>(null);
   const volcanoesDataRef = useRef<any[]>([]);
   const forestsDataRef = useRef<any[]>([]);
@@ -100,9 +117,14 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
   const currentPlumeGeoRef = useRef<any>(null);
   const plumeTooltipRef = useRef<L.Tooltip | null>(null);
 
-  const applyBasemap = (map: L.Map, type: "satellite" | "dark") => {
+  const [mapStyle] = useState<"exposure" | "satellite">("satellite");
+  const [isLocating, setIsLocating] = useState<boolean>(false);
+  const userLocationMarkerRef = useRef<L.Marker | null>(null);
+
+  const applyBasemap = (map: L.Map, type: "exposure" | "satellite") => {
     if (baseTileLayerRef.current) map.removeLayer(baseTileLayerRef.current);
     if (labelsTileLayerRef.current) map.removeLayer(labelsTileLayerRef.current);
+    labelsTileLayerRef.current = null;
 
     if (type === "satellite") {
       // 1. Esri World Imagery (Citra Satelit & Relief Permukaan / Batimetri Laut)
@@ -123,13 +145,62 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
         }
       ).addTo(map);
     } else {
-      // Tampilan Taktis Gelap (OSM + Inverted Dark Filter)
+      // Tampilan Taktis Kertas / Gelap
       baseTileLayerRef.current = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "&copy; OpenStreetMap | PVMBG &bull; NASA FIRMS &bull; Open-Meteo",
         className: "dark-tiles",
         maxZoom: 18
       }).addTo(map);
     }
+  };
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+    applyBasemap(mapRef.current, mapStyle);
+  }, [mapStyle]);
+
+  const handleShowMyLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Browser Anda tidak mendukung geolokasi GPS.");
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setIsLocating(false);
+        const { latitude, longitude } = pos.coords;
+        if (!mapRef.current) return;
+
+        mapRef.current.flyTo([latitude, longitude], 14, { duration: 1.5 });
+
+        if (userLocationMarkerRef.current) {
+          mapRef.current.removeLayer(userLocationMarkerRef.current);
+        }
+
+        const userIcon = L.divIcon({
+          className: "user-gps-pulse-marker",
+          html: `
+            <div class="relative w-8 h-8 flex items-center justify-center">
+              <span class="absolute w-8 h-8 rounded-full bg-emerald-400/40 animate-ping"></span>
+              <span class="relative w-4 h-4 rounded-full bg-emerald-500 border-2 border-white shadow-lg"></span>
+            </div>
+          `,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16]
+        });
+
+        userLocationMarkerRef.current = L.marker([latitude, longitude], { icon: userIcon, zIndexOffset: 3000 })
+          .addTo(mapRef.current)
+          .bindPopup("<strong>Lokasi Anda</strong><br>Koordinat terdeteksi dari GPS perangkat.")
+          .openPopup();
+      },
+      () => {
+        setIsLocating(false);
+        alert("Gagal membaca koordinat GPS perangkat. Pastikan izin lokasi aktif.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   const handleResetIndonesia = () => {
@@ -144,69 +215,118 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
 
   // Update Hotspot layer dengan Viewport Culling & LOD zoom
   const updateHotspotsViewport = useCallback((map: L.Map) => {
-    if (!showHotspots) {
-      if (hotspotsLayerRef.current) map.removeLayer(hotspotsLayerRef.current);
+    if (!showHotspotsRef.current) {
+      if (hotspotsLayerRef.current) {
+        map.removeLayer(hotspotsLayerRef.current);
+        hotspotsLayerRef.current = null;
+      }
+      return;
+    }
+
+    const zoom = map.getZoom();
+    const isSpecificForest = hazardRef.current === "fire" && !!eventIdRef.current;
+
+    // LOD SWITCHER:
+    // Jika melihat peta nasional (tanpa titik hutan spesifik) dan zoom jauh (< 8.0),
+    // sembunyikan titik api individual agar tidak clutter.
+    // Jika satu kawasan hutan spesifik dipilih, tampilkan titik api bahkan sejak zoom 6.5+.
+    const minZoom = isSpecificForest ? 6.5 : 8.0;
+    if (zoom < minZoom) {
+      if (hotspotsLayerRef.current) {
+        map.removeLayer(hotspotsLayerRef.current);
+        hotspotsLayerRef.current = null;
+      }
       return;
     }
 
     const allFeatures = rawHotspotsRef.current;
-    if (!allFeatures.length) return;
+    if (!allFeatures || !allFeatures.length) {
+      if (hotspotsLayerRef.current) {
+        map.removeLayer(hotspotsLayerRef.current);
+        hotspotsLayerRef.current = null;
+      }
+      return;
+    }
 
     if (hotspotsLayerRef.current) map.removeLayer(hotspotsLayerRef.current);
 
     const bounds = map.getBounds().pad(0.15); // Buffer 15% di luar viewport
-    const zoom = map.getZoom();
-
-    // Saring fitur yang ada di viewport
     const inBounds = allFeatures.filter((f: any) => {
       const c = f.geometry?.coordinates;
       if (!c) return false;
       return bounds.contains([c[1], c[0]]);
     });
 
-    // LOD: jika zoom jauh (< 7), batasi max 150 titik terpanas (FRP tertinggi)
-    let visibleFeatures = inBounds;
-    if (zoom < 7 && inBounds.length > 150) {
-      visibleFeatures = [...inBounds]
-        .sort((a, b) => (b.properties?.frp || 0) - (a.properties?.frp || 0))
-        .slice(0, 150);
-    } else if (zoom < 9 && inBounds.length > 400) {
-      visibleFeatures = [...inBounds]
-        .sort((a, b) => (b.properties?.frp || 0) - (a.properties?.frp || 0))
-        .slice(0, 400);
+    if (!inBounds.length) {
+      if (hotspotsLayerRef.current) {
+        map.removeLayer(hotspotsLayerRef.current);
+        hotspotsLayerRef.current = null;
+      }
+      return;
     }
 
-    hotspotsLayerRef.current = L.geoJSON({ type: "FeatureCollection", features: visibleFeatures } as any, {
+    // Urutkan titik api berdasarkan FRP tertinggi agar api paling signifikan selalu diprioritaskan
+    const sorted = [...inBounds].sort((a: any, b: any) => (b.properties?.frp || 0) - (a.properties?.frp || 0));
+
+    // Deduplikasi spasial dinamis (Grid Culling): cegah ratusan icon bertumpuk pada piksel yang sama
+    // Menghilangkan lag browser secara drastis (60fps) dan menjaga tampilan peta tetap bersih & profesional
+    const seenGrid = new Set<string>();
+    const sampledFeatures: any[] = [];
+    const maxMarkers = 50; // Maksimal 50 marker aktif per viewport agar bebas lag
+    const gridSize = zoom >= 13 ? 0.005 : (zoom >= 11 ? 0.012 : (zoom >= 9 ? 0.025 : 0.045));
+
+    for (const f of sorted) {
+      const c = f.geometry?.coordinates;
+      if (!c) continue;
+      const key = `${Math.round(c[0] / gridSize)}_${Math.round(c[1] / gridSize)}`;
+      if (!seenGrid.has(key)) {
+        seenGrid.add(key);
+        sampledFeatures.push(f);
+        if (sampledFeatures.length >= maxMarkers) break;
+      }
+    }
+
+    hotspotsLayerRef.current = L.geoJSON({ type: "FeatureCollection", features: sampledFeatures } as any, {
       pointToLayer: (_feature: any, latlng) => {
         const icon = L.divIcon({
           className: "hotspot-icon",
-          html: `<img src="/titik_api.png" class="w-5 h-5 object-contain drop-shadow-md pointer-events-auto" />`,
-          iconSize: [20, 20],
-          iconAnchor: [10, 10]
+          html: `<img src="/titik_api.png" class="w-4.5 h-4.5 object-contain drop-shadow-md pointer-events-auto hover:scale-125 transition-transform" />`,
+          iconSize: [18, 18],
+          iconAnchor: [9, 9]
         });
         return L.marker(latlng, { icon });
       },
       onEachFeature: (feature: any, layer) => {
         const p = feature.properties;
         layer.bindTooltip(
-          `<strong>Titik Api VIIRS</strong><br>FRP: ${p.frp || '-'} MW`,
-          { direction: "top" }
+          `<div style="font-family: ui-sans-serif, system-ui, sans-serif; padding: 2px;">
+            <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
+              <img src="/titik_api.png" style="width: 14px; height: 14px; object-fit: contain;" />
+              <strong style="color: #140f0e; font-size: 11px;">Titik Api NASA FIRMS</strong>
+            </div>
+            <span style="color: #A14646; font-size: 10.5px; font-weight: 600;">FRP: ${p.frp ? `${p.frp} MW` : '-'}</span>
+          </div>`,
+          { direction: "top", offset: [0, -8] }
         );
       }
     }).addTo(map);
-  }, [showHotspots]);
+  }, []);
+
+  updateHotspotsViewportRef.current = updateHotspotsViewport;
 
   const loadHotspots = useCallback(async (map: L.Map, targetEventId?: string) => {
     try {
-      const target = targetEventId || (hazard === "fire" ? eventId : "national");
+      const target = targetEventId || (hazardRef.current === "fire" && eventIdRef.current ? eventIdRef.current : "national");
       const geo = await api.getHotspots(target);
-      const features = geo.features || [];
-      rawHotspotsRef.current = features;
-      updateHotspotsViewport(map);
+      const features = geo?.features || [];
+      if (features.length > 0 || !rawHotspotsRef.current.length) {
+        rawHotspotsRef.current = features;
+      }
+      updateHotspotsViewportRef.current(map);
     } catch {
       // Offline fallback
     }
-  }, [hazard, eventId, updateHotspotsViewport]);
+  }, []);
 
   // Inisialisasi Peta Leaflet
   useEffect(() => {
@@ -245,15 +365,16 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
       })
       .catch(() => {});
 
-    // Hook moveend dengan debounce ringan untuk Viewport Culling titik api
+    // Hook moveend & zoomend dengan debounce ringan untuk Viewport Culling titik api & LOD zoom
     let moveTimeout: ReturnType<typeof setTimeout> | null = null;
-    const onMoveEnd = () => {
+    const onMoveOrZoomEnd = () => {
       if (moveTimeout) clearTimeout(moveTimeout);
       moveTimeout = setTimeout(() => {
-        updateHotspotsViewport(map);
+        updateHotspotsViewportRef.current(map);
       }, 80);
     };
-    map.on("moveend", onMoveEnd);
+    map.on("moveend", onMoveOrZoomEnd);
+    map.on("zoomend", onMoveOrZoomEnd);
 
     // Deteksi hover zona sebaran partikel secara independen (Solusi evaluasi 1: selalu jalan meski simulasi play/running)
     const onMouseMove = (e: L.LeafletMouseEvent) => {
@@ -289,15 +410,19 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
       if (matchedFeature) {
         const p = matchedFeature.properties || {};
         const t = p.tier;
-        const tierName =
-          p.tier_label ||
-          (t === "minimum" || t === "p90" || t === "min"
-            ? "Bahaya Tinggi (P90)"
-            : t === "mid" || t === "p50"
-            ? "Waspada Sedang (P50)"
-            : "Siaga Dini (P05)");
+        const isFire =
+          hazardRef.current === "fire" ||
+          eventIdRef.current.startsWith("hutan_") ||
+          eventIdRef.current.startsWith("karhutla_");
 
-        const hazardLabel = p.hazard === "fire" ? "Sebaran Asap Karhutla" : "Sebaran Abu Vulkanik";
+        const tierName =
+          t === "minimum" || t === "p90" || t === "min"
+            ? (isFire ? "Asap Sangat Pekat (P90)" : "Abu Tebal / Bahaya Tinggi (P90)")
+            : t === "mid" || t === "p50"
+            ? (isFire ? "Asap Sedang (P50)" : "Abu Sedang / Waspada (P50)")
+            : (isFire ? "Asap Tipis / Siaga Dini (P05)" : "Debu Halus / Siaga Dini (P05)");
+
+        const hazardLabel = isFire ? "Sebaran Asap Karhutla (PM2.5)" : "Sebaran Abu Vulkanik";
         const content = `<div class="p-1"><strong>${hazardLabel}</strong><br/>Tingkat: <span class="font-bold text-[#EB895B]">${tierName}</span><br/><small class="text-slate-400">Waktu Horizon: ${formatHour(currentHour)}</small></div>`;
 
         if (!plumeTooltipRef.current) {
@@ -330,16 +455,23 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
     // Load semua layer secara paralel
     Promise.allSettled([
       loadVolcanoes(map),
-      loadForests(),
+      loadForests(map),
+      api.getForestBoundaries().then((res) => {
+        forestBoundariesRef.current = res?.features || [];
+      }).catch(() => {}),
       loadHotspots(map),
       loadFacilities(map)
     ]).finally(() => {
+      if (eventIdRef.current) {
+        focusEventRef.current(map, eventIdRef.current, hazardRef.current);
+      }
       onLayersLoaded?.();
     });
 
     return () => {
       if (moveTimeout) clearTimeout(moveTimeout);
-      map.off("moveend", onMoveEnd);
+      map.off("moveend", onMoveOrZoomEnd);
+      map.off("zoomend", onMoveOrZoomEnd);
       map.off("mousemove", onMouseMove);
       map.off("mouseout", onMouseOut);
       if (plumeTooltipRef.current) {
@@ -349,7 +481,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
       map.remove();
       mapRef.current = null;
     };
-  }, [updateHotspotsViewport]);
+  }, []);
 
   // Reset View Handler
   useEffect(() => {
@@ -422,7 +554,96 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
     live_kalimantan: [-2.200, 113.900, 8.5]
   };
 
-  const prevEventIdRef = useRef<string>(eventId);
+  const highlightKrb = useCallback((map: L.Map, _lat?: number, _lng?: number, _radiusKm?: number, _volcanoName?: string) => {
+    if (krbCircleRef.current) {
+      map.removeLayer(krbCircleRef.current);
+      krbCircleRef.current = null;
+    }
+  }, []);
+
+  const focusEvent = useCallback((map: L.Map, targetEventId: string, targetHazard: HazardType) => {
+    if (!targetEventId) {
+      if (krbCircleRef.current) {
+        map.removeLayer(krbCircleRef.current);
+        krbCircleRef.current = null;
+      }
+      if (forestBoundaryLayerRef.current) {
+        map.removeLayer(forestBoundaryLayerRef.current);
+        forestBoundaryLayerRef.current = null;
+      }
+      if (rawHotspotsRef.current.length === 0) {
+        loadHotspots(map, "national");
+      }
+      return;
+    }
+
+    // Periksa apakah targetEventId adalah kawasan hutan atau gunung api
+    const isFireEvent =
+      targetHazard === "fire" ||
+      targetEventId.startsWith("hutan_") ||
+      targetEventId.startsWith("karhutla_") ||
+      (forestsDataRef.current || []).some((f: any) => f.id === targetEventId);
+
+    if (isFireEvent) {
+      if (krbCircleRef.current) {
+        map.removeLayer(krbCircleRef.current);
+        krbCircleRef.current = null;
+      }
+
+      if (forestBoundaryLayerRef.current) {
+        map.removeLayer(forestBoundaryLayerRef.current);
+        forestBoundaryLayerRef.current = null;
+      }
+
+      const boundaryFeat = forestBoundariesRef.current.find(
+        (f: any) => f.id === targetEventId || f.properties?.id === targetEventId || f.properties?.forest_id === targetEventId
+      );
+
+      if (boundaryFeat && boundaryFeat.geometry) {
+        forestBoundaryLayerRef.current = L.geoJSON(boundaryFeat as any, {
+          style: {
+            color: "#EB895B",
+            weight: 1.5,
+            dashArray: "4, 4",
+            fillColor: "#EB895B",
+            fillOpacity: 0.08
+          }
+        }).addTo(map);
+      }
+
+      const fireObj = (forestsDataRef.current || []).find((f: any) => f.id === targetEventId);
+      if (fireObj) {
+        map.flyTo([fireObj.lat, fireObj.lon], 10, { duration: 1.8, easeLinearity: 0.25 });
+      } else if (EVENT_COORDS[targetEventId]) {
+        const c = EVENT_COORDS[targetEventId];
+        map.flyTo([c[0], c[1]], c[2] || 10, { duration: 1.8, easeLinearity: 0.25 });
+      }
+      loadHotspots(map, targetEventId);
+    } else {
+      if (forestBoundaryLayerRef.current) {
+        map.removeLayer(forestBoundaryLayerRef.current);
+        forestBoundaryLayerRef.current = null;
+      }
+
+      const feat = (volcanoesDataRef.current || []).find(
+        (f: any) =>
+          (f.properties?.event_id && f.properties.event_id === targetEventId) ||
+          (f.properties?.id && f.properties.id === targetEventId) ||
+          (f.id && f.id === targetEventId)
+      );
+      if (feat && feat.geometry && feat.geometry.coordinates) {
+        const c = feat.geometry.coordinates;
+        map.flyTo([c[1], c[0]], 11, { duration: 1.8, easeLinearity: 0.25 });
+        highlightKrb(map, c[1], c[0], feat.properties?.radius_bahaya_km || 5.0, feat.properties?.name);
+      } else if (EVENT_COORDS[targetEventId]) {
+        const target = EVENT_COORDS[targetEventId];
+        map.flyTo([target[0], target[1]], target[2], { duration: 1.8, easeLinearity: 0.25 });
+        highlightKrb(map, target[0], target[1], 5.0);
+      }
+    }
+  }, [loadHotspots, highlightKrb]);
+
+  focusEventRef.current = focusEvent;
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -432,18 +653,14 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
 
   useEffect(() => {
     if (!mapRef.current) return;
+    if (showForests) forestsLayerRef.current?.addTo(mapRef.current);
+    else forestsLayerRef.current?.remove();
+  }, [showForests]);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
     updateHotspotsViewport(mapRef.current);
   }, [showHotspots, updateHotspotsViewport]);
-
-  // Otomatis pastikan layer dispersi aktif ketika simulasi dijalankan
-  useEffect(() => {
-    if (activeRunId) {
-      setShowPlume(true);
-      if (plumeLayerRef.current && mapRef.current) {
-        plumeLayerRef.current.addTo(mapRef.current);
-      }
-    }
-  }, [activeRunId]);
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -464,53 +681,92 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
   }, [showAirports]);
 
   useEffect(() => {
-    // Terbang ke episentrum kejadian saat eventId atau hazard berubah
-    if (prevEventIdRef.current !== eventId) {
-      prevEventIdRef.current = eventId;
-      if (!eventId) {
-        if (krbCircleRef.current && mapRef.current) {
-          mapRef.current.removeLayer(krbCircleRef.current);
-          krbCircleRef.current = null;
-        }
-        return;
-      }
-      if (mapRef.current && eventId) {
-        if (hazard === "fire") {
-          const fireObj = (forestsDataRef.current || []).find((f: any) => f.id === eventId);
-          if (fireObj) {
-            mapRef.current.flyTo([fireObj.lat, fireObj.lon], 10, { duration: 1.8, easeLinearity: 0.25 });
-          } else if (EVENT_COORDS[eventId]) {
-            const target = EVENT_COORDS[eventId];
-            mapRef.current.flyTo([target[0], target[1]], target[2], { duration: 1.8, easeLinearity: 0.25 });
-          }
-          if (krbCircleRef.current) {
-            mapRef.current.removeLayer(krbCircleRef.current);
-            krbCircleRef.current = null;
-          }
-          loadHotspots(mapRef.current, eventId);
-        } else {
-          const feat = (volcanoesDataRef.current || []).find(
-            (f: any) => (f.properties?.event_id || f.properties?.id || f.id) === eventId
-          );
-          if (feat && feat.geometry && feat.geometry.coordinates) {
-            const c = feat.geometry.coordinates;
-            mapRef.current.flyTo([c[1], c[0]], 11, { duration: 1.8, easeLinearity: 0.25 });
-            highlightKrb(mapRef.current, c[1], c[0], feat.properties?.radius_bahaya_km || 5.0, feat.properties?.name);
-          } else if (EVENT_COORDS[eventId]) {
-            const target = EVENT_COORDS[eventId];
-            mapRef.current.flyTo([target[0], target[1]], target[2], { duration: 1.8, easeLinearity: 0.25 });
-            highlightKrb(mapRef.current, target[0], target[1], 5.0);
-          }
-        }
-      }
-    }
-  }, [eventId, hazard]);
+    if (!mapRef.current) return;
+    focusEvent(mapRef.current, eventId, hazard);
+  }, [eventId, hazard, focusEventTrigger, focusEvent]);
 
-  const loadForests = async () => {
+  const loadForests = async (map: L.Map) => {
     try {
       const forests = await api.getNationalForests();
       const list = Array.isArray(forests) ? forests : (forests?.forests || []);
       forestsDataRef.current = list;
+
+      if (forestsLayerRef.current) map.removeLayer(forestsLayerRef.current);
+
+      const features = list.map((f: any) => ({
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: [f.lon, f.lat]
+        },
+        properties: f
+      }));
+
+      forestsLayerRef.current = L.geoJSON({ type: "FeatureCollection", features } as any, {
+        pointToLayer: (feature: any, latlng) => {
+          const p = feature.properties;
+          let imageSrc = "/hutan.png";
+          if (p.level === 4 || p.risk_level === "Sangat Rawan") {
+            imageSrc = "/hutan_sangat_rawan.png";
+          } else if (p.level === 3 || p.risk_level === "Rawan") {
+            imageSrc = "/hutan_rawan.png";
+          } else if (p.level === 2 || p.risk_level === "Waspada") {
+            imageSrc = "/hutan_waspada.png";
+          }
+
+          const isCritical = p.level >= 3 || p.risk_level === "Sangat Rawan" || p.risk_level === "Rawan";
+          const pulseHtml = isCritical
+            ? `<span class="volcano-pulse-ring ${p.level === 4 ? 'ring-red' : 'ring-orange'}"></span>`
+            : "";
+
+          const icon = L.divIcon({
+            className: "forest-div-icon",
+            html: `
+              <div class="relative w-8 h-8 flex items-center justify-center overflow-visible">
+                ${pulseHtml}
+                <img src="${imageSrc}" class="w-7 h-7 object-contain drop-shadow-md z-10 relative select-none pointer-events-none hover:scale-110 transition-transform" />
+              </div>
+            `,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16],
+            popupAnchor: [0, -16]
+          });
+
+          return L.marker(latlng, { icon });
+        },
+        onEachFeature: (feature: any, layer) => {
+          const p = feature.properties;
+          const coords = feature.geometry.coordinates;
+
+          let badgeColor = "#22c55e";
+          if (p.level === 4 || p.risk_level === "Sangat Rawan") badgeColor = "#A14646";
+          else if (p.level === 3 || p.risk_level === "Rawan") badgeColor = "#DA6556";
+          else if (p.level === 2 || p.risk_level === "Waspada") badgeColor = "#EB895B";
+
+          layer.bindTooltip(
+            `<div style="font-family: ui-sans-serif, system-ui, sans-serif; padding: 2px;">
+              <strong style="color: #140f0e; font-size: 11px;">${p.name}</strong><br>
+              <span style="display: inline-block; padding: 1px 5px; border-radius: 4px; font-size: 9.5px; font-weight: 700; color: #fff; background-color: ${badgeColor}; margin-top: 3px;">
+                ${p.level_name || p.risk_level || 'Normal'}
+              </span>
+              <div style="font-size: 10px; color: #64748b; margin-top: 2px;">
+                ${p.n_hotspots != null ? `🔥 ${p.n_hotspots} titik api (24j)` : ''}
+                ${p.area_ha ? ` &bull; ${(p.area_ha / 1000).toLocaleString('id-ID')}k Ha` : ''}
+              </div>
+            </div>`,
+            { direction: "top", offset: [0, -10] }
+          );
+
+          layer.on("click", () => {
+            map.flyTo([coords[1], coords[0]], 10, { duration: 1.8, easeLinearity: 0.25 });
+            onSelectEvent(p.id, coords[1], coords[0], 15.0, "fire");
+          });
+        }
+      });
+
+      if (showForests) {
+        forestsLayerRef.current.addTo(map);
+      }
     } catch {
       // Offline fallback
     }
@@ -564,7 +820,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
           layer.on("click", () => {
             map.flyTo([coords[1], coords[0]], 11, { duration: 1.8, easeLinearity: 0.25 });
             highlightKrb(map, coords[1], coords[0], p.radius_bahaya_km, p.name);
-            onSelectEvent(p.event_id || p.id, coords[1], coords[0], p.radius_bahaya_km);
+            onSelectEvent(p.id || p.event_id, coords[1], coords[0], p.radius_bahaya_km, "volcano");
           });
         }
       }).addTo(map);
@@ -655,95 +911,68 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
     }
   };
 
-  const highlightKrb = (map: L.Map, lat: number, lng: number, radiusKm: number, volcanoName?: string) => {
-    if (krbCircleRef.current) map.removeLayer(krbCircleRef.current);
-
-    const radKm = radiusKm || 5.0;
-    krbCircleRef.current = L.circle([lat, lng], {
-      radius: radKm * 1000,
-      color: "#DA6556",
-      weight: 1.5,
-      dashArray: "4, 4",
-      fillColor: "#DA6556",
-      fillOpacity: 0.12,
-      interactive: true
-    }).addTo(map);
-
-    krbCircleRef.current.bindTooltip(
-      `<div class="text-xs font-mono">
-        <strong>KRB PVMBG: ${volcanoName || "Gunung Api"}</strong><br/>
-        Radius Bahaya: ${radKm} km
-      </div>`,
-      { sticky: true }
-    );
-  };
-
-  // Render Poligon Plume saat jam berubah atau cache diperbarui
+  // Render Poligon Sebaran Asap Karhutla & Abu Vulkanik saat jam berubah atau cache simulasi aktif
   useEffect(() => {
-    if (!mapRef.current || !hourlyTiersCache) return;
-
+    if (!mapRef.current) return;
     const map = mapRef.current;
-    if (!showPlume) {
-      if (plumeLayerRef.current) {
-        map.removeLayer(plumeLayerRef.current);
-        plumeLayerRef.current = null;
-      }
-      return;
+
+    if (plumeLayerRef.current) {
+      map.removeLayer(plumeLayerRef.current);
+      plumeLayerRef.current = null;
     }
+    currentPlumeGeoRef.current = null;
 
-    const hourKey = `hour_${currentHour}`;
-    const geoData = hourlyTiersCache[hourKey] || hourlyTiersCache[currentHour] || (hourlyTiersCache.features ? hourlyTiersCache : null);
-
-    if (!geoData) return;
-
-    const colors = hazard === "fire"
-      ? {
-          p90: { fill: "#b91c1c", stroke: "#7f1d1d", fillOpacity: 0.55, weight: 2.2, dash: undefined },
-          p50: { fill: "#f97316", stroke: "#c2410c", fillOpacity: 0.35, weight: 1.8, dash: "6, 4" },
-          p05: { fill: "#eab308", stroke: "#a16207", fillOpacity: 0.18, weight: 1.2, dash: "4, 4" },
-          label: "Sebaran Asap Karhutla (PM2.5)"
-        }
-      : {
-          p90: { fill: "#dc2626", stroke: "#991b1b", fillOpacity: 0.55, weight: 2.2, dash: undefined },
-          p50: { fill: "#f97316", stroke: "#c2410c", fillOpacity: 0.35, weight: 1.8, dash: "6, 4" },
-          p05: { fill: "#eab308", stroke: "#a16207", fillOpacity: 0.18, weight: 1.2, dash: "4, 4" },
-          label: "Sebaran Abu Vulkanik"
-        };
-
-    if (plumeLayerRef.current) map.removeLayer(plumeLayerRef.current);
-
-    plumeLayerRef.current = L.geoJSON(geoData, {
-      style: (feature: any) => {
-        const tier = feature.properties?.tier;
-        let c;
-        if (tier === "minimum" || tier === "p90" || tier === "min") {
-          c = colors.p90;
-        } else if (tier === "mid" || tier === "p50") {
-          c = colors.p50;
-        } else {
-          c = colors.p05;
-        }
-        return {
-          className: "plume-animated-layer",
-          color: c.stroke,
-          weight: c.weight,
-          opacity: 0.9,
-          fillColor: c.fill,
-          fillOpacity: c.fillOpacity,
-          dashArray: c.dash
-        };
-      }
-    }).addTo(map);
-
-    // Simpan ref geoData aktif untuk hit-testing hover independen
-    currentPlumeGeoRef.current = geoData;
-
-    // Evaluasi 2: HANYA tampilkan marker popup untuk fasilitas yang spesifik tersentuh asap/abu (tanpa memunculkan semua fasilitas lainnya)
     if (impactedFacilitiesLayerRef.current) {
       map.removeLayer(impactedFacilitiesLayerRef.current);
       impactedFacilitiesLayerRef.current = null;
     }
 
+    if (!showPlume || !hourlyTiersCache) return;
+
+    const hourKey = `hour_${currentHour}`;
+    const geoData = hourlyTiersCache[hourKey] || hourlyTiersCache[currentHour] || (hourlyTiersCache.features ? hourlyTiersCache : null);
+
+    if (!geoData || !geoData.features || geoData.features.length === 0) return;
+
+    currentPlumeGeoRef.current = geoData;
+
+    const colors = CONFIG.COLORS[hazard] || CONFIG.COLORS.volcano;
+
+    plumeLayerRef.current = L.geoJSON(geoData, {
+      style: (feature: any) => {
+        const tier = feature.properties?.tier || "mid";
+        if (tier === "p90" || tier === "min" || tier === "minimum") {
+          return { color: colors.p90, fillColor: colors.p90, fillOpacity: 0.58, weight: 1.5 };
+        }
+        if (tier === "p50" || tier === "mid") {
+          return { color: colors.p50, fillColor: colors.p50, fillOpacity: 0.36, weight: 1.2, dashArray: "3,3" };
+        }
+        return { color: colors.p05, fillColor: colors.p05, fillOpacity: 0.18, weight: 0.8 };
+      },
+      onEachFeature: (feature: any, layer) => {
+        const p = feature.properties || {};
+        const isFire =
+          hazard === "fire" ||
+          eventId.startsWith("hutan_") ||
+          eventId.startsWith("karhutla_");
+
+        const tierName =
+          p.tier === "p90" || p.tier === "min" || p.tier === "minimum"
+            ? (isFire ? "Asap Sangat Pekat (P90)" : "Abu Tebal / Bahaya Tinggi (P90)")
+            : p.tier === "p50" || p.tier === "mid"
+            ? (isFire ? "Asap Sedang (P50)" : "Abu Sedang / Waspada (P50)")
+            : (isFire ? "Asap Tipis / Siaga Dini (P05)" : "Debu Halus / Siaga Dini (P05)");
+
+        const hazardLabel = isFire ? "Sebaran Asap Karhutla (PM2.5)" : "Sebaran Abu Vulkanik";
+
+        layer.bindTooltip(
+          `<strong>${hazardLabel}</strong><br/>Tingkat: <span style="color:#EB895B;font-weight:700;">${tierName}</span><br/><small style="color:#94a3b8">Waktu Horizon: ${formatHour(currentHour)}</small>`,
+          { sticky: true }
+        );
+      }
+    }).addTo(map);
+
+    // Evaluasi Fasilitas Terdampak
     const { schools, hospitals, airports } = rawFacilitiesRef.current;
     if (activeRunId && (schools.length > 0 || hospitals.length > 0 || airports.length > 0)) {
       const allFacilities = [...schools, ...hospitals, ...airports];
@@ -771,7 +1000,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
         }).addTo(map);
       }
     }
-  }, [currentHour, hourlyTiersCache, hazard, showPlume]);
+  }, [currentHour, hourlyTiersCache, activeRunId, hazard, showPlume]);
 
   // Gambar Rute Evakuasi & Otomatis Munculkan Marker RS Tujuan Evakuasi
   useEffect(() => {
@@ -824,129 +1053,171 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
     <div className="relative w-full h-full isolate z-0">
       <div ref={mapContainerRef} className="w-full h-full bg-[#140f0e]" />
 
-      {/* 2 & 3. Kontrol Navigasi Kiri Bawah: Lapisan Spasial, Kompas, dan Zoom (+ / -) */}
-      <div className="absolute bottom-6 left-4 flex flex-col items-center gap-2 z-[500] transition-all duration-300 ease-out">
-        {/* Tombol Lapisan Spasial Aktif */}
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setIsLayerPanelOpen(!isLayerPanelOpen)}
-            className="w-10 h-10 rounded-full shadow-2xl flex items-center justify-center transition cursor-pointer active:scale-95 group"
-            style={{
-              background: isLayerPanelOpen ? "#EB895B" : "rgba(245, 239, 227, 0.95)",
-              border: "1px solid rgba(235, 137, 91, 0.45)",
-              color: isLayerPanelOpen ? "#FFFFFF" : "#EB895B"
-            }}
-            title="Pengaturan Lapisan Spasial"
-          >
-            <Layers className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
-          </button>
-        </div>
-
-        {/* Popover Lapisan Spasial (Diletakkan berpatokan pada bawah grup agar tidak menabrak atas) */}
-        {isLayerPanelOpen && (
+      {/* Kontrol Navigasi Kiri Bawah (Zoom [+|-], Suite [User|Pusatkan|Spasial], dan CameraReadout) */}
+      <div className="absolute bottom-3 sm:bottom-4 left-2 md:left-4 z-[600] flex flex-col items-start gap-1.5 transition-all duration-300 select-none">
+        {/* Baris Tombol: [ + | - ] lalu [ 👤 | 🎯 | 📑 ] */}
+        <div className="flex items-center gap-2">
+          {/* 1. Dock Zoom: + (Zoom In) lalu - (Zoom Out) */}
           <div
-            className="absolute bottom-0 left-[3.25rem] rounded-xl p-3 shadow-2xl flex flex-col gap-2.5 backdrop-blur-md text-[#140f0e] border animate-in fade-in zoom-in-95 duration-200"
+            className="flex items-center rounded-full overflow-hidden shadow-2xl backdrop-blur-xl border"
             style={{
-              background: "rgba(245, 239, 227, 0.96)",
+              background: "rgba(245, 239, 227, 0.95)",
               borderColor: "rgba(235, 137, 91, 0.4)",
-              minWidth: "210px"
+              boxShadow: "0 8px 20px -3px rgba(0,0,0,0.15)"
             }}
           >
-              <div className="flex items-center justify-between border-b pb-1.5 mb-0.5" style={{ borderColor: "rgba(0, 0, 0, 0.1)" }}>
-                <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: "#EB895B" }}>
-                  Lapisan Spasial
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setIsLayerPanelOpen(false)}
-                  className="text-[#EB895B] hover:text-slate-800 transition cursor-pointer opacity-80 hover:opacity-100"
-                  title="Tutup Panel"
+            <button
+              type="button"
+              onClick={() => mapRef.current?.zoomIn()}
+              className="w-8 h-9 flex items-center justify-center transition cursor-pointer active:scale-95 hover:bg-black/5 text-[#140f0e] border-r border-black/10"
+              title="Perbesar Peta (Zoom In)"
+            >
+              <Plus size={14} weight="bold" />
+            </button>
+            <button
+              type="button"
+              onClick={() => mapRef.current?.zoomOut()}
+              className="w-8 h-9 flex items-center justify-center transition cursor-pointer active:scale-95 hover:bg-black/5 text-[#140f0e]"
+              title="Perkecil Peta (Zoom Out)"
+            >
+              <Minus size={14} weight="bold" />
+            </button>
+          </div>
+
+          {/* 2. Dock Suite: Icon User, Icon Pusatkan, Icon Spasial */}
+          <div
+            className="flex items-center gap-1.5 p-1 rounded-full backdrop-blur-xl shadow-2xl border"
+            style={{
+              background: "rgba(245, 239, 227, 0.95)",
+              borderColor: "rgba(235, 137, 91, 0.4)",
+              boxShadow: "0 8px 20px -3px rgba(0,0,0,0.15)"
+            }}
+          >
+            {/* 👤 Lokasi Anda (GPS) */}
+            <button
+              type="button"
+              onClick={handleShowMyLocation}
+              disabled={isLocating}
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition cursor-pointer hover:scale-105 active:scale-95 shadow-md ${
+                isLocating
+                  ? "bg-[#EB895B] text-white animate-pulse border border-[#EB895B]"
+                  : "bg-[#EB895B]/15 hover:bg-[#EB895B]/25 text-[#A14646] border border-[#EB895B]/40"
+              }`}
+              title="Tampilkan Lokasi Anda di Peta (GPS)"
+            >
+              <User size={16} weight="duotone" />
+            </button>
+
+            {/* 🎯 Pusatkan Peta ke Seluruh Wilayah Indonesia */}
+            <button
+              type="button"
+              onClick={handleResetIndonesia}
+              className="w-9 h-9 rounded-full flex items-center justify-center transition cursor-pointer hover:scale-105 active:scale-95 bg-black/5 hover:bg-black/10 text-[#140f0e] border border-black/10 shadow-xs"
+              title="Pusatkan Peta ke Seluruh Indonesia"
+            >
+              <Crosshair size={16} weight="bold" />
+            </button>
+
+            {/* 📑 Tombol Popover Lapisan Spasial (Icon Only) */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsLayerPanelOpen(!isLayerPanelOpen)}
+                className={`w-9 h-9 rounded-full flex items-center justify-center transition cursor-pointer hover:scale-105 active:scale-95 shadow-md border ${
+                  isLayerPanelOpen
+                    ? "bg-[#EB895B] text-white border-[#EB895B]"
+                    : "bg-black/5 hover:bg-black/10 text-[#140f0e] border-black/10"
+                }`}
+                title="Pengaturan Lapisan Spasial"
+              >
+                <Stack size={16} weight="duotone" />
+              </button>
+
+              {/* Popover Lapisan Spasial: Membuka ke arah KANAN (horizontal flyout) */}
+              {isLayerPanelOpen && (
+                <div
+                  className="absolute bottom-0 left-full ml-3 rounded-xl p-3 shadow-2xl flex flex-col gap-2 backdrop-blur-xl text-[#140f0e] border animate-in fade-in zoom-in-95 duration-150 min-w-[220px] max-h-[260px] overflow-y-auto z-[1100]"
+                  style={{
+                    background: "rgba(245, 239, 227, 0.98)",
+                    borderColor: "rgba(235, 137, 91, 0.4)",
+                    boxShadow: "0 12px 28px -4px rgba(0,0,0,0.25)"
+                  }}
                 >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
+                  <div className="flex items-center justify-between border-b pb-1.5 mb-0.5" style={{ borderColor: "rgba(20, 15, 14, 0.1)" }}>
+                    <span className="font-subheading text-[10px] font-bold tracking-wider uppercase text-[#EB895B]">
+                      Lapisan Spasial
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsLayerPanelOpen(false)}
+                      className="text-[#140f0e]/50 hover:text-[#140f0e] transition cursor-pointer p-0.5 rounded hover:bg-black/5"
+                      title="Tutup Panel"
+                    >
+                      <X size={14} weight="bold" />
+                    </button>
+                  </div>
 
-              <label className="flex items-center gap-2.5 text-xs font-medium cursor-pointer hover:opacity-80 transition select-none">
-                <input type="checkbox" checked={showVolcanoes} onChange={(e) => setShowVolcanoes(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B]" />
-                <img src="/1_normal.png" className="w-4 h-4 object-contain" />
-                <span>Gunungapi PVMBG</span>
-              </label>
+                  <label className="flex items-center gap-2 text-[11px] font-body font-medium cursor-pointer hover:opacity-80 transition select-none">
+                    <input type="checkbox" checked={showVolcanoes} onChange={(e) => setShowVolcanoes(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B] rounded" />
+                    <img src="/1_normal.png" className="w-3.5 h-3.5 object-contain" />
+                    <span className="font-body">Gunungapi PVMBG</span>
+                  </label>
 
-              <label className="flex items-center gap-2.5 text-xs font-medium cursor-pointer hover:opacity-80 transition select-none">
-                <input type="checkbox" checked={showHotspots} onChange={(e) => setShowHotspots(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B]" />
-                <img src="/titik_api.png" className="w-4 h-4 object-contain" />
-                <span>Titik Api Satelit</span>
-              </label>
+                  <label className="flex items-center gap-2 text-[11px] font-body font-medium cursor-pointer hover:opacity-80 transition select-none">
+                    <input type="checkbox" checked={showForests} onChange={(e) => setShowForests(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B] rounded" />
+                    <img src="/hutan.png" className="w-3.5 h-3.5 object-contain" />
+                    <span className="font-body">Kawasan Hutan & Gambut</span>
+                  </label>
 
-              <label className="flex items-center gap-2.5 text-xs font-medium cursor-pointer hover:opacity-80 transition select-none">
-                <input type="checkbox" checked={showPlume} onChange={(e) => setShowPlume(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B]" />
-                <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0" style={{ background: "rgba(253, 183, 115, 0.3)", border: "1px dashed #FDB773" }}></div>
-                <span>Peluang Dispersi</span>
-              </label>
+                  <label className="flex items-center gap-2 text-[11px] font-body font-medium cursor-pointer hover:opacity-80 transition select-none">
+                    <input type="checkbox" checked={showHotspots} onChange={(e) => setShowHotspots(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B] rounded" />
+                    <img src="/titik_api.png" className="w-3.5 h-3.5 object-contain" />
+                    <span className="font-body">Titik Api Satelit (LOD)</span>
+                  </label>
 
-              <label className="flex items-center gap-2.5 text-xs font-medium cursor-pointer hover:opacity-80 transition select-none">
-                <input type="checkbox" checked={showSchools} onChange={(e) => setShowSchools(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B]" />
-                <img src="/school.png" className="w-4 h-4 object-contain" />
-                <span>Fasilitas Sekolah</span>
-              </label>
+                  <label className="flex items-center gap-2 text-[11px] font-body font-medium cursor-pointer hover:opacity-80 transition select-none">
+                    <input type="checkbox" checked={showPlume} onChange={(e) => setShowPlume(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B] rounded" />
+                    <div className="w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0" style={{ background: "rgba(235, 137, 91, 0.35)", border: "1px dashed #EB895B" }}></div>
+                    <span className="font-body">
+                      {hazard === "fire" ? "Sebaran Asap Karhutla" : "Sebaran Abu Vulkanik"}
+                    </span>
+                  </label>
 
-              <label className="flex items-center gap-2.5 text-xs font-medium cursor-pointer hover:opacity-80 transition select-none">
-                <input type="checkbox" checked={showHospitals} onChange={(e) => setShowHospitals(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B]" />
-                <img src="/hospital.png" className="w-4 h-4 object-contain" />
-                <span>Fasilitas Kesehatan</span>
-              </label>
+                  <label className="flex items-center gap-2 text-[11px] font-body font-medium cursor-pointer hover:opacity-80 transition select-none">
+                    <input type="checkbox" checked={showSchools} onChange={(e) => setShowSchools(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B] rounded" />
+                    <img src="/school.png" className="w-3.5 h-3.5 object-contain" />
+                    <span className="font-body">Fasilitas Sekolah</span>
+                  </label>
 
-              <label className="flex items-center gap-2.5 text-xs font-medium cursor-pointer hover:opacity-80 transition select-none">
-                <input type="checkbox" checked={showAirports} onChange={(e) => setShowAirports(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B]" />
-                <img src="/plane.png" className="w-4 h-4 object-contain" />
-                <span>Bandara Udara</span>
-              </label>
+                  <label className="flex items-center gap-2 text-[11px] font-body font-medium cursor-pointer hover:opacity-80 transition select-none">
+                    <input type="checkbox" checked={showHospitals} onChange={(e) => setShowHospitals(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B] rounded" />
+                    <img src="/hospital.png" className="w-3.5 h-3.5 object-contain" />
+                    <span className="font-body">Fasilitas Kesehatan</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 text-[11px] font-body font-medium cursor-pointer hover:opacity-80 transition select-none">
+                    <input type="checkbox" checked={showAirports} onChange={(e) => setShowAirports(e.target.checked)} className="w-3.5 h-3.5 accent-[#EB895B] rounded" />
+                    <img src="/plane.png" className="w-3.5 h-3.5 object-contain" />
+                    <span className="font-body">Bandara Udara</span>
+                  </label>
+                </div>
+              )}
             </div>
-          )}
-
-        {/* Tombol Bulat Reset Tampilan Peta ke Seluruh Indonesia */}
-        <button
-          type="button"
-          onClick={handleResetIndonesia}
-          className="w-10 h-10 rounded-full shadow-2xl flex items-center justify-center transition cursor-pointer active:scale-95 group"
-          style={{
-            background: "rgba(245, 239, 227, 0.95)",
-            border: "1px solid rgba(235, 137, 91, 0.45)",
-            color: "#EB895B"
-          }}
-          title="Reset Tampilan Peta ke Seluruh Wilayah Indonesia"
-        >
-          <Compass className="w-5 h-5 group-hover:rotate-45 transition-transform duration-300" />
-        </button>
-
-        {/* Tombol Navigasi Zoom (+ dan -) */}
-        <div
-          className="flex flex-col rounded-lg overflow-hidden shadow-2xl"
-          style={{
-            background: "rgba(245, 239, 227, 0.95)",
-            border: "1px solid rgba(235, 137, 91, 0.35)",
-            color: "#140f0e"
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => mapRef.current?.zoomIn()}
-            className="w-9 h-9 flex items-center justify-center transition cursor-pointer active:scale-95 hover:bg-black/5"
-            style={{ borderBottom: "1px solid rgba(0, 0, 0, 0.1)" }}
-            title="Perbesar Peta (Zoom In)"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => mapRef.current?.zoomOut()}
-            className="w-9 h-9 flex items-center justify-center transition cursor-pointer active:scale-95 hover:bg-black/5"
-            title="Perkecil Peta (Zoom Out)"
-          >
-            <Minus className="w-4 h-4" />
-          </button>
+          </div>
         </div>
+
+        {/* Live Camera Coordinates Readout */}
+        <CameraReadout map={mapRef.current} lang="id" />
+      </div>
+
+      {/* Mode Peta Nasional (Histori Heatmap, Real-time Wind Streamlines, 16-Day Forecast & Smoke Paths) */}
+      <div
+        className={`absolute top-3.5 right-3.5 sm:top-4 sm:right-4 ${_isDrawerOpen ? "lg:right-[396px]" : "lg:right-4"} z-[500] transition-all duration-300 flex flex-col items-end`}
+      >
+        <NationalModes
+          map={mapRef.current}
+          lang="id"
+        />
       </div>
     </div>
   );

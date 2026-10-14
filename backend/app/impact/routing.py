@@ -110,7 +110,7 @@ def get_real_road_evacuation_route(
             osrm_url,
             headers={"User-Agent": "UdaraSiaga-JOINTS2026-EmergencyRouter/1.0"}
         )
-        with urllib.request.urlopen(req, timeout=3.5) as response:
+        with urllib.request.urlopen(req, timeout=12) as response:
             if response.status == 200:
                 data = json.loads(response.read().decode("utf-8"))
                 routes = data.get("routes", [])
@@ -166,7 +166,7 @@ def get_real_road_evacuation_route(
                         )
                         try:
                             d_req = urllib.request.Request(detour_url, headers={"User-Agent": "UdaraSiaga-Router/1.0"})
-                            with urllib.request.urlopen(d_req, timeout=3.0) as d_resp:
+                            with urllib.request.urlopen(d_req, timeout=10) as d_resp:
                                 if d_resp.status == 200:
                                     d_data = json.loads(d_resp.read().decode("utf-8"))
                                     d_routes = d_data.get("routes", [])
@@ -214,38 +214,24 @@ def get_real_road_evacuation_route(
                         "hazard_avoided": hazard_avoided,
                         "min_distance_to_epicenter_km": round(min_hazard_dist, 1) if min_hazard_dist < 900 else None,
                         "safety_note": (
-                            "Rute evakuasi minim dampak terverifikasi: memprioritaskan koridor jalan raya yang "
-                            "menjauhi konsentrasi abu vulkanik pekat dan lingkar kawah aktif."
+                            "Rute jalan OSRM (OpenStreetMap). Dari beberapa alternatif dipilih rute yang menjauhi "
+                            "sumber bahaya; tetap ikuti arahan petugas di lapangan."
                         )
                     }
     except Exception:
         pass
 
-    # Perhitungan Fallback Realistis (menjauhi kawah aktif)
-    wps = generate_offline_road_waypoints(
-        (origin_lat, origin_lon),
-        (dest_lat, dest_lon),
-        center_lat=center_lat,
-        center_lon=center_lon
-    )
-    coordinates_latlng = [[round(lat, 5), round(lon, 5)] for lat, lon in wps]
-    
-    # Rasio jalan raya Indonesia umumnya 1.25x - 1.35x jarak garis lurus
-    road_distance_km = round(direct_dist_km * 1.30, 2)
-    # Estimasi kecepatan ambulans gawat darurat rata-rata 40-50 km/jam
-    duration_minutes = max(round((road_distance_km / 45.0) * 60.0), 1)
-
+    # OSRM tidak dapat dihubungi: kembalikan garis lurus berlabel jelas (bukan jaringan jalan)
     return {
-        "routing_engine": "UdaraSiaga Local Road Curvature Synthesizer (Offline Fallback)",
+        "routing_engine": "Garis lurus (OSRM tidak dapat dihubungi)",
         "origin": {"name": origin_name, "latitude": origin_lat, "longitude": origin_lon},
         "destination": {"name": dest_name, "latitude": dest_lat, "longitude": dest_lon},
-        "distance_km": road_distance_km,
+        "distance_km": None,
         "direct_distance_km": direct_dist_km,
-        "estimated_duration_minutes": duration_minutes,
-        "estimated_speed_kmh": 45.0,
-        "coordinates": coordinates_latlng,
-        "status": "success",
+        "estimated_duration_minutes": None,
+        "coordinates": [[round(origin_lat, 5), round(origin_lon, 5)], [round(dest_lat, 5), round(dest_lon, 5)]],
+        "status": "road_network_unavailable",
         "is_real_road": False,
-        "hazard_avoided": True,
-        "safety_note": "Rute kurvatur jalan raya aman: koridor menghindari pusat bahaya atmosfer."
+        "hazard_avoided": False,
+        "safety_note": "Layanan rute jalan (OSRM) tidak dapat dihubungi; garis ini hanya arah garis lurus, bukan jalur jalan.",
     }

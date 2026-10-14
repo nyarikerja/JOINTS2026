@@ -59,7 +59,7 @@ Seluruh contoh respons bersumber dari fixture uji nyata di `docs/fixtures/`.
 | **Fitur Pembeda (L2)** | `GET` | `/runs/{run_id}/severity?t={h}` | Ringkasan metrik keparahan persentil beban abu/konsentrasi PM2.5 |
 | **Fitur Pembeda (L2)** | `GET` | `/runs/{run_id}/arrival` | Peta waktu tiba (*time-of-arrival*) polutan per sektor wilayah |
 | **Bukti Kepercayaan (L3)** | `GET` | `/validation/{event_id}` | Evaluasi validasi lapangan (District Hit Rate, FSS, dampak bandara) |
-| **Bukti Kepercayaan (L3)** | `GET` | `/demo/play/{event_id}` | Urutan keyframe playback pratinjau otomatis untuk demonstrasi juri |
+| **Bukti Kepercayaan (L3)** | `GET` | `/demo/play/{event_id}` | Dinonaktifkan (`available: false`); demo harus dari `POST /simulate` |
 | **Bukti Kepercayaan (L3)** | `GET` | `/runs/{run_id}/export?format={json\|html}` | Ekspor ringkasan satu halaman (JSON terstruktur & HTML siap cetak) |
 | **Bukti Kepercayaan (L3)** | `GET` | `/runs/{run_id}/lahar-warning` | Analisis peringatan dini potensi lahar hujan sekunder di DAS sungai |
 | **Kesehatan Masyarakat (L3)** | `GET` | `/runs/{run_id}/health-guidance` | Rekomendasi masker (N95 vs bedah), peringatan lensa kontak, & kelompok rentan |
@@ -67,7 +67,7 @@ Seluruh contoh respons bersumber dari fixture uji nyata di `docs/fixtures/`.
 | **Kesiapsiagaan Dini (L3)** | `GET` | `/runs/{run_id}/cross-border` | Analisis pelacakan risiko asap lintas batas (*Transboundary Haze*) |
 | **Kesiapsiagaan Dini (L3)** | `GET` | `/runs/{run_id}/evacuation-routes` | Peta rute evakuasi aman dan penetapan zona larangan (KRB Buffer) |
 | **Kesiapsiagaan Dini (L3)** | `GET` | `/runs/{run_id}/evacuation-route` | Rute jalan raya riil OSRM OpenStreetMap dari sekolah/faskes ke RS rujukan aman |
-| **Kesiapsiagaan Dini (L3)** | `GET` | `/runs/{run_id}/emergency-advisory` | AI Emergency Briefing multi-sektor (Gemini AI & BNPB: Siaran Pers & WhatsApp) |
+| **Kesiapsiagaan Dini (L3)** | `GET` | `/runs/{run_id}/emergency-advisory` | Draf ringkasan kesiapsiagaan (Gemini bila kunci valid, selain itu template); bukan siaran resmi |
 
 
 ---
@@ -616,9 +616,21 @@ sequenceDiagram
     "eye_protection": "Safety Goggles tertutup lis karet",
     "contact_lens_ban": "DILARANG KERAS MEMAKAI LENSA KONTAK (SOFTLENS) karena abrasi kornea silika tajam"
   },
-  "spab_remote_learning_mandate": "Sekolah di wilayah paparan >= 40% wajib menghentikan KBM tatap muka dan beralih ke PJJ Daring",
+  "spab_remote_learning_mandate": "Sekolah dengan peluang paparan >= 90% dipertimbangkan beralih ke PJJ daring; >= 50% batasi kegiatan luar ruang",
   "water_security": "Tutup rapat tandon air minum dan sumur gali dari racun fluorida dan asam sulfur"
 }
 ```
 
+## Perubahan kontrak (11 Oktober 2026)
 
+- `POST /simulate` menolak dengan **422** bila mode `auto` tidak punya data langsung (VONA berabu ≤ 24 jam untuk gunung, deteksi FIRMS 24 jam untuk kebakaran) dan **503** bila prakiraan Open-Meteo tidak tersedia.
+- Respons `POST /simulate` dan `GET /runs/{run_id}` kini memuat `event_name`, `start_utc` (H+0), `center_coords`, `source_info` (VONA atau FIRMS), `weather` (model, aras angin, waktu unduh, ringkasan hujan), dan `hotspots_used` (`count`, `n_overpasses`, `mean_instantaneous_frp_mw`).
+- `GET /runs/{run_id}/impact` menambah `population_source` dan `facilities_coverage`; `ispu` tetap `available: false` selama faktor emisi PM2.5 placeholder.
+- `GET /runs/{run_id}/rain-effect` mengembalikan `scavenged_mass_pct` (massa partikel tercuci hujan, keluaran model) dan ringkasan hujan prakiraan.
+- `GET /runs/{run_id}/lahar-warning` dihitung dari peluang hujan ensemble melampaui `lahar_rain_trigger_mm_h`; `vulnerable_drainage_basins` kosong (belum ada data sungai).
+- `GET /runs/{run_id}/land-water` dan `POST /runs/sensitivity` menjawab `available: false`.
+- `GET /validation/{event_id}?run_id=` menghitung `district_hit_rate` dari run nyata; tanpa `run_id` hanya status.
+- `GET /layers/hotspots` menerima `hours` (default 24) dan mengembalikan `sensor`, `confidence` (rendah/nominal/tinggi), `acq_datetime_utc`; `GET /layers/heatmap?days=` memakai jendela jam dari sekarang.
+- `GET /layers/facilities` memerlukan `bbox` untuk sekolah/faskes (data OSM); tanpa bbox hanya bandara.
+- `GET /layers/summary-kpi` dan `POST /layers/sync-live` melaporkan `fetched_at` dan `stale` tiap sumber.
+- `GET /advice/nearby` memisahkan `crater_thermal_anomalies` (deteksi FIRMS ≤ 5 km dari kawah aktif) dari titik api vegetasi.

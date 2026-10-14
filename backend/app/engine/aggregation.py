@@ -137,18 +137,22 @@ def aggregate_tiers_for_hour(
     # 1. Penghalusan difusi kontinu Gauss & Boundary Tapering
     # Mengeliminasi artefak kotak kaku pada tepi domain komputasi dan menjamin ujung plume menutup aerodinamis alami
     if np.any(prob_grid > 0):
+        raw_max = float(np.max(prob_grid))
         edge_mask = np.ones_like(prob_grid)
         edge_mask[0:2, :] = 0.0
         edge_mask[-2:, :] = 0.0
         edge_mask[:, 0:2] = 0.0
         edge_mask[:, -2:] = 0.0
         edge_weight = scipy.ndimage.gaussian_filter(edge_mask, sigma=1.5, mode="constant", cval=0.0)
-        smoothed_prob = scipy.ndimage.gaussian_filter(prob_grid * edge_weight, sigma=1.2, mode="constant", cval=0.0)
+        smoothed_prob = scipy.ndimage.gaussian_filter(prob_grid * edge_weight, sigma=1.0, mode="constant", cval=0.0)
+        s_max = float(np.max(smoothed_prob))
+        if s_max > 0:
+            smoothed_prob = smoothed_prob * (raw_max / s_max)
 
         # 2. Sub-Grid Bicubic Upsampling (Zoom orde 3) untuk menghasilkan medan kontur sebaran yang meliuk alami
         # Mengeliminasi artefak undakan raster kotak-kotak 5km menjadi kontur aerodinamis sub-pixel
         zoom_factor = 3
-        up_prob = scipy.ndimage.zoom(smoothed_prob, zoom=zoom_factor, order=3)
+        up_prob = scipy.ndimage.zoom(smoothed_prob, zoom=zoom_factor, order=1)
         up_prob = np.clip(up_prob, 0.0, 1.0)
     else:
         up_prob = prob_grid

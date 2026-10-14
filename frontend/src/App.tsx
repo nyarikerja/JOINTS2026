@@ -6,6 +6,8 @@ import { TimelinePlayer } from "./components/layout/TimelinePlayer";
 import { AnalyticsDrawer } from "./components/layout/AnalyticsDrawer";
 import { LegendModal } from "./components/layout/LegendModal";
 import { PrintReportModal } from "./components/layout/PrintReportModal";
+import { GpsAdvisoryModal } from "./components/layout/GpsAdvisoryModal";
+import { useLocationWatch } from "./utils/locationWatch";
 import { api } from "./services/api";
 import type {
   HazardType,
@@ -41,7 +43,10 @@ export const App: React.FC = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [isLegendOpen, setIsLegendOpen] = useState<boolean>(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
+  const [isGpsModalOpen, setIsGpsModalOpen] = useState<boolean>(false);
   const [isRunning, setIsRunning] = useState<boolean>(false);
+
+  useLocationWatch();
   const [progressText, setProgressText] = useState<string>("");
   const [loadingProgress, setLoadingProgress] = useState<number>(0);
 
@@ -58,6 +63,7 @@ export const App: React.FC = () => {
   const [autoPlayTrigger, setAutoPlayTrigger] = useState<number>(0);
   const [selectedEventName, setSelectedEventName] = useState<string>("G. Anak Krakatau");
   const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
+  const [eventFocusTrigger, setEventFocusTrigger] = useState<number>(0);
 
   useEffect(() => {
     // Buka panduan simulasi secara otomatis saat user pertama kali membuka web
@@ -128,10 +134,12 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleEventChange = (newEventId: string) => {
-    if (newEventId !== eventId) {
-      setEventId(newEventId);
+  const handleEventChange = (newEventId: string, newHazard?: HazardType) => {
+    if (newHazard && newHazard !== hazard) {
+      setHazard(newHazard);
     }
+    setEventId(newEventId);
+    setEventFocusTrigger((prev) => prev + 1);
   };
 
   const [simulatedEventName, setSimulatedEventName] = useState<string>("G. Anak Krakatau");
@@ -149,37 +157,36 @@ export const App: React.FC = () => {
     const isFire = activeHazard === "fire";
     setProgressText(
       isFire
-        ? "Memproses pemodelan sebaran asap & emisi PM2.5 karhutla..."
-        : "Memproses pemodelan erupsi & trayektori sebaran abu vulkanik..."
+        ? "Menghubungkan data titik api NASA FIRMS & angin ECMWF..."
+        : "Mengambil parameter erupsi PVMBG & profil angin troposfer ECMWF..."
     );
 
-    // Progress dinamis continuous melambat secara natural asimtotik mendekati 99%, tidak pernah berhenti total (stuck)
+    // Fase 1 & 2: Dibatasi maksimal 74% selama backend komputasi pemodelan adveksi & dispersi 48 jam
+    let targetCap = 74;
     const loadingInterval = setInterval(() => {
       setLoadingProgress((prev) => {
-        if (prev >= 99) return 99;
-        // Makin tinggi persentase, penambahan makin halus sehingga tetap terasa berjalan
-        const remaining = 99 - prev;
-        const delta = Math.max(0.1, remaining * 0.04);
-        const next = prev + delta;
+        if (prev >= targetCap) return prev;
+        const remaining = targetCap - prev;
+        const delta = Math.max(0.08, remaining * 0.035);
+        const next = Math.min(targetCap, prev + delta);
 
-        // Transisi teks fase secara dinamis dan mulus
-        if (next < 50) {
+        if (next < 35) {
           setProgressText(
             isFire
-              ? "Memproses pemodelan sebaran asap & emisi PM2.5 karhutla..."
-              : "Memproses pemodelan erupsi & trayektori sebaran abu vulkanik..."
+              ? "Menghubungkan data titik api NASA FIRMS & angin ECMWF..."
+              : "Mengambil parameter erupsi PVMBG & profil angin troposfer ECMWF..."
           );
-        } else if (next < 99) {
+        } else if (next < 74) {
           setProgressText(
             isFire
-              ? "Menganalisis dampak kabut asap pada populasi & fasilitas..."
-              : "Menganalisis proyeksi paparan abu vulkanik pada wilayah & faskes..."
+              ? "Mengalkulasi pemodelan emisi PM2.5 & adveksi partikel 48 jam..."
+              : "Mensimulasikan dispersi abu vulkanik 15 ensemble members 48 jam..."
           );
         }
 
         return next;
       });
-    }, 60);
+    }, 80);
 
     // Samakan konstruksi overrides dengan standar backend (hanya mode experiment)
     let backendOverrides: Record<string, any> | null = null;
@@ -212,13 +219,24 @@ export const App: React.FC = () => {
     };
 
     try {
+      // 1. Eksekusi Pemodelan Fisika di Backend
       const simRes = await api.runSimulation(payload);
       const runId = simRes.run_id;
       setActiveRunId(runId);
       
+      // Fase 3: Pemodelan selesai, beralih ke analisis dampak & rekomendasi mitigasi
+      targetCap = 94;
+      setLoadingProgress((p) => Math.max(p, 76));
+      setProgressText(
+        isFire
+          ? "Menganalisis fasilitas terdampak asap & menyiapkan jalur evakuasi..."
+          : "Menganalisis wilayah & fasilitas terdampak abu vulkanik..."
+      );
+
       // Reset jam ke 0 lalu aktifkan auto-play agar animasi sebaran jam 0 s/d 48 langsung berjalan otomatis
       setCurrentHour(0);
 
+      // 2. Ambil data analisis dampak, fasilitas, validasi satelit, advisory, & poligon jam 0 secara paralel
       const [impact, facilities, validation, advisory, tier0] = await Promise.all([
         api.getImpact(runId).catch(() => null),
         api.getFacilitiesImpacted(runId).catch(() => null),
@@ -238,14 +256,17 @@ export const App: React.FC = () => {
       setIsDrawerOpen(true);
       setAutoPlayTrigger((prev) => prev + 1);
 
-      // Fase 3: 100% Selesai
+      // Fase 4: Finalisasi & Tampilkan 100%
       clearInterval(loadingInterval);
-      setLoadingProgress(100);
+      setLoadingProgress(96);
       setProgressText(
         isFire
           ? "Pemodelan sebaran asap karhutla siap ditampilkan"
           : "Pemodelan sebaran abu vulkanik siap ditampilkan"
       );
+
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      setLoadingProgress(100);
 
       // Simpan referensi run terakhir ke local storage
       localStorage.setItem("lastRunId", runId);
@@ -261,7 +282,7 @@ export const App: React.FC = () => {
         setIsRunning(false);
         setProgressText("");
         setLoadingProgress(0);
-      }, 700);
+      }, 500);
     }
   };
 
@@ -373,14 +394,15 @@ export const App: React.FC = () => {
           currentHour={currentHour}
           hourlyTiersCache={hourlyTiersCache}
           evacuationRoute={evacuationRoute}
-          onSelectEvent={(newId) => {
-            handleEventChange(newId);
+          onSelectEvent={(newId, _lat, _lng, _radius, eventHazard) => {
+            handleEventChange(newId, eventHazard);
           }}
           resetViewTrigger={resetViewTrigger}
           flyToTarget={flyToTarget}
           activeRunId={activeRunId}
           isDrawerOpen={isDrawerOpen}
           onToggleLegend={() => setIsLegendOpen((prev) => !prev)}
+          focusEventTrigger={eventFocusTrigger}
         />
 
         {/* Loading Simulasi Center Screen */}
@@ -487,6 +509,7 @@ export const App: React.FC = () => {
           onDrawRoute={handleDrawRoute}
           activeRouteId={evacuationRoute?.facilityId}
           simulatedEventName={simulatedEventName}
+          onOpenGpsModal={() => setIsGpsModalOpen(true)}
         />
 
         {/* Modal Legenda Otoritatif PVMBG & Dispersi */}
@@ -505,6 +528,12 @@ export const App: React.FC = () => {
           impact={impactData}
           facilities={facilitiesData}
           advisory={advisoryData}
+        />
+
+        {/* Modal AI GPS Siaga Personal Warga */}
+        <GpsAdvisoryModal
+          isOpen={isGpsModalOpen}
+          onClose={() => setIsGpsModalOpen(false)}
         />
       </div>
     </div>

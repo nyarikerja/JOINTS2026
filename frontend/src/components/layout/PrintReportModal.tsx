@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { X, Printer } from "lucide-react";
+import { X, Printer } from "@phosphor-icons/react";
 import type {
   ImpactResponse,
   FacilitiesImpactResponse,
@@ -72,7 +72,7 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
         {/* Toolbar Dialog (Tidak ikut tercetak) */}
         <div className="print-hide px-6 py-3.5 bg-[#ece5db] border-b border-black/10 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2 text-[#140f0e]">
-            <Printer className="w-5 h-5 text-[#EB895B]" />
+            <Printer size={20} weight="duotone" className="text-[#EB895B]" />
             <span className="font-heading text-sm font-bold tracking-wide">
               Pratinjau Dokumen Ringkasan Eksekutif (A4 Portrait)
             </span>
@@ -83,7 +83,7 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
               onClick={handlePrint}
               className="px-4 py-1.5 rounded-lg text-xs font-bold bg-[#EB895B] hover:bg-[#DA6556] text-white shadow-sm transition cursor-pointer flex items-center gap-1.5 font-button"
             >
-              <Printer className="w-3.5 h-3.5" />
+              <Printer size={16} weight="bold" />
               <span>Cetak Sekarang (A4)</span>
             </button>
             <button
@@ -92,7 +92,7 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
               className="p-1.5 rounded-lg text-black/60 hover:text-black hover:bg-black/5 transition cursor-pointer"
               title="Tutup Pratinjau"
             >
-              <X className="w-5 h-5" />
+              <X size={18} weight="bold" />
             </button>
           </div>
         </div>

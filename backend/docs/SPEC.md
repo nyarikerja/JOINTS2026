@@ -200,7 +200,7 @@ Tes wajib:
 
 ## 5. Kejadian siap pakai
 
-Setiap event di `data/events/{event_id}/`: `meta.json`, angin dan hujan, `hotspots.csv` (kebakaran) atau `vona.json` (gunung), dan `validation.json`. `meta.json` memuat `event_id`, `hazard`, `name`, `start_utc`, `end_utc`, `bbox`, `source`, `members_source`, `n_members`, `data_status` per sumber, `source_urls`.
+Setiap event di `data/events/{event_id}/`: `meta.json` dan (opsional) `reported_impact.geojson`. Angin/hujan (`weather_live.json`), titik api, dan VONA kini diambil langsung saat run; berkas statis lama telah dihapus. `meta.json` memuat `event_id`, `hazard`, `name`, `start_utc`, `end_utc`, `bbox`, `source`, `members_source`, `n_members`, `data_status` per sumber, `source_urls`.
 
 **`anak_krakatau_2026_09`** (gunung)
 - `start_utc` 2026-09-04T16:07Z, `end_utc` 2026-09-05T17:04Z, `duration_h` 25.

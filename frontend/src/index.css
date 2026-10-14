@@ -133,6 +133,19 @@
   }
   ::-webkit-scrollbar-track {
     background: #1c1513;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-track-piece {
+    background: #1c1513;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-track-piece:start {
+    border-top-left-radius: 9999px;
+    border-top-right-radius: 9999px;
+  }
+  ::-webkit-scrollbar-track-piece:end {
+    border-bottom-left-radius: 9999px;
+    border-bottom-right-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb {
     background: #EB895B;

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { RefreshCw, PanelRight, Layers, HelpCircle, X } from "lucide-react";
+import { ArrowClockwise, SidebarSimple, Stack, Question, X } from "@phosphor-icons/react";
 import { api } from "../../services/api";
 import type { SummaryKpiResponse } from "../../types/api";
 
@@ -186,7 +186,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
           }}
           title="Panduan Penggunaan"
         >
-          <HelpCircle className="w-4 h-4" />
+          <Question size={16} weight="bold" />
         </button>
 
         <button
@@ -201,7 +201,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
           }}
           title="Sinkronisasi sensor NASA & Open-Meteo"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} style={{ color: isSyncing ? "#DA6556" : "#A14646" }} />
+          <ArrowClockwise size={15} weight="bold" className={isSyncing ? "animate-spin" : ""} style={{ color: isSyncing ? "#DA6556" : "#A14646" }} />
           <span>{syncStatus || "Live Sync"}</span>
         </button>
 
@@ -222,7 +222,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
           }}
           title="Buka / Tutup Keterangan Peta Status Gunung & Ancaman Udara"
         >
-          <Layers className="w-3.5 h-3.5" style={{ color: isLegendOpen ? "#F5EFE3" : "#DA6556" }} />
+          <Stack size={15} weight={isLegendOpen ? "fill" : "duotone"} style={{ color: isLegendOpen ? "#F5EFE3" : "#DA6556" }} />
           <span>Legenda</span>
         </button>
 
@@ -242,7 +242,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
           }}
           title="Buka / Tutup Proyeksi Dampak"
         >
-          <PanelRight className="w-3.5 h-3.5" style={{ color: isDrawerOpen ? "#F5EFE3" : "#140f0e" }} />
+          <SidebarSimple size={15} weight={isDrawerOpen ? "fill" : "duotone"} style={{ color: isDrawerOpen ? "#F5EFE3" : "#140f0e" }} />
           <span>Proyeksi Dampak</span>
         </button>
       </div>
@@ -255,14 +255,14 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
             {/* Header Modal */}
             <div className="bg-white px-4 py-3 border-b border-[#2b211e]/10 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <HelpCircle className="w-5 h-5 text-[#A14646]" />
+                <Question size={20} weight="bold" className="text-[#A14646]" />
                 <h3 className="font-sans text-sm font-bold tracking-wide">Panduan Simulasi</h3>
               </div>
               <button 
                 onClick={closeHelp}
                 className="text-[#2b211e]/50 hover:text-[#2b211e] transition cursor-pointer p-1 rounded hover:bg-[#2b211e]/5"
               >
-                <X className="w-4 h-4" />
+                <X size={16} weight="bold" />
               </button>
             </div>
 

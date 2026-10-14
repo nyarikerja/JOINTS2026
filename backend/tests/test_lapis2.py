@@ -15,6 +15,8 @@ Pengujian endpoint dan fitur pembeda Lapis 2:
 import pytest
 from fastapi.testclient import TestClient
 
+pytestmark = pytest.mark.network
+
 from app.main import app
 
 client = TestClient(app)
@@ -24,8 +26,9 @@ client = TestClient(app)
 def volcano_run():
     payload = {
         "hazard": "volcano",
-        "mode": "auto",
+        "mode": "experiment",
         "source": {"event_id": "anak_krakatau_2026_09"},
+        "overrides": {"column_height_km": 10.0},
         "horizon_hours": 6,
         "n_members": 5,
         "seed": 42
@@ -39,8 +42,9 @@ def volcano_run():
 def fire_run():
     payload = {
         "hazard": "fire",
-        "mode": "auto",
+        "mode": "experiment",
         "source": {"event_id": "live_kalimantan"},
+        "overrides": {"duration_h": 6},
         "horizon_hours": 6,
         "n_members": 5,
         "seed": 42
@@ -95,10 +99,10 @@ def test_land_water_impact(volcano_run):
     resp = client.get(f"/runs/{volcano_run}/land-water")
     assert resp.status_code == 200
     data = resp.json()
-    assert "cropland_exposed_ha" in data
-    assert "water_sources_exposed_count" in data
-    cropland = data["cropland_exposed_ha"]
-    assert cropland["min"] <= cropland["median"] <= cropland["max"]
+    # Tutupan lahan belum terintegrasi: jawab available False dengan alasan (Prinsip 4)
+    assert data["available"] is False
+    assert data["reason"]
+    assert "cropland_exposed_ha" not in data
     assert "ash_wetness_warning" in data
 
 
@@ -106,10 +110,10 @@ def test_rain_effect(volcano_run):
     resp = client.get(f"/runs/{volcano_run}/rain-effect")
     assert resp.status_code == 200
     data = resp.json()
-    assert "population_exposure_reduced" in data
+    assert data["available"] is True
     assert "hazard_specific_warning" in data
-    pop = data["population_exposure_reduced"]
-    assert pop["min"] <= pop["median"] <= pop["max"]
+    frac = data["scavenged_mass_pct"]
+    assert 0 <= frac["min"] <= frac["median"] <= frac["max"] <= 100
 
 
 def test_compare_runs(volcano_run):
@@ -142,8 +146,9 @@ def test_parameter_sensitivity(volcano_run):
     resp = client.post("/runs/sensitivity", json=payload)
     assert resp.status_code == 200
     data = resp.json()
-    assert "sensitivity_curve" in data
-    assert len(data["sensitivity_curve"]) > 1
+    # Tidak ada kurva dari rumus skala; perlu simulasi ulang per nilai parameter
+    assert data["available"] is False
+    assert data["sensitivity_curve"] == []
 
 
 def test_action_advice(volcano_run):
