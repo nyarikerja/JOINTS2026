@@ -82,43 +82,45 @@ export const TimelinePlayer: React.FC<TimelinePlayerProps> = ({
       >
         {/* Row 1: Player Controls & Quick Steps */}
         <div className="flex items-center justify-between gap-2 mb-1.5">
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
             {/* Play/Pause Button */}
             <button
               type="button"
               onClick={() => setIsPlaying(!isPlaying)}
-              className="w-6.5 h-6.5 rounded-full flex items-center justify-center transition cursor-pointer bg-[#EB895B] hover:bg-[#d97746] active:scale-95 text-white shadow-xs shrink-0"
+              className="w-7 h-7 rounded-full flex items-center justify-center transition cursor-pointer bg-[#EB895B] hover:bg-[#d97746] active:scale-95 text-white shadow-xs shrink-0"
               title={isPlaying ? "Jeda Animasi" : "Putar Animasi"}
             >
               {isPlaying ? (
-                <Pause size={11} weight="fill" />
+                <Pause size={12} weight="fill" />
               ) : (
-                <Play size={11} weight="fill" className="translate-x-[0.5px]" />
+                <Play size={12} weight="fill" className="translate-x-[0.5px]" />
               )}
             </button>
 
-            {/* Label Horizon Waktu (Tidak terpotong lagi) */}
-            <span className="font-sans text-[10px] font-bold tracking-wider uppercase text-[#140f0e] shrink-0 whitespace-nowrap">
-              Horizon Waktu
-            </span>
+            {/* Kontainer Vertikal: Horizon Waktu di atas, Nama Lokasi Teks Saja di bawah */}
+            <div className="flex flex-col min-w-0 overflow-hidden">
+              <div className="flex items-center gap-2">
+                <span className="font-sans text-[10px] font-bold tracking-wider uppercase text-[#140f0e] shrink-0 whitespace-nowrap">
+                  Horizon Waktu
+                </span>
 
-            {/* Readout T+... */}
-            <span 
-              className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded shadow-2xs tabular-nums bg-white/90 text-[#A14646] border border-black/10 shrink-0"
-            >
-              {formatHour(currentHour)}
-            </span>
+                <span 
+                  className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded shadow-2xs tabular-nums bg-white/90 text-[#A14646] border border-black/10 shrink-0"
+                >
+                  {formatHour(currentHour)}
+                </span>
+              </div>
 
-            {/* Keterangan Lokasi Kejadian (Langsung nama lokasi tanpa kata 'Simulasi:') */}
-            {cleanEventName && (
-              <span 
-                className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#EB895B]/15 border border-[#EB895B]/30 text-[9.5px] font-bold text-[#140f0e] truncate max-w-[200px] sm:max-w-[280px] shrink-0" 
-                title={cleanEventName}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                <span className="truncate font-bold text-[#A14646] font-sans">{cleanEventName}</span>
-              </span>
-            )}
+              {/* Teks Lokasi Bersih di Bawah Horizon Waktu (Tanpa label/garis luar) */}
+              {cleanEventName && (
+                <span 
+                  className="text-[10px] font-semibold text-[#8b3a2b] truncate leading-tight mt-0.5 font-sans" 
+                  title={cleanEventName}
+                >
+                  {cleanEventName}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Segmented Quick Step Buttons */}
