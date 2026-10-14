@@ -487,12 +487,6 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* Watermark Skenario Hipotetis (Mode Coba-Coba / Experiment) */}
-        {mode === "experiment" && activeRunId && (
-          <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-amber-950/80 backdrop-blur-sm border border-amber-500/40 rounded px-2.5 py-0.5 z-[999] text-[10px] font-mono tracking-wider text-amber-200 uppercase pointer-events-none shadow-md">
-            SKENARIO HIPOTETIS &bull; BUKAN DATA RESMI
-          </div>
-        )}
 
         {/* Zona B: Floating Controller Melayang di Kiri Atas Peta */}
         <ControllerDock
