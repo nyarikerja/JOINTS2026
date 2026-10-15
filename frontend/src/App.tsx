@@ -38,7 +38,7 @@ export const App: React.FC = () => {
   const [runInfo, setRunInfo] = useState<SimulationResponse | null>(null);
   const [simError, setSimError] = useState<string | null>(null);
   const [currentHour, setCurrentHour] = useState<number>(0);
-  const [hourlyTiersCache, setHourlyTiersCache] = useState<Record<string | number, any> | null>(null);
+  const [hourlyTiersCache, setHourlyTiersCache] = useState<Record<string | number, unknown> | null>(null);
 
   const [impactData, setImpactData] = useState<ImpactResponse | null>(null);
   const [facilitiesData, setFacilitiesData] = useState<FacilitiesImpactResponse | null>(null);
@@ -107,7 +107,7 @@ export const App: React.FC = () => {
           api.getAllTiers(savedRunId).catch(() => null)
         ]);
         if (allTiers && typeof allTiers === "object") {
-          const normalized: Record<string | number, any> = {};
+          const normalized: Record<string | number, unknown> = {};
           Object.entries(allTiers).forEach(([k, val]) => {
             normalized[k] = val;
             normalized[Number(k)] = val;
@@ -128,10 +128,14 @@ export const App: React.FC = () => {
 
   // Tautan berbagi: URL selalu memuat run yang aktif
   React.useEffect(() => {
-    const url = new URL(window.location.href);
-    if (activeRunId) url.searchParams.set("run", activeRunId);
-    else url.searchParams.delete("run");
-    window.history.replaceState(null, "", url.toString());
+    try {
+      const url = new URL(window.location.href);
+      if (activeRunId) url.searchParams.set("run", activeRunId);
+      else url.searchParams.delete("run");
+      window.history.replaceState(null, "", url.toString());
+    } catch (e) {
+      console.debug("Failed to update URL search params", e);
+    }
   }, [activeRunId]);
 
   useLocationWatch();
@@ -143,7 +147,7 @@ export const App: React.FC = () => {
     api.getAllTiers(activeRunId)
       .then((allTiers) => {
         if (allTiers && typeof allTiers === "object") {
-          const normalized: Record<string | number, any> = {};
+          const normalized: Record<string | number, unknown> = {};
           Object.entries(allTiers).forEach(([k, val]) => {
             normalized[k] = val;
             normalized[Number(k)] = val;
@@ -237,7 +241,7 @@ export const App: React.FC = () => {
     }, 80);
 
     // Samakan konstruksi overrides dengan standar backend (hanya mode experiment)
-    let backendOverrides: Record<string, any> | null = null;
+    let backendOverrides: Record<string, unknown> | null = null;
     if (mode === "experiment") {
       backendOverrides = {};
       if (activeHazard === "volcano" && overrides.column_height_km) {
@@ -267,7 +271,7 @@ export const App: React.FC = () => {
           }
         : { event_id: activeEventId },
       horizon_hours: 48,
-      n_members: activeEventId === "anak_krakatau_2026_09" ? 51 : 15,
+      n_members: 15,
       seed: 42,
       thresholds: { min: 0.9, mid: 0.5, max: 0.05 },
       overrides: backendOverrides
@@ -304,7 +308,7 @@ export const App: React.FC = () => {
       ]);
 
       if (allTiers && typeof allTiers === "object") {
-        const normalized: Record<string | number, any> = {};
+        const normalized: Record<string | number, unknown> = {};
         Object.entries(allTiers).forEach(([k, val]) => {
           normalized[k] = val;
           normalized[Number(k)] = val;
@@ -334,7 +338,9 @@ export const App: React.FC = () => {
         const hist = JSON.parse(localStorage.getItem("runHistory") || "[]").filter((r: any) => r.id !== runId);
         hist.unshift({ id: runId, name: eventLabel, mode: simRes.mode, hazard: activeHazard, label: simRes.scenario_label, t: Date.now() });
         localStorage.setItem("runHistory", JSON.stringify(hist.slice(0, 12)));
-      } catch {}
+      } catch (e) {
+        console.debug("Failed to save runHistory", e);
+      }
       localStorage.setItem("lastRunId", runId);
       localStorage.setItem("lastEventId", activeEventId || runId);
       localStorage.setItem("lastEventName", eventLabel);
@@ -424,7 +430,9 @@ export const App: React.FC = () => {
       const url = new URL(window.location.href);
       url.searchParams.delete("run");
       window.history.replaceState({}, "", url.toString());
-    } catch {}
+    } catch (e) {
+      console.debug("Failed to reset URL", e);
+    }
   }, []);
 
   return (

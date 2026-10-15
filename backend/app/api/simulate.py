@@ -1,3 +1,4 @@
+# pyright: reportMissingImports=false
 """
 app/api/simulate.py
 
@@ -39,8 +40,9 @@ from app.services import magma_status
 router = APIRouter(tags=["simulation"])
 
 # Run dengan larik lengkap di memori; run lain dimuat ulang dari disk (data/runs/*.npz)
+# 1 run in memory untuk mencegah OOM di Railway/Render free tier
 RUNS_CACHE: Dict[str, Dict[str, Any]] = {}
-RUNS_IN_MEMORY = 4
+RUNS_IN_MEMORY = 1
 # Paling banyak 2 simulasi berjalan bersamaan (limits.max_concurrent_runs)
 _SIM_SLOTS = threading.Semaphore(2)
 
@@ -153,12 +155,12 @@ def _volcano_source(name: str, lat: float, lon: float, elev_m: float, in_catalog
 
 def _resolve_volcano(req: SimulationRequest, custom: bool) -> Dict[str, Any]:
     if custom:
-        lat, lon = float(req.source.latitude), float(req.source.longitude)
+        lat, lon = float(req.source.latitude or 0.0), float(req.source.longitude or 0.0)
         name = req.source.name or f"Titik kustom ({lat:.3f}, {lon:.3f})"
         elev = _elevation_m(lat, lon)
         volcano = None
     else:
-        volcano = _find_volcano(req.source.event_id)
+        volcano = _find_volcano(req.source.event_id or "")
         if not volcano:
             raise HTTPException(404, f"Gunung api '{req.source.event_id}' tidak ada di katalog.")
         lat, lon, name = float(volcano["latitude"]), float(volcano["longitude"]), volcano["name"]
@@ -255,12 +257,12 @@ def _fire_history(area: Dict[str, Any], name: str):
 
 def _resolve_fire(req: SimulationRequest, custom: bool) -> Dict[str, Any]:
     if custom:
-        lat, lon = float(req.source.latitude), float(req.source.longitude)
+        lat, lon = float(req.source.latitude or 0.0), float(req.source.longitude or 0.0)
         name = req.source.name or f"Titik kustom ({lat:.3f}, {lon:.3f})"
         event_id = f"custom_fire_{hashlib.md5(f'{lat:.4f}_{lon:.4f}'.encode()).hexdigest()[:8]}"
         area = event_area(event_id, center=(lat, lon), custom=True)
     else:
-        event_id = req.source.event_id
+        event_id = req.source.event_id or ""
         k = NATIONAL_KARHUTLA.get(event_id)
         if not k:
             raise HTTPException(404, f"Kawasan '{event_id}' tidak ada di katalog karhutla/hutan nasional.")
@@ -271,6 +273,7 @@ def _resolve_fire(req: SimulationRequest, custom: bool) -> Dict[str, Any]:
     hotspots = FirmsIngest.load_area_hotspots(area)
     ovr = req.overrides or {}
     scenario_label = None
+    source_info: Dict[str, Any]
     if req.mode == "auto":
         if hotspots:
             source_info = {"type": "firms", "tier": 1, "label": f"{len(hotspots)} deteksi NASA FIRMS (24 jam terakhir)",
@@ -371,9 +374,11 @@ def _run_simulation(req: SimulationRequest, custom: bool):
 
 
 def _remember(run_id: str, data: Dict[str, Any]) -> None:
+    import gc
     while len(RUNS_CACHE) >= RUNS_IN_MEMORY:
         del RUNS_CACHE[next(iter(RUNS_CACHE))]
     RUNS_CACHE[run_id] = data
+    gc.collect()
 
 
 def _get_run_data(run_id: str) -> Dict[str, Any]:
@@ -385,7 +390,10 @@ def _get_run_data(run_id: str) -> Dict[str, Any]:
     if not save_file.exists():
         raise HTTPException(status_code=404, detail=f"Run '{run_id}' tidak ditemukan.")
     import json
-    data = json.loads(save_file.read_text(encoding="utf-8-sig"))
+    try:
+        data = json.loads(save_file.read_text(encoding="utf-8-sig"))
+    except Exception:
+        raise HTTPException(status_code=500, detail=f"Gagal membaca data run '{run_id}'.")
     arr_file = RUNS_DIR / f"{run_id}.npz"
     if arr_file.exists():
         try:

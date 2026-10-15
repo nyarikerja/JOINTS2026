@@ -149,11 +149,8 @@ def aggregate_tiers_for_hour(
         if s_max > 0:
             smoothed_prob = smoothed_prob * (raw_max / s_max)
 
-        # 2. Sub-Grid Bicubic Upsampling (Zoom orde 3) untuk menghasilkan medan kontur sebaran yang meliuk alami
-        # Mengeliminasi artefak undakan raster kotak-kotak 5km menjadi kontur aerodinamis sub-pixel
-        zoom_factor = 3
-        up_prob = scipy.ndimage.zoom(smoothed_prob, zoom=zoom_factor, order=1)
-        up_prob = np.clip(up_prob, 0.0, 1.0)
+        # Gunakan smoothed_prob langsung tanpa upsampling 3x untuk efisiensi RAM cloud (mencegah OOM di Railway/Render)
+        up_prob = smoothed_prob
     else:
         up_prob = prob_grid
 
