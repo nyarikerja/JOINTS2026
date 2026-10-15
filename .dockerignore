@@ -10,5 +10,4 @@ backend/data/layers/osm_facilities
 backend/data/layers/firms_history
 backend/.env
 *.zip
-*.jpg
 image*.png
