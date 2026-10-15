@@ -66,9 +66,10 @@ interface MapWorkspaceProps {
   onLayersLoaded?: () => void;
   selectedFacilityId?: string | null;
   onSelectFacility?: (id: string | null) => void;
-  onSelectPlumeTier?: (tier: string | null) => void;
   selectedPlumeTier?: string | null;
+  onSelectPlumeTier?: (tier: string | null) => void;
   runHotspots?: any[];
+  onResetSimulation?: () => void;
 }
 
 const FACILITY_MIN_ZOOM = 11;
@@ -91,8 +92,9 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
   onLayersLoaded,
   selectedFacilityId,
   onSelectFacility,
+  selectedPlumeTier,
   onSelectPlumeTier,
-  selectedPlumeTier
+  onResetSimulation
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -159,6 +161,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
 
   const [mapStyle, setMapStyle] = useState<"exposure" | "satellite">("satellite");
   const [isLocating, setIsLocating] = useState(false);
+  const [layersLoadedSeq, setLayersLoadedSeq] = useState(0);
   const userLocationMarkerRef = useRef<L.Marker | null>(null);
 
   const applyBasemap = (map: L.Map, type: "satellite" | "dark" | "paper") => {
@@ -260,6 +263,8 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
         { duration: 1.2 }
       );
     }
+    // Reset seluruh state simulasi aktif yang sedang berjalan
+    onResetSimulation?.();
   };
 
   // Update Hotspot layer dengan Hybrid LOD (Heatmap < 9, Markers >= 9) & Viewport Culling
@@ -348,23 +353,23 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
               `<div style="min-width: 170px; line-height: 1.45; font-family: ui-sans-serif, system-ui, sans-serif; padding: 2px;">
                 <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
                   <img src="/titik_api.png" style="width: 16px; height: 16px; object-fit: contain;" />
-                  <strong style="color: #FFF0C5; font-size: 12px; font-weight: 700;">Titik Api ${p.sensor || "NASA FIRMS"}</strong>
+                  <strong style="color: #140f0e; font-size: 12px; font-weight: 700;">Titik Api ${p.sensor || "NASA FIRMS"}</strong>
                 </div>
-                <div style="color: #FDB773; font-size: 11px; margin-bottom: 2px;">
-                  Radiasi Energi (FRP): <strong style="color: #FFEDD5;">${p.frp ? `${p.frp} MW` : '-'}</strong>
+                <div style="color: #b45309; font-size: 11px; margin-bottom: 2px; font-weight: 600;">
+                  Radiasi Energi (FRP): <strong style="color: #9a3412;">${p.frp ? `${p.frp} MW` : '-'}</strong>
                 </div>
                 ${p.confidence ? `
-                  <div style="color: #cbd5e1; font-size: 10.5px;">
-                    Keyakinan Deteksi: <strong style="color: #f1f5f9;">${p.confidence}</strong>
+                  <div style="color: #475569; font-size: 10.5px;">
+                    Keyakinan Deteksi: <strong style="color: #1e293b;">${p.confidence}</strong>
                   </div>
                 ` : ''}
                 ${p.acq_date ? `
-                  <div style="color: #94a3b8; font-size: 9.5px; margin-top: 3px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 3px;">
+                  <div style="color: #64748b; font-size: 9.5px; margin-top: 3px; border-top: 1px solid rgba(22,38,28,0.12); padding-top: 3px;">
                     Terdeteksi: ${p.acq_datetime_utc ? new Date(p.acq_datetime_utc).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) + " WIB" : `${p.acq_date} ${p.acq_time || ""} UTC`}
                   </div>
                 ` : ''}
               </div>`,
-              { direction: "top", offset: [0, -10] }
+              { direction: "top", offset: [0, -10], className: "tactical-tooltip-f7faf4" }
             );
           }
         }).addTo(map);
@@ -748,23 +753,52 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
     // Resolusi warna level simbol aktif (Level I: Hijau, Level II: Kuning, Level III: Oranye, Level IV: Merah)
     let symbolColor = "#f97316"; // Default siaga
 
+    // Parser status level robust (mendukung angka, angka romawi, dan string nama level)
+    const parseLevelValue = (val: any): number => {
+      if (typeof val === "number" && !isNaN(val)) return val;
+      if (!val) return 3;
+      const str = String(val).toLowerCase();
+      if (str.includes("4") || str.includes("iv") || str.includes("awas") || str.includes("sangat rawan")) return 4;
+      if (str.includes("3") || str.includes("iii") || str.includes("siaga") || str.includes("rawan")) return 3;
+      if (str.includes("2") || str.includes("ii") || str.includes("waspada")) return 2;
+      if (str.includes("1") || str.includes("normal") || str.includes("bebas api")) return 1;
+      const num = parseInt(str, 10);
+      return isNaN(num) ? 3 : num;
+    };
+
     if (hazard === "fire") {
-      const fireObj = (forestsDataRef.current || []).find((f: any) =>
+      let fireObj = (forestsDataRef.current || []).find((f: any) =>
         f.id === eventId || f.name === eventId || (f.properties && (f.properties.id === eventId || f.properties.name === eventId))
       );
+      if (!fireObj && cLat !== undefined && cLng !== undefined) {
+        fireObj = (forestsDataRef.current || []).find((f: any) => {
+          const lat = Number(f.lat ?? f.latitude ?? f.geometry?.coordinates?.[1]);
+          const lng = Number(f.lon ?? f.longitude ?? f.geometry?.coordinates?.[0]);
+          return Math.abs(lat - cLat) < 0.25 && Math.abs(lng - cLng) < 0.25;
+        });
+      }
       const p = fireObj?.properties || fireObj;
       const nHot = Number(p?.n_hotspots || (runHotspots ? runHotspots.length : 0));
-      const lvl = Number(p?.level || (nHot >= 100 ? 4 : nHot >= 10 ? 3 : nHot >= 1 ? 2 : 1));
+      const lvl = parseLevelValue(p?.level ?? (nHot >= 100 ? 4 : nHot >= 10 ? 3 : nHot >= 1 ? 2 : 1));
       if (lvl === 4) symbolColor = "#ef4444"; // Level IV (Awas / Merah)
       else if (lvl === 3) symbolColor = "#f97316"; // Level III (Siaga / Oranye)
       else if (lvl === 2) symbolColor = "#eab308"; // Level II (Waspada / Kuning)
       else symbolColor = "#10b981"; // Level I (Normal / Hijau)
     } else {
-      const feat = (volcanoesDataRef.current || []).find(
-        (f: any) => (f.properties?.event_id || f.properties?.id || f.id) === eventId
+      let feat = (volcanoesDataRef.current || []).find(
+        (f: any) => {
+          const id = f.properties?.event_id || f.properties?.id || f.id;
+          return id && (id === eventId || String(id).toLowerCase() === String(eventId).toLowerCase());
+        }
       );
+      if (!feat && cLat !== undefined && cLng !== undefined) {
+        feat = (volcanoesDataRef.current || []).find((f: any) => {
+          const coords = f.geometry?.coordinates;
+          return coords && Math.abs(coords[1] - cLat) < 0.15 && Math.abs(coords[0] - cLng) < 0.15;
+        });
+      }
       const p = feat?.properties || feat;
-      const lvl = Number(p?.level || p?.status_level || 3);
+      const lvl = parseLevelValue(p?.level || p?.status_level || (eventId?.toLowerCase().includes("krakatau") || (cLat && Math.abs(cLat - (-6.102)) < 0.05) ? 3 : 3));
       if (lvl === 4) symbolColor = "#ef4444"; // Level 4 (Awas / Merah)
       else if (lvl === 3) symbolColor = "#f97316"; // Level 3 (Siaga / Oranye)
       else if (lvl === 2) symbolColor = "#eab308"; // Level 2 (Waspada / Kuning)
@@ -846,7 +880,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
 
     windVectorMarkerRef.current = L.marker([cLat, cLng], {
       icon: arrowIcon,
-      zIndexOffset: 1500,
+      zIndexOffset: 5000,
       interactive: false
     }).addTo(map);
 
@@ -856,7 +890,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
         windVectorMarkerRef.current = null;
       }
     };
-  }, [currentWindInfo, eventId, hazard, hourlyTiersCache, currentHour, runCenter, runHotspots]);
+  }, [currentWindInfo, eventId, hazard, hourlyTiersCache, currentHour, runCenter, runHotspots, layersLoadedSeq]);
 
   // Render titik api eksklusif di wilayah kawasan hutan terpilih (Point-in-Area Hutan, TANPA menceklis toggle nasional)
   useEffect(() => {
@@ -919,7 +953,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
                 iconSize: [20, 20],
                 iconAnchor: [10, 10]
               });
-              return L.marker(latlng, { icon, zIndexOffset: 2500 });
+              return L.marker(latlng, { icon, zIndexOffset: 800 });
             },
             onEachFeature: (feature: any, layer) => {
               const p = feature.properties;
@@ -927,23 +961,23 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
                 `<div style="min-width: 170px; line-height: 1.45; font-family: ui-sans-serif, system-ui, sans-serif; padding: 2px;">
                   <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
                     <img src="/titik_api.png" style="width: 16px; height: 16px; object-fit: contain;" />
-                    <strong style="color: #FFF0C5; font-size: 12px; font-weight: 700;">Titik Api ${p.sensor || "NASA FIRMS"}</strong>
+                    <strong style="color: #140f0e; font-size: 12px; font-weight: 700;">Titik Api ${p.sensor || "NASA FIRMS"}</strong>
                   </div>
-                  <div style="color: #FDB773; font-size: 11px; margin-bottom: 2px;">
-                    Radiasi Energi (FRP): <strong style="color: #FFEDD5;">${p.frp ? `${p.frp} MW` : '-'}</strong>
+                  <div style="color: #b45309; font-size: 11px; margin-bottom: 2px; font-weight: 600;">
+                    Radiasi Energi (FRP): <strong style="color: #9a3412;">${p.frp ? `${p.frp} MW` : '-'}</strong>
                   </div>
                   ${p.confidence ? `
-                    <div style="color: #cbd5e1; font-size: 10.5px;">
-                      Keyakinan Deteksi: <strong style="color: #f1f5f9;">${p.confidence}</strong>
+                    <div style="color: #475569; font-size: 10.5px;">
+                      Keyakinan Deteksi: <strong style="color: #1e293b;">${p.confidence}</strong>
                     </div>
                   ` : ''}
                   ${p.acq_date ? `
-                    <div style="color: #94a3b8; font-size: 9.5px; margin-top: 3px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 3px;">
+                    <div style="color: #64748b; font-size: 9.5px; margin-top: 3px; border-top: 1px solid rgba(22,38,28,0.12); padding-top: 3px;">
                       Terdeteksi: ${p.acq_datetime_utc ? new Date(p.acq_datetime_utc).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) + " WIB" : `${p.acq_date} ${p.acq_time || ""} UTC`}
                     </div>
                   ` : ''}
                 </div>`,
-                { direction: "top", offset: [0, -10] }
+                { direction: "top", offset: [0, -10], className: "tactical-tooltip-f7faf4" }
               );
             }
           }
@@ -1094,19 +1128,19 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
         iconAnchor: [12, 12]
       });
 
-      const marker = L.marker([lat, lng], { icon, zIndexOffset: 1200 })
+      const marker = L.marker([lat, lng], { icon, zIndexOffset: 1000 })
         .bindTooltip(
-          `<div style="min-width: 140px; line-height: 1.45;">
+          `<div style="min-width: 140px; line-height: 1.45; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
             <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 2px;">
               <img src="/school.png" style="width: 15px; height: 15px; object-fit: contain;" />
-              <strong style="color: #FFF0C5; font-size: 11.5px;">${s.name}</strong>
+              <strong style="color: #140f0e; font-size: 12px; font-weight: 700;">${s.name}</strong>
             </div>
-            <div style="color: ${isHigh ? '#f87171' : '#fde047'}; font-size: 10px;">
+            <div style="color: ${isHigh ? '#dc2626' : '#d97706'}; font-size: 10.5px; font-weight: 600;">
               ⚠️ Peluang terpapar ${hazard === 'fire' ? 'asap' : 'abu'}: <strong>${prob}%</strong>${eta !== null ? ` (paling cepat T+${eta} jam)` : ''}
             </div>
-            <div style="color: #93c5fd; font-size: 9.5px;">${s.district || ''}</div>
+            <div style="color: #475569; font-size: 10px; font-weight: 500;">${s.district || ''}</div>
           </div>`,
-          { direction: "top", offset: [0, -14] }
+          { direction: "top", offset: [0, -14], className: "tactical-tooltip-f7faf4" }
         )
         .on("click", () => {
           onSelectFacility?.(s.facility_id || s.id || s.name);
@@ -1135,19 +1169,19 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
         iconAnchor: [12, 12]
       });
 
-      const marker = L.marker([lat, lng], { icon, zIndexOffset: 1200 })
+      const marker = L.marker([lat, lng], { icon, zIndexOffset: 1000 })
         .bindTooltip(
-          `<div style="min-width: 140px; line-height: 1.45;">
+          `<div style="min-width: 140px; line-height: 1.45; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
             <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 2px;">
               <img src="/hospital.png" style="width: 15px; height: 15px; object-fit: contain;" />
-              <strong style="color: #FFF0C5; font-size: 11.5px;">${h.name}</strong>
+              <strong style="color: #140f0e; font-size: 12px; font-weight: 700;">${h.name}</strong>
             </div>
-            <div style="color: ${isSafe ? '#34d399' : '#f87171'}; font-size: 10px;">
+            <div style="color: ${isSafe ? '#059669' : '#dc2626'}; font-size: 10.5px; font-weight: 600;">
               ${isSafe ? '✅ Di luar jalur paparan (peluang < 10%)' : `⚠️ Peluang terpapar ${hazard === 'fire' ? 'asap' : 'abu'} ${prob}%`}
             </div>
-            <div style="color: #93c5fd; font-size: 9.5px;">${h.district || ''}</div>
+            <div style="color: #475569; font-size: 10px; font-weight: 500;">${h.district || ''}</div>
           </div>`,
-          { direction: "top", offset: [0, -14] }
+          { direction: "top", offset: [0, -14], className: "tactical-tooltip-f7faf4" }
         )
         .on("click", () => {
           onSelectFacility?.(h.facility_id || h.id || h.name);
@@ -1199,6 +1233,26 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
         return;
       }
       if (mapRef.current && eventId) {
+        // Angkat z-index marker gunung dan hutan aktif agar selalu paling depan
+        if (forestsLayerRef.current) {
+          forestsLayerRef.current.eachLayer((layer: any) => {
+            const p = layer.feature?.properties;
+            const isSel = p && (p.id === eventId || p.name === eventId || p.event_id === eventId);
+            if (typeof layer.setZIndexOffset === "function") {
+              layer.setZIndexOffset(isSel ? 4500 : 3500);
+            }
+          });
+        }
+        if (volcanoesLayerRef.current) {
+          volcanoesLayerRef.current.eachLayer((layer: any) => {
+            const p = layer.feature?.properties;
+            const isSel = p && (p.id === eventId || p.event_id === eventId || p.name === eventId);
+            if (typeof layer.setZIndexOffset === "function") {
+              layer.setZIndexOffset(isSel ? 4500 : 3500);
+            }
+          });
+        }
+
         if (hazard === "fire") {
           const fireObj = (forestsDataRef.current || []).find((f: any) => f.id === eventId);
           if (fireObj) {
@@ -1235,6 +1289,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
       const forests = await api.getNationalForests();
       const list = Array.isArray(forests) ? forests : (forests?.forests || []);
       forestsDataRef.current = list;
+      setLayersLoadedSeq((v) => v + 1);
 
       if (forestsLayerRef.current) map.removeLayer(forestsLayerRef.current);
 
@@ -1256,29 +1311,20 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
 
           // Sistem Level 1-4 Karhutla Berbasis Titik Api Aktif (Selaras Gunung Api)
           let imageSrc = "/hutan_waspada.png"; // Level I: Normal
-          let pulseClass = "";
 
           if (nHot >= 100) {
             imageSrc = "/hutan_sangat_rawan.png"; // Level IV: Awas
-            pulseClass = "ring-red";
           } else if (nHot >= 10) {
             imageSrc = "/hutan_rawan.png"; // Level III: Siaga
-            pulseClass = "ring-orange";
           } else if (nHot >= 1) {
             imageSrc = "/hutan_rawan.png"; // Level II: Waspada
-            pulseClass = "";
           }
-
-          const pulseHtml = pulseClass
-            ? `<span class="volcano-pulse-ring ${pulseClass}"></span>`
-            : "";
 
           const icon = L.divIcon({
             className: "forest-div-icon",
             html: `
               <div class="relative w-8 h-8 flex items-center justify-center overflow-visible">
-                ${pulseHtml}
-                <img src="${imageSrc}" class="w-7 h-7 object-contain drop-shadow-md z-10 relative select-none pointer-events-none hover:scale-110 transition-transform" />
+                <img src="${imageSrc}" class="w-7 h-7 object-contain drop-shadow-md z-10 relative select-none pointer-events-none hover:scale-110 transition-transform" style="filter: drop-shadow(1px 0 0 #ffffff) drop-shadow(-1px 0 0 #ffffff) drop-shadow(0 1px 0 #ffffff) drop-shadow(0 -1px 0 #ffffff);" />
               </div>
             `,
             iconSize: [32, 32],
@@ -1286,52 +1332,49 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
             popupAnchor: [0, -16]
           });
 
-          return L.marker(latlng, { icon });
+          const isSelected = eventId && (p.id === eventId || p.name === eventId || p.event_id === eventId);
+          return L.marker(latlng, { icon, zIndexOffset: isSelected ? 4500 : 3500 });
         },
         onEachFeature: (feature: any, layer) => {
           const p = feature.properties;
           const coords = feature.geometry.coordinates;
-          const nHot = Number(p.n_hotspots || 0);
 
-          // Status Bahaya Level 1-4 Selaras Gunung Api
-          let levelBadge = "Level I (Normal)";
-          let statusColor = "#10b981"; // Hijau
+          const elevStr = p.area_ha ? `${Number(p.area_ha).toLocaleString("id-ID")} ha` : "";
+          const forestTypeLine = [p.forest_type || "Kawasan Hutan", elevStr].filter(Boolean).join(" &bull; ");
+          const locLine = [p.province, p.region].filter(Boolean).join(" &bull; ");
 
-          if (nHot >= 100) {
-            levelBadge = "Level IV (Awas - Sangat Rawan)";
-            statusColor = "#ef4444"; // Merah
-          } else if (nHot >= 10) {
-            levelBadge = "Level III (Siaga - Rawan)";
-            statusColor = "#f97316"; // Oranye
-          } else if (nHot >= 1) {
-            levelBadge = "Level II (Waspada)";
-            statusColor = "#f59e0b"; // Kuning
-          }
+          let riskColor = "#16a34a"; // Normal (green)
+          if (p.level === 4 || p.risk_level === "Sangat Rawan") riskColor = "#dc2626"; // Red
+          else if (p.level === 3 || p.risk_level === "Rawan") riskColor = "#ea580c"; // Orange
+          else if (p.level === 2 || p.risk_level === "Waspada") riskColor = "#d97706"; // Amber
 
-          const location = [p.province, p.region].filter(Boolean).join(" &bull; ");
-          const area = p.area_ha ? `${p.area_ha.toLocaleString("id-ID")} ha` : "";
+          const riskText = p.level_name || (p.level === 4 || p.risk_level === "Sangat Rawan" ? "Level IV (Sangat Rawan)" : p.level === 3 || p.risk_level === "Rawan" ? "Level III (Rawan)" : p.level === 2 || p.risk_level === "Waspada" ? "Level II (Waspada)" : "Level I (Normal)");
+          const nHotspots = p.n_hotspots != null ? p.n_hotspots : 0;
 
-          layer.bindTooltip(
-            `<div style="min-width: 185px; line-height: 1.45;">
-              <strong style="font-size: 13px; color: #FFF0C5; display: block; margin-bottom: 2px;">${p.name}</strong>
-              <div style="color: #a7f3d0; font-size: 10.5px; margin-bottom: 2px;">
-                🌲 ${p.forest_type || 'Kawasan Hutan'}${area ? ` &bull; <strong>${area}</strong>` : ''}
+          const forestHtml = `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.45; text-align: left;">
+              <div style="font-size: 13.5px; font-weight: 800; color: #16241b; margin-bottom: 3px; letter-spacing: -0.01em;">${p.name}</div>
+              <div style="font-size: 11px; color: #166534; font-weight: 600; display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
+                <span>🌲</span> <span>${forestTypeLine}</span>
               </div>
-              ${location ? `
-                <div style="color: #93c5fd; font-size: 10.5px; margin-bottom: 2px;">
-                  📍 ${location}
-                </div>
-              ` : ''}
-              <div style="font-size: 11px; margin-bottom: 2px;">
-                Status Bahaya (Live): <strong style="color: ${statusColor}">${levelBadge}</strong>
+              <div style="font-size: 11px; color: #2b6cb0; font-weight: 500; display: flex; align-items: center; gap: 4px; margin-bottom: 3px;">
+                <span style="font-size: 11px;">📍</span> <span>${locLine || 'Indonesia'}</span>
               </div>
-              <div style="display: flex; align-items: center; gap: 4px; color: ${nHot > 0 ? '#f87171' : '#a7f3d0'}; font-size: 11px; border-top: 1px solid rgba(235,137,91,0.25); padding-top: 3px; margin-top: 3px;">
-                <img src="/titik_api.png" style="width: 14px; height: 14px; object-fit: contain;" />
-                <strong>${nHot > 0 ? `${nHot} titik api aktif` : '0 titik api (Bebas Api)'}</strong>&nbsp;<span style="color:#cbd5e1;">(NASA FIRMS, 24 jam)</span>
+              <div style="font-size: 11px; color: #2d3748; margin-bottom: 3px;">
+                Status Bahaya (Live): <strong style="color: ${riskColor}; font-weight: 700;">${riskText}</strong>
               </div>
-            </div>`,
-            { direction: "top", offset: [0, -12] }
-          );
+              <div style="font-size: 11px; display: flex; align-items: center; gap: 4px;">
+                <span>🔥</span> <strong style="color: #dc2626; font-weight: 800;">${nHotspots} titik api aktif</strong>
+                <span style="color: #64748b; font-size: 10px; margin-left: 2px;">(NASA FIRMS, 24 jam)</span>
+              </div>
+            </div>
+          `;
+
+          layer.bindTooltip(forestHtml, {
+            direction: "top",
+            offset: [0, -18],
+            className: "tactical-tooltip-f7faf4"
+          });
 
           layer.on("click", () => {
             map.flyTo([coords[1], coords[0]], 10, { duration: 1.8, easeLinearity: 0.25 });
@@ -1354,6 +1397,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
       const geo = await api.getNationalVolcanoes();
       const features = geo.features || [];
       volcanoesDataRef.current = features;
+      setLayersLoadedSeq((v) => v + 1);
 
       if (volcanoesLayerRef.current) map.removeLayer(volcanoesLayerRef.current);
 
@@ -1365,16 +1409,10 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
           else if (p.level === 3) imageSrc = "/3_siaga.png";
           else if (p.level === 4) imageSrc = "/4_awas.png";
 
-          const isHighAlert = p.level >= 3;
-          const pulseHtml = isHighAlert
-            ? `<span class="volcano-pulse-ring ${p.level === 4 ? 'ring-red' : 'ring-orange'}"></span>`
-            : "";
-
           const icon = L.divIcon({
             className: "volcano-div-icon",
             html: `
               <div class="relative w-8 h-8 flex items-center justify-center overflow-visible">
-                ${pulseHtml}
                 <img src="${imageSrc}" class="w-7 h-7 object-contain drop-shadow-md z-10 relative select-none pointer-events-none" />
               </div>
             `,
@@ -1383,42 +1421,53 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
             popupAnchor: [0, -16]
           });
 
-          return L.marker(latlng, { icon });
+          const isSelected = eventId && (p.id === eventId || p.event_id === eventId || p.name === eventId);
+          return L.marker(latlng, { icon, zIndexOffset: isSelected ? 4500 : 3500 });
         },
         onEachFeature: (feature: any, layer) => {
           const p = feature.properties;
           const coords = feature.geometry.coordinates;
-          const levelNum = Number(p.level);
-          const levelColor = p.color || (levelNum === 4 ? "#ef4444" : levelNum === 3 ? "#f97316" : levelNum === 2 ? "#eab308" : "#10b981");
-          const location = [p.province, p.region].filter(Boolean).join(" &bull; ");
-          const elevation = p.elevation_m ? `${p.elevation_m.toLocaleString("id-ID")} mdpl` : "";
-          const radius = p.radius_bahaya_km ? `${p.radius_bahaya_km} km` : "";
 
-          const tooltipHtml = `
-            <div style="min-width: 175px; line-height: 1.45;">
-              <strong style="font-size: 13px; color: #FFF0C5; display: block; margin-bottom: 2px;">${p.name}</strong>
-              <div style="color: #93c5fd; font-size: 10.5px; margin-bottom: 2px;">
-                📍 ${location || 'Indonesia'}${elevation ? ` &bull; <strong>${elevation}</strong>` : ''}
+          // Format Tooltip Gunung Api Sesuai Gambar 1 & Acuan 5174:
+          const elevStr = p.elevation_m ? `${Number(p.elevation_m).toLocaleString("id-ID")} mdpl` : "";
+          const locParts = [p.province, p.region, elevStr].filter(Boolean).join(" &bull; ");
+
+          let statusColor = "#16a34a"; // Normal (Level I)
+          if (p.level === 4 || (p.level_name && p.level_name.includes("Awas"))) statusColor = "#dc2626"; // Awas (red)
+          else if (p.level === 3 || (p.level_name && p.level_name.includes("Siaga"))) statusColor = "#ea580c"; // Siaga (orange)
+          else if (p.level === 2 || (p.level_name && p.level_name.includes("Waspada"))) statusColor = "#d97706"; // Waspada (amber)
+
+          const statusText = p.level_name || (p.level === 4 ? "Level IV (Awas)" : p.level === 3 ? "Level III (Siaga)" : p.level === 2 ? "Level II (Waspada)" : "Level I (Normal)");
+          const radiusKm = p.radius_bahaya_km || 5;
+
+          const now = new Date();
+          const dateStr = now.toLocaleDateString("id-ID", { day: "numeric", month: "short", timeZone: "Asia/Jakarta" });
+          const timeStr = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" }).replace(":", ".");
+          const footerStr = `Sumber level: MAGMA (PVMBG), diperiksa ${dateStr}, ${timeStr} WIB`;
+
+          const volcanoHtml = `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.45; text-align: left;">
+              <div style="font-size: 13.5px; font-weight: 800; color: #16241b; margin-bottom: 3px; letter-spacing: -0.01em;">${p.name}</div>
+              <div style="font-size: 11px; color: #2b6cb0; font-weight: 500; display: flex; align-items: center; gap: 4px; margin-bottom: 3px;">
+                <span style="font-size: 11px;">📍</span> <span>${locParts || 'Indonesia'}</span>
               </div>
-              <div style="font-size: 11px; margin-bottom: 2px;">
-                Status Aktivitas: <strong style="color: ${levelColor}">${p.level_name || `Level ${p.level}`}</strong>
+              <div style="font-size: 11px; color: #2d3748; margin-bottom: 3px;">
+                Status Aktivitas: <strong style="color: ${statusColor}; font-weight: 700;">${statusText}</strong>
               </div>
-              ${radius ? `
-                <div style="color: #fde047; font-size: 10.5px; margin-bottom: 2px;">
-                  ⚠️ Radius bahaya (katalog): <strong>${radius}</strong>
-                </div>
-              ` : ''}
-              <div style="color: #cbd5e1; font-size: 10px; border-top: 1px solid rgba(235,137,91,0.25); padding-top: 3px; margin-top: 3px;">
-                ${p.level_source === 'magma'
-                  ? `Sumber level: MAGMA (PVMBG)${p.level_updated_at ? `, diperiksa ${new Date(p.level_updated_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} WIB` : ''}`
-                  : 'Level belum terverifikasi MAGMA (gunung tidak ada di daftar MAGMA)'}
+              <div style="font-size: 11px; color: #854d0e; display: flex; align-items: center; gap: 4px; margin-bottom: 5px;">
+                <span>⚠️</span> <span>Radius bahaya (katalog):</span> <strong style="color: #a16207; font-weight: 800;">${radiusKm} km</strong>
+              </div>
+              <div style="border-top: 1px solid rgba(22, 38, 28, 0.12); margin: 6px 0 5px 0;"></div>
+              <div style="font-size: 9.5px; color: #64748b; font-weight: 500;">
+                ${footerStr}
               </div>
             </div>
           `;
 
-          layer.bindTooltip(tooltipHtml, {
+          layer.bindTooltip(volcanoHtml, {
             direction: "top",
-            offset: [0, -12]
+            offset: [0, -18],
+            className: "tactical-tooltip-f7faf4"
           });
 
           layer.on("click", () => {
@@ -1492,14 +1541,14 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
         onEachFeature: (feature: any, layer) => {
           const p = feature.properties;
           layer.bindTooltip(
-            `<div style="min-width: 130px; line-height: 1.4;">
+            `<div style="min-width: 130px; line-height: 1.4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
               <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 2px;">
                 <img src="/school.png" style="width: 14px; height: 14px; object-fit: contain;" />
-                <strong style="color: #FFF0C5; font-size: 11.5px;">${p.name || 'Sekolah'}</strong>
+                <strong style="color: #140f0e; font-size: 12px; font-weight: 700;">${p.name || 'Sekolah'}</strong>
               </div>
-              <div style="color: #93c5fd; font-size: 10px;">🏫 ${p.district || 'Fasilitas Pendidikan'}</div>
+              <div style="color: #475569; font-size: 10px; font-weight: 500;">🏫 ${p.district || 'Fasilitas Pendidikan'}</div>
             </div>`,
-            { direction: "top", offset: [0, -12] }
+            { direction: "top", offset: [0, -12], className: "tactical-tooltip-f7faf4" }
           );
           layer.bindPopup(`<div class="text-xs p-1 font-bold text-slate-800">${p.name || 'Sekolah'}</div>`);
           layer.on("click", () => {
@@ -1525,14 +1574,14 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
         onEachFeature: (feature: any, layer) => {
           const p = feature.properties;
           layer.bindTooltip(
-            `<div style="min-width: 130px; line-height: 1.4;">
+            `<div style="min-width: 130px; line-height: 1.4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
               <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 2px;">
                 <img src="/hospital.png" style="width: 14px; height: 14px; object-fit: contain;" />
-                <strong style="color: #FFF0C5; font-size: 11.5px;">${p.name || 'Fasilitas Kesehatan'}</strong>
+                <strong style="color: #140f0e; font-size: 12px; font-weight: 700;">${p.name || 'Fasilitas Kesehatan'}</strong>
               </div>
-              <div style="color: #a7f3d0; font-size: 10px;">🏥 ${p.district || 'Pusat Medis / RS'}</div>
+              <div style="color: #059669; font-size: 10px; font-weight: 500;">🏥 ${p.district || 'Pusat Medis / RS'}</div>
             </div>`,
-            { direction: "top", offset: [0, -12] }
+            { direction: "top", offset: [0, -12], className: "tactical-tooltip-f7faf4" }
           );
           layer.bindPopup(`<div class="text-xs p-1 font-bold text-slate-800">${p.name || 'Fasilitas Kesehatan'}</div>`);
           layer.on("click", () => {
@@ -1591,7 +1640,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
     );
   };
 
-  // Fungsi penyorotan kontur putih tegas saat zona plume diklik (Sesuai Efek Visual Acuan)
+  // Fungsi penyorotan kontur putih tegas saat zona plume diklik
   const applyPlumeHighlight = useCallback((tierKey: string | null) => {
     if (!plumeLayerRef.current) return;
 
@@ -1608,41 +1657,35 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
     const palette = isFire
       ? {
           min: { fill: "#78350f", stroke: "#451a03", fillOpacity: 0.60, strokeOpacity: 1.0, weight: 2.5, dash: undefined },
-          mid: { fill: "#92400e", stroke: "#78350f", fillOpacity: 0.35, strokeOpacity: 0.85, weight: 1.8, dash: "6, 4" },
-          max: { fill: "#a16207", stroke: "#854d0e", fillOpacity: 0.15, strokeOpacity: 0.70, weight: 1.0, dash: "3, 3" }
+          mid: { fill: "#ea580c", stroke: "#9a3412", fillOpacity: 0.35, strokeOpacity: 0.85, weight: 1.8, dash: "6, 4" },
+          max: { fill: "#f59e0b", stroke: "#b45309", fillOpacity: 0.18, strokeOpacity: 0.70, weight: 1.4, dash: "3, 3" }
         }
       : {
-          min: { fill: "#991b1b", stroke: "#7f1d1d", fillOpacity: 0.60, strokeOpacity: 1.0, weight: 2.5, dash: undefined },
-          mid: { fill: "#dc2626", stroke: "#b91c1c", fillOpacity: 0.35, strokeOpacity: 0.85, weight: 1.8, dash: "6, 4" },
-          max: { fill: "#f59e0b", stroke: "#d97706", fillOpacity: 0.18, strokeOpacity: 0.70, weight: 1.0, dash: "3, 3" }
+          min: { fill: "#450a0a", stroke: "#2b0505", fillOpacity: 0.65, strokeOpacity: 1.0, weight: 2.5, dash: undefined },
+          mid: { fill: "#dc2626", stroke: "#7f1d1d", fillOpacity: 0.38, strokeOpacity: 0.85, weight: 1.8, dash: "6, 4" },
+          max: { fill: "#ea580c", stroke: "#9a3412", fillOpacity: 0.18, strokeOpacity: 0.70, weight: 1.4, dash: "3, 3" }
         };
 
-    const setLayerStyle = (l: any, style: any, isWhiteContour = false) => {
-      l.setStyle({
-        color: isWhiteContour ? "#ffffff" : (style.color || style.stroke),
-        weight: isWhiteContour ? (style.weight || 3.2) : style.weight,
-        opacity: isWhiteContour ? 1 : (style.opacity ?? style.strokeOpacity ?? 0.85),
-        fillColor: style.fillColor || style.fill,
-        fillOpacity: style.fillOpacity,
-        dashArray: isWhiteContour ? "" : (style.dashArray || style.dash || "")
-      });
+    const setLayerStyle = (l: any, style: any, isSelected: boolean) => {
+      if (l.setStyle) {
+        l.setStyle({
+          color: style.stroke || style.color,
+          weight: style.weight,
+          opacity: style.opacity ?? style.strokeOpacity ?? 1,
+          fillColor: style.fillColor || style.fill,
+          fillOpacity: style.fillOpacity
+        });
+      }
       if (l._path) {
-        if (isWhiteContour) {
-          l._path.classList.add("plume-selected-contour");
-          l._path.setAttribute("stroke", "#ffffff");
-          l._path.setAttribute("stroke-width", String(style.weight || 3.2));
-          l._path.setAttribute("stroke-opacity", "1");
-          l._path.removeAttribute("stroke-dasharray");
+        if (isSelected) {
+          l._path.setAttribute("filter", "drop-shadow(0px 0px 6px rgba(255, 255, 255, 0.85))");
         } else {
-          l._path.classList.remove("plume-selected-contour");
-          l._path.setAttribute("stroke", style.color || style.stroke);
-          l._path.setAttribute("stroke-width", String(style.weight));
-          l._path.setAttribute("stroke-opacity", String(style.opacity ?? style.strokeOpacity ?? 0.85));
-          if (style.dashArray || style.dash) {
-            l._path.setAttribute("stroke-dasharray", style.dashArray || style.dash);
-          } else {
-            l._path.removeAttribute("stroke-dasharray");
-          }
+          l._path.removeAttribute("filter");
+        }
+        if (style.dashArray || style.dash) {
+          l._path.setAttribute("stroke-dasharray", style.dashArray || style.dash);
+        } else {
+          l._path.removeAttribute("stroke-dasharray");
         }
       }
     };
@@ -1656,7 +1699,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
 
     const norm = tierKey === "min" ? "minimum" : tierKey === "max" ? "maximum" : tierKey;
 
-    if (norm === "minimum") {
+    if (norm === "minimum" || norm === "p90") {
       sub.min.forEach((l) =>
         setLayerStyle(
           l,
@@ -1678,7 +1721,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
           false
         )
       );
-    } else if (norm === "mid") {
+    } else if (norm === "mid" || norm === "p50") {
       sub.mid.forEach((l) =>
         setLayerStyle(
           l,
@@ -1700,7 +1743,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
           false
         )
       );
-    } else if (norm === "maximum") {
+    } else if (norm === "maximum" || norm === "p05") {
       sub.max.forEach((l) =>
         setLayerStyle(
           l,
@@ -1818,23 +1861,56 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
       },
       onEachFeature: (feature: any, layer: any) => {
         const p = feature.properties;
-        const tierName =
-          p.tier_label ||
-          (p.tier === "minimum" || p.tier === "p90" || p.tier === "min"
-            ? "Peluang ≥ 90% (inti)"
-            : p.tier === "mid" || p.tier === "p50"
-            ? "Peluang ≥ 50%"
-            : "Peluang ≥ 5% (terjauh)");
-        layer.bindTooltip(`<strong>${colors.label}</strong><br>Tingkat: ${tierName}<br>Waktu: ${formatHour(currentHour)}<br><small style="color:#7dd3fc">Klik untuk melihat detail &amp; batas zona</small>`, {
-          sticky: true
+        const isFire = hazard === "fire";
+        const t = p.tier;
+
+        let tierName = "Abu Sedang / Waspada (P50)";
+        let tierColor = "#ea580c";
+        if (t === "minimum" || t === "p90" || t === "min") {
+          tierName = isFire ? "Asap Sangat Pekat (P90)" : "Abu Tebal / Bahaya Tinggi (P90)";
+          tierColor = "#dc2626";
+        } else if (t === "mid" || t === "p50") {
+          tierName = isFire ? "Asap Sedang (P50)" : "Abu Sedang / Waspada (P50)";
+          tierColor = "#ea580c";
+        } else {
+          tierName = isFire ? "Asap Tipis / Siaga Dini (P05)" : "Debu Halus / Siaga Dini (P05)";
+          tierColor = "#d97706";
+        }
+
+        const hazardLabel = isFire ? "Sebaran Asap Karhutla (PM2.5)" : "Sebaran Abu Vulkanik";
+        const hazardIcon = isFire ? "💨" : "🌋";
+
+        const content = `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.4; text-align: left; min-width: 200px; width: max-content; white-space: nowrap;">
+            <div style="font-size: 13px; font-weight: 800; color: #16241b; margin-bottom: 3px; letter-spacing: -0.01em; display: flex; align-items: center; gap: 5px;">
+              <span>${hazardIcon}</span>
+              <span>${hazardLabel}</span>
+            </div>
+            <div style="font-size: 11.5px; color: #334155; margin-bottom: 3px;">
+              Tingkat: <strong style="color: ${tierColor}; font-weight: 700;">${tierName}</strong>
+            </div>
+            <div style="border-top: 1px solid rgba(22, 38, 28, 0.12); margin: 5px 0 4px 0;"></div>
+            <div style="font-size: 10px; color: #64748b; font-weight: 500; display: flex; align-items: center; gap: 4px;">
+              <span>⏱️</span> <span>Waktu Horizon: <strong style="color: #1e293b; font-weight: 700;">${formatHour(currentHour)}</strong></span>
+            </div>
+            <div style="font-size: 9.5px; color: #0284c7; font-weight: 600; margin-top: 3px;">👆 Klik kontur untuk filter fasilitas &amp; wilayah</div>
+          </div>
+        `;
+
+        layer.bindTooltip(content, {
+          sticky: true,
+          direction: "top",
+          offset: [0, -12],
+          className: "tactical-tooltip-f7faf4 plume-global-tooltip"
         });
+
         layer.on("click", (e: any) => {
           if (e && L.DomEvent && typeof L.DomEvent.stopPropagation === "function") {
             L.DomEvent.stopPropagation(e);
           }
-          const t = p.tier === "min" ? "minimum" : p.tier === "max" ? "maximum" : (p.tier || "minimum");
-          applyPlumeHighlight(t);
-          onSelectPlumeTier?.(t);
+          const chosenTier = p.tier === "min" ? "minimum" : p.tier === "max" ? "maximum" : (p.tier || "minimum");
+          applyPlumeHighlight(chosenTier);
+          onSelectPlumeTier?.(chosenTier);
         });
       }
     });
@@ -2007,12 +2083,12 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
               <User className="w-4 h-4" />
             </button>
 
-            {/* 🎯 Pusatkan Peta ke Seluruh Wilayah Indonesia */}
+            {/* 🎯 Pusatkan Peta ke Seluruh Wilayah Indonesia & Reset Simulasi */}
             <button
               type="button"
               onClick={handleResetIndonesia}
               className="w-9 h-9 rounded-full flex items-center justify-center transition cursor-pointer hover:scale-105 active:scale-95 bg-black/5 hover:bg-black/10 text-[#140f0e] border border-black/10 shadow-xs"
-              title="Pusatkan Peta ke Seluruh Indonesia"
+              title="Pusatkan Peta & Reset Simulasi"
             >
               <LocateFixed className="w-4 h-4" />
             </button>
@@ -2136,7 +2212,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
 
       {/* Mode Peta Nasional (Histori Heatmap, Real-time Wind Streamlines, 16-Day Forecast & Smoke Paths) */}
       <div
-        className={`absolute top-16 right-2 lg:top-auto lg:bottom-6 ${_isDrawerOpen ? "lg:right-[396px]" : "lg:right-4"} z-[500] transition-all duration-300`}
+        className={`absolute top-3.5 right-3.5 sm:top-4 sm:right-4 ${_isDrawerOpen ? "lg:right-[396px]" : "lg:right-4"} z-[500] transition-all duration-300 flex flex-col items-end`}
       >
         <NationalModes
           map={mapRef.current}

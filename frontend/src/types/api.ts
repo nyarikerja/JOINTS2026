@@ -40,6 +40,7 @@ export interface LiveSyncResponse {
   timestamp_utc: string;
   sources: Record<string, { latency_ms?: number; error?: string | null; fetched_at?: string | null; [k: string]: any }>;
   kpi?: SummaryKpiResponse;
+  latency_ms?: number;
 }
 
 export interface SimulationOverrides {

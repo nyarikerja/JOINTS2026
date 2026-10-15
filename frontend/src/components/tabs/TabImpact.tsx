@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { Sparkles, AlertOctagon, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertOctagon } from "lucide-react";
+import { 
+  ChartLineUp, 
+  MapPin, 
+  ShieldCheck, 
+  CloudRain, 
+  Flame, 
+  ShieldWarning 
+} from "@phosphor-icons/react";
 import { formatCompactRange } from "../../utils/formatters";
 import type { 
   ImpactResponse, 
   HazardType, 
-  CarbonEmissionsResponse, 
-  HotspotRankingResponse, 
-  ExtinguishResponse, 
-  LaharWarningResponse,
-  RainEffectResponse,
-  SimulationResponse
+  LaharWarningResponse, 
+  RainEffectResponse 
 } from "../../types/api";
 import { api } from "../../services/api";
-import { AirQualityCard, CompareRuns, ShareRunButton } from "./RunExtras";
 
 interface TabImpactProps {
   impact: ImpactResponse | null;
@@ -22,68 +25,60 @@ interface TabImpactProps {
   onOpenLegend?: () => void;
   simulatedEventName?: string;
   activeRunId?: string | null;
-  runInfo?: SimulationResponse | null;
+  onHourChange?: (h: number) => void;
 }
 
-const fmtWib = (iso?: string | null) =>
-  iso
-    ? new Date(iso).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) + " WIB"
-    : "-";
+const ISPU_CONFIG: Record<string, { label: string; cls: string }> = {
+  baik: { label: "Baik", cls: "bg-emerald-500/15 text-emerald-800 border-emerald-500/30" },
+  sedang: { label: "Sedang", cls: "bg-sky-500/15 text-sky-800 border-sky-500/30" },
+  tidak_sehat: { label: "Tidak Sehat", cls: "bg-amber-500/20 text-amber-900 border-amber-500/40" },
+  sangat_tidak_sehat: { label: "Sangat Tidak Sehat", cls: "bg-red-500/15 text-red-800 border-red-500/30" },
+  berbahaya: { label: "Berbahaya", cls: "bg-purple-500/15 text-purple-900 border-purple-500/30" }
+};
+
+const IspuBadge: React.FC<{ cat?: string | null }> = ({ cat }) => {
+  if (!cat) return <span className="text-[10px] text-[#2b211e]/50">-</span>;
+  const key = cat.toLowerCase().replace(/\s+/g, "_");
+  const c = ISPU_CONFIG[key] || { label: cat.toUpperCase(), cls: "bg-slate-100 text-slate-700 border-slate-300" };
+  return (
+    <span className={`text-[9px] font-bold px-2 py-0.5 rounded border uppercase inline-block max-w-full truncate text-center tracking-wider leading-tight ${c.cls}`}>
+      {c.label}
+    </span>
+  );
+};
 
 export const TabImpact: React.FC<TabImpactProps> = ({
   impact,
   hazard,
-  rainMm,
+  rainMm: _rainMm,
   currentHour = 12,
   onOpenLegend: _onOpenLegend,
   simulatedEventName,
   activeRunId,
-  runInfo
+  onHourChange
 }) => {
-  // Data Lapis 2 Khusus Karhutla & Vulkanik
-  const [carbonData, setCarbonData] = useState<CarbonEmissionsResponse | null>(null);
-  const [rankingData, setRankingData] = useState<HotspotRankingResponse | null>(null);
-  const [extinguishResult, setExtinguishResult] = useState<ExtinguishResponse | null>(null);
-  const [extinguishingClusterId, setExtinguishingClusterId] = useState<number | null>(null);
+  const [airQualityData, setAirQualityData] = useState<any>(null);
   const [laharData, setLaharData] = useState<LaharWarningResponse | null>(null);
   const [rainEffectData, setRainEffectData] = useState<RainEffectResponse | null>(null);
 
   useEffect(() => {
     if (!activeRunId) {
-      setCarbonData(null);
-      setRankingData(null);
-      setExtinguishResult(null);
+      setAirQualityData(null);
       setLaharData(null);
       setRainEffectData(null);
       return;
     }
 
-    const effectiveHazard = runInfo?.hazard || hazard;
-    if (effectiveHazard === "fire") {
-      api.getCarbonEmissions(activeRunId).then(setCarbonData).catch(() => {});
-      api.getHotspotRanking(activeRunId).then(setRankingData).catch(() => {});
-      setLaharData(null);
+    api.getRunAirQuality(activeRunId).then(setAirQualityData).catch(() => setAirQualityData(null));
+
+    if (hazard === "volcano") {
+      api.getLaharWarning(activeRunId).then(setLaharData).catch(() => setLaharData(null));
     } else {
-      api.getLaharWarning(activeRunId).then(setLaharData).catch(() => {});
-      setCarbonData(null);
-      setRankingData(null);
+      setLaharData(null);
     }
 
-    api.getRainEffect(activeRunId).then(setRainEffectData).catch(() => {});
-  }, [activeRunId, hazard, runInfo?.hazard]);
-
-  const handleSimulateExtinguish = async (clusterId: number) => {
-    if (!activeRunId) return;
-    setExtinguishingClusterId(clusterId);
-    try {
-      const res = await api.extinguishHotspots(activeRunId, [clusterId]);
-      setExtinguishResult(res);
-    } catch (err) {
-      console.error("Gagal simulasi pemadaman:", err);
-    } finally {
-      setExtinguishingClusterId(null);
-    }
-  };
+    api.getRainEffect(activeRunId).then(setRainEffectData).catch(() => setRainEffectData(null));
+  }, [activeRunId, hazard]);
 
   // Ambil metrik dinamis jam aktif dari backend (hourly_series) atau fallback ke akumulasi
   const cur: any = (impact?.hourly_series && (impact.hourly_series[String(currentHour)] || impact.hourly_series[currentHour])) || impact;
@@ -94,8 +89,20 @@ export const TabImpact: React.FC<TabImpactProps> = ({
   const area = cur?.area_exposed_km2;
   const schools = cur?.schools_exposed;
   const health = cur?.healthcare_exposed;
-  const coverage = impact?.facilities_coverage;
-  const isRaining = rainMm > 0;
+
+  const cleanEventName = simulatedEventName
+    ? simulatedEventName.replace(/^(Kejadian Observasi|Skenario Hipotetis|Simulasi)(\s*[:-]\s*)?/i, "")
+    : "";
+
+  // Sample 17 jam interval untuk grafik batang proyeksi tren paparan
+  const sampleHours = [0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39, 42, 45, 48];
+  const maxPopInSeries = Math.max(
+    ...sampleHours.map((h) => {
+      const item = impact?.hourly_series?.[String(h)] || impact?.hourly_series?.[h];
+      return item?.population_exposed?.median || 0;
+    }),
+    1
+  );
 
   return (
     <div className="space-y-3.5 text-xs text-[#2b211e]">
@@ -103,10 +110,8 @@ export const TabImpact: React.FC<TabImpactProps> = ({
       <div>
         <div className="flex items-start justify-between mb-1">
           <div className="flex flex-col">
-            <h3 className="font-sans text-[12px] font-bold uppercase tracking-wider text-[#2b211e] truncate max-w-[200px]" title={simulatedEventName || "METRIK POPULASI"}>
-              {simulatedEventName 
-                ? simulatedEventName.replace(/^(Kejadian Observasi|Skenario Hipotetis|Simulasi)(\s*[:-]\s*)?/i, "") 
-                : "METRIK POPULASI"}
+            <h3 className="font-sans text-[12px] font-bold uppercase tracking-wider text-[#2b211e] line-clamp-2 max-w-[210px] leading-tight break-words" title={simulatedEventName || "METRIK POPULASI"}>
+              {cleanEventName || "METRIK POPULASI"}
             </h3>
             {simulatedEventName && (
               <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[#A14646] mt-0.5">
@@ -118,41 +123,6 @@ export const TabImpact: React.FC<TabImpactProps> = ({
             Jam T+{currentHour < 10 ? `0${currentHour}` : currentHour}:00
           </span>
         </div>
-
-        {runInfo && (
-          <div className="mt-2 p-2.5 rounded-lg bg-white/80 border border-[#2b211e]/15 text-[10px] text-[#2b211e]/80 space-y-0.5 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-[#A14646] uppercase tracking-wide">Data masukan run</span>
-              <ShareRunButton />
-              <span className={`font-mono text-[9px] px-1.5 py-0.5 rounded border ${runInfo.scenario_label === "kejadian observasi" ? "bg-emerald-500/10 text-emerald-800 border-emerald-400/40" : "bg-amber-500/10 text-amber-800 border-amber-400/40"}`}>
-                {runInfo.scenario_label === "kejadian observasi" ? "Kejadian teramati" : runInfo.scenario_label}
-              </span>
-            </div>
-            {runInfo.source_info && (
-              <div>
-                Sumber: <strong>{runInfo.source_info.label}</strong>
-                {runInfo.source_info.ash_top_asl_m ? ` · puncak abu ${runInfo.source_info.ash_top_asl_m.toLocaleString("id-ID")} m dpl` : ""}
-                {runInfo.source_info.issued_utc ? ` · ${fmtWib(runInfo.source_info.issued_utc)}` : ""}
-                {runInfo.source_info.url && (
-                  <> · <a href={runInfo.source_info.url} target="_blank" rel="noreferrer" className="underline text-[#A14646]">MAGMA</a></>
-                )}
-              </div>
-            )}
-            {runInfo.hotspots_used && (
-              <div>
-                Titik api: {runInfo.hotspots_used.count.toLocaleString("id-ID")} deteksi dari {runInfo.hotspots_used.n_overpasses ?? "-"} lintasan satelit
-                {runInfo.hotspots_used.mean_instantaneous_frp_mw !== undefined ? ` · rata-rata FRP ${runInfo.hotspots_used.mean_instantaneous_frp_mw.toLocaleString("id-ID")} MW` : ""}
-              </div>
-            )}
-            {runInfo.weather && (
-              <div>
-                Cuaca: {runInfo.weather.model} · angin {runInfo.weather.level} · diunduh {fmtWib(runInfo.weather.fetched_at)}
-                {runInfo.weather.stale && <strong className="text-amber-700"> (salinan lama)</strong>}
-              </div>
-            )}
-            <div>H+0 = {fmtWib(runInfo.start_utc)} · {runInfo.n_members} anggota ensemble ({runInfo.members_source})</div>
-          </div>
-        )}
 
         {/* Kotak Panduan Format P5 / P50 / P95 & Keterangan Legenda */}
         <div className="mt-2 p-2.5 rounded-lg bg-white/80 border border-[#2b211e]/15 text-[#2b211e] space-y-1.5 shadow-xs">
@@ -179,6 +149,12 @@ export const TabImpact: React.FC<TabImpactProps> = ({
               <span className="text-[9px] text-[#2b211e]/65 leading-tight block">Skenario Terburuk</span>
             </div>
           </div>
+
+          <div className="pt-1.5 border-t border-[#2b211e]/10 flex items-center justify-between text-[10px] text-[#2b211e]/75">
+            <span className="leading-tight">
+              Catatan: Penjelasan lengkap terkait P5, P50, dan P95 tersedia di menu <strong>Legenda</strong> pada bilah atas.
+            </span>
+          </div>
         </div>
 
         <div className="mt-2.5 space-y-2">
@@ -186,12 +162,15 @@ export const TabImpact: React.FC<TabImpactProps> = ({
           <div className="bg-white border border-[#2b211e]/10 rounded-lg p-2.5 shadow-xs relative group cursor-help">
             <div className="flex justify-between text-[#2b211e]/65 text-[11px] mb-1">
               <span>Penduduk Terpapar (Jiwa)</span>
-              <span className="bg-[#f7f3ed] text-[#2b211e] px-1.5 py-0.5 rounded text-[9px] font-medium border border-[#2b211e]/10" title={impact?.population_source}>WorldPop 2020</span>
+              <span className="bg-[#f7f3ed] text-[#2b211e] px-1.5 py-0.5 rounded text-[9px] font-medium border border-[#2b211e]/10">WorldPop</span>
             </div>
             <div className="font-sans text-base font-bold text-[#2b211e]">
               {formatCompactRange(pop?.min, pop?.median, pop?.max)}
             </div>
             <div className="text-[10px] text-[#2b211e]/50">Jiwa di jalur sebaran abu/asap atmosferik</div>
+            <div className="absolute right-0 bottom-full mb-1 hidden group-hover:block w-48 bg-[#2b211e] text-[#f7f3ed] text-[9px] p-2 rounded shadow-lg text-left z-10 pointer-events-none">
+              Total populasi penduduk yang diproyeksikan terdampak, berdasarkan estimasi demografi spasial WorldPop.
+            </div>
           </div>
 
           {/* Anak-anak & Lansia */}
@@ -201,11 +180,17 @@ export const TabImpact: React.FC<TabImpactProps> = ({
               <div className="font-sans text-xs font-bold text-[#2b211e]">
                 {formatCompactRange(child?.min, child?.median, child?.max)}
               </div>
+              <div className="absolute left-0 bottom-full mb-1 hidden group-hover:block w-36 bg-[#2b211e] text-[#f7f3ed] text-[9px] p-2 rounded shadow-lg text-left z-10 pointer-events-none">
+                Jumlah penduduk rentan usia di bawah 15 tahun (balita &amp; anak-anak).
+              </div>
             </div>
             <div className="bg-white border border-[#2b211e]/10 rounded-lg p-2.5 shadow-xs relative group cursor-help">
               <span className="text-[10px] text-[#2b211e]/60 block mb-0.5">Lansia (&ge;65 Th)</span>
               <div className="font-sans text-xs font-bold text-[#2b211e]">
                 {formatCompactRange(elder?.min, elder?.median, elder?.max)}
+              </div>
+              <div className="absolute right-0 bottom-full mb-1 hidden group-hover:block w-36 bg-[#2b211e] text-[#f7f3ed] text-[9px] p-2 rounded shadow-lg text-left z-10 pointer-events-none">
+                Jumlah penduduk rentan lanjut usia 65 tahun ke atas.
               </div>
             </div>
           </div>
@@ -216,209 +201,483 @@ export const TabImpact: React.FC<TabImpactProps> = ({
               <span>Fasilitas Publik Berisiko</span>
               <span className="bg-[#f7f3ed] text-[#2b211e] px-1.5 py-0.5 rounded text-[9px] font-medium border border-[#2b211e]/10">OSM</span>
             </div>
-            {coverage && !coverage.complete && (
-              <p className="text-[9.5px] text-amber-800 bg-amber-500/10 border border-amber-400/30 rounded p-1.5 mb-2 leading-snug">{coverage.note}</p>
-            )}
             <div className="grid grid-cols-2 gap-2">
-              <div className="bg-[#f7f3ed]/50 p-2 rounded border border-[#2b211e]/5">
+              <div className="bg-[#f7f3ed]/50 p-2 rounded border border-[#2b211e]/5 relative group cursor-help">
                 <span className="text-[10px] text-[#2b211e]/60 block mb-0.5">Sekolah</span>
                 <div className="font-sans text-xs font-bold text-[#2b211e]">
                   {schools ? formatCompactRange(schools.min, schools.median, schools.max) : "-"}
                 </div>
+                <div className="absolute left-0 bottom-full mb-1 hidden group-hover:block w-36 bg-[#2b211e] text-[#f7f3ed] text-[9px] p-2 rounded shadow-lg text-left z-10 pointer-events-none">
+                  Jumlah fasilitas pendidikan (TK, SD, SMP, SMA, Kampus) dalam radius bahaya.
+                </div>
               </div>
-              <div className="bg-[#f7f3ed]/50 p-2 rounded border border-[#2b211e]/5">
+              <div className="bg-[#f7f3ed]/50 p-2 rounded border border-[#2b211e]/5 relative group cursor-help">
                 <span className="text-[10px] text-[#2b211e]/60 block mb-0.5">Fasilitas Kesehatan</span>
                 <div className="font-sans text-xs font-bold text-[#2b211e]">
                   {health ? formatCompactRange(health.min, health.median, health.max) : "-"}
                 </div>
+                <div className="absolute right-0 bottom-full mb-1 hidden group-hover:block w-36 bg-[#2b211e] text-[#f7f3ed] text-[9px] p-2 rounded shadow-lg text-left z-10 pointer-events-none">
+                  Jumlah rumah sakit, puskesmas, klinik, dan apotek dalam radius bahaya.
+                </div>
               </div>
             </div>
+            <div className="text-[10px] text-[#2b211e]/50 mt-2">Fasilitas publik dalam zona bahaya aktif</div>
           </div>
 
           {/* Luas Footprint */}
-          <div className="bg-white border border-[#2b211e]/10 rounded-lg p-2.5 shadow-xs">
-            <span className="text-[10px] text-[#2b211e]/60 block mb-0.5">Luas Area Footprint (km²)</span>
+          <div className="bg-white border border-[#2b211e]/10 rounded-lg p-2.5 shadow-xs relative group cursor-help">
+            <span className="text-[10px] text-[#2b211e]/60 block mb-0.5">
+              Luas Area Footprint (km<sup className="text-[8px] font-semibold">2</sup>)
+            </span>
             <div className="font-sans text-xs font-bold text-[#2b211e]">
               {formatCompactRange(area?.min, area?.median, area?.max)}
             </div>
+            <div className="absolute right-0 bottom-full mb-1 hidden group-hover:block w-40 bg-[#2b211e] text-[#f7f3ed] text-[9px] p-2 rounded shadow-lg text-left z-10 pointer-events-none">
+              Total estimasi luasan wilayah yang tercakup dalam area dampak material.
+            </div>
           </div>
 
-          {activeRunId && <AirQualityCard runId={activeRunId} hazard={hazard} />}
-
-        </div>
-      </div>
-
-      {/* 2. FITUR KHUSUS KARHUTLA: EMISI KARBON & PERINGKAT KLASTER (Lapis 2) */}
-      {hazard === "fire" && (
-        <div className="pt-2 border-t border-[#2b211e]/10 space-y-2.5">
-          <div>
-            <div className="flex items-center gap-1.5 mb-1">
-              <img src="/titik_api.png" alt="Titik Api" className="w-3.5 h-3.5 object-contain shrink-0" />
-              <h3 className="font-sans text-[11px] font-bold uppercase tracking-wider text-[#A14646]">
-                EMISI KARBON &amp; KLASTER KARHUTLA
-              </h3>
-            </div>
-            <p className="text-[10px] text-[#2b211e]/70 leading-relaxed">
-              Estimasi pelepasan gas rumah kaca (CO₂e) formula Wooster (2005) &amp; Li (2018).
-            </p>
-          </div>
-
-          {/* Emisi Karbon Gambut vs Non-Gambut */}
-          {carbonData && (
-            <div className="bg-white border border-[#2b211e]/10 rounded-lg p-2.5 shadow-xs space-y-2" title={carbonData.caveat}>
-              <div className="flex justify-between items-center text-[11px]">
-                <span className="text-[#2b211e]/70 font-medium">Total Pelepasan CO₂e:</span>
-                <strong className="text-[#A14646] font-mono">
-                  {formatCompactRange(carbonData.total_co2e_tonnes?.min, carbonData.total_co2e_tonnes?.median, carbonData.total_co2e_tonnes?.max)} Ton
-                </strong>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-[10px] pt-1 border-t border-[#2b211e]/5">
-                <div className="bg-[#f7f3ed] p-1.5 rounded">
-                  <span className="text-[#2b211e]/60 block text-[9px]">Lahan Gambut:</span>
-                  <strong className="text-[#A14646] font-mono text-[10px]">
-                    {formatCompactRange(carbonData.peat_emissions_tonnes?.min, carbonData.peat_emissions_tonnes?.median, carbonData.peat_emissions_tonnes?.max)} Ton
-                  </strong>
-                </div>
-                <div className="bg-[#f7f3ed] p-1.5 rounded">
-                  <span className="text-[#2b211e]/60 block text-[9px]">Non-Gambut:</span>
-                  <strong className="text-[#2a8485] font-mono text-[10px]">
-                    {formatCompactRange(carbonData.non_peat_emissions_tonnes?.min, carbonData.non_peat_emissions_tonnes?.median, carbonData.non_peat_emissions_tonnes?.max)} Ton
-                  </strong>
-                </div>
-              </div>
-              {carbonData.caveat && (
-                <p className="text-[9px] text-[#2b211e]/55 leading-snug">{carbonData.caveat}</p>
-              )}
-            </div>
-          )}
-
-          {/* Peringkat Klaster Titik Api & Simulasi Pemadaman Kontra-faktual */}
-          {rankingData && rankingData.ranked_clusters?.length > 0 && (
-            <div className="bg-white border border-[#2b211e]/10 rounded-lg p-2.5 shadow-xs space-y-2">
+          {/* ======================================================== */}
+          {/* CARD 0: GRAFIK PROYEKSI TREN PAPARAN 48 JAM (CHART)      */}
+          {/* ======================================================== */}
+          {impact?.hourly_series && (
+            <div className="bg-white border border-[#2b211e]/15 rounded-xl p-3 shadow-xs space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <img src="/titik_api.png" alt="Titik Api" className="w-3.5 h-3.5 object-contain shrink-0" />
-                  <span className="font-bold text-[10px] text-[#2b211e] uppercase tracking-wide">
-                    Prioritas Klaster Titik Api
+                  <ChartLineUp size={16} weight="duotone" className="text-[#EB895B]" />
+                  <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[#2b211e]">
+                    Grafik Tren Paparan (H+0 s/d H+48)
                   </span>
                 </div>
-                <span className="text-[9px] font-mono text-[#2b211e]/60">
-                  {rankingData.ranked_clusters.length} Klaster
+                <span className="font-mono text-[9px] px-1.5 py-0.5 rounded bg-[#f7f3ed] text-[#2b211e]/80 border border-[#2b211e]/10 font-bold">
+                  P50 Median
                 </span>
               </div>
 
-              {/* Hasil Pemadaman Terkini jika Ada */}
-              {extinguishResult && (
-                <div className="p-2 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-900 space-y-1">
-                  <div className="flex items-center gap-1 font-bold text-[10px] text-emerald-800">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
-                    <span>Hasil Kontra-faktual Pemadaman:</span>
-                  </div>
-                  <div className="text-[9px] space-y-0.5 leading-relaxed">
-                    <p>Warga Terlindungi: <strong>{formatCompactRange(extinguishResult.population_reduced?.min, extinguishResult.population_reduced?.median, extinguishResult.population_reduced?.max)} Jiwa (-{extinguishResult.reduction_percentage}%)</strong></p>
-                    <p>Emisi CO₂e Tercegah: <strong>{formatCompactRange(extinguishResult.carbon_reduced_co2e_tonnes?.min, extinguishResult.carbon_reduced_co2e_tonnes?.median, extinguishResult.carbon_reduced_co2e_tonnes?.max)} Ton</strong></p>
-                  </div>
-                </div>
-              )}
+              <div className="text-[10px] text-[#2b211e]/70 flex justify-between items-baseline">
+                <span>Laju akumulasi penduduk di jalur dispersi:</span>
+                <span className="font-mono font-bold text-[#A14646]">
+                  {formatCompactRange(cur?.population_exposed?.min, cur?.population_exposed?.median, cur?.population_exposed?.max)} Jiwa
+                </span>
+              </div>
 
-              {/* Daftar Klaster Teratas */}
-              <div className="space-y-1.5">
-                {rankingData.ranked_clusters.slice(0, 3).map((cl) => {
-                  const isOperating = extinguishingClusterId === cl.cluster_id;
+              {/* Line Chart Container */}
+              <div className="pt-1.5">
+                {(() => {
+                  const svgWidth = 320;
+                  const svgHeight = 70;
+                  const padX = 14;
+                  const padYTop = 8;
+                  const padYBottom = 18;
+                  const chartW = svgWidth - padX * 2;
+                  const chartH = svgHeight - padYTop - padYBottom;
+
+                  const points = sampleHours.map((h) => {
+                    const item = impact.hourly_series?.[String(h)] || impact.hourly_series?.[h];
+                    const pop = item?.population_exposed?.median || 0;
+                    const x = padX + (h / 48) * chartW;
+                    const y = padYTop + chartH - (pop / maxPopInSeries) * chartH;
+                    return { h, pop, x, y };
+                  });
+
+                  let linePath = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
+                  for (let i = 1; i < points.length; i++) {
+                    const prev = points[i - 1];
+                    const curr = points[i];
+                    const cp1x = (prev.x + (curr.x - prev.x) / 2).toFixed(1);
+                    const cp2x = cp1x;
+                    linePath += ` C ${cp1x} ${prev.y.toFixed(1)}, ${cp2x} ${curr.y.toFixed(1)}, ${curr.x.toFixed(1)} ${curr.y.toFixed(1)}`;
+                  }
+
+                  const lastPt = points[points.length - 1];
+                  const firstPt = points[0];
+                  const baseY = (padYTop + chartH).toFixed(1);
+                  const areaPath = `${linePath} L ${lastPt.x.toFixed(1)} ${baseY} L ${firstPt.x.toFixed(1)} ${baseY} Z`;
+
+                  const clampedCurHour = Math.max(0, Math.min(48, currentHour));
+                  const curPt = points.reduce((prev, curr) => 
+                    Math.abs(curr.h - clampedCurHour) < Math.abs(prev.h - clampedCurHour) ? curr : prev
+                  );
+                  const curX = (padX + (clampedCurHour / 48) * chartW).toFixed(1);
+                  const curY = curPt.y;
 
                   return (
-                    <div key={cl.cluster_id} className="p-2 rounded bg-[#f7f3ed] border border-[#2b211e]/10 flex items-center justify-between text-[10px]">
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-[#A14646]">#Peringkat {cl.rank}</span>
-                          <span className="text-[#2b211e]/60 flex items-center gap-1">
-                            <img src="/titik_api.png" alt="Titik Api" className="w-3 h-3 object-contain inline-block" />
-                            {cl.hotspot_count} titik api
-                          </span>
-                        </div>
-                        <div className="text-[9px] text-[#2b211e]/70 mt-0.5">
-                          Total FRP: <strong>{Math.round(cl.total_frp_mw)} MW</strong> &bull; Skor Risiko: <strong>{Math.round(cl.exposure_contribution_score)}</strong>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => handleSimulateExtinguish(cl.cluster_id)}
-                        disabled={isOperating}
-                        className="py-1 px-2 rounded bg-[#2a8485] hover:bg-[#20696a] text-white text-[9px] font-semibold transition cursor-pointer flex items-center gap-1 shrink-0"
+                    <div className="relative w-full bg-[#f7f3ed]/70 rounded-lg border border-[#2b211e]/10 p-2">
+                      <svg
+                        viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+                        className="w-full h-24 overflow-visible select-none"
                       >
-                        {isOperating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                        <span>Padamkan</span>
-                      </button>
+                        <defs>
+                          <linearGradient id="popAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#EB895B" stopOpacity="0.45" />
+                            <stop offset="100%" stopColor="#EB895B" stopOpacity="0.02" />
+                          </linearGradient>
+                        </defs>
+
+                        {/* Garis Grid Horizontal */}
+                        <line x1={padX} y1={padYTop} x2={padX + chartW} y2={padYTop} stroke="rgba(43, 33, 30, 0.08)" strokeDasharray="3 3" />
+                        <line x1={padX} y1={padYTop + chartH / 2} x2={padX + chartW} y2={padYTop + chartH / 2} stroke="rgba(43, 33, 30, 0.08)" strokeDasharray="3 3" />
+                        <line x1={padX} y1={padYTop + chartH} x2={padX + chartW} y2={padYTop + chartH} stroke="rgba(43, 33, 30, 0.15)" />
+
+                        {/* Area Gradient Fill */}
+                        <path d={areaPath} fill="url(#popAreaGrad)" />
+
+                        {/* Line Chart Curve */}
+                        <path
+                          d={linePath}
+                          fill="none"
+                          stroke="#EB895B"
+                          strokeWidth="2.4"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+
+                        {/* Titik Sampel Data (Setiap 6 Jam) */}
+                        {points
+                          .filter((p) => p.h % 6 === 0)
+                          .map((p) => (
+                            <circle
+                              key={p.h}
+                              cx={p.x}
+                              cy={p.y}
+                              r="2.5"
+                              fill="#2a8485"
+                              stroke="#ffffff"
+                              strokeWidth="1.2"
+                            />
+                          ))}
+
+                        {/* Garis & Titik Penunjuk Jam Aktif */}
+                        <line
+                          x1={curX}
+                          y1={padYTop - 2}
+                          x2={curX}
+                          y2={padYTop + chartH}
+                          stroke="#DA6556"
+                          strokeWidth="1.8"
+                          strokeDasharray="3 2"
+                        />
+                        <circle
+                          cx={curX}
+                          cy={curY}
+                          r="4"
+                          fill="#DA6556"
+                          stroke="#ffffff"
+                          strokeWidth="2"
+                        />
+
+                        {/* Label Sumbu X Konsisten: H+0, H+12, H+24, H+36, H+48 */}
+                        {[0, 12, 24, 36, 48].map((h) => {
+                          const x = padX + (h / 48) * chartW;
+                          const isMatch = Math.abs(currentHour - h) <= 3;
+                          return (
+                            <g key={h}>
+                              <line
+                                x1={x}
+                                y1={padYTop + chartH}
+                                x2={x}
+                                y2={padYTop + chartH + 3}
+                                stroke="rgba(43, 33, 30, 0.3)"
+                              />
+                              <text
+                                x={x}
+                                y={svgHeight - 2}
+                                textAnchor="middle"
+                                fontSize="8"
+                                fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+                                fill={isMatch ? "#DA6556" : "rgba(43, 33, 30, 0.65)"}
+                                fontWeight={isMatch ? "bold" : "normal"}
+                              >
+                                H+{h}
+                              </text>
+                            </g>
+                          );
+                        })}
+
+                        {/* Click target interaktif per horizon jam */}
+                        {points.map((p) => (
+                          <rect
+                            key={p.h}
+                            x={p.x - chartW / (sampleHours.length * 2)}
+                            y={0}
+                            width={chartW / sampleHours.length}
+                            height={svgHeight}
+                            fill="transparent"
+                            className="cursor-pointer"
+                            onClick={() => onHourChange?.(p.h)}
+                          >
+                            <title>{`Horizon H+${p.h}:00 - ${p.pop.toLocaleString("id-ID")} jiwa (Klik untuk lompat jam)`}</title>
+                          </rect>
+                        ))}
+                      </svg>
                     </div>
                   );
-                })}
+                })()}
+
+                <div className="flex justify-between items-center text-[9px] text-[#2b211e]/55 mt-1 px-0.5">
+                  <span className="font-mono">H+00 (Awal)</span>
+                  <span className="text-[8px] italic text-[#2b211e]/60">Klik garis untuk melompat jam</span>
+                  <span className="font-mono">H+48 (Penuh)</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* CARD 1: KUALITAS UDARA (ISPU PM2.5) - INFOGRAFIS SIMPLE   */}
+          {/* ======================================================== */}
+          {airQualityData?.available && (
+            <div className="bg-white border border-[#2b211e]/15 rounded-xl p-3 shadow-xs space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[#2b211e]">
+                  Kualitas Udara (ISPU PM2.5)
+                </span>
+                <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-[#f7f3ed] text-[#2b211e]/70 border border-[#2b211e]/10">
+                  Episentrum Sumber
+                </span>
+              </div>
+
+              {/* 2 Infographic Stat Tiles */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-[#f7f3ed] p-2.5 rounded-lg border border-[#2b211e]/10 flex flex-col justify-between gap-1.5 min-w-0">
+                  <span className="text-[9px] text-[#2b211e]/60 font-semibold block uppercase tracking-wider truncate">
+                    24 Jam Terakhir
+                  </span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="font-mono text-base font-bold text-[#2b211e]">
+                      {airQualityData.center?.pm25_24h_now != null ? airQualityData.center.pm25_24h_now : "-"}
+                    </span>
+                    <span className="text-[9px] text-[#2b211e]/60">
+                      µg/m<sup className="text-[7px]">3</sup>
+                    </span>
+                  </div>
+                  <div className="pt-0.5">
+                    <IspuBadge cat={airQualityData.center?.ispu_now} />
+                  </div>
+                </div>
+
+                <div className="bg-[#f7f3ed] p-2.5 rounded-lg border border-[#2b211e]/10 flex flex-col justify-between gap-1.5 min-w-0">
+                  <span className="text-[9px] text-[#2b211e]/60 font-semibold block uppercase tracking-wider truncate">
+                    Terburuk 48 Jam
+                  </span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="font-mono text-base font-bold text-[#2b211e]">
+                      {airQualityData.center?.pm25_24h_max_forecast != null ? airQualityData.center.pm25_24h_max_forecast : "-"}
+                    </span>
+                    <span className="text-[9px] text-[#2b211e]/60">
+                      µg/m<sup className="text-[7px]">3</sup>
+                    </span>
+                  </div>
+                  <div className="pt-0.5">
+                    <IspuBadge cat={airQualityData.center?.ispu_max_forecast} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Infographic Micro Footer: Source tags & nearest station */}
+              <div className="flex items-center justify-between pt-1 border-t border-[#2b211e]/10 text-[9px] text-[#2b211e]/60">
+                <span className="truncate">Copernicus CAMS &bull; Stasiun OpenAQ</span>
+                {airQualityData.stations && airQualityData.stations.length > 0 && (
+                  <span className="shrink-0 font-medium text-[#2a8485]">
+                    {airQualityData.stations[0].name} ({airQualityData.stations[0].distance_km} km)
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* CARD 2: POTENSI LAHAR HUJAN - INFOGRAFIS SIMPLE          */}
+          {/* ======================================================== */}
+          {hazard === "volcano" && laharData?.available && laharData.lahar_risk_level !== "none" && (
+            <div className="bg-white border border-[#DA6556]/30 rounded-xl p-3 shadow-xs space-y-2.5">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <AlertOctagon className="w-4 h-4 text-[#DA6556]" />
+                  <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[#DA6556]">
+                    POTENSI LAHAR HUJAN
+                  </span>
+                </div>
+                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider font-mono ${
+                  laharData.lahar_risk_level === "tinggi"
+                    ? "bg-red-500/15 text-red-800 border-red-500/30"
+                    : laharData.lahar_risk_level === "waspada"
+                    ? "bg-amber-500/15 text-amber-800 border-amber-500/30"
+                    : "bg-emerald-500/15 text-emerald-800 border-emerald-500/30"
+                }`}>
+                  {laharData.lahar_risk_level}
+                </span>
+              </div>
+
+              {/* 2 Infographic Stat Tiles */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-[#f7f3ed] p-2 rounded-lg border border-[#2b211e]/10 space-y-1">
+                  <span className="text-[9px] text-[#2b211e]/60 font-semibold block uppercase tracking-wider">
+                    Hujan Maks 48 Jam
+                  </span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="font-mono text-base font-bold text-[#2b211e]">
+                      {laharData.forecast_precip_max_mm_h?.median ?? 0}
+                    </span>
+                    <span className="text-[9px] text-[#2b211e]/60">mm/jam</span>
+                  </div>
+                  <div className="text-[9px] text-[#2b211e]/60 truncate">
+                    Rentang: {laharData.forecast_precip_max_mm_h?.min ?? 0} – {laharData.forecast_precip_max_mm_h?.max ?? 0} mm/j
+                  </div>
+                </div>
+
+                <div className="bg-[#f7f3ed] p-2 rounded-lg border border-[#2b211e]/10 space-y-1">
+                  <span className="text-[9px] text-[#2b211e]/60 font-semibold block uppercase tracking-wider truncate">
+                    Peluang Picu (&ge;{laharData.rainfall_threshold_trigger_mm_h || 20} mm/j)
+                  </span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="font-mono text-base font-bold text-[#DA6556]">
+                      {Math.round((laharData.prob_rain_above_trigger || 0) * 100)}%
+                    </span>
+                  </div>
+                  <div className="text-[9px] text-[#2b211e]/60 truncate">
+                    Ambang Lahar Dingin
+                  </div>
+                </div>
+              </div>
+
+              {/* Infographic Visual Gauge Bar */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-[9px] text-[#2b211e]/70 font-medium">
+                  <span>Probabilitas Pemicu Lahar</span>
+                  <span className="font-mono font-bold text-[#DA6556]">
+                    {Math.round((laharData.prob_rain_above_trigger || 0) * 100)}%
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-[#2b211e]/10 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.max(6, Math.min(100, (laharData.prob_rain_above_trigger || 0) * 100))}%`,
+                      background: (laharData.prob_rain_above_trigger || 0) >= 0.5 
+                        ? "#ef4444" 
+                        : (laharData.prob_rain_above_trigger || 0) >= 0.2 
+                        ? "#f59e0b" 
+                        : "#10b981"
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Infographic Quick Chips (No paragraphs!) */}
+              <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-[#2b211e]/10 text-[9px]">
+                <div className="bg-[#f7f3ed] px-2 py-1 rounded text-[#2b211e]/75 border border-[#2b211e]/5 truncate flex items-center gap-1.5">
+                  <MapPin size={12} weight="duotone" className="text-[#EB895B] shrink-0" />
+                  <span className="truncate">{cleanEventName || "Puncak Gunung"}</span>
+                </div>
+                <div className="bg-[#f7f3ed] px-2 py-1 rounded text-[#2b211e]/75 border border-[#2b211e]/5 truncate flex items-center gap-1.5">
+                  <ShieldCheck size={12} weight="duotone" className="text-[#2a8485] shrink-0" />
+                  <span className="truncate">Rujukan: PVMBG &amp; BPBD</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* CARD 3: EFEK PENCUCIAN HUJAN - INFOGRAFIS SIMPLE         */}
+          {/* ======================================================== */}
+          {rainEffectData?.available && (
+            <div className="bg-white border border-[#2b211e]/15 rounded-xl p-3 shadow-xs space-y-2.5">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[#2b211e]">
+                  EFEK PENCUCIAN HUJAN
+                </span>
+                {rainEffectData.scavenged_mass_pct && (
+                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-800 border border-emerald-500/20">
+                    {rainEffectData.scavenged_mass_pct.median}% massa tercuci
+                  </span>
+                )}
+              </div>
+
+              {/* 2 Infographic Stat Tiles */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-[#f7f3ed] p-2 rounded-lg border border-[#2b211e]/10 space-y-1">
+                  <span className="text-[9px] text-[#2b211e]/60 font-semibold block uppercase tracking-wider">
+                    Massa Tercuci
+                  </span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="font-mono text-base font-bold text-emerald-700">
+                      {rainEffectData.scavenged_mass_pct?.median ?? 0}%
+                    </span>
+                  </div>
+                  <div className="text-[9px] text-[#2b211e]/60 truncate">
+                    P5–P95: {rainEffectData.scavenged_mass_pct?.min ?? 0}% – {rainEffectData.scavenged_mass_pct?.max ?? 0}%
+                  </div>
+                </div>
+
+                <div className="bg-[#f7f3ed] p-2 rounded-lg border border-[#2b211e]/10 space-y-1">
+                  <span className="text-[9px] text-[#2b211e]/60 font-semibold block uppercase tracking-wider">
+                    Hujan Maks Sumber
+                  </span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="font-mono text-base font-bold text-[#2b211e]">
+                      {rainEffectData.precip_max_mm_h?.median ?? 0}
+                    </span>
+                    <span className="text-[9px] text-[#2b211e]/60">mm/jam</span>
+                  </div>
+                  <div className="text-[9px] text-[#2b211e]/60 truncate">
+                    Rentang: {rainEffectData.precip_max_mm_h?.min ?? 0} – {rainEffectData.precip_max_mm_h?.max ?? 0} mm/j
+                  </div>
+                </div>
+              </div>
+
+              {/* Infographic Visual Progress Bar */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-[9px] text-[#2b211e]/70 font-medium">
+                  <span>Pembersihan Partikel Atmosferik</span>
+                  <span className="font-mono font-bold text-emerald-700">
+                    {rainEffectData.scavenged_mass_pct?.median ?? 0}%
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-[#2b211e]/10 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-[#2a8485] transition-all duration-500"
+                    style={{
+                      width: `${Math.max(5, Math.min(100, rainEffectData.scavenged_mass_pct?.median ?? 0))}%`
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Infographic Action/Impact Chips (No paragraphs!) */}
+              <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-[#2b211e]/10 text-[9px]">
+                {hazard === "volcano" ? (
+                  <>
+                    <div className="bg-emerald-500/10 px-2 py-1 rounded text-emerald-800 border border-emerald-500/20 truncate flex items-center gap-1.5">
+                      <CloudRain size={13} weight="duotone" className="text-emerald-700 shrink-0" />
+                      <span className="truncate">Abu Jatuh Dekat Kawah</span>
+                    </div>
+                    <div className="bg-amber-500/10 px-2 py-1 rounded text-amber-900 border border-amber-500/20 truncate flex items-center gap-1.5">
+                      <ShieldWarning size={13} weight="duotone" className="text-amber-700 shrink-0" />
+                      <span className="truncate">Waspada Beban Atap</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="bg-emerald-500/10 px-2 py-1 rounded text-emerald-800 border border-emerald-500/20 truncate flex items-center gap-1.5">
+                      <CloudRain size={13} weight="duotone" className="text-emerald-700 shrink-0" />
+                      <span className="truncate">Asap Udara Berkurang</span>
+                    </div>
+                    <div className="bg-amber-500/10 px-2 py-1 rounded text-amber-900 border border-amber-500/20 truncate flex items-center gap-1.5">
+                      <Flame size={13} weight="duotone" className="text-amber-700 shrink-0" />
+                      <span className="truncate">Api Gambut Tetap Aktif</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
         </div>
-      )}
-
-      {/* 4. FITUR KHUSUS VULKANIK: POTENSI LAHAR HUJAN DARI PRAKIRAAN HUJAN ENSEMBLE */}
-      {hazard === "volcano" && laharData?.available && laharData.lahar_risk_level !== "none" && (
-        <div className="pt-2 border-t border-[#2b211e]/10">
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <AlertOctagon className="w-3.5 h-3.5 text-[#DA6556]" />
-            <h3 className="font-sans text-[11px] font-bold uppercase tracking-wider text-[#DA6556]">
-              POTENSI LAHAR HUJAN
-            </h3>
-          </div>
-          <div className="bg-white border border-[#DA6556]/30 rounded-lg p-2.5 shadow-xs space-y-2">
-            <div className="flex items-center justify-between text-[10px]">
-              <span className="text-[#2b211e]/70">Tingkat potensi (dari prakiraan hujan):</span>
-              <span className="px-1.5 py-0.5 rounded font-bold font-mono bg-red-500/10 text-red-800 border border-red-500/20 uppercase text-[9px]">
-                {laharData.lahar_risk_level}
-              </span>
-            </div>
-            <p className="text-[10px] text-[#2b211e]/75 leading-relaxed">
-              {laharData.warning_text || laharData.reason}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* 5. Efek Pencucian Hujan (keluaran model) */}
-      {rainEffectData?.available && (
-      <div className="pt-2 border-t border-[#2b211e]/10 space-y-1.5">
-        <div className="flex items-center justify-between">
-          <h3 className="font-sans text-[11px] font-bold uppercase tracking-wider text-[#2b211e]">
-            EFEK PENCUCIAN HUJAN
-          </h3>
-          {rainEffectData?.scavenged_mass_pct && (
-            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-800 border border-emerald-500/20">
-              {rainEffectData.scavenged_mass_pct.median}% massa tercuci
-            </span>
-          )}
-        </div>
-        <div className="bg-white border border-[#2b211e]/10 rounded p-2.5 text-[10.5px] text-[#2b211e] shadow-xs space-y-1.5">
-          {rainEffectData?.available ? (
-            <>
-              <p className="leading-relaxed text-[#2b211e]/80">
-                Massa partikel yang tercuci hujan selama simulasi:{" "}
-                <strong>{rainEffectData.scavenged_mass_pct?.min}% – {rainEffectData.scavenged_mass_pct?.median}% – {rainEffectData.scavenged_mass_pct?.max}%</strong>{" "}
-                (P5 – P50 – P95 ensemble).
-              </p>
-              {rainEffectData.precip_max_mm_h && (
-                <p className="text-[10px] text-[#2b211e]/70">
-                  Hujan maksimum di sumber: {rainEffectData.precip_max_mm_h.median} mm/jam (rentang {rainEffectData.precip_max_mm_h.min}–{rainEffectData.precip_max_mm_h.max}){isRaining ? `, termasuk tambahan skenario ${rainMm} mm/jam` : ""}.
-                </p>
-              )}
-              {rainEffectData.hazard_specific_warning && (
-                <p className="text-[10px] text-[#2b211e]/65 leading-relaxed pt-1 border-t border-[#2b211e]/5">
-                  {rainEffectData.hazard_specific_warning}
-                </p>
-              )}
-            </>
-          ) : null}
-        </div>
       </div>
-      )}
-      {activeRunId && <CompareRuns runId={activeRunId} />}
     </div>
   );
 };
+
+

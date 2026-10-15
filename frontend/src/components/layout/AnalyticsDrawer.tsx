@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, MapPin, Building2, ShieldAlert } from "lucide-react";
+import { X, MapPin, Buildings, ShieldWarning } from "@phosphor-icons/react";
 import { TabImpact } from "../tabs/TabImpact";
 import { TabFacilities } from "../tabs/TabFacilities";
 import { TabProtocolAI } from "../tabs/TabProtocolAI";
@@ -32,6 +32,7 @@ interface AnalyticsDrawerProps {
   onSelectFacility?: (id: string | null) => void;
   selectedPlumeTier?: string | null;
   onSelectPlumeTier?: (tier: string | null) => void;
+  onHourChange?: (h: number) => void;
   eventId?: string;
   runInfo?: SimulationResponse | null;
 }
@@ -54,9 +55,10 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
   simulatedEventName,
   activeRunId,
   selectedFacilityId,
-  onSelectFacility,
+  onSelectFacility: _onSelectFacility,
   selectedPlumeTier,
   onSelectPlumeTier,
+  onHourChange,
   eventId,
   runInfo
 }) => {
@@ -70,13 +72,13 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
 
   const tabs = [
     { id: "region", label: "Wilayah", icon: MapPin },
-    { id: "facilities", label: "Fasilitas", icon: Building2 },
-    { id: "protocol", label: "Protokol & AI", icon: ShieldAlert }
+    { id: "facilities", label: "Fasilitas", icon: Buildings },
+    { id: "protocol", label: "Protokol & AI", icon: ShieldWarning }
   ] as const;
 
   return (
     <aside
-      className={`absolute top-0 right-0 w-[380px] max-w-full h-full backdrop-blur-xl z-[1050] flex flex-col shadow-2xl transition-transform duration-300 ease-out font-sans overflow-visible ${
+      className={`absolute top-0 right-0 w-[350px] max-w-full h-full backdrop-blur-xl z-[1050] flex flex-col shadow-2xl transition-transform duration-300 ease-out font-sans ${
         isOpen ? "translate-x-0" : "translate-x-full"
       }`}
       style={{
@@ -117,7 +119,7 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
                       }
                 }
               >
-                <Icon className="w-3.5 h-3.5" />
+                <Icon size={16} weight={isActive ? "duotone" : "regular"} />
                 <span>{t.label}</span>
               </button>
             );
@@ -131,20 +133,20 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
           className="w-10 flex items-center justify-center transition cursor-pointer hover:bg-black/10 text-[#2b211e]/70 hover:text-[#2b211e] border-l border-black/10"
           title="Tutup Panel"
         >
-          <X className="w-4 h-4" />
+          <X size={16} weight="bold" />
         </button>
       </div>
 
-      {/* Content Body Scrollable */}
-      <div className="flex-1 overflow-y-auto p-3.5 custom-scrollbar">
+      {/* Content Body */}
+      <div className={`flex-1 ${!impact ? "flex flex-col" : "overflow-y-auto p-3.5 custom-scrollbar"}`}>
         {!impact ? (
-          <div className="h-full flex flex-col items-center justify-center text-center p-6 opacity-80 mt-12">
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-6 opacity-80 -translate-y-8">
             <div className="w-16 h-16 bg-[#2b211e]/5 rounded-full flex items-center justify-center mb-4">
-              <ShieldAlert className="w-8 h-8 text-[#2b211e]/40" />
+              <ShieldWarning size={32} weight="duotone" className="text-[#2b211e]/40" />
             </div>
             <h3 className="font-bold text-[#2b211e] mb-1">Simulasi Belum Dijalankan</h3>
-            <p className="text-[11px] text-[#2b211e]/70 leading-relaxed">
-              Silakan pilih kejadian di Pusat Kendali lalu tekan <strong>Mulai Simulasi</strong> untuk melihat proyeksi dampak wilayah &amp; aksi dini.
+            <p className="text-[11px] text-[#2b211e]/70 leading-relaxed max-w-[260px]">
+              Silakan pilih kejadian di Pusat Kendali lalu tekan <strong>Mulai Simulasi</strong> untuk melihat proyeksi.
             </p>
           </div>
         ) : (
@@ -158,10 +160,9 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
                 onOpenLegend={onOpenLegend}
                 simulatedEventName={simulatedEventName}
                 activeRunId={activeRunId}
-                runInfo={runInfo}
+                onHourChange={onHourChange}
               />
             )}
-
             {activeTab === "facilities" && (
               <TabFacilities
                 schools={facilities?.schools || []}
@@ -170,17 +171,10 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
                 onFlyTo={onFlyTo}
                 onDrawRoute={onDrawRoute}
                 activeRouteId={activeRouteId}
-                activeRunId={activeRunId}
-                selectedFacilityId={selectedFacilityId}
-                onSelectFacility={onSelectFacility}
                 selectedPlumeTier={selectedPlumeTier}
                 onSelectPlumeTier={onSelectPlumeTier}
-                coverage={facilities?.facilities_coverage}
-                truncated={facilities?.list_truncated}
-                totalSchools={facilities?.total_schools_at_risk}
               />
             )}
-
             {activeTab === "protocol" && (
               <TabProtocolAI
                 hazard={hazard}
@@ -196,4 +190,3 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
     </aside>
   );
 };
-

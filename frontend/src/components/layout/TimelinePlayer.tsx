@@ -1,22 +1,32 @@
 import React, { useEffect, useState } from "react";
-import { Play, Pause, ChevronUp, ChevronDown } from "lucide-react";
+import { Play, Pause, CaretUp, CaretDown } from "@phosphor-icons/react";
 import { formatHour } from "../../utils/formatters";
 
 interface TimelinePlayerProps {
   currentHour: number;
   onHourChange: (hour: number) => void;
   isDrawerOpen?: boolean;
-  onResetDefault?: () => void;
+  autoPlayTrigger?: number;
+  simulatedEventName?: string;
 }
 
 export const TimelinePlayer: React.FC<TimelinePlayerProps> = ({
   currentHour,
   onHourChange,
-  isDrawerOpen = false,
-  onResetDefault
+  isDrawerOpen: _isDrawerOpen = false,
+  autoPlayTrigger,
+  simulatedEventName
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
+
+  // Otomatis putar animasi timeline ketika autoPlayTrigger terpicu (setelah simulasi selesai)
+  useEffect(() => {
+    if (autoPlayTrigger && autoPlayTrigger > 0) {
+      setIsPlaying(true);
+      setIsExpanded(true);
+    }
+  }, [autoPlayTrigger]);
 
   useEffect(() => {
     let interval: any = null;
@@ -32,82 +42,111 @@ export const TimelinePlayer: React.FC<TimelinePlayerProps> = ({
 
   const quickSteps = [0, 6, 12, 24, 36, 48];
 
+  const cleanEventName = simulatedEventName
+    ? simulatedEventName.replace(/^(Kejadian Observasi|Skenario Hipotetis|Simulasi)(\s*[:-]\s*)?/i, "").trim()
+    : "";
+
   return (
     <div 
-      className={`absolute transition-all duration-300 ease-out z-[1000] -translate-x-1/2 w-[min(620px,calc(100vw-40px))] ${
-        isExpanded ? "bottom-3.5 translate-y-0" : "bottom-0 translate-y-full"
+      className={`absolute left-1/2 -translate-x-1/2 transition-all duration-300 ease-out z-[1000] w-[min(660px,calc(100vw-2rem))] ${
+        isExpanded ? "bottom-3 translate-y-0" : "bottom-0 translate-y-full"
       }`}
-      style={{
-        left: isDrawerOpen && window.innerWidth >= 1024 ? "calc(50vw - 190px)" : "50vw"
-      }}
     >
-      {/* Tombol Toggle Slide */}
+      {/* Tab Puller Toggle Slide */}
       <button 
+        type="button"
         onClick={() => setIsExpanded(!isExpanded)}
-        className="absolute -top-7 left-1/2 -translate-x-1/2 w-12 h-7 rounded-t-lg flex items-center justify-center cursor-pointer transition-colors shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] hover:bg-white/50"
-        style={{ background: "rgba(245, 239, 227, 0.95)", border: "1px solid rgba(0,0,0,0.1)", borderBottom: "none" }}
+        className="absolute -top-4.5 left-1/2 -translate-x-1/2 w-10 h-4.5 rounded-t-md flex items-center justify-center cursor-pointer transition-colors hover:bg-white shadow-[0_-2px_4px_rgba(0,0,0,0.06)]"
+        style={{ 
+          background: "rgba(245, 239, 227, 0.97)", 
+          border: "1px solid rgba(20, 15, 14, 0.15)", 
+          borderBottom: "none" 
+        }}
         title={isExpanded ? "Sembunyikan Horizon Waktu" : "Tampilkan Horizon Waktu"}
       >
         {isExpanded ? (
-          <ChevronDown className="w-5 h-5 text-[#EB895B]" />
+          <CaretDown size={12} weight="bold" className="text-[#EB895B]" />
         ) : (
-          <ChevronUp className="w-5 h-5 text-[#EB895B]" />
+          <CaretUp size={12} weight="bold" className="text-[#EB895B]" />
         )}
       </button>
 
-      {/* Main Panel */}
+      {/* Main Instrument Panel */}
       <div 
-        className="w-full backdrop-blur-xl rounded-xl px-3 sm:px-4 py-2.5 shadow-2xl text-[#140f0e]"
-        style={{ background: "rgba(245, 239, 227, 0.95)", border: "1px solid rgba(0,0,0,0.1)" }}
+        className="w-full backdrop-blur-md rounded-lg px-3 py-2 text-[#140f0e] select-none"
+        style={{ 
+          background: "rgba(245, 239, 227, 0.97)", 
+          border: "1px solid rgba(20, 15, 14, 0.15)",
+          boxShadow: "0 8px 24px -4px rgba(20, 15, 14, 0.16)"
+        }}
       >
-        <div className="flex flex-wrap items-center justify-between gap-y-1.5 mb-1.5">
-          <div className="flex items-center gap-2">
+        {/* Row 1: Player Controls & Quick Steps */}
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            {/* Play/Pause Button */}
             <button
+              type="button"
               onClick={() => setIsPlaying(!isPlaying)}
-              className="w-6 h-6 rounded-full flex items-center justify-center transition cursor-pointer hover:opacity-80 shadow-sm"
-              style={{ background: "#EB895B" }}
+              className="w-7 h-7 rounded-full flex items-center justify-center transition cursor-pointer bg-[#EB895B] hover:bg-[#d97746] active:scale-95 text-white shadow-xs shrink-0"
               title={isPlaying ? "Jeda Animasi" : "Putar Animasi"}
             >
-              {isPlaying ? <Pause className="w-3 h-3 text-white" /> : <Play className="w-3 h-3 fill-white text-white" />}
+              {isPlaying ? (
+                <Pause size={12} weight="fill" />
+              ) : (
+                <Play size={12} weight="fill" className="translate-x-[0.5px]" />
+              )}
             </button>
-            <span className="hidden sm:inline text-xs font-bold" style={{ color: "#140f0e" }}>Horizon Waktu:</span>
-            <span className="font-mono text-xs font-bold px-2 py-0.5 rounded shadow-sm whitespace-nowrap" style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.1)", color: "#140f0e" }}>
-              {formatHour(currentHour)}
-            </span>
+
+            {/* Kontainer Vertikal: Horizon Waktu di atas, Nama Lokasi Teks Saja di bawah */}
+            <div className="flex flex-col min-w-0 overflow-hidden">
+              <div className="flex items-center gap-2">
+                <span className="font-sans text-[10px] font-bold tracking-wider uppercase text-[#140f0e] shrink-0 whitespace-nowrap">
+                  Horizon Waktu
+                </span>
+
+                <span 
+                  className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded shadow-2xs tabular-nums bg-white/90 text-[#A14646] border border-black/10 shrink-0"
+                >
+                  {formatHour(currentHour)}
+                </span>
+              </div>
+
+              {/* Teks Lokasi Bersih di Bawah Horizon Waktu (Tanpa label/garis luar) */}
+              {cleanEventName && (
+                <span 
+                  className="text-[10px] font-semibold text-[#8b3a2b] truncate leading-tight mt-0.5 font-sans" 
+                  title={cleanEventName}
+                >
+                  {cleanEventName}
+                </span>
+              )}
+            </div>
           </div>
 
-          <div className="flex gap-1">
-            {quickSteps.map((step) => (
-              <button
-                key={step}
-                onClick={() => onHourChange(step)}
-                className={`text-[10px] px-2 py-0.5 rounded border transition cursor-pointer shadow-sm ${
-                  currentHour === step
-                    ? "font-bold"
-                    : "hover:bg-black/5"
-                }`}
-                style={currentHour === step ? {
-                  background: "#EB895B", color: "#FFFFFF", borderColor: "#EB895B"
-                } : {
-                  background: "#FFFFFF", color: "rgba(20, 15, 14, 0.7)", borderColor: "rgba(0,0,0,0.1)"
-                }}
-              >
-                H+{step}
-              </button>
-            ))}
-            {onResetDefault && (
-              <button
-                onClick={onResetDefault}
-                className="text-[10px] px-2 py-0.5 rounded border transition cursor-pointer shadow-sm text-[#DA6556] bg-red-500/10 hover:bg-red-500/20 border-[#DA6556]/30 flex items-center gap-1 font-semibold ml-0.5"
-                title="Hapus simulasi aktif dan kembalikan ke pemantauan default"
-              >
-                Reset
-              </button>
-            )}
+          {/* Segmented Quick Step Buttons */}
+          <div className="flex items-center gap-0.5 p-0.5 rounded bg-black/5 border border-black/10 shrink-0">
+            {quickSteps.map((step) => {
+              const isActive = currentHour === step;
+              return (
+                <button
+                  type="button"
+                  key={step}
+                  onClick={() => onHourChange(step)}
+                  className={`font-mono text-[9px] px-1.5 py-0.5 rounded transition cursor-pointer tabular-nums ${
+                    isActive
+                      ? "font-bold text-white bg-[#EB895B] shadow-2xs"
+                      : "text-[#140f0e]/65 hover:text-[#140f0e] hover:bg-black/5 font-medium"
+                  }`}
+                >
+                  +{step}h
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        <div>
+        {/* Row 2: Range Scrubber & Time Ticks (Exact ControllerDock slider style) */}
+        <div className="flex flex-col gap-0.5">
           <input
             type="range"
             min={0}
@@ -115,15 +154,14 @@ export const TimelinePlayer: React.FC<TimelinePlayerProps> = ({
             step={1}
             value={currentHour}
             onChange={(e) => onHourChange(parseInt(e.target.value, 10))}
-            className="w-full cursor-pointer"
-            style={{ accentColor: "#EB895B" }}
+            className="w-full h-1.5 rounded bg-black/10 cursor-pointer accent-[#EB895B]"
           />
-          <div className="flex justify-between font-mono text-[9px] mt-0.5 font-medium" style={{ color: "rgba(20, 15, 14, 0.6)" }}>
-            <span>00:00 <span className="hidden sm:inline">(Awal)</span></span>
+          <div className="flex justify-between font-mono text-[8.5px] text-[#140f0e]/50 font-medium tracking-tight px-0.5">
+            <span>00:00 (Awal)</span>
             <span>12:00</span>
             <span>24:00</span>
             <span>36:00</span>
-            <span>48:00 <span className="hidden sm:inline">(Akhir)</span></span>
+            <span>48:00 (Akhir)</span>
           </div>
         </div>
       </div>

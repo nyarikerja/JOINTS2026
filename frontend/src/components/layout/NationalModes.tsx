@@ -7,7 +7,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import L from "leaflet";
-import { History, Radio, TrendingUp, CircleOff, RefreshCw } from "lucide-react";
+import { ClockCounterClockwise, Broadcast, ChartLineUp, EyeSlash, ArrowClockwise } from "@phosphor-icons/react";
 import { api } from "../../services/api";
 import { WindLeafletLayer, WIND_SPEED_BINS } from "../../simulation/windLayer";
 import { HeatLeafletLayer, HEAT_STOPS } from "../../simulation/heatLayer";
@@ -54,11 +54,6 @@ function formatWib(iso: string, lang = "id"): string {
   }
 }
 
-function textNode(text: string): HTMLElement {
-  const el = document.createElement("span");
-  el.textContent = text;
-  return el;
-}
 
 function sumDetections(heat: any): number {
   return heat?.cells ? heat.cells.reduce((n: number, c: any) => n + (c.count || 0), 0) : 0;
@@ -230,7 +225,13 @@ export const NationalModes: React.FC<NationalModesProps> = ({
           fillColor: color,
           fillOpacity: 1
         })
-          .bindTooltip(textNode(`${p.name} (${sourceLabel})`), { direction: "top" })
+          .bindTooltip(
+            `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.45; text-align: left;">
+              <strong style="color: #16241b; font-size: 12.5px; font-weight: 800;">${p.name}</strong>
+              <div style="font-size: 11px; color: #475569;">${sourceLabel}</div>
+            </div>`,
+            { direction: "top", offset: [0, -6], className: "tactical-tooltip-f7faf4" }
+          )
           .addTo(group);
 
         // 4. Milestone Waktu Terjadwal (+24j, +48j, +72j, dst.)
@@ -244,8 +245,11 @@ export const NationalModes: React.FC<NationalModesProps> = ({
             fillOpacity: isReached ? 0.95 : 0.35
           })
             .bindTooltip(
-              textNode(`${p.name} · +${h} ${id ? "jam" : "h"}${isReached ? (id ? " (Tercapai)" : " (Reached)") : ""}`),
-              { direction: "top" }
+              `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.45; text-align: left;">
+                <strong style="color: #16241b; font-size: 12px; font-weight: 700;">${p.name}</strong>
+                <div style="font-size: 10.5px; color: #64748b;">+${h} ${id ? "jam" : "h"}${isReached ? (id ? " (Tercapai)" : " (Reached)") : ""}</div>
+              </div>`,
+              { direction: "top", offset: [0, -5], className: "tactical-tooltip-f7faf4" }
             )
             .addTo(group);
         }
@@ -273,10 +277,13 @@ export const NationalModes: React.FC<NationalModesProps> = ({
             fillOpacity: 1
           })
             .bindTooltip(
-              textNode(
-                `${p.name} · ${id ? "Posisi Terkini" : "Position"}: +${leadH}${id ? " jam" : "h"} ${formattedTime ? `(${formattedTime})` : ""}`
-              ),
-              { direction: "top" }
+              `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.45; text-align: left;">
+                <strong style="color: #16241b; font-size: 12.5px; font-weight: 800;">${p.name}</strong>
+                <div style="font-size: 11px; color: #475569;">
+                  ${id ? "Posisi Terkini" : "Position"}: <strong style="color: #16241b;">+${leadH}${id ? " jam" : "h"}</strong> ${formattedTime ? `(${formattedTime})` : ""}
+                </div>
+              </div>`,
+              { direction: "top", offset: [0, -8], className: "tactical-tooltip-f7faf4" }
             )
             .addTo(group);
         }
@@ -295,10 +302,10 @@ export const NationalModes: React.FC<NationalModesProps> = ({
   }, [heat, heatOn]);
 
   const modes: [NationalMode, React.ElementType, string][] = [
-    ["off", CircleOff, id ? "Mati" : "Off"],
-    ["history", History, id ? "Histori" : "History"],
-    ["now", Radio, id ? "Saat ini" : "Now"],
-    ["forecast", TrendingUp, id ? "Prediksi" : "Forecast"]
+    ["off", EyeSlash, id ? "Mati" : "Off"],
+    ["history", ClockCounterClockwise, id ? "Histori" : "History"],
+    ["now", Broadcast, id ? "Saat ini" : "Now"],
+    ["forecast", ChartLineUp, id ? "Prediksi" : "Forecast"]
   ];
 
   const levelSwitch = (
@@ -365,7 +372,28 @@ export const NationalModes: React.FC<NationalModesProps> = ({
 
   return (
     <div className="flex flex-col items-end gap-2 max-w-[min(340px,calc(100vw-1rem))] select-none">
-      {/* 1. HUD Vektor Angin Simulasi dengan Kompas Presisi Tinggi (Diletakkan di Atas Card History / National Modes) */}
+      {/* 1. Selector Mode Nasional (Pill Docked di Atas) */}
+      <fieldset
+        className="flex rounded-full p-1 backdrop-blur-xl border shadow-2xl"
+        style={{
+          background: "rgba(245, 239, 227, 0.98)",
+          borderColor: "rgba(235, 137, 91, 0.4)",
+          boxShadow: "0 8px 20px -3px rgba(0,0,0,0.15)"
+        }}
+      >
+        <legend className="sr-only">{id ? "Kerangka waktu data nasional" : "Data time frame"}</legend>
+        {modes.map(([value, Icon, label]) => (
+          <label key={value} className="cursor-pointer" title={label}>
+            <input type="radio" name="national-mode" value={value} checked={mode === value} onChange={() => changeMode(value)} className="sr-only peer" />
+            <span className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] font-bold text-[#140f0e]/75 hover:bg-black/5 hover:text-[#140f0e] peer-checked:bg-[#EB895B] peer-checked:text-white peer-checked:shadow-md transition">
+              <Icon className="w-3.5 h-3.5" aria-hidden="true" />
+              <span className={value === "off" ? "sr-only sm:not-sr-only" : ""}>{label}</span>
+            </span>
+          </label>
+        ))}
+      </fieldset>
+
+      {/* 2. HUD Vektor Angin Simulasi dengan Kompas Presisi Tinggi */}
       {windInfo && (
         <div
           className="w-full rounded-2xl p-2.5 sm:p-3 shadow-2xl backdrop-blur-xl border flex items-center gap-3 transition-all duration-300"
@@ -403,10 +431,10 @@ export const NationalModes: React.FC<NationalModesProps> = ({
         </div>
       )}
 
-      {/* 2. Card Info Mode Nasional (Histori Titik Api / Saat ini / Prediksi) */}
+      {/* 3. Card Info Mode Nasional (Histori Titik Api / Saat ini / Prediksi) */}
       {mode !== "off" && (
         <section
-          className="w-full rounded-2xl p-3 backdrop-blur-xl border shadow-2xl text-[11px] leading-snug"
+          className="w-full rounded-2xl p-3 backdrop-blur-xl border shadow-2xl text-[11px] leading-snug max-h-[60vh] overflow-y-auto"
           style={{
             background: "rgba(245, 239, 227, 0.98)",
             borderColor: "rgba(235, 137, 91, 0.4)",
@@ -427,7 +455,7 @@ export const NationalModes: React.FC<NationalModesProps> = ({
                 onClick={() => { startLoading(); setReload((n) => n + 1); }}
                 className="ml-auto flex items-center gap-1 px-2 py-1 rounded-full hover:bg-black/5 cursor-pointer text-[#140f0e]"
               >
-                <RefreshCw className="w-3 h-3" aria-hidden="true" /> {id ? "Coba lagi" : "Retry"}
+                <ArrowClockwise size={12} weight="bold" aria-hidden="true" /> {id ? "Coba lagi" : "Retry"}
               </button>
             </div>
           )}
@@ -552,26 +580,6 @@ export const NationalModes: React.FC<NationalModesProps> = ({
         </section>
       )}
 
-      {/* Selector Mode Nasional */}
-      <fieldset
-        className="flex rounded-full p-1 backdrop-blur-xl border shadow-2xl"
-        style={{
-          background: "rgba(245, 239, 227, 0.98)",
-          borderColor: "rgba(235, 137, 91, 0.4)",
-          boxShadow: "0 8px 20px -3px rgba(0,0,0,0.15)"
-        }}
-      >
-        <legend className="sr-only">{id ? "Kerangka waktu data nasional" : "Data time frame"}</legend>
-        {modes.map(([value, Icon, label]) => (
-          <label key={value} className="cursor-pointer" title={label}>
-            <input type="radio" name="national-mode" value={value} checked={mode === value} onChange={() => changeMode(value)} className="sr-only peer" />
-            <span className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] font-bold text-[#140f0e]/75 hover:bg-black/5 hover:text-[#140f0e] peer-checked:bg-[#EB895B] peer-checked:text-white peer-checked:shadow-md transition">
-              <Icon className="w-3.5 h-3.5" aria-hidden="true" />
-              <span className={value === "off" ? "sr-only sm:not-sr-only" : ""}>{label}</span>
-            </span>
-          </label>
-        ))}
-      </fieldset>
     </div>
   );
 };
