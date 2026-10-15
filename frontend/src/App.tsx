@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { Loader2 } from "lucide-react";
 import { TacticalHeader } from "./components/layout/TacticalHeader";
 import { ControllerDock } from "./components/layout/ControllerDock";
 import { MapWorkspace } from "./components/layout/MapWorkspace";
@@ -49,8 +50,6 @@ export const App: React.FC = () => {
   const [isGpsModalOpen, setIsGpsModalOpen] = useState<boolean>(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
   const [isRunning, setIsRunning] = useState<boolean>(false);
-
-  useLocationWatch();
   const [progressText, setProgressText] = useState<string>("");
   const [loadingProgress, setLoadingProgress] = useState<number>(0);
   const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null);
@@ -68,7 +67,6 @@ export const App: React.FC = () => {
 
   const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; _t: number; name?: string; type?: "school" | "hospital" | string } | null>(null);
   const [resetViewTrigger, setResetViewTrigger] = useState<number>(0);
-  const [autoPlayTrigger, setAutoPlayTrigger] = useState<number>(0);
   const [isMapReady, setIsMapReady] = useState<boolean>(false);
   // Loader sungai (public/loader) menggantikan overlay "Memuat Data Spasial" selama masih tampil
   const [riverLoaderOn, setRiverLoaderOn] = useState<boolean>(() => isLoaderActive());
@@ -79,11 +77,6 @@ export const App: React.FC = () => {
     return () => window.removeEventListener("loader:done", off);
   }, [riverLoaderOn]);
   const [selectedEventName, setSelectedEventName] = useState<string>("G. Anak Krakatau");
-  const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
-  const [eventFocusTrigger, setEventFocusTrigger] = useState<number>(0);
-  const [showSchools, setShowSchools] = useState<boolean>(false);
-  const [showHospitals, setShowHospitals] = useState<boolean>(false);
-  const [showAirports, setShowAirports] = useState<boolean>(false);
 
   // Pulihkan run dari tautan (?run=...) atau sesi terakhir (localStorage) saat pertama kali dimuat
   React.useEffect(() => {
@@ -183,12 +176,10 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleEventChange = (newEventId: string, newHazard?: HazardType) => {
-    if (newHazard && newHazard !== hazard) {
-      setHazard(newHazard);
+  const handleEventChange = (newEventId: string) => {
+    if (newEventId !== eventId) {
+      setEventId(newEventId);
     }
-    setEventId(newEventId);
-    setEventFocusTrigger((prev) => prev + 1);
   };
 
   const [simulatedEventName, setSimulatedEventName] = useState<string>("G. Anak Krakatau");
@@ -283,7 +274,6 @@ export const App: React.FC = () => {
     };
 
     try {
-      // 1. Eksekusi Pemodelan Fisika di Backend
       const simRes = await api.runSimulation(payload);
       const runId = simRes.run_id;
       setActiveRunId(runId);
@@ -303,8 +293,8 @@ export const App: React.FC = () => {
           : "Menganalisis wilayah & fasilitas terdampak abu vulkanik..."
       );
 
-      // Reset jam ke 0 lalu aktifkan auto-play agar animasi sebaran jam 0 s/d 48 langsung berjalan otomatis
-      setCurrentHour(0);
+      // Set pratinjau jam ke 48 (akhir) agar pengguna tahu simulasi mencakup 48 jam penuh
+      setCurrentHour(48);
 
       const [impact, facilities, advisory, allTiers] = await Promise.all([
         api.getImpact(runId).catch(() => null),
@@ -476,7 +466,6 @@ export const App: React.FC = () => {
           runHotspots={runInfo?.hotspots}
           isDrawerOpen={isDrawerOpen}
           onToggleLegend={() => setIsLegendOpen((prev) => !prev)}
-          focusEventTrigger={eventFocusTrigger}
           onLayersLoaded={() => setIsMapReady(true)}
           onSelectFacility={(id) => {
             setSelectedFacilityId(id);
@@ -499,6 +488,7 @@ export const App: React.FC = () => {
             </span>
           </div>
         )}
+
         {/* Loading Simulasi Center Screen */}
         {isRunning && (
           <div className="absolute inset-0 z-[2000] bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center select-none">
@@ -607,31 +597,6 @@ export const App: React.FC = () => {
         <LegendModal
           isOpen={isLegendOpen}
           onClose={() => setIsLegendOpen(false)}
-          showSchools={showSchools}
-          onToggleSchools={setShowSchools}
-          showHospitals={showHospitals}
-          onToggleHospitals={setShowHospitals}
-          showAirports={showAirports}
-          onToggleAirports={setShowAirports}
-        />
-
-        {/* Modal Pratinjau Dokumen Ringkasan Eksekutif (A4 Portrait) */}
-        <PrintReportModal
-          isOpen={isPrintModalOpen}
-          onClose={() => setIsPrintModalOpen(false)}
-          hazard={hazard}
-          simulatedEventName={simulatedEventName}
-          activeRunId={activeRunId}
-          impact={impactData}
-          facilities={facilitiesData}
-          advisory={advisoryData}
-          hourlyTiersCache={hourlyTiersCache}
-        />
-
-        {/* Modal AI GPS Siaga Personal Warga */}
-        <GpsAdvisoryModal
-          isOpen={isGpsModalOpen}
-          onClose={() => setIsGpsModalOpen(false)}
         />
 
         {/* Modal Pratinjau Dokumen Ringkasan Eksekutif (A4 Portrait) */}
