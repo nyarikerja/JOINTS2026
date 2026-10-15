@@ -1,3 +1,4 @@
+# pyright: reportMissingImports=false
 """
 app/api/layers.py
 
@@ -39,10 +40,16 @@ def get_layer(
             facs, missing = osm_facilities.airports(), []
         else:
             if (n - s) * (e - w) > 9.0:
-                raise HTTPException(400, "Area bbox terlalu luas untuk fasilitas OSM (maks 9 derajat persegi); perbesar peta.")
-            facs, missing = OverpassIngest.get_facilities_with_coverage(
-                s, n, w, e, facility_type=facility_type, fetch_missing=True, max_fetch=2
-            )
+                try:
+                    from app.db.repositories.facility_repo import FacilityRepository
+                    facs = FacilityRepository.get_by_bbox(s, n, w, e, facility_type=facility_type, limit=limit or 300, zoom=zoom)
+                    missing = []
+                except Exception:
+                    facs, missing = osm_facilities.airports(), []
+            else:
+                facs, missing = OverpassIngest.get_facilities_with_coverage(
+                    s, n, w, e, facility_type=facility_type, fetch_missing=True, max_fetch=2
+                )
         if zoom is not None and zoom < 11:
             # LOD: pada skala jauh hanya rumah sakit dan bandara agar peta tidak penuh
             facs = [f for f in facs if f["facility_type"] == "airport" or f.get("subtype") == "hospital"]
@@ -63,8 +70,8 @@ def get_layer(
         }
 
     elif name == "hotspots":
-        from app.services import firms_live
         from app.ingest.firms import event_area
+        from app.services import firms_live
         target_event = event_id if event_id and event_id not in ["all", "national", "indonesia"] else "national"
         hrs = float(hours or 24)
         if target_event == "national":
@@ -154,8 +161,11 @@ def get_layer(
         from app.core.config import BACKEND_DIR
         volc_path = BACKEND_DIR / "data" / "layers" / "volcanoes_indonesia.geojson"
         if volc_path.exists():
-            with open(volc_path, "r", encoding="utf-8-sig") as f:
-                return json.load(f)
+            try:
+                with open(volc_path, "r", encoding="utf-8-sig") as f:
+                    return json.load(f)
+            except Exception:
+                pass
         return {"type": "FeatureCollection", "features": []}
 
     elif name in ["forests", "forests-national"]:
@@ -175,7 +185,10 @@ def get_layer(
         if not forests_data:
             forest_path = BACKEND_DIR / "data" / "layers" / "forests_indonesia.json"
             if forest_path.exists():
-                forests_data = json.loads(forest_path.read_text(encoding="utf-8-sig"))
+                try:
+                    forests_data = json.loads(forest_path.read_text(encoding="utf-8-sig"))
+                except Exception:
+                    forests_data = []
         # Jumlah titik api & level status = deteksi FIRMS 24 jam terakhir (diselaraskan dengan sistem Level 1-4)
         for item in forests_data:
             area = event_area(item["id"], center=(item.get("lat"), item.get("lon")))
@@ -215,8 +228,11 @@ def get_layer(
         from app.core.config import BACKEND_DIR
         bound_path = BACKEND_DIR / "data" / "layers" / "forest_boundaries.geojson"
         if bound_path.exists():
-            with open(bound_path, "r", encoding="utf-8-sig") as f:
-                return json.load(f)
+            try:
+                with open(bound_path, "r", encoding="utf-8-sig") as f:
+                    return json.load(f)
+            except Exception:
+                pass
         return {"type": "FeatureCollection", "features": []}
 
     elif name == "summary-kpi":

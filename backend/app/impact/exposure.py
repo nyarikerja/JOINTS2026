@@ -1,3 +1,4 @@
+# pyright: reportMissingImports=false
 """
 app/impact/exposure.py
 

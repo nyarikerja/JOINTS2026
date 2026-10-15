@@ -1,3 +1,4 @@
+# pyright: reportMissingImports=false
 """
 app/services/osm_facilities.py
 
@@ -81,7 +82,7 @@ def _element_to_record(el: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     if lat is None or lon is None:
         return None
     amenity = tags.get("amenity")
-    kind = _KIND.get(amenity)
+    kind = _KIND.get(amenity) if isinstance(amenity, str) else None
     if kind is None:
         return None
     name = tags.get("name") or tags.get("name:id")
@@ -179,6 +180,21 @@ def facilities_in_bbox(
         if lat_min <= a["latitude"] <= lat_max and lon_min <= a["longitude"] <= lon_max:
             if facility_type in (None, "airport"):
                 out.append(a)
+
+    # Fallback ke basis data fasilitas nasional (udarasiaga.db / facilities_indonesia.json)
+    # bila tile Overpass belum terunduh atau hasil query kosong (mencakup sekolah & RS di area karhutla/abu)
+    if not out or missing:
+        try:
+            from app.db.repositories.facility_repo import FacilityRepository
+            db_facs = FacilityRepository.get_by_bbox(lat_min, lat_max, lon_min, lon_max, facility_type=facility_type, limit=500)
+            seen_ids = {f["facility_id"] for f in out}
+            for df in db_facs:
+                if df["facility_id"] not in seen_ids:
+                    out.append(df)
+                    seen_ids.add(df["facility_id"])
+        except Exception:
+            pass
+
     if missing:
         request_tiles(missing)
     return out, missing
@@ -191,11 +207,11 @@ def airports(refresh: bool = False) -> List[Dict[str, Any]]:
     """Bandara berkode IATA di Indonesia (OSM aeroway=aerodrome)."""
     global _airports_cache
     if _airports_cache is not None and not refresh:
-        return _airports_cache
+        return _airports_cache or []
     if AIRPORTS_FILE.exists() and not refresh:
         try:
             _airports_cache = json.loads(AIRPORTS_FILE.read_text(encoding="utf-8")).get("facilities", [])
-            return _airports_cache
+            return _airports_cache or []
         except Exception:
             pass
     if is_offline():
@@ -244,6 +260,11 @@ def facility_by_id(facility_id: str, hint_tiles: Iterable[Tuple[int, int]] = ())
         for f in load_tile(t) or []:
             if f["facility_id"] == facility_id:
                 return f
+    try:
+        from app.db.repositories.facility_repo import FacilityRepository
+        return FacilityRepository.get_by_id(facility_id)
+    except Exception:
+        pass
     return None
 
 

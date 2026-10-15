@@ -87,6 +87,7 @@ def _wind_level_for_plume(plume_top_asl_km: float) -> str:
 
 def _find_volcano(event_id: str) -> Optional[Dict[str, Any]]:
     from app.db.repositories.volcano_repo import VolcanoRepository
+
     v = VolcanoRepository.get_by_id(event_id)
     if v:
         return v
@@ -112,45 +113,81 @@ def _volcano_source(name: str, lat: float, lon: float, elev_m: float, in_catalog
         vona = magma_status.latest_ash_vona(name, VONA_MAX_AGE_H)
         if vona and vona["ash_top_asl_m"] > elev_m + 10:
             start = datetime.datetime.fromisoformat(vona["issued_utc"].replace("Z", "+00:00"))
-            return vona["ash_top_asl_m"] / 1000.0, start, {
-                "type": "vona", "tier": 1,
-                "label": f"VONA {vona['notice']} ({vona['color_code'].upper()}), erupsi sedang teramati",
-                "issued_utc": vona["issued_utc"], "ash_top_asl_m": vona["ash_top_asl_m"],
-                "ash_above_summit_m": vona.get("ash_above_summit_m"),
-                "ash_direction_reported": vona.get("ash_direction"),
-                "url": vona.get("url"), "source": magma_status.SOURCE,
-            }, None
+            return (
+                vona["ash_top_asl_m"] / 1000.0,
+                start,
+                {
+                    "type": "vona",
+                    "tier": 1,
+                    "label": f"VONA {vona['notice']} ({vona['color_code'].upper()}), erupsi sedang teramati",
+                    "issued_utc": vona["issued_utc"],
+                    "ash_top_asl_m": vona["ash_top_asl_m"],
+                    "ash_above_summit_m": vona.get("ash_above_summit_m"),
+                    "ash_direction_reported": vona.get("ash_direction"),
+                    "url": vona.get("url"),
+                    "source": magma_status.SOURCE,
+                },
+                None,
+            )
         hist = magma_status.latest_ash_vona_any(name)
         # Jika riwayat VONA memiliki tinggi kolom erupsi nyata (minimal 800m di atas kawah):
         if hist and (hist["ash_top_asl_m"] - elev_m) >= 800:
-            return hist["ash_top_asl_m"] / 1000.0, _now(), {
-                "type": "vona_history", "tier": 2,
-                "label": f"Erupsi terakhir teramati: VONA {hist['notice']} ({hist['issued_utc'][:10]})",
-                "issued_utc": hist["issued_utc"], "ash_top_asl_m": hist["ash_top_asl_m"],
-                "url": hist.get("url"), "source": magma_status.SOURCE,
-            }, "skenario dari erupsi terakhir teramati"
+            return (
+                hist["ash_top_asl_m"] / 1000.0,
+                _now(),
+                {
+                    "type": "vona_history",
+                    "tier": 2,
+                    "label": f"Erupsi terakhir teramati: VONA {hist['notice']} ({hist['issued_utc'][:10]})",
+                    "issued_utc": hist["issued_utc"],
+                    "ash_top_asl_m": hist["ash_top_asl_m"],
+                    "url": hist.get("url"),
+                    "source": magma_status.SOURCE,
+                },
+                "skenario dari erupsi terakhir teramati",
+            )
 
     erup = gvp.last_eruption_with_vei(lat, lon)
     if erup:
         h = _vei_height_km(erup["vei"])
         date_txt = "-".join(str(x) for x in (erup["year"], erup.get("month"), erup.get("day")) if x)
-        return elev_m / 1000.0 + h, _now(), {
-            "type": "gvp_vei", "tier": 3,
-            "label": f"Erupsi terakhir tercatat GVP: {date_txt}, VEI {erup['vei']} (kolom ±{h:.1f} km di atas kawah)",
-            "eruption_date": date_txt, "vei": erup["vei"], "ash_top_asl_m": round(elev_m + h * 1000),
-            "url": "https://volcano.si.edu/", "source": erup["source"],
-        }, "skenario dari erupsi terakhir tercatat"
+        return (
+            elev_m / 1000.0 + h,
+            _now(),
+            {
+                "type": "gvp_vei",
+                "tier": 3,
+                "label": f"Erupsi terakhir tercatat GVP: {date_txt}, VEI {erup['vei']} (kolom ±{h:.1f} km di atas kawah)",
+                "eruption_date": date_txt,
+                "vei": erup["vei"],
+                "ash_top_asl_m": round(elev_m + h * 1000),
+                "url": "https://volcano.si.edu/",
+                "source": erup["source"],
+            },
+            "skenario dari erupsi terakhir tercatat",
+        )
 
     if not in_catalog:
-        raise HTTPException(422, "Titik ini tidak berada dekat gunung api yang tercatat (MAGMA/GVP). "
-                                 "Untuk titik bebas gunakan mode Uji Skenario.")
+        raise HTTPException(
+            422,
+            "Titik ini tidak berada dekat gunung api yang tercatat (MAGMA/GVP). "
+            "Untuk titik bebas gunakan mode Uji Skenario.",
+        )
     vei = int(_assumption("default_vei_without_record", 2))
     h = _vei_height_km(vei)
-    return elev_m / 1000.0 + h, _now(), {
-        "type": "assumed_vei", "tier": 4,
-        "label": f"Tidak ada catatan erupsi; memakai asumsi VEI {vei} (kolom ±{h:.1f} km di atas kawah)",
-        "vei": vei, "ash_top_asl_m": round(elev_m + h * 1000), "source": "config/assumptions.yaml",
-    }, "skenario asumsi (tanpa catatan erupsi)"
+    return (
+        elev_m / 1000.0 + h,
+        _now(),
+        {
+            "type": "assumed_vei",
+            "tier": 4,
+            "label": f"Tidak ada catatan erupsi; memakai asumsi VEI {vei} (kolom ±{h:.1f} km di atas kawah)",
+            "vei": vei,
+            "ash_top_asl_m": round(elev_m + h * 1000),
+            "source": "config/assumptions.yaml",
+        },
+        "skenario asumsi (tanpa catatan erupsi)",
+    )
 
 
 def _resolve_volcano(req: SimulationRequest, custom: bool) -> Dict[str, Any]:
@@ -172,7 +209,9 @@ def _resolve_volcano(req: SimulationRequest, custom: bool) -> Dict[str, Any]:
     peak_phase_h = float(_assumption("volcanic_peak_phase_h", 6.0))
     scenario_label = None
     if req.mode == "auto":
-        plume_top_km, start, source_info, scenario_label = _volcano_source(name, lat, lon, float(elev), volcano is not None)
+        plume_top_km, start, source_info, scenario_label = _volcano_source(
+            name, lat, lon, float(elev), volcano is not None
+        )
         duration_h = float(req.horizon_hours) if req.horizon_hours else 48.0
     else:
         ovr = req.overrides or {}
@@ -183,10 +222,13 @@ def _resolve_volcano(req: SimulationRequest, custom: bool) -> Dict[str, Any]:
         source_info = {"type": "scenario", "label": "Tinggi kolom abu ditentukan pengguna (skenario hipotetis)"}
 
     if plume_top_km * 1000.0 <= float(elev) + 10.0:
-        raise HTTPException(422, f"Tinggi puncak abu {plume_top_km:.1f} km dpl tidak melebihi elevasi kawah ({float(elev):.0f} m).")
+        raise HTTPException(
+            422, f"Tinggi puncak abu {plume_top_km:.1f} km dpl tidak melebihi elevasi kawah ({float(elev):.0f} m)."
+        )
 
     meta = {
-        "event_id": req.source.event_id or f"custom_volcano_{hashlib.md5(f'{lat:.4f}_{lon:.4f}'.encode()).hexdigest()[:8]}",
+        "event_id": req.source.event_id
+        or f"custom_volcano_{hashlib.md5(f'{lat:.4f}_{lon:.4f}'.encode()).hexdigest()[:8]}",
         "hazard": "volcano",
         "name": name,
         "coordinates": {"latitude": lat, "longitude": lon},
@@ -199,8 +241,14 @@ def _resolve_volcano(req: SimulationRequest, custom: bool) -> Dict[str, Any]:
         "scenario_label": scenario_label,
         "level_name": volcano.get("level_name") if volcano else None,
     }
-    return {"meta": meta, "hotspots": [], "lat": lat, "lon": lon, "start": start,
-            "level": _wind_level_for_plume(plume_top_km)}
+    return {
+        "meta": meta,
+        "hotspots": [],
+        "lat": lat,
+        "lon": lon,
+        "start": start,
+        "level": _wind_level_for_plume(plume_top_km),
+    }
 
 
 def _aggregate_sources(hotspots: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -217,14 +265,16 @@ def _aggregate_sources(hotspots: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         c["n"] += 1
     out = []
     for i, c in enumerate(sorted(cells.values(), key=lambda x: -x["frp"])[:60]):
-        out.append({
-            "id": f"source_{i}",
-            "latitude": c["wlat"] / c["frp"],
-            "longitude": c["wlon"] / c["frp"],
-            "frp": round(c["frp"] * scale, 3),
-            "n_detections": c["n"],
-            "is_active": True,
-        })
+        out.append(
+            {
+                "id": f"source_{i}",
+                "latitude": c["wlat"] / c["frp"],
+                "longitude": c["wlon"] / c["frp"],
+                "frp": round(c["frp"] * scale, 3),
+                "n_detections": c["n"],
+                "is_active": True,
+            }
+        )
     return out
 
 
@@ -240,14 +290,31 @@ def _fire_history(area: Dict[str, Any], name: str):
     if week:
         last_day = max(h["acq_date"] for h in week)
         rows = [h for h in week if h["acq_date"] == last_day]
-        return rows, {"type": "firms_recent", "tier": 2, "area_kind": area["kind"],
-                      "label": f"Kebakaran terakhir terdeteksi {last_day}: {len(rows)} deteksi FIRMS",
-                      "fire_date": last_day}, "skenario dari kebakaran terakhir terdeteksi"
+        return (
+            rows,
+            {
+                "type": "firms_recent",
+                "tier": 2,
+                "area_kind": area["kind"],
+                "label": f"Kebakaran terakhir terdeteksi {last_day}: {len(rows)} deteksi FIRMS",
+                "fire_date": last_day,
+            },
+            "skenario dari kebakaran terakhir terdeteksi",
+        )
     hist = firms_history.last_fire(area["bbox"], area.get("polygon")) if area.get("bbox") else None
     if hist:
-        return hist["hotspots"], {"type": "firms_archive", "tier": 3, "area_kind": area["kind"],
-                                  "label": f"Kebakaran terakhir terdeteksi {hist['date']}: {len(hist['hotspots'])} deteksi arsip FIRMS",
-                                  "fire_date": hist["date"], "source": hist["source"]}, "skenario dari kebakaran terakhir terdeteksi"
+        return (
+            hist["hotspots"],
+            {
+                "type": "firms_archive",
+                "tier": 3,
+                "area_kind": area["kind"],
+                "label": f"Kebakaran terakhir terdeteksi {hist['date']}: {len(hist['hotspots'])} deteksi arsip FIRMS",
+                "fire_date": hist["date"],
+                "source": hist["source"],
+            },
+            "skenario dari kebakaran terakhir terdeteksi",
+        )
     raise HTTPException(
         422,
         f"Tidak ada deteksi titik api NASA FIRMS di {name} dalam 2 tahun terakhir. "
@@ -276,19 +343,35 @@ def _resolve_fire(req: SimulationRequest, custom: bool) -> Dict[str, Any]:
     source_info: Dict[str, Any]
     if req.mode == "auto":
         if hotspots:
-            source_info = {"type": "firms", "tier": 1, "label": f"{len(hotspots)} deteksi NASA FIRMS (24 jam terakhir)",
-                           "area_kind": area["kind"]}
+            source_info = {
+                "type": "firms",
+                "tier": 1,
+                "label": f"{len(hotspots)} deteksi NASA FIRMS (24 jam terakhir)",
+                "area_kind": area["kind"],
+            }
         else:
             hotspots, source_info, scenario_label = _fire_history(area, name)
     else:
         if not hotspots:
             rng = np.random.default_rng(req.seed)
-            hotspots = [{
-                "id": f"scenario_{i}", "latitude": lat + float(rng.normal(0, 0.04)),
-                "longitude": lon + float(rng.normal(0, 0.04)), "frp": float(rng.uniform(45.0, 160.0)),
-                "confidence": "skenario", "acq_date": "skenario", "acq_time": "", "sensor": "skenario", "is_active": True,
-            } for i in range(18)]
-            source_info = {"type": "scenario", "label": "Titik api hipotetis (tidak ada deteksi FIRMS 24 jam di area ini)"}
+            hotspots = [
+                {
+                    "id": f"scenario_{i}",
+                    "latitude": lat + float(rng.normal(0, 0.04)),
+                    "longitude": lon + float(rng.normal(0, 0.04)),
+                    "frp": float(rng.uniform(45.0, 160.0)),
+                    "confidence": "skenario",
+                    "acq_date": "skenario",
+                    "acq_time": "",
+                    "sensor": "skenario",
+                    "is_active": True,
+                }
+                for i in range(18)
+            ]
+            source_info = {
+                "type": "scenario",
+                "label": "Titik api hipotetis (tidak ada deteksi FIRMS 24 jam di area ini)",
+            }
         else:
             source_info = {"type": "firms_modified", "label": f"{len(hotspots)} deteksi FIRMS, dimodifikasi pengguna"}
         scale = float((ovr.get("hotspots") or {}).get("frp_scale") or 1.0)
@@ -312,7 +395,9 @@ def _resolve_fire(req: SimulationRequest, custom: bool) -> Dict[str, Any]:
         "hotspots_used": {
             "count": len(hotspots),
             "n_overpasses": overpass_count(hotspots),
-            "mean_instantaneous_frp_mw": round(sum(float(h["frp"]) for h in hotspots) * mean_instantaneous_frp_scale(hotspots), 1),
+            "mean_instantaneous_frp_mw": round(
+                sum(float(h["frp"]) for h in hotspots) * mean_instantaneous_frp_scale(hotspots), 1
+            ),
             "area_kind": area["kind"],
             "window_h": 24,
         },
@@ -322,7 +407,9 @@ def _resolve_fire(req: SimulationRequest, custom: bool) -> Dict[str, Any]:
 
 @router.post("/simulate")
 def start_simulation(req: SimulationRequest):
-    custom = not (req.source.event_id or "").strip() and req.source.latitude is not None and req.source.longitude is not None
+    custom = (
+        not (req.source.event_id or "").strip() and req.source.latitude is not None and req.source.longitude is not None
+    )
     if not custom and not (req.source.event_id or "").strip():
         raise HTTPException(422, "Pilih event (event_id) atau titik koordinat.")
 
@@ -375,6 +462,7 @@ def _run_simulation(req: SimulationRequest, custom: bool):
 
 def _remember(run_id: str, data: Dict[str, Any]) -> None:
     import gc
+
     while len(RUNS_CACHE) >= RUNS_IN_MEMORY:
         del RUNS_CACHE[next(iter(RUNS_CACHE))]
     RUNS_CACHE[run_id] = data
@@ -390,6 +478,7 @@ def _get_run_data(run_id: str) -> Dict[str, Any]:
     if not save_file.exists():
         raise HTTPException(status_code=404, detail=f"Run '{run_id}' tidak ditemukan.")
     import json
+
     try:
         data = json.loads(save_file.read_text(encoding="utf-8-sig"))
     except Exception:
@@ -399,7 +488,9 @@ def _get_run_data(run_id: str) -> Dict[str, Any]:
         try:
             z = np.load(arr_file)
             shape = tuple(int(x) for x in z["shape"])
-            data["hourly_exposure_masks"] = np.unpackbits(z["masks"], count=int(np.prod(shape))).astype(bool).reshape(shape)
+            data["hourly_exposure_masks"] = (
+                np.unpackbits(z["masks"], count=int(np.prod(shape))).astype(bool).reshape(shape)
+            )
             data["member_max_severity"] = z["severity"].astype(float)
             _remember(run_id, data)
         except Exception:
@@ -443,7 +534,9 @@ def get_run_status(run_id: str):
 
 
 @router.get("/runs/{run_id}/tiers")
-def get_run_tiers(run_id: str, t: Optional[int] = Query(None, ge=0, le=48, description="Langkah jam (kosong = seluruh jam)")):
+def get_run_tiers(
+    run_id: str, t: Optional[int] = Query(None, ge=0, le=48, description="Langkah jam (kosong = seluruh jam)")
+):
     data = _get_run_data(run_id)
     tiers = data.get("hourly_tiers", {})
     if t is None:
@@ -473,6 +566,7 @@ def get_run_impact(run_id: str):
         imp = data.get("impact") or {}
         if not (imp.get("facilities_coverage") or {}).get("complete", True):
             from app.services import osm_facilities
+
             if osm_facilities.tiles_available(tuple(t) for t in imp["facilities_coverage"]["missing_tiles"]):
                 data["impact"] = None
                 data["_facilities"] = None

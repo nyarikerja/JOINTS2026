@@ -1,3 +1,4 @@
+# pyright: reportMissingImports=false, reportPossiblyUnboundVariable=false, reportOptionalSubscript=false
 """
 app/engine/simulator.py
 

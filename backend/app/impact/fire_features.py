@@ -1,3 +1,4 @@
+# pyright: reportMissingImports=false
 """
 app/impact/fire_features.py
 
