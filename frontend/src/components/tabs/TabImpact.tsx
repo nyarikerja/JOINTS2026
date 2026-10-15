@@ -90,7 +90,7 @@ export const TabImpact: React.FC<TabImpactProps> = ({
       <div>
         <div className="flex items-start justify-between mb-1">
           <div className="flex flex-col">
-            <h3 className="font-sans text-[12px] font-bold uppercase tracking-wider text-[#2b211e] truncate max-w-[200px]" title={simulatedEventName || "METRIK POPULASI"}>
+            <h3 className="font-sans text-[12px] font-bold uppercase tracking-wider text-[#2b211e] line-clamp-2 max-w-[210px] leading-tight break-words" title={simulatedEventName || "METRIK POPULASI"}>
               {cleanEventName || "METRIK POPULASI"}
             </h3>
             {simulatedEventName && (

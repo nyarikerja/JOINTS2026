@@ -218,16 +218,16 @@ export const TabProtocolAI: React.FC<TabProtocolAIProps> = ({
     <div className="space-y-3.5 text-xs text-[#2b211e]">
       {/* 1. Header Informasi Kejadian (Nama langsung tanpa awalan "Episentrum:") */}
       <div className="bg-white border border-[#2b211e]/10 rounded-xl p-3 shadow-xs">
-        <div className="flex items-center justify-between gap-2 mb-1.5">
-          <div className="text-[#140f0e] font-bold text-xs truncate flex-1 min-w-0" title={cleanPlaceName || "Sumber Kejadian"}>
-            <span className="truncate block">{cleanPlaceName || "Sumber Kejadian"}</span>
+        <div className="flex items-start justify-between gap-2 mb-1.5">
+          <div className="text-[#140f0e] font-bold text-xs flex-1 min-w-0 line-clamp-2 leading-snug break-words" title={cleanPlaceName || "Sumber Kejadian"}>
+            {cleanPlaceName || "Sumber Kejadian"}
           </div>
 
           <button
             type="button"
             onClick={() => point && loadAdvice(point.lat, point.lon, true)}
             disabled={loading || !point}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-[#2b211e]/20 text-[#2b211e]/80 hover:bg-[#2b211e]/5 text-[10px] font-bold cursor-pointer transition shrink-0"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-[#2b211e]/20 text-[#2b211e]/80 hover:bg-[#2b211e]/5 text-[10px] font-bold cursor-pointer transition shrink-0 mt-0.5"
             title="Muat Ulang AI"
           >
             <ArrowClockwise size={12} weight="bold" className={loading ? "animate-spin text-[#EB895B]" : ""} />
