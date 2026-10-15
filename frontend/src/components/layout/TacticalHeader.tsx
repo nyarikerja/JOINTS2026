@@ -118,7 +118,13 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
     setIsSyncing(true);
     try {
       const res = await api.syncLive();
-      setSyncStatus(`Tersinkron (${res.latency_ms || 92}ms)`);
+      const latencies = Object.values(res.sources || {})
+        .map((s) => s.latency_ms)
+        .filter((l): l is number => typeof l === "number");
+      const avgLatency = latencies.length > 0
+        ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length)
+        : (res.latency_ms || 92);
+      setSyncStatus(`Tersinkron (${avgLatency}ms)`);
       await loadKpi();
     } catch {
       setSyncStatus("Gagal");
@@ -286,7 +292,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
             title="Periksa zonasi bahaya abu/karhutla di lokasi Anda saat ini (AI GPS)"
           >
             <CrosshairSimple size={15} weight="bold" className="text-emerald-700" />
-            <span>GPS</span>
+            <span>AI GPS</span>
           </button>
         )}
 

@@ -43,6 +43,26 @@ def _refine(field3: np.ndarray) -> np.ndarray:
     return _bilinear(field3, _FI, _FJ)
 
 
+
+def _downwind_shift_km(weather_data: Dict[str, Any], horizon_hours: int, max_km: float) -> tuple[float, float]:
+    """Pergeseran pusat domain (utara, timur) dalam km: setengah perpindahan angin rata-rata
+    ensemble selama horizon, dibatasi max_km. Tanpa data angin -> (0, 0)."""
+    u, v = weather_data.get("wind_u"), weather_data.get("wind_v")
+    if u is None or v is None:
+        return 0.0, 0.0
+    u_a = np.asarray(u, dtype=float)[..., :max(1, horizon_hours)]
+    v_a = np.asarray(v, dtype=float)[..., :max(1, horizon_hours)]
+    if u_a.size == 0 or v_a.size == 0:
+        return 0.0, 0.0
+    mu, mv = float(np.nanmean(u_a)), float(np.nanmean(v_a))
+    if not np.isfinite(mu) or not np.isfinite(mv):
+        return 0.0, 0.0
+    disp_km = np.hypot(mu, mv) * horizon_hours * 3.6 * 0.5
+    if disp_km < 1e-6:
+        return 0.0, 0.0
+    k = min(disp_km, max(0.0, max_km)) / np.hypot(mu, mv)
+    return mv * k, mu * k
+
 class SimulationRunner:
     def __init__(self, request: SimulationRequest):
         self.request = request
@@ -71,8 +91,13 @@ class SimulationRunner:
             coords = event_meta.get("coordinates", {"latitude": -6.102, "longitude": 105.423})
             center_lat = float(coords.get("latitude", -6.102))
             center_lon = float(coords.get("longitude", 105.423))
-            # Domain 900 km (radius 450 km) agar partikel beradveksi bebas tanpa terpotong batas grid sebelum konsentrasi meluruh
-            grid = SimulationGrid.create_for_volcano(center_lat, center_lon, domain_km=900.0, res_deg=0.03)
+            # Domain 1500 km (sel 0,05° agar jumlah sel ~ sama dengan domain lama), pusatnya digeser searah angin rata-rata ensemble (maks. 500 km, sisi hulu
+            # tetap >= 250 km dari sumber). Domain 900 km simetris sebelumnya memotong sebaran 48 jam
+            # pada angin ~8 m/s sehingga tepinya tampak lurus seperti kotak.
+            domain_km = 1500.0
+            shift_n, shift_e = _downwind_shift_km(weather_data, horizon_hours, max_km=domain_km / 2.0 - 250.0)
+            grid = SimulationGrid.create_for_volcano(center_lat, center_lon, domain_km=domain_km, res_deg=0.05,
+                                                     shift_north_km=shift_n, shift_east_km=shift_e)
         else:
             bbox = event_meta.get("bbox", [110.0, -4.0, 116.0, 1.0])
             # Untuk kebakaran hutan, pusat kejadian adalah kluster titik api aktif (atau koordinat kawasan hutan riil)

@@ -1,0 +1,24 @@
+# Render Blueprint: satu layanan web dari Dockerfile (backend FastAPI + build frontend).
+services:
+  - type: web
+    name: helaloka
+    runtime: docker
+    plan: free
+    branch: feat/tactical-national-modes
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: UDARASIAGA_OFFLINE
+        value: "0"
+      - key: WEB_CONCURRENCY
+        value: "1"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: FEATHERLESS_API_KEY
+        sync: false
+      - key: FEATHERLESS_BASE_URL
+        sync: false
+      - key: FIRMS_MAP_KEY
+        sync: false
+      - key: OPENAQ_API_KEY
+        sync: false

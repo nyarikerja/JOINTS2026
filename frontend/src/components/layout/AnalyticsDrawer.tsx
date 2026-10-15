@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, MapPin, Buildings, ShieldWarning } from "@phosphor-icons/react";
 import { TabImpact } from "../tabs/TabImpact";
 import { TabFacilities } from "../tabs/TabFacilities";
@@ -8,7 +8,8 @@ import type {
   FacilitiesImpactResponse,
   ValidationResponse,
   HazardType,
-  SchoolItem
+  SchoolItem,
+  SimulationResponse
 } from "../../types/api";
 
 interface AnalyticsDrawerProps {
@@ -16,20 +17,24 @@ interface AnalyticsDrawerProps {
   onClose: () => void;
   impact: ImpactResponse | null;
   facilities: FacilitiesImpactResponse | null;
-  validation: ValidationResponse | null;
+  validation?: ValidationResponse | null;
   advisory?: any;
   hazard: HazardType;
   currentHour?: number;
   rainMm: number;
   onOpenLegend?: () => void;
-  onFlyTo: (lat: number, lng: number) => void;
+  onFlyTo: (lat: number, lng: number, name?: string, type?: "school" | "hospital" | string) => void;
   onDrawRoute: (s: SchoolItem) => void;
   activeRouteId?: string;
   simulatedEventName?: string;
   activeRunId?: string | null;
+  selectedFacilityId?: string | null;
+  onSelectFacility?: (id: string | null) => void;
+  selectedPlumeTier?: string | null;
+  onSelectPlumeTier?: (tier: string | null) => void;
+  onHourChange?: (h: number) => void;
   eventId?: string;
-  currentCoords?: { lat: number; lng: number } | null;
-  onOpenGpsModal?: () => void;
+  runInfo?: SimulationResponse | null;
 }
 
 type TabType = "region" | "facilities" | "protocol";
@@ -49,11 +54,21 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
   activeRouteId,
   simulatedEventName,
   activeRunId,
+  selectedFacilityId,
+  onSelectFacility: _onSelectFacility,
+  selectedPlumeTier,
+  onSelectPlumeTier,
+  onHourChange,
   eventId,
-  currentCoords,
-  onOpenGpsModal: _onOpenGpsModal
+  runInfo
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>("region");
+
+  useEffect(() => {
+    if (selectedFacilityId || (selectedPlumeTier && selectedPlumeTier !== "all")) {
+      setActiveTab("facilities");
+    }
+  }, [selectedFacilityId, selectedPlumeTier]);
 
   const tabs = [
     { id: "region", label: "Wilayah", icon: MapPin },
@@ -145,6 +160,7 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
                 onOpenLegend={onOpenLegend}
                 simulatedEventName={simulatedEventName}
                 activeRunId={activeRunId}
+                onHourChange={onHourChange}
               />
             )}
             {activeTab === "facilities" && (
@@ -155,15 +171,17 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
                 onFlyTo={onFlyTo}
                 onDrawRoute={onDrawRoute}
                 activeRouteId={activeRouteId}
+                selectedPlumeTier={selectedPlumeTier}
+                onSelectPlumeTier={onSelectPlumeTier}
               />
             )}
             {activeTab === "protocol" && (
               <TabProtocolAI
                 hazard={hazard}
                 advisory={advisory}
-                placeName={simulatedEventName}
                 eventId={eventId}
-                currentCoords={currentCoords}
+                currentCoords={runInfo?.center_coords ? { lat: runInfo.center_coords.latitude, lng: runInfo.center_coords.longitude } : null}
+                placeName={runInfo?.event_name || simulatedEventName}
               />
             )}
           </>

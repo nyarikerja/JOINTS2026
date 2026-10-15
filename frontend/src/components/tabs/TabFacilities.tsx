@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { GraduationCap, FirstAid, NavigationArrow, MapPin, MagnifyingGlass } from "@phosphor-icons/react";
+import React, { useState, useEffect } from "react";
+import { GraduationCap, FirstAid, NavigationArrow, MapPin, MagnifyingGlass, Funnel } from "@phosphor-icons/react";
 import type { SchoolItem, HospitalItem } from "../../types/api";
 
 interface TabFacilitiesProps {
@@ -9,6 +9,8 @@ interface TabFacilitiesProps {
   onFlyTo: (lat: number, lng: number) => void;
   onDrawRoute: (s: SchoolItem) => void;
   activeRouteId?: string;
+  selectedPlumeTier?: string | null;
+  onSelectPlumeTier?: (tier: string | null) => void;
 }
 
 export const TabFacilities: React.FC<TabFacilitiesProps> = ({
@@ -18,9 +20,20 @@ export const TabFacilities: React.FC<TabFacilitiesProps> = ({
   onFlyTo,
   onDrawRoute,
   activeRouteId,
+  selectedPlumeTier,
+  onSelectPlumeTier,
 }) => {
   const [filterType, setFilterType] = useState<"all" | "schools" | "hospitals">("all");
+  const [tierFilter, setTierFilter] = useState<string>(selectedPlumeTier || "all");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Sinkronkan tierFilter jika selectedPlumeTier dari klik peta berubah
+  useEffect(() => {
+    if (selectedPlumeTier) {
+      const normalized = selectedPlumeTier === "max" ? "maximum" : selectedPlumeTier === "min" ? "minimum" : selectedPlumeTier;
+      setTierFilter(normalized);
+    }
+  }, [selectedPlumeTier]);
 
   // Filter dan deduplikasi fasilitas agar nama tidak terulang ganda
   const cleanRawSchools = rawSchools.filter((s) => {
@@ -41,8 +54,25 @@ export const TabFacilities: React.FC<TabFacilitiesProps> = ({
     new Map(validHospitals.map(h => [h.name.trim().toLowerCase(), h])).values()
   );
 
-  const filteredSchools = schools.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()));
-  const filteredHospitals = hospitals.filter(h => h.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const isMatchTier = (fac: any) => {
+    if (!tierFilter || tierFilter === "all") return true;
+    const prob = fac.exposure_pct ?? fac.exposure_prob_pct ?? (fac.exposure_probability ? Math.round(fac.exposure_probability * 100) : 0);
+    if (tierFilter === "minimum" || tierFilter === "min" || tierFilter === "p90") {
+      return prob >= 90;
+    } else if (tierFilter === "mid" || tierFilter === "p50") {
+      return prob >= 50 && prob < 90;
+    } else if (tierFilter === "maximum" || tierFilter === "max" || tierFilter === "p05") {
+      return prob >= 5 && prob < 50;
+    }
+    return true;
+  };
+
+  const filteredSchools = schools
+    .filter(isMatchTier)
+    .filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredHospitals = hospitals
+    .filter(isMatchTier)
+    .filter(h => h.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   const safeHospitals = hospitals.filter((h) => {
     const prob = h.exposure_pct ?? h.exposure_prob_pct ?? (h.exposure_probability ? h.exposure_probability * 100 : 0);
@@ -91,7 +121,7 @@ export const TabFacilities: React.FC<TabFacilitiesProps> = ({
             filterType === "all" ? "bg-[#EB895B] text-white font-semibold" : "text-[#2b211e]/70 hover:text-[#2b211e]"
           }`}
         >
-          Semua ({schools.length + hospitals.length})
+          Semua ({filteredSchools.length + filteredHospitals.length})
         </button>
         <button
           type="button"
@@ -100,7 +130,7 @@ export const TabFacilities: React.FC<TabFacilitiesProps> = ({
             filterType === "schools" ? "bg-[#EB895B] text-white font-semibold" : "text-[#2b211e]/70 hover:text-[#2b211e]"
           }`}
         >
-          Sekolah ({schools.length})
+          Sekolah ({filteredSchools.length})
         </button>
         <button
           type="button"
@@ -109,8 +139,88 @@ export const TabFacilities: React.FC<TabFacilitiesProps> = ({
             filterType === "hospitals" ? "bg-[#EB895B] text-white font-semibold" : "text-[#2b211e]/70 hover:text-[#2b211e]"
           }`}
         >
-          RS &amp; Faskes ({hospitals.length})
+          RS &amp; Faskes ({filteredHospitals.length})
         </button>
+      </div>
+
+      {/* Filter Zona Plume (Tingkat Bahaya Kontur) */}
+      <div className="p-2 rounded-lg bg-white/90 border border-[#2b211e]/12 space-y-1.5 shadow-2xs">
+        <div className="flex items-center justify-between text-[10px] text-[#2b211e]/80">
+          <div className="flex items-center gap-1 font-bold">
+            <Funnel size={12} weight="bold" className="text-[#EB895B]" />
+            <span className="uppercase tracking-wider text-[9px]">Filter Zona Kontur:</span>
+          </div>
+          {tierFilter !== "all" && (
+            <button
+              type="button"
+              onClick={() => {
+                setTierFilter("all");
+                onSelectPlumeTier?.("all");
+              }}
+              className="text-[#DA6556] hover:underline font-bold text-[9px] cursor-pointer"
+            >
+              Reset Semua Zona
+            </button>
+          )}
+        </div>
+        <div className="grid grid-cols-4 gap-1 text-[9px] font-semibold text-center">
+          <button
+            type="button"
+            onClick={() => {
+              setTierFilter("all");
+              onSelectPlumeTier?.("all");
+            }}
+            className={`py-1 px-0.5 rounded border transition cursor-pointer ${
+              tierFilter === "all"
+                ? "bg-[#2b211e] text-white border-[#2b211e]"
+                : "bg-[#f7f3ed] text-[#2b211e]/70 border-[#2b211e]/15 hover:bg-neutral-100"
+            }`}
+          >
+            Semua
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setTierFilter("minimum");
+              onSelectPlumeTier?.("minimum");
+            }}
+            className={`py-1 px-0.5 rounded border transition cursor-pointer ${
+              tierFilter === "minimum" || tierFilter === "p90"
+                ? "bg-red-600 text-white border-red-600 shadow-xs"
+                : "bg-red-50 text-red-800 border-red-200 hover:bg-red-100"
+            }`}
+          >
+            Inti (P90)
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setTierFilter("mid");
+              onSelectPlumeTier?.("mid");
+            }}
+            className={`py-1 px-0.5 rounded border transition cursor-pointer ${
+              tierFilter === "mid" || tierFilter === "p50"
+                ? "bg-amber-600 text-white border-amber-600 shadow-xs"
+                : "bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100"
+            }`}
+          >
+            Waspada (P50)
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setTierFilter("maximum");
+              onSelectPlumeTier?.("maximum");
+            }}
+            className={`py-1 px-0.5 rounded border transition cursor-pointer ${
+              tierFilter === "maximum" || tierFilter === "p05"
+                ? "bg-emerald-700 text-white border-emerald-700 shadow-xs"
+                : "bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100"
+            }`}
+          >
+            Siaga (P05)
+          </button>
+        </div>
       </div>
 
       {/* Search Input */}
@@ -126,7 +236,7 @@ export const TabFacilities: React.FC<TabFacilitiesProps> = ({
       </div>
 
       {/* List Fasilitas */}
-      <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
+      <div className="space-y-2 max-h-[calc(100vh-310px)] overflow-y-auto pr-1 pb-2 custom-scrollbar">
         {/* Render Sekolah */}
         {(filterType === "all" || filterType === "schools") &&
           filteredSchools.map((s) => {

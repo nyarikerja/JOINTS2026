@@ -108,13 +108,13 @@
   }
   var CARD=['Utara','Timur Laut','Timur','Tenggara','Selatan','Barat Daya','Barat','Barat Laut'];
   function readout(route){
-    var hi=0,pjj=0;schools.forEach(function(f){if(f.p>=.9)hi++;if(f.p>=.4)pjj++;});
+    var hi=0,mid=0;schools.forEach(function(f){if(f.p>=.9)hi++;else if(f.p>=.5)mid++;});
     var safe=hosp.filter(function(h){return h.p<.05;}).length;
-    el('simRead').innerHTML='<span><strong>'+pjj+' dari '+schools.length+'</strong> sekolah contoh berpeluang 40% atau lebih terkena abu; '+hi+' di antaranya berada di inti zona 90%. Kegiatan belajar di sekolah tersebut disarankan beralih ke daring.</span><span><strong>'+safe+' dari '+hosp.length+'</strong> rumah sakit contoh berada di luar zona 5%.'+(route?' Rute rujukan terdekat dari sekolah paling terpapar sepanjang <strong>'+fmt(route.km,1)+' km</strong>.':'')+'</span>';
+    el('simRead').innerHTML='<span><strong>'+hi+' dari '+schools.length+'</strong> sekolah contoh berpeluang 90% atau lebih terkena abu (pertimbangkan belajar daring), dan <strong>'+mid+'</strong> lainnya berpeluang 50–89% (batasi kegiatan luar ruang).</span><span><strong>'+safe+' dari '+hosp.length+'</strong> rumah sakit contoh berada di luar zona 5%.'+(route?' Rute rujukan terdekat dari sekolah paling terpapar sepanjang <strong>'+fmt(route.km,1)+' km</strong>.':'')+'</span>';
     var top=schools.slice().sort(function(a,b){return (b.p-a.p)||((a.tmin||99)-(b.tmin||99));}).slice(0,3);
     el('simTable').tBodies[0].innerHTML=top.map(function(f){
-      var a=f.p>=.4?['hi','Alihkan ke daring']:(f.p>=.05?['md','Siaga, siapkan N95']:['lo','Kegiatan normal']);
-      return '<tr><td><span class="sl">'+f.id+'</span>Sekolah '+f.id+'</td><td><span class="meter"><i style="width:'+Math.round(f.p*100)+'%"></i></span>'+Math.round(f.p*100)+'%</td><td>'+fmtT(f.t50)+'</td><td>'+fmtT(f.tmin)+'</td><td><span class="act '+a[0]+'">'+a[1]+'</span></td></tr>';
+      var a=f.p>=.9?['hi','Pertimbangkan daring']:(f.p>=.5?['md','Batasi luar ruang']:['lo','Pantau']);
+      return '<tr><td data-l="Sekolah"><span class="sl">'+f.id+'</span>Sekolah '+f.id+'</td><td data-l="Peluang abu"><span class="meter"><i style="width:'+Math.round(f.p*100)+'%"></i></span>'+Math.round(f.p*100)+'%</td><td data-l="Tiba (median)">'+fmtT(f.t50)+'</td><td data-l="Tercepat">'+fmtT(f.tmin)+'</td><td data-l="Tindakan"><span class="act '+a[0]+'">'+a[1]+'</span></td></tr>';
     }).join('');
   }
   /* jam desimal menjadi teks: "45 menit", "2 jam 15 menit" */

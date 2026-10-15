@@ -2231,7 +2231,7 @@ input[type=range]::-moz-range-thumb {
   box-shadow: 0 12px 30px -20px rgba(22, 48, 42, .22);
   min-width: 0;
   transition: transform .25s var(--ease), border-color .25s, box-shadow .25s;
-  overflow: hidden
+  overflow: visible
 }
 
 .src li:hover {
@@ -3080,8 +3080,22 @@ footer {
 }
 
 .wclock *,
-.vframe * {
-  transition: fill 1.1s, opacity 1.1s, stroke 1.1s, filter 1.1s
+.nav-in .vframe * {
+  transition: fill 1.1s, opacity 1.1s, stroke 1.1s, filter 1.1s;
+}
+
+/* kartu ikut musim aktif; warnanya berganti sekaligus tanpa transisi per elemen agar gulir tetap ringan */
+.vframe.vcard * {
+  transition: none !important;
+}
+
+.vframe .wc-stem.tip {
+  stroke-width: 1.2;
+}
+
+.wc-berry {
+  fill: var(--berry, #B5532B);
+  opacity: var(--berryA, 0);
 }
 
 .wc-face {
@@ -3184,15 +3198,41 @@ footer {
   height: calc(100% + 24px);
   overflow: visible;
   pointer-events: none;
-  z-index: 2
+  z-index: 2;
 }
 
 .vframe .wc-stem {
-  stroke-width: 2.2
+  stroke-width: 2.2;
 }
 
 .vframe .wc-leaf {
-  stroke-width: .4
+  stroke-width: .4;
+}
+
+/* Matikan animasi kontinu daun pada kartu agar landing page ringan saat digulir */
+.vframe.vcard .wc-leaf {
+  animation: none !important;
+}
+
+/* Daun pada kartu bergoyang lembut saat kursor diarahkan ke kartu (hover, hanya perangkat dengan kursor) */
+@media (hover: hover) {
+  :is(.panel, .side, .decide, .facts li, .ask li, .res > div, .vine li, .aud li, .src li):hover .vframe.vcard .wc-leaf {
+    animation: wcSway 3.6s ease-in-out infinite alternate !important;
+  }
+}
+
+/* Pastikan seluruh kartu pada landing page dapat memuat sulur merambat tanpa terpotong */
+.panel,
+.side,
+.decide,
+.facts li,
+.ask li,
+.res > div,
+.vine li,
+.aud li,
+.src li {
+  position: relative;
+  overflow: visible !important;
 }
 
 @keyframes wcSway {
@@ -3205,78 +3245,143 @@ footer {
   }
 }
 
+/* Tema warna musim:
+   1. Berlaku dinamis pada navbar (.nav-in) dan jam (.wclock) via :root[data-s=...]
+   2. Kartu (.vframe.vcard) mewarisi variabel yang sama, jadi sulur kartu ikut berganti saat musim adegan berubah */
+
+:root[data-s=sunrise] {
+  --leaf: #5E9C40;
+  --leaf2: #2F6B2E;
+  --vein: rgba(236, 255, 220, .45);
+  --stem: #4B3A22;
+  --bloom: #FFF7DE;
+  --bloomA: .95;
+  --ctr: #F2C14E;
+  --mk: #E9A3B4;
+  --snowA: 0;
+  --dropA: 0;
+  --face: 1;
+}
+
 :root[data-s=noon] {
   --leaf: #64A83F;
-  --bloom: #FFFFFF
+  --leaf2: #2F6B2E;
+  --vein: rgba(236, 255, 220, .45);
+  --stem: #4B3A22;
+  --bloom: #FFFFFF;
+  --bloomA: .95;
+  --ctr: #F2C14E;
+  --mk: #E9A3B4;
+  --snowA: 0;
+  --dropA: 0;
+  --face: 1;
 }
 
 :root[data-s=autumn] {
+  --berry: #B5332B;
+  --berryA: 1;
   --leaf: #E08A2E;
   --leaf2: #A8412A;
   --vein: rgba(255, 230, 180, .5);
   --stem: #5A3A20;
+  --bloom: #FFF7DE;
   --bloomA: 0;
   --mk: #E08A2E;
-  --ctr: #B5532B
+  --ctr: #B5532B;
+  --snowA: 0;
+  --dropA: 0;
+  --face: 1;
 }
 
 :root[data-s=sunset] {
   --leaf: #7A8F3A;
   --leaf2: #4A5A2A;
+  --vein: rgba(236, 255, 220, .45);
+  --stem: #4B3A22;
   --bloom: #FFD3A1;
   --bloomA: .85;
-  --face: .95
+  --ctr: #F2C14E;
+  --mk: #E9A3B4;
+  --snowA: 0;
+  --dropA: 0;
+  --face: .95;
 }
 
 :root[data-s=night] {
   --leaf: #2F5E44;
   --leaf2: #1D3B2D;
   --vein: rgba(200, 240, 230, .25);
+  --stem: #3A2E20;
   --bloom: #DDE8FF;
   --bloomA: .55;
   --ctr: #BFD3E6;
   --mk: #9DB4D0;
-  --face: .8
+  --snowA: 0;
+  --dropA: 0;
+  --face: .8;
 }
 
 :root[data-s=rain] {
   --leaf: #3F8048;
   --leaf2: #255A33;
+  --vein: rgba(236, 255, 220, .45);
+  --stem: #4B3A22;
+  --bloom: #FFF7DE;
   --bloomA: 0;
+  --ctr: #F2C14E;
+  --mk: #E9A3B4;
   --dropA: 1;
-  --face: .92
+  --snowA: 0;
+  --face: .92;
 }
 
 :root[data-s=storm] {
   --leaf: #355E3B;
   --leaf2: #1E3F28;
+  --vein: rgba(236, 255, 220, .45);
+  --stem: #4B3A22;
+  --bloom: #FFF7DE;
   --bloomA: 0;
+  --ctr: #F2C14E;
+  --mk: #E9A3B4;
   --dropA: 1;
-  --face: .82
+  --snowA: 0;
+  --face: .82;
 }
 
-:root[data-s=storm] .wc-leaf {
-  animation-duration: 1.3s
+:root[data-s=storm] .nav-in .wc-leaf,
+:root[data-s=storm] .wclock .wc-leaf {
+  animation-duration: 1.3s;
 }
 
 :root[data-s=snow] {
+  --berry: #C8343C;
+  --berryA: .9;
   --leaf: #9DB4AC;
   --leaf2: #6F8A82;
   --vein: rgba(255, 255, 255, .7);
   --stem: #5E5348;
+  --bloom: #FFF7DE;
   --bloomA: 0;
   --snowA: 1;
+  --dropA: 0;
   --mk: #C8D8E6;
-  --ctr: #E6EEF5
+  --ctr: #E6EEF5;
+  --face: 1;
 }
 
 :root[data-s=sakura] {
   --leaf: #86BE5E;
   --leaf2: #4E8A3A;
+  --vein: rgba(236, 255, 220, .45);
+  --stem: #4B3A22;
   --bloom: #F7B6C8;
   --bloomA: 1;
   --ctr: #E06B8E;
-  --mk: #F7B6C8
+  --mk: #F7B6C8;
+  --snowA: 0;
+  --dropA: 0;
+  --face: 1;
 }
 
 @media (max-width:700px) {
@@ -3904,5 +4009,94 @@ html.portaling .nav {
 @media (prefers-reduced-motion:reduce) {
   .scrap {
     transition: none
+  }
+}
+
+/* ---------- performa: kartu besar tidak memakai backdrop-filter ----------
+   Kartu sudah hampir buram (alfa .86-.94); blur di belakangnya nyaris tak terlihat tetapi memaksa GPU
+   mengaburkan ulang kanvas 3D yang bergerak di setiap frame. Chip kecil (navigasi, rail, tombol) tetap memakai blur. */
+.paper,
+.dark,
+.facts li,
+.ask li,
+.flow li:not(.arr),
+.flow li.arr,
+.vcap,
+.duo .side,
+.vine li,
+.modes li,
+.rainnote,
+.finale .panel,
+.foot {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.paper {
+  background: rgba(246, 240, 226, .95);
+}
+
+.dark {
+  background: rgba(26, 22, 20, .92);
+}
+
+.facts li {
+  background: rgba(246, 240, 226, .86);
+}
+
+/* HP, layar sentuh, atau mode Hemat/Statis: tanpa blur sama sekali */
+@media (max-width: 900px), (pointer: coarse) {
+  * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+:root[data-q=lite] *,
+:root[data-q=static] * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* tabel prioritas sekolah di HP: setiap baris menjadi kartu kecil, tanpa geser horizontal */
+@media (max-width: 600px) {
+  .dtab {
+    min-width: 0
+  }
+
+  .dtab thead {
+    display: none
+  }
+
+  .dtab tr {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(251, 244, 228, .14)
+  }
+
+  .dtab tr:last-child {
+    border-bottom: 0
+  }
+
+  .dtab td {
+    padding: 0;
+    border: 0;
+    white-space: normal
+  }
+
+  .dtab td:first-child,
+  .dtab td:last-child {
+    grid-column: 1 / -1
+  }
+
+  .dtab td[data-l]:not(:first-child):not(:last-child)::before {
+    content: attr(data-l);
+    display: block;
+    font: 700 10px var(--sans);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    opacity: .6
   }
 }

@@ -35,6 +35,7 @@ venv/
 # Large Simulation Outputs & Temporary Caches
 data/runs/*.json
 **/data/runs/*.json
+**/data/runs/*.npz
 data/raw/
 **/data/raw/
 **/data/events/custom_*/
@@ -78,3 +79,19 @@ backend/data/layers/firms_history/
 reference_repos/
 **/_backup_*
 frontend/public/loading/
+frontend-original/
+
+
+
+# Cache data langsung (diunduh ulang otomatis oleh backend)
+backend/data/layers/osm_facilities/
+backend/data/layers/firms_live_snapshot.npz
+backend/data/layers/wind_grid_snapshot.json
+backend/data/layers/worldpop/
+backend/data/events/*/weather_live.json
+backend/data/layers/gvp_eruptions.json
+backend/data/layers/firms_history/
+
+demo-video/
+*.bak
+*.backup_*

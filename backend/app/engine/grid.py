@@ -45,8 +45,12 @@ class SimulationGrid:
         return float(self.lats[row]), float(self.lons[col])
 
     @classmethod
-    def create_for_volcano(cls, center_lat: float, center_lon: float, domain_km: float = 300.0, res_deg: float = 0.02):
-        # 1 derajat latitude ≈ 111 km
+    def create_for_volcano(cls, center_lat: float, center_lon: float, domain_km: float = 300.0, res_deg: float = 0.02,
+                           shift_north_km: float = 0.0, shift_east_km: float = 0.0):
+        # 1 derajat latitude ≈ 111 km. Pusat domain boleh digeser (km) searah angin rata-rata
+        # supaya sisi hilir punya ruang lebih; sumber tetap di dalam domain.
+        center_lat = center_lat + shift_north_km / 111.0
+        center_lon = center_lon + shift_east_km / (111.0 * np.cos(np.radians(center_lat)))
         half_deg_lat = (domain_km / 2.0) / 111.0
         half_deg_lon = (domain_km / 2.0) / (111.0 * np.cos(np.radians(center_lat)))
         return cls(

@@ -45,7 +45,7 @@
   <div class="co" data-a="lava"><i></i><span><b>Guguran lava pijar</b><em>mengikuti alur lembah di lereng</em></span></div>
   <div class="co" data-a="mud"><i></i><span><b>Lahar hujan</b><em>endapan abu terbawa aliran air</em></span></div>
   <div class="co" data-a="lake"><i></i><span><b>Sumber air warga</b><em>rentan tercemar endapan abu</em></span></div>
-  <div class="co" data-a="fire"><i></i><span><b>Titik panas</b><em>terdeteksi satelit VIIRS</em></span></div>
+  <div class="co" data-a="fire"><i></i><span><b>Titik panas</b><em>terdeteksi satelit VIIRS &amp; MODIS</em></span></div>
 </div>
 
 <header class="nav" id="nav">
@@ -89,9 +89,9 @@
         </div>
       </div>
       <ul class="facts" data-speed=".05">
-        <li class="leaf sm rv"><b data-count="70">70</b><span>gunung api Tipe A dalam katalog PVMBG</span></li>
+        <li class="leaf sm rv"><b data-count="70">70</b><span>gunung api dengan status MAGMA PVMBG terkini</span></li>
         <li class="leaf sm r rv"><b data-count="36">36</b><span>kawasan hutan dan gambut rawan terbakar</span></li>
-        <li class="leaf sm r rv"><b data-count="100" data-suffix=" m">100 m</b><span>resolusi grid kependudukan untuk menghitung paparan</span></li>
+        <li class="leaf sm r rv"><b data-count="1" data-suffix=" km">1 km</b><span>resolusi grid penduduk WorldPop untuk menghitung paparan</span></li>
         <li class="leaf sm rv"><b>P5–P95</b><span>rentang ketidakpastian pada setiap estimasi dampak</span></li>
       </ul>
     </div>
@@ -140,7 +140,7 @@
   </section>
 
   <div class="vista" aria-hidden="true" data-scene="noon" data-ash="1" data-smoke="0" data-fire="0" data-lava="1" data-ext="1" data-mud="0" data-sl="Siang">
-    <div class="band"><div class="band-in" data-band>PVMBG <b>·</b> VONA <b>·</b> NASA FIRMS <b>·</b> VIIRS <b>·</b> Open-Meteo <b>·</b> WorldPop <b>·</b> OpenStreetMap <b>·</b> Mastin 2009 <b>·</b> Wooster 2005 <b>·</b></div></div>
+    <div class="band"><div class="band-in" data-band>PVMBG <b>·</b> VONA <b>·</b> NASA FIRMS <b>·</b> VIIRS <b>·</b> MODIS <b>·</b> Open-Meteo <b>·</b> ECMWF <b>·</b> WorldPop <b>·</b> OpenStreetMap <b>·</b> Mastin 2009 <b>·</b> Wooster 2005 <b>·</b></div></div>
     <p class="vcap"><time>12.00</time><span>Siang</span><em>Kolom abu naik dari kawah</em></p>
   </div>
 
@@ -151,7 +151,7 @@
       <article class="panel stone dark rv">
         <p class="eyebrow">Abu vulkanik</p>
         <h2 class="split">Dari tinggi kolom abu ke <em>laju erupsi massa</em></h2>
-        <p>Tinggi kolom pada buletin VONA dikonversi menjadi laju erupsi massa dengan relasi empiris Mastin dkk. (2009). Massa tersebut kemudian dibagi ke ribuan paket partikel yang diadveksi oleh medan angin.</p>
+        <p>Tinggi puncak abu pada buletin VONA MAGMA terbaru (24 jam terakhir) dikonversi menjadi laju erupsi massa dengan relasi empiris Mastin dkk. (2009). Massa tersebut dibagi ke ribuan paket partikel yang diadveksi oleh prakiraan angin ensemble.</p>
         <div class="ctl">
           <label for="km">Tinggi kolom di atas kawah <output id="kmOut" for="km">5,0 km</output></label>
           <input id="km" type="range" min="1" max="15" step="0.5" value="5">
@@ -174,7 +174,7 @@
         <article class="panel ember dark rv">
           <p class="eyebrow">Asap kebakaran lahan</p>
           <h2 class="split">Emisi PM2.5 diestimasi dari <em>daya radiasi api</em></h2>
-          <p>Setiap titik panas VIIRS dari NASA FIRMS membawa nilai Fire Radiative Power (FRP). Nilai itu dikonversi menjadi biomassa terbakar dengan koefisien Wooster dkk. (2005), lalu dikalikan faktor 2,34 untuk lahan gambut tropis sebelum asapnya dilepas ke model angin.</p>
+          <p>Setiap deteksi VIIRS dan MODIS dari NASA FIRMS dalam 24 jam terakhir membawa nilai Fire Radiative Power (FRP). FRP dirata-ratakan per lintasan satelit, dikonversi menjadi biomassa terbakar dengan koefisien Wooster dkk. (2005), lalu asapnya dilepas ke model angin.</p>
           <p class="note">Contoh ilustratif untuk lanskap gambut Riau, Sumatera Selatan, Kalimantan, dan Papua.</p>
         </article>
         <aside class="side leaf r rv" data-speed=".08">
@@ -249,15 +249,15 @@
       <div class="vine-wrap">
       <svg class="stalk" viewBox="0 0 1000 180" preserveAspectRatio="none" aria-hidden="true"><path d="M0 120 C120 40 220 40 300 95 S470 170 560 100 S760 20 850 80 S960 140 1000 90"/></svg>
       <ol class="vine">
-        <li class="leaf rv" data-speed=".04"><span class="k" aria-hidden="true"></span><h3>Akuisisi data</h3><p>Data PVMBG, NASA FIRMS, Open-Meteo, WorldPop, dan OpenStreetMap diperbarui otomatis tanpa input manual.</p></li>
-        <li class="leaf r rv" data-speed=".1"><span class="k" aria-hidden="true"></span><h3>Simulasi ensemble</h3><p>Aplikasi menjalankan 15 hingga 51 anggota integrasi Lagrangian RK2 dengan perturbasi angin. Demo di halaman ini memakai 24 anggota.</p></li>
-        <li class="leaf rv" data-speed=".06"><span class="k" aria-hidden="true"></span><h3>Analisis paparan</h3><p>Zona 90%, 50%, dan 5% ditumpangkan pada grid penduduk 100 m serta lokasi sekolah dan fasilitas kesehatan.</p></li>
+        <li class="leaf rv" data-speed=".04"><span class="k" aria-hidden="true"></span><h3>Akuisisi data</h3><p>Status gunung api dan VONA dari MAGMA (PVMBG), titik api NASA FIRMS tiap 15 menit, prakiraan angin Open-Meteo, penduduk WorldPop, serta sekolah dan faskes OpenStreetMap, tanpa input manual.</p></li>
+        <li class="leaf r rv" data-speed=".1"><span class="k" aria-hidden="true"></span><h3>Simulasi ensemble</h3><p>Aplikasi memakai anggota ensemble ECMWF (51 anggota) dari Open-Meteo; tiap anggota menggerakkan partikel dengan integrasi Lagrangian RK2. Demo di halaman ini memakai 24 anggota sintetis.</p></li>
+        <li class="leaf rv" data-speed=".06"><span class="k" aria-hidden="true"></span><h3>Analisis paparan</h3><p>Zona 90%, 50%, dan 5% ditumpangkan pada grid penduduk WorldPop 1 km serta lokasi sekolah dan fasilitas kesehatan OpenStreetMap.</p></li>
         <li class="leaf r rv" data-speed=".12"><span class="k" aria-hidden="true"></span><h3>Rekomendasi tindakan</h3><p>Triase sekolah, rute ke rumah sakit di luar sebaran abu, anjuran respirator N95/KN95, dan prioritas pemadaman klaster titik api.</p></li>
       </ol>
       </div>
-      <p class="rainnote rv">Hujan lebat mempercepat pencucian abu dari atmosfer, tetapi endapan di lereng dapat memicu lahar hujan. Untuk kondisi ini sistem menerbitkan peringatan sekunder.</p>
+      <p class="rainnote rv">Hujan lebat mempercepat pencucian abu dari atmosfer, tetapi endapan di lereng dapat memicu lahar hujan. Aplikasi menampilkan potensi lahar dari prakiraan hujan ensemble di puncak gunung.</p>
       <ul class="modes">
-        <li class="rv"><b>Otomatis</b><span>Sumber dan parameter diambil dari data resmi terbaru.</span></li>
+        <li class="rv"><b>Kondisi nyata</b><span>Memakai erupsi dan titik api yang sedang teramati; bila tidak ada, erupsi atau kebakaran terakhir yang tercatat, dengan label data historis.</span></li>
         <li class="rv"><b>Skenario</b><span>Ubah tinggi kolom, arah angin, atau curah hujan. Keluaran diberi label hipotetis.</span></li>
         <li class="rv"><b>Titik bebas</b><span>Jalankan simulasi dari koordinat mana pun di wilayah Indonesia.</span></li>
       </ul>
@@ -280,7 +280,7 @@
             <h3>Erupsi · kolom abu 5.000 m</h3>
             <dl>
               <dt>Penduduk terpapar</dt><dd>18.500–49.000 <small>jiwa</small></dd>
-              <dt>Sekolah di zona tinggi (≥40%)</dt><dd>6 <small>sekolah · abu tiba paling cepat 3,5 jam</small></dd>
+              <dt>Sekolah berpeluang ≥90%</dt><dd>6 <small>sekolah · abu tiba paling cepat 3,5 jam</small></dd>
               <dt>Rumah sakit di luar sebaran</dt><dd>2 <small>rute rujukan terdekat 11,4 km</small></dd>
             </dl>
           </div>
@@ -288,7 +288,7 @@
             <h3>Karhutla gambut · 42 titik api</h3>
             <dl>
               <dt>Total FRP</dt><dd>1.340 <small>MW</small></dd>
-              <dt>PM2.5 terlepas</dt><dd>480 <small>ton per hari</small></dd>
+              <dt>Emisi CO₂e</dt><dd>3.100–4.900 <small>ton per hari</small></dd>
               <dt>Penduduk terpapar</dt><dd>14.000–36.500 <small>jiwa · 11 sekolah</small></dd>
             </dl>
           </div>
@@ -325,7 +325,7 @@
                   <span class="src-icon" aria-hidden="true">&#x2197;</span>
                 </div>
                 <b>PVMBG, Badan Geologi</b>
-                <span class="d">Katalog gunung api Tipe A dan buletin VONA</span>
+                <span class="d">Tingkat aktivitas gunung api dan buletin VONA (MAGMA Indonesia)</span>
               </div>
             </a>
           </li>
@@ -340,7 +340,7 @@
                   <span class="src-icon" aria-hidden="true">&#x2197;</span>
                 </div>
                 <b>NASA FIRMS</b>
-                <span class="d">Titik panas VIIRS dari Suomi-NPP dan NOAA-20</span>
+                <span class="d">Titik panas VIIRS (S-NPP, NOAA-20, NOAA-21) dan MODIS, 24 jam terakhir</span>
               </div>
             </a>
           </li>
@@ -355,7 +355,7 @@
                   <span class="src-icon" aria-hidden="true">&#x2197;</span>
                 </div>
                 <b>Open-Meteo</b>
-                <span class="d">Vektor angin dan curah hujan</span>
+                <span class="d">Prakiraan ensemble ECMWF 51 anggota: angin dan curah hujan</span>
               </div>
             </a>
           </li>
@@ -375,7 +375,7 @@
                   <span class="src-icon" aria-hidden="true">&#x2197;</span>
                 </div>
                 <b>WorldPop dan OpenStreetMap</b>
-                <span class="d">Grid penduduk 100 m, sekolah, dan fasilitas kesehatan</span>
+                <span class="d">Grid penduduk 1 km (2020), sekolah, dan fasilitas kesehatan</span>
               </div>
             </div>
           </li>

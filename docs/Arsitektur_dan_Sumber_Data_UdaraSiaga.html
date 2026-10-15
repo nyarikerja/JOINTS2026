@@ -120,7 +120,7 @@ td .v{margin:0 4px 4px 0}
 
 <div class="ex g">
 <b>Contoh Hasil Simulasi Nyata: Erupsi Gunung Api (Gunung Merapi / Lewotobi / Krakatau / Sinabung / Slamet)</b>
-Erupsi kolom abu setinggi 5.000 meter di atas kawah. Berdasarkan formula empiris Mastin et al. (2009), laju erupsi massa abu (Mass Eruption Rate) mencapai 2.450 ton material per detik. Dispersi partikel silika diperkirakan melanda zona inti hampir pasti (P90) seluas 4 kecamatan dan zona maksimum (P05) hingga 12 kecamatan. Rentang populasi terpapar berada di angka 18.500 s.d. 49.000 jiwa (termasuk 3.800 anak-anak dan 1.950 lansia menurut grid WorldPop 100m). Sebanyak 6 sekolah berada pada zona bahaya tinggi (&ge;40%) dan otomatis diterbitkan rekomendasi triase PJJ Daring dengan waktu tiba abu tercepat 3,5 jam. Sistem secara otomatis menetapkan 2 Rumah Sakit Aman Bebas Abu di luar jejak kontur beserta garis rute evakuasi darurat (11,4 km). Diberikan instruksi medis tegas: wajib respirator N95/KN95 dan dilarang keras mengenakan lensa kontak (softlens) guna mencegah abrasi kornea permanen. Jika hujan lebat turun, abu tercuci lebih cepat namun sistem mengaktifkan peringatan sekunder bahaya lahar hujan di lereng.
+Erupsi kolom abu setinggi 5.000 meter di atas kawah. Berdasarkan formula empiris Mastin et al. (2009), laju erupsi massa abu (Mass Eruption Rate) mencapai 2.450 ton material per detik. Dispersi partikel silika diperkirakan melanda zona inti hampir pasti (P90) seluas 4 kecamatan dan zona maksimum (P05) hingga 12 kecamatan. Rentang populasi terpapar berada di angka 18.500 s.d. 49.000 jiwa (termasuk 3.800 anak-anak dan 1.950 lansia menurut grid WorldPop 1 km). Sebanyak 6 sekolah berpeluang terpapar &ge;90% sehingga disarankan mempertimbangkan PJJ daring dengan waktu tiba abu tercepat 3,5 jam. Sistem secara otomatis menetapkan 2 Rumah Sakit Aman Bebas Abu di luar jejak kontur beserta garis rute evakuasi darurat (11,4 km). Diberikan instruksi medis tegas: wajib respirator N95/KN95 dan dilarang keras mengenakan lensa kontak (softlens) guna mencegah abrasi kornea permanen. Jika hujan lebat turun, abu tercuci lebih cepat namun aplikasi menampilkan potensi lahar hujan dari prakiraan hujan ensemble.
 </div>
 
 <div class="ex h">
@@ -230,7 +230,7 @@ Terdeteksi 42 titik api satelit NASA FIRMS dengan total Fire Radiative Power (FR
 <p class="vn">Digunakan untuk menghitung pencucian partikel (wet scavenging) serta memicu peringatan sekunder bahaya lahar dingin.</p>
 </div>
 <div class="n b">
-<b>Demografi Kependudukan (WorldPop 100m)</b>
+<b>Demografi Kependudukan (WorldPop 1 km)</b>
 <p>Distribusi penduduk per grid resolusi tinggi, mencakup agregat total jiwa, anak-anak (&lt;15 tahun), dan kelompok lansia (&ge;65 tahun).</p>
 <div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m a">Otomatis</span><span class="v bgd">Background</span><span class="v fg">Terlihat pengguna</span></div>
 <p class="vn">Dipadukan dengan poligon bahaya untuk menghitung rentang populasi terdampak P5&ndash;P50&ndash;P95.</p>
@@ -399,7 +399,7 @@ Terdeteksi 42 titik api satelit NASA FIRMS dengan total Fire Radiative Power (FR
 <p class="sub">Pusat komando komunikasi publik dan protokol mitigasi medis resmi di Laci Kanan (<b>Tab 2: Protokol &amp; Edukasi AI</b>) berbasis standar Kemenkes, WHO, IVHHN, dan PERDAMI.</p>
 <div class="grid">
 <div class="n b safe">
-<b>AI Emergency Briefing (Google Gemini &amp; Pusdalops BNPB)</b>
+<b>Ringkasan AI untuk Warga (LLM Featherless Qwen3.6)</b>
 <p>Otomatisasi perumusan materi komunikasi tanggap darurat resmi dengan fallback engine deterministik lokal jika offline: <b>Draf Siaran Pers Resmi BPBD</b> siap rilis media massa dan <b>Draf Pesan Siaran WhatsApp Warga</b> berpoin ringkas dengan tombol 1-klik salin teks untuk satgas/relawan.</p>
 <div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m a">Otomatis</span><span class="v fg">Terlihat pengguna</span></div>
 </div>
@@ -478,7 +478,7 @@ Terdeteksi 42 titik api satelit NASA FIRMS dengan total Fire Radiative Power (FR
 <div class="grid">
 <div class="n b alert"><b>Model 2-Tab Emas &amp; Hierarki Kecamatan</b><p>Kecamatan sebagai wadah spasial induk (*spatial container*) yang menaungi sekolah PJJ, faskes lokal, dan estimasi warga rentan secara terpadu tanpa fragmentasi.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div></div>
 <div class="n b safe"><b>Rute Jalan Raya Riil OSRM &amp; Triase RS</b><p>Identifikasi RS rujukan zona aman dan perutean jalan raya riil berbelok (OSRM OpenStreetMap) dengan kilometer nyata dan estimasi durasi ambulans gawat darurat.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div></div>
-<div class="n b safe"><b>AI Emergency Briefing (Gemini &amp; BNPB)</b><p>Perumusan draf Siaran Pers resmi BPBD dan draf pesan broadcast WhatsApp warga (tombol 1-klik salin teks) didukung Google Gemini AI dengan fallback engine BNPB.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m a">Otomatis</span><span class="v fg">Terlihat pengguna</span></div></div>
+<div class="n b safe"><b>Ringkasan AI untuk Warga</b><p>LLM Featherless (Qwen3.6) merangkum fakta FIRMS, MAGMA, dan lintasan angin menjadi langkah keluarga (tombol 1-klik salin teks); template sebagai cadangan. Bukan peringatan resmi.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m a">Otomatis</span><span class="v fg">Terlihat pengguna</span></div></div>
 <div class="n b alert"><b>Edukasi APD: Wajib N95 &amp; Larang Softlens</b><p>Standar APD medis wajib N95/KN95 dan larangan keras pemakaian lensa kontak akibat abrasi kornea silika tajam serta protokol pengamanan tandon air minum.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div></div>
 <div class="n h c"><b>Intervensi Pemadaman Titik Api Terukur</b><p>Simulasi pemadaman klaster api teratas dengan kalkulasi instan delta warga terlindungi dan emisi karbon dicegah.</p><div class="badge-group"><span class="t h">Kebakaran hutan</span><span class="m c">Coba-coba</span><span class="v fg">Terlihat pengguna</span></div></div>
 <div class="n b"><b>Rentang Dampak Multi-Sektor (P5&ndash;P50&ndash;P95)</b><p>Kuantifikasi jujur dampak kependudukan (anak &amp; lansia), kerusakan pertanian (hektare), dan sumber air bersih.</p><div class="badge-group"><span class="t b">Kedua bahaya</span><span class="m k">Semua mode</span><span class="v fg">Terlihat pengguna</span></div></div>

@@ -184,43 +184,6 @@ def facilities_in_bbox(
     return out, missing
 
 
-_cached_all: Dict[str, List[Dict[str, Any]]] = {}
-
-
-def all_cached(facility_type: Optional[str] = None) -> List[Dict[str, Any]]:
-    """Mengembalikan seluruh fasilitas yang tersimpan di tile cache lokal OSM."""
-    global _cached_all
-    cache_key = facility_type or "all"
-    if cache_key in _cached_all:
-        return _cached_all[cache_key]
-
-    out: List[Dict[str, Any]] = []
-    if facility_type in (None, "airport"):
-        out.extend(airports())
-
-    target_types = set()
-    if facility_type is None:
-        target_types = {"school", "healthcare", "hospital"}
-    elif facility_type == "school":
-        target_types = {"school"}
-    elif facility_type in ("healthcare", "hospital"):
-        target_types = {"healthcare", "hospital"}
-
-    if target_types and TILE_DIR.exists():
-        for p in sorted(TILE_DIR.glob("tile_*.json")):
-            try:
-                data = json.loads(p.read_text(encoding="utf-8"))
-                for f in data.get("facilities", []):
-                    ft = f.get("facility_type")
-                    if ft in target_types:
-                        out.append(f)
-            except Exception:
-                pass
-
-    _cached_all[cache_key] = out
-    return out
-
-
 _airports_cache: Optional[List[Dict[str, Any]]] = None
 
 
