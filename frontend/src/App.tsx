@@ -34,6 +34,7 @@ export const App: React.FC = () => {
   });
 
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const [runInfo, setRunInfo] = useState<any>(null);
   const [currentHour, setCurrentHour] = useState<number>(0);
   const [hourlyTiersCache, setHourlyTiersCache] = useState<Record<string | number, any> | null>(null);
 
@@ -75,6 +76,9 @@ export const App: React.FC = () => {
   const [selectedEventName, setSelectedEventName] = useState<string>("G. Anak Krakatau");
   const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
   const [eventFocusTrigger, setEventFocusTrigger] = useState<number>(0);
+  const [showSchools, setShowSchools] = useState<boolean>(false);
+  const [showHospitals, setShowHospitals] = useState<boolean>(false);
+  const [showAirports, setShowAirports] = useState<boolean>(false);
 
   useEffect(() => {
     // Buka panduan simulasi secara otomatis saat user pertama kali membuka web
@@ -84,7 +88,7 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  // Pulihkan sesi simulasi terakhir dari localStorage saat pertama kali dimuat
+  // Pulihkan sesi simulasi terakhir dari backend / localStorage saat pertama kali dimuat
   React.useEffect(() => {
     const restoreLastSession = async () => {
       const savedRunId = localStorage.getItem("lastRunId");
@@ -92,27 +96,42 @@ export const App: React.FC = () => {
       const savedEventName = localStorage.getItem("lastEventName");
       const savedHazard = localStorage.getItem("lastHazard") as HazardType;
       
-      if (savedRunId && savedEventId) {
-        setEventId(savedEventId);
-        if (savedHazard) setHazard(savedHazard);
-        if (savedEventName) setSelectedEventName(savedEventName);
-        
-        setActiveRunId(savedRunId);
-        setSimulatedEventName(savedEventName || savedEventId);
-        setCurrentHour(48);
-        
+      if (savedRunId) {
         try {
+          // Ambil metadata run langsung dari backend untuk menjamin akurasi nama kejadian, hazard, koordinat (bukan hardcode)
+          const runStatus = await api.getRunStatus(savedRunId).catch(() => null);
+          const effectiveHazard = runStatus?.hazard || savedHazard || "volcano";
+          const effectiveEventId = runStatus?.event_id || savedEventId || "";
+          const effectiveEventName = runStatus?.event_name || savedEventName || effectiveEventId;
+
+          if (runStatus) setRunInfo(runStatus);
+          setHazard(effectiveHazard);
+          if (effectiveEventId) setEventId(effectiveEventId);
+          setSelectedEventName(effectiveEventName);
+          setActiveRunId(savedRunId);
+          setSimulatedEventName(effectiveEventName);
+          setCurrentHour(48);
+
+          // Perbarui localStorage dengan data valid yang terkonfirmasi dari backend
+          localStorage.setItem("lastRunId", savedRunId);
+          if (effectiveEventId) localStorage.setItem("lastEventId", effectiveEventId);
+          localStorage.setItem("lastEventName", effectiveEventName);
+          localStorage.setItem("lastHazard", effectiveHazard);
+
           const [impact, facilities, validation, advisory, tier48] = await Promise.all([
             api.getImpact(savedRunId).catch(() => null),
             api.getFacilitiesImpacted(savedRunId).catch(() => null),
-            api.getValidation(savedEventId).catch(() => null),
+            effectiveEventId ? api.getValidation(effectiveEventId).catch(() => null) : null,
             api.getEmergencyAdvisory(savedRunId).catch(() => null),
             api.getTiersAtHour(savedRunId, 48).catch(() => null)
           ]);
           
           if (tier48) setHourlyTiersCache({ 48: tier48 });
           if (impact) setImpactData(impact);
-          if (facilities) setFacilitiesData(facilities);
+          if (facilities) {
+            setFacilitiesData(facilities);
+            setShowSchools(true);
+          }
           if (validation) setValidationData(validation);
           if (advisory) setAdvisoryData(advisory);
         } catch (e) {
@@ -221,7 +240,10 @@ export const App: React.FC = () => {
     const payload: SimulationPayload = {
       hazard: activeHazard,
       mode,
-      source: { event_id: activeEventId },
+      source: { 
+        event_id: activeEventId,
+        name: selectedEventName
+      },
       horizon_hours: 48,
       n_members: 15,
       seed: 42,
@@ -234,6 +256,21 @@ export const App: React.FC = () => {
       const simRes = await api.runSimulation(payload);
       const runId = simRes.run_id;
       setActiveRunId(runId);
+      setRunInfo(simRes);
+      
+      const resolvedEventName = simRes.event_name || selectedEventName || activeEventId;
+      setSimulatedEventName(resolvedEventName);
+      setSelectedEventName(resolvedEventName);
+
+      // Fokuskan kamera peta ke pusat koordinat kejadian yang baru disimulasikan
+      if (simRes.center_coords?.latitude && simRes.center_coords?.longitude) {
+        setFlyToTarget({
+          lat: simRes.center_coords.latitude,
+          lng: simRes.center_coords.longitude,
+          _t: Date.now()
+        });
+      }
+      setEventFocusTrigger((prev) => prev + 1);
       
       // Fase 3: Pemodelan selesai, beralih ke analisis dampak & rekomendasi mitigasi
       targetCap = 94;
@@ -262,6 +299,9 @@ export const App: React.FC = () => {
 
       setImpactData(impact);
       setFacilitiesData(facilities);
+      if (facilities?.schools && facilities.schools.length > 0) {
+        setShowSchools(true);
+      }
       setValidationData(validation);
       setAdvisoryData(advisory);
       setIsDrawerOpen(true);
@@ -282,7 +322,7 @@ export const App: React.FC = () => {
       // Simpan referensi run terakhir ke local storage
       localStorage.setItem("lastRunId", runId);
       localStorage.setItem("lastEventId", activeEventId);
-      localStorage.setItem("lastEventName", selectedEventName || simRes.scenario_label || activeEventId);
+      localStorage.setItem("lastEventName", resolvedEventName);
       localStorage.setItem("lastHazard", activeHazard);
     } catch (err: any) {
       clearInterval(loadingInterval);
@@ -382,6 +422,14 @@ export const App: React.FC = () => {
     }
   };
 
+  const currentCoords = React.useMemo(() => {
+    if (!runInfo?.center_coords?.latitude || !runInfo?.center_coords?.longitude) return null;
+    return {
+      lat: Number(runInfo.center_coords.latitude),
+      lng: Number(runInfo.center_coords.longitude)
+    };
+  }, [runInfo?.center_coords?.latitude, runInfo?.center_coords?.longitude]);
+
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#080c0e] text-slate-100 font-sans">
       {/* Zona A: Tactical Header */}
@@ -394,6 +442,7 @@ export const App: React.FC = () => {
         isHelpOpen={isHelpOpen}
         onOpenHelp={() => setIsHelpOpen(true)}
         onCloseHelp={() => setIsHelpOpen(false)}
+        onOpenGpsModal={() => setIsGpsModalOpen(true)}
       />
 
       {/* Main Workspace (Zona B, C, dan D) */}
@@ -415,6 +464,14 @@ export const App: React.FC = () => {
           onToggleLegend={() => setIsLegendOpen((prev) => !prev)}
           focusEventTrigger={eventFocusTrigger}
           onLayersLoaded={() => setIsMapReady(true)}
+          showSchools={showSchools}
+          onToggleSchools={setShowSchools}
+          showHospitals={showHospitals}
+          onToggleHospitals={setShowHospitals}
+          showAirports={showAirports}
+          onToggleAirports={setShowAirports}
+          runHotspots={runInfo?.hotspots}
+          impactedFacilities={facilitiesData}
         />
 
         {/* Global Loading Overlay (Di bawah Navbar): cadangan jika loader sungai dilewati sebelum peta siap */}
@@ -467,22 +524,6 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* Floating Active Simulation Pill */}
-        {activeRunId && (
-          <div className="absolute top-3.5 left-1/2 -translate-x-1/2 bg-[#1c1513]/90 backdrop-blur-md border border-[#EB895B]/30 rounded-full px-3.5 py-1 z-[1000] text-xs flex items-center gap-2 shadow-xl pointer-events-none">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[#FFF0C5]/70">Simulasi Aktif:</span>
-            <strong className="text-[#FFF0C5] font-semibold">{simulatedEventName}</strong>
-            <span className="text-[#EB895B] font-mono text-[11px]">(H+{currentHour}:00)</span>
-          </div>
-        )}
-
-        {/* Watermark Skenario Hipotetis (Mode Coba-Coba / Experiment) */}
-        {mode === "experiment" && activeRunId && (
-          <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-amber-950/80 backdrop-blur-sm border border-amber-500/40 rounded px-2.5 py-0.5 z-[999] text-[10px] font-mono tracking-wider text-amber-200 uppercase pointer-events-none shadow-md">
-            SKENARIO HIPOTETIS &bull; BUKAN DATA RESMI
-          </div>
-        )}
 
         {/* Zona B: Floating Controller Melayang di Kiri Atas Peta */}
         <ControllerDock
@@ -510,6 +551,7 @@ export const App: React.FC = () => {
           onHourChange={setCurrentHour}
           isDrawerOpen={isDrawerOpen}
           autoPlayTrigger={autoPlayTrigger}
+          simulatedEventName={simulatedEventName}
         />
 
         {/* Zona D: Tabbed Inspection Dock Melayang di Kanan */}
@@ -530,6 +572,9 @@ export const App: React.FC = () => {
           onDrawRoute={handleDrawRoute}
           activeRouteId={evacuationRoute?.facilityId}
           simulatedEventName={simulatedEventName}
+          activeRunId={activeRunId}
+          eventId={eventId}
+          currentCoords={currentCoords}
           onOpenGpsModal={() => setIsGpsModalOpen(true)}
         />
 
@@ -537,6 +582,12 @@ export const App: React.FC = () => {
         <LegendModal
           isOpen={isLegendOpen}
           onClose={() => setIsLegendOpen(false)}
+          showSchools={showSchools}
+          onToggleSchools={setShowSchools}
+          showHospitals={showHospitals}
+          onToggleHospitals={setShowHospitals}
+          showAirports={showAirports}
+          onToggleAirports={setShowAirports}
         />
 
         {/* Modal Pratinjau Dokumen Ringkasan Eksekutif (A4 Portrait) */}
@@ -549,6 +600,7 @@ export const App: React.FC = () => {
           impact={impactData}
           facilities={facilitiesData}
           advisory={advisoryData}
+          hourlyTiersCache={hourlyTiersCache}
         />
 
         {/* Modal AI GPS Siaga Personal Warga */}

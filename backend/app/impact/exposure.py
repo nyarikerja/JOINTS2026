@@ -376,12 +376,45 @@ def get_exposed_facilities_list(run_output: Dict[str, Any], grid: SimulationGrid
     referral.sort(key=lambda x: (not x["is_safe"], x["distance_from_epicenter_km"]))
 
     evaluated = [f for f in evaluate(fac_info["in_footprint"]) if f["exposure_probability"] >= min_prob]
-    schools = [f for f in evaluated if f["facility_type"] == "school"]
-    healthcare = [f for f in evaluated if f["facility_type"] == "healthcare"]
+    raw_schools = [f for f in evaluated if f["facility_type"] == "school"]
+    raw_healthcare = [f for f in evaluated if f["facility_type"] == "healthcare"]
     airports = [f for f in evaluated if f["facility_type"] == "airport"]
 
+    def _clean_and_dedup(facs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        sorted_facs = sorted(facs, key=lambda x: (-x.get("exposure_probability", 0), x.get("arrival_time_earliest_h") or 999))
+        named = []
+        unnamed = []
+        for f in sorted_facs:
+            n_raw = (f.get("name") or "").strip()
+            n_low = n_raw.lower()
+            is_placeholder = "tanpa nama" in n_low or n_low in ["sekolah", "sdn", "sd", "smp", "sma", "faskes", "fasilitas kesehatan"]
+            if is_placeholder:
+                unnamed.append(f)
+            else:
+                named.append(f)
+        chosen = named if named else unnamed
+        unique = []
+        seen = set()
+        seen_fids = set()
+        for f in chosen:
+            fid = f.get("facility_id")
+            norm_name = f.get("name", "").strip().lower()
+            if fid and fid in seen_fids:
+                continue
+            if norm_name in seen:
+                continue
+            if fid:
+                seen_fids.add(fid)
+            seen.add(norm_name)
+            unique.append(f)
+        return unique
+
+    schools = _clean_and_dedup(raw_schools)
+    healthcare = _clean_and_dedup(raw_healthcare)
+
     safe = [h for h in hospitals if h["is_safe"]]
-    pool = safe or hospitals
+    hosp_preferred = [h for h in (safe or hospitals) if any(kw in (h.get("name") or "").lower() for kw in ["rs", "rumah sakit", "puskesmas", "klinik", "hospital"])]
+    pool = hosp_preferred or safe or hospitals
     if schools and pool:
         from app.engine.landmask import LandMask
 

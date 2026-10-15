@@ -54,11 +54,6 @@ function formatWib(iso: string, lang = "id"): string {
   }
 }
 
-function textNode(text: string): HTMLElement {
-  const el = document.createElement("span");
-  el.textContent = text;
-  return el;
-}
 
 function sumDetections(heat: any): number {
   return heat?.cells ? heat.cells.reduce((n: number, c: any) => n + (c.count || 0), 0) : 0;
@@ -230,7 +225,13 @@ export const NationalModes: React.FC<NationalModesProps> = ({
           fillColor: color,
           fillOpacity: 1
         })
-          .bindTooltip(textNode(`${p.name} (${sourceLabel})`), { direction: "top" })
+          .bindTooltip(
+            `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.45; text-align: left;">
+              <strong style="color: #16241b; font-size: 12.5px; font-weight: 800;">${p.name}</strong>
+              <div style="font-size: 11px; color: #475569;">${sourceLabel}</div>
+            </div>`,
+            { direction: "top", offset: [0, -6], className: "tactical-tooltip-f7faf4" }
+          )
           .addTo(group);
 
         // 4. Milestone Waktu Terjadwal (+24j, +48j, +72j, dst.)
@@ -244,8 +245,11 @@ export const NationalModes: React.FC<NationalModesProps> = ({
             fillOpacity: isReached ? 0.95 : 0.35
           })
             .bindTooltip(
-              textNode(`${p.name} · +${h} ${id ? "jam" : "h"}${isReached ? (id ? " (Tercapai)" : " (Reached)") : ""}`),
-              { direction: "top" }
+              `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.45; text-align: left;">
+                <strong style="color: #16241b; font-size: 12px; font-weight: 700;">${p.name}</strong>
+                <div style="font-size: 10.5px; color: #64748b;">+${h} ${id ? "jam" : "h"}${isReached ? (id ? " (Tercapai)" : " (Reached)") : ""}</div>
+              </div>`,
+              { direction: "top", offset: [0, -5], className: "tactical-tooltip-f7faf4" }
             )
             .addTo(group);
         }
@@ -273,10 +277,13 @@ export const NationalModes: React.FC<NationalModesProps> = ({
             fillOpacity: 1
           })
             .bindTooltip(
-              textNode(
-                `${p.name} · ${id ? "Posisi Terkini" : "Position"}: +${leadH}${id ? " jam" : "h"} ${formattedTime ? `(${formattedTime})` : ""}`
-              ),
-              { direction: "top" }
+              `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.45; text-align: left;">
+                <strong style="color: #16241b; font-size: 12.5px; font-weight: 800;">${p.name}</strong>
+                <div style="font-size: 11px; color: #475569;">
+                  ${id ? "Posisi Terkini" : "Position"}: <strong style="color: #16241b;">+${leadH}${id ? " jam" : "h"}</strong> ${formattedTime ? `(${formattedTime})` : ""}
+                </div>
+              </div>`,
+              { direction: "top", offset: [0, -8], className: "tactical-tooltip-f7faf4" }
             )
             .addTo(group);
         }

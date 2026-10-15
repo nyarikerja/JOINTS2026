@@ -22,8 +22,24 @@ export const TabFacilities: React.FC<TabFacilitiesProps> = ({
   const [filterType, setFilterType] = useState<"all" | "schools" | "hospitals">("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const schools = Array.from(new Map(rawSchools.map(s => [s.facility_id || s.id || s.name, s])).values());
-  const hospitals = Array.from(new Map(rawHospitals.map(h => [h.facility_id || h.id || h.name, h])).values());
+  // Filter dan deduplikasi fasilitas agar nama tidak terulang ganda
+  const cleanRawSchools = rawSchools.filter((s) => {
+    const n = (s.name || "").toLowerCase().trim();
+    return n && !n.includes("tanpa nama") && n !== "sekolah" && n !== "sdn" && n !== "sd";
+  });
+  const validSchools = cleanRawSchools.length > 0 ? cleanRawSchools : rawSchools;
+  const schools = Array.from(
+    new Map(validSchools.map(s => [s.name.trim().toLowerCase(), s])).values()
+  );
+
+  const cleanRawHospitals = rawHospitals.filter((h) => {
+    const n = (h.name || "").toLowerCase().trim();
+    return n && !n.includes("tanpa nama") && n !== "fasilitas kesehatan";
+  });
+  const validHospitals = cleanRawHospitals.length > 0 ? cleanRawHospitals : rawHospitals;
+  const hospitals = Array.from(
+    new Map(validHospitals.map(h => [h.name.trim().toLowerCase(), h])).values()
+  );
 
   const filteredSchools = schools.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()));
   const filteredHospitals = hospitals.filter(h => h.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -129,7 +145,7 @@ export const TabFacilities: React.FC<TabFacilitiesProps> = ({
                 <div className="flex items-start justify-between gap-1.5 mb-1">
                   <div className="flex items-start gap-1.5 min-w-0 pt-0.5">
                     <GraduationCap size={15} weight="duotone" className="text-[#DA6556] shrink-0" />
-                    <h4 className="font-bold text-[11px] leading-tight pr-1">{s.name}</h4>
+                    <h4 className="font-bold text-[12px] leading-snug pr-1 text-[#140f0e] tracking-tight font-sans" style={{ fontFamily: "'Poppins', 'Manrope', system-ui, -apple-system, sans-serif" }}>{s.name}</h4>
                   </div>
                   <span
                     className={`px-1.5 py-0.5 rounded text-[9px] font-semibold shrink-0 ${
@@ -195,7 +211,7 @@ export const TabFacilities: React.FC<TabFacilitiesProps> = ({
                 <div className="flex items-start justify-between gap-1.5 mb-1">
                   <div className="flex items-start gap-1.5 min-w-0 pt-0.5">
                     <FirstAid size={15} weight="duotone" className="text-[#2a8485] shrink-0" />
-                    <h4 className="font-bold text-[11px] leading-tight pr-1">{h.name}</h4>
+                    <h4 className="font-bold text-[12px] leading-snug pr-1 text-[#140f0e] tracking-tight font-sans" style={{ fontFamily: "'Poppins', 'Manrope', system-ui, -apple-system, sans-serif" }}>{h.name}</h4>
                   </div>
                   <span
                     className={`px-1.5 py-0.5 rounded text-[9px] font-semibold shrink-0 ${

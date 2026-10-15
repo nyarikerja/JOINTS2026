@@ -65,9 +65,13 @@ export interface SimulationResponse {
   run_id: string;
   hazard: HazardType;
   status: string;
+  event_id?: string;
+  event_name?: string;
   n_members: number;
   scenario_label: string;
   hourly_tiers?: Record<string, any>;
+  center_coords?: { latitude: number; longitude: number };
+  hotspots?: any[];
 }
 
 export interface ImpactRange {
@@ -216,4 +220,32 @@ export interface ValidationResponse {
   reference_observation?: string;
   timestamp?: string;
 }
+
+export interface LaharWarningResponse {
+  run_id: string;
+  hazard: string;
+  available?: boolean;
+  reason?: string;
+  lahar_risk_level: string;
+  prob_rain_above_trigger?: number;
+  forecast_precip_max_mm_h?: ImpactRange;
+  forecast_precip_total_mm?: ImpactRange;
+  rainfall_threshold_trigger_mm_h?: number;
+  warning_text?: string;
+  source?: string;
+  weather_model?: string;
+}
+
+export interface RainEffectResponse {
+  run_id: string;
+  hazard: string;
+  available?: boolean;
+  reason?: string;
+  scavenged_mass_pct?: ImpactRange;
+  precip_max_mm_h?: ImpactRange | null;
+  precip_total_mm?: ImpactRange | null;
+  weather_model?: string;
+  hazard_specific_warning?: string;
+}
+
 

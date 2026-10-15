@@ -26,6 +26,7 @@ venv/
 **/venv/
 
 # SQLite Journal & Shared Memory Files
+*.sqlite
 *.db-wal
 *.db-shm
 *.sqlite-wal

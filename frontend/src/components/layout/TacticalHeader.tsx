@@ -1,5 +1,13 @@
-import React, { useEffect, useState } from "react";
-import { ArrowClockwise, SidebarSimple, Stack, Question, X } from "@phosphor-icons/react";
+import React, { useState, useEffect } from "react";
+import {
+  ArrowClockwise,
+  SidebarSimple,
+  Stack,
+  Question,
+  X,
+  CrosshairSimple,
+  BookOpen
+} from "@phosphor-icons/react";
 import { Home } from "lucide-react";
 import { api } from "../../services/api";
 import type { SummaryKpiResponse } from "../../types/api";
@@ -13,6 +21,7 @@ interface TacticalHeaderProps {
   isHelpOpen?: boolean;
   onOpenHelp?: () => void;
   onCloseHelp?: () => void;
+  onOpenGpsModal?: () => void;
 }
 
 export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
@@ -22,7 +31,8 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
   isLegendOpen = false,
   isHelpOpen: controlledHelpOpen,
   onOpenHelp,
-  onCloseHelp
+  onCloseHelp,
+  onOpenGpsModal
 }) => {
   const [clockWib, setClockWib] = useState("--:--:-- WIB");
   const [clockUtc, setClockUtc] = useState("--:--:-- UTC");
@@ -81,6 +91,16 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isHelpOpen) {
+        closeHelp();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isHelpOpen]);
+
   const loadKpi = async () => {
     try {
       const data = await api.getSummaryKpi();
@@ -132,11 +152,11 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
       >
         <img
           src="/gunung_black.png"
-          alt="Logo hELAlOKA"
+          alt="Logo HELALOKA"
           className="w-8 h-8 object-contain shrink-0 drop-shadow-sm select-none pointer-events-none group-hover:scale-105 transition-transform"
         />
         <div className="flex items-center gap-1.5">
-          <span className="font-heading text-lg tracking-tight" style={{ color: "#140f0e" }}>hELAlOKA</span>
+          <span className="font-heading text-lg tracking-tight" style={{ color: "#140f0e" }}>HELALOKA</span>
           <span className="font-subheading text-[10px] px-1.5 py-0.5 rounded tracking-wider text-white shadow-xs" style={{ backgroundColor: "#A14646" }}>
             INDONESIA
           </span>
@@ -219,17 +239,16 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
         <button
           onClick={handleSync}
           disabled={isSyncing}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-50 shadow-xs hover:brightness-105 active:scale-95"
+          className="flex items-center justify-center w-7 h-7 rounded-lg transition cursor-pointer disabled:opacity-50 shadow-xs hover:brightness-105 active:scale-95 bg-[#F5EFE3]"
           style={{
-            background: "#F5EFE3",
             border: "1px solid rgba(20, 15, 14, 0.12)",
             color: "#140f0e",
             boxShadow: "0 1px 3px rgba(0, 0, 0, 0.08)"
           }}
-          title="Sinkronisasi sensor NASA & Open-Meteo"
+          title={syncStatus ? `Sinkronisasi: ${syncStatus}` : "Sinkronisasi sensor NASA & Open-Meteo"}
+          aria-label="Live Sync"
         >
           <ArrowClockwise size={15} weight="bold" className={isSyncing ? "animate-spin" : ""} style={{ color: isSyncing ? "#DA6556" : "#A14646" }} />
-          <span>{syncStatus || "Live Sync"}</span>
         </button>
 
         {/* Tombol Legenda */}
@@ -253,6 +272,25 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
           <span>Legenda</span>
         </button>
 
+        {/* Tombol AI Cek GPS (Pindah ke tengah antara Legenda dan Proyeksi) */}
+        {onOpenGpsModal && (
+          <button
+            onClick={onOpenGpsModal}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs hover:brightness-105 active:scale-95"
+            style={{
+              background: "#F5EFE3",
+              border: "1px solid rgba(20, 15, 14, 0.12)",
+              color: "#065f46",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.08)"
+            }}
+            title="Periksa zonasi bahaya abu/karhutla di lokasi Anda saat ini (AI GPS)"
+          >
+            <CrosshairSimple size={15} weight="bold" className="text-emerald-700" />
+            <span>GPS</span>
+          </button>
+        )}
+
+        {/* Tombol Proyeksi */}
         <button
           onClick={onToggleDrawer}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs hover:brightness-105 active:scale-95"
@@ -267,73 +305,112 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
             color: "#140f0e",
             boxShadow: "0 1px 3px rgba(0, 0, 0, 0.08)"
           }}
-          title="Buka / Tutup Proyeksi Dampak"
+          title="Buka / Tutup Proyeksi"
         >
           <SidebarSimple size={15} weight={isDrawerOpen ? "fill" : "duotone"} style={{ color: isDrawerOpen ? "#F5EFE3" : "#140f0e" }} />
-          <span>Proyeksi Dampak</span>
+          <span>Proyeksi</span>
         </button>
       </div>
     </header>
 
-      {/* Modal Bantuan */}
+      {/* Modal Panduan Operasional Simulasi (Style Identik GPS Modal) */}
       {isHelpOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-[#f7f3ed] rounded-xl shadow-2xl max-w-sm w-full border border-[#2b211e]/10 overflow-hidden text-[#2b211e] animate-popup">
-            {/* Header Modal */}
-            <div className="bg-white px-4 py-3 border-b border-[#2b211e]/10 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Question size={20} weight="bold" className="text-[#A14646]" />
-                <h3 className="font-sans text-sm font-bold tracking-wide">Panduan Simulasi</h3>
-              </div>
-              <button 
-                onClick={closeHelp}
-                className="text-[#2b211e]/50 hover:text-[#2b211e] transition cursor-pointer p-1 rounded hover:bg-[#2b211e]/5"
-              >
-                <X size={16} weight="bold" />
-              </button>
-            </div>
+        <div 
+          className="fixed inset-0 z-[2200] flex items-center justify-center bg-black/55 backdrop-blur-sm p-4 font-sans animate-fade-in"
+          onClick={closeHelp}
+        >
+          <div 
+            className="relative w-full max-w-md bg-[#f7f3ed] rounded-[28px] shadow-2xl border border-[#2b211e]/15 overflow-hidden text-[#2b211e] flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200"
+            style={{
+              boxShadow: "0 25px 60px -15px rgba(20, 15, 14, 0.5)"
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Scrollable Body */}
+            <div className="overflow-y-auto p-6 md:p-7 space-y-4 custom-scrollbar">
+              {/* 1. Baris Atas: Badge Status di Kiri, Logo HELALOKA & Tombol Tutup di Kanan */}
+              <div className="flex items-center justify-between gap-3">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10.5px] font-bold tracking-wide uppercase shadow-2xs bg-[#EB895B] text-white">
+                  <BookOpen size={13} weight="bold" />
+                  <span>PANDUAN OPERASIONAL</span>
+                </span>
 
-            {/* Konten Modal */}
-            <div className="p-5 space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-[#EB895B]/20 text-[#c25e2d] font-bold text-xs flex items-center justify-center shrink-0 border border-[#EB895B]/30">
+                <div className="flex items-center gap-1.5">
+                  <img
+                    src="/gunung_black.png"
+                    alt="Logo HELALOKA"
+                    className="w-8 h-8 object-contain shrink-0"
+                  />
+                  <button
+                    type="button"
+                    onClick={closeHelp}
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-[#2b211e]/50 hover:text-[#2b211e] hover:bg-[#2b211e]/10 transition cursor-pointer"
+                    title="Tutup (Esc)"
+                  >
+                    <X size={18} weight="bold" />
+                  </button>
+                </div>
+              </div>
+
+              {/* 2. Judul Utama & Subtitle */}
+              <div>
+                <h2 className="text-xl md:text-2xl font-bold text-[#140f0e] leading-snug tracking-tight">
+                  Panduan Simulasi
+                </h2>
+                <p className="text-xs text-[#2b211e]/75 mt-1 leading-relaxed">
+                  Tiga langkah taktis menjalankan pemodelan dispersi atmosferik dan menganalisis proyeksi.
+                </p>
+              </div>
+
+              {/* Step 1 */}
+              <div className="rounded-2xl p-4 bg-white/80 border border-[#2b211e]/10 shadow-2xs flex items-start gap-3.5 transition hover:border-[#EB895B]/40">
+                <div className="w-8 h-8 rounded-full bg-[#EB895B] text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs font-mono">
                   1
                 </div>
-                <div>
-                  <h4 className="text-xs font-bold mb-0.5">Pilih Gunung / Kejadian</h4>
-                  <p className="text-[11px] text-[#2b211e]/70 leading-relaxed">Pilih salah satu gunung berapi aktif di sebelah menu "Pusat Kendali Simulasi" pada pojok kiri bawah.</p>
+                <div className="flex-1">
+                  <h4 className="text-xs font-bold text-[#140f0e] mb-0.5">Pilih Gunung / Kejadian</h4>
+                  <p className="text-[11px] text-[#2b211e]/75 leading-relaxed">
+                    Pilih salah satu gunung berapi aktif di sebelah menu <strong>"Pusat Kendali Simulasi"</strong> pada pojok kiri bawah.
+                  </p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-[#EB895B]/20 text-[#c25e2d] font-bold text-xs flex items-center justify-center shrink-0 border border-[#EB895B]/30">
+              {/* Step 2 */}
+              <div className="rounded-2xl p-4 bg-white/80 border border-[#2b211e]/10 shadow-2xs flex items-start gap-3.5 transition hover:border-[#EB895B]/40">
+                <div className="w-8 h-8 rounded-full bg-[#DA6556] text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs font-mono">
                   2
                 </div>
-                <div>
-                  <h4 className="text-xs font-bold mb-0.5">Jalankan Simulasi</h4>
-                  <p className="text-[11px] text-[#2b211e]/70 leading-relaxed">Tekan tombol <strong>"Mulai Simulasi"</strong> yang berwarna oranye dan tunggu hingga pemrosesan model dispersi selesai.</p>
+                <div className="flex-1">
+                  <h4 className="text-xs font-bold text-[#140f0e] mb-0.5">Jalankan Simulasi</h4>
+                  <p className="text-[11px] text-[#2b211e]/75 leading-relaxed">
+                    Tekan tombol <strong>"Mulai Simulasi"</strong> yang berwarna oranye dan tunggu hingga pemrosesan model dispersi selesai.
+                  </p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-[#EB895B]/20 text-[#c25e2d] font-bold text-xs flex items-center justify-center shrink-0 border border-[#EB895B]/30">
+              {/* Step 3 */}
+              <div className="rounded-2xl p-4 bg-white/80 border border-[#2b211e]/10 shadow-2xs flex items-start gap-3.5 transition hover:border-[#EB895B]/40">
+                <div className="w-8 h-8 rounded-full bg-[#A14646] text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs font-mono">
                   3
                 </div>
-                <div>
-                  <h4 className="text-xs font-bold mb-0.5">Lihat Proyeksi Dampak</h4>
-                  <p className="text-[11px] text-[#2b211e]/70 leading-relaxed">Akses analisis hasil paparan penduduk, fasilitas publik, dan AI melalui tombol <strong>"Proyeksi Dampak"</strong> di pojok kanan atas.</p>
+                <div className="flex-1">
+                  <h4 className="text-xs font-bold text-[#140f0e] mb-0.5">Lihat Proyeksi</h4>
+                  <p className="text-[11px] text-[#2b211e]/75 leading-relaxed">
+                    Akses analisis hasil paparan penduduk, fasilitas publik, dan AI melalui tombol <strong>"Proyeksi"</strong> di pojok kanan atas.
+                  </p>
                 </div>
               </div>
-            </div>
 
-            {/* Footer Modal */}
-            <div className="px-5 py-3 bg-white border-t border-[#2b211e]/10 flex justify-end">
-              <button
-                onClick={closeHelp}
-                className="px-4 py-1.5 bg-[#EB895B] hover:bg-[#DA6556] text-white text-xs font-bold rounded-lg transition cursor-pointer shadow-xs"
-              >
-                Paham
-              </button>
+              {/* 3. Footer Aksi */}
+              <div className="pt-2 flex items-center justify-end border-t border-[#2b211e]/10">
+                <button
+                  type="button"
+                  onClick={closeHelp}
+                  className="px-6 py-2 bg-[#EB895B] hover:bg-[#DA6556] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer font-button active:scale-98"
+                >
+                  Paham
+                </button>
+              </div>
             </div>
           </div>
         </div>

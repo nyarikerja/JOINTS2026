@@ -34,18 +34,42 @@ def get_layer(
     if name in ["facilities", "facilities-national"]:
         from app.services import osm_facilities
         if not bbox:
-            if facility_type not in (None, "airport"):
-                raise HTTPException(400, "Fasilitas sekolah/kesehatan memerlukan parameter bbox (data OSM per wilayah).")
-            facs, missing = osm_facilities.airports(), []
+            facs = osm_facilities.all_cached(facility_type)
+            missing = []
         else:
-            if (n - s) * (e - w) > 9.0:
-                raise HTTPException(400, "Area bbox terlalu luas untuk fasilitas OSM (maks 9 derajat persegi); perbesar peta.")
-            facs, missing = OverpassIngest.get_facilities_with_coverage(
-                s, n, w, e, facility_type=facility_type, fetch_missing=True, max_fetch=2
+            facs, missing = osm_facilities.facilities_in_bbox(
+                s, n, w, e, facility_type=facility_type, fetch_missing=False
             )
-        if zoom is not None and zoom < 11:
-            # LOD: pada skala jauh hanya rumah sakit dan bandara agar peta tidak penuh
+        if zoom is not None and zoom < 11 and facility_type is None:
+            # LOD: pada skala jauh hanya rumah sakit dan bandara agar peta tidak penuh bila tanpa filter tipe
             facs = [f for f in facs if f["facility_type"] == "airport" or f.get("subtype") == "hospital"]
+
+        # Deduplikasi fasilitas & filter nama placeholder duplikat
+        unique_facs = []
+        seen_keys = set()
+        seen_names = set()
+        for f in facs:
+            fid = f.get("facility_id")
+            raw_name = (f.get("name") or "").strip()
+            name_norm = raw_name.lower()
+            is_unnamed = "tanpa nama" in name_norm or name_norm in ["sekolah", "sdn", "sd", "smp", "sma", "faskes", "fasilitas kesehatan"]
+            loc_key = (name_norm, round(f.get("latitude", 0), 4), round(f.get("longitude", 0), 4))
+
+            if fid and fid in seen_keys:
+                continue
+            if not is_unnamed and name_norm in seen_names:
+                continue
+            if loc_key in seen_keys:
+                continue
+
+            if fid:
+                seen_keys.add(fid)
+            if not is_unnamed:
+                seen_names.add(name_norm)
+            seen_keys.add(loc_key)
+            unique_facs.append(f)
+
+        facs = unique_facs
         if limit:
             facs = facs[:limit]
         features = [{
