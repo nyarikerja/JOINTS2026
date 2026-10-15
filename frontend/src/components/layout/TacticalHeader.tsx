@@ -6,8 +6,7 @@ import {
   Question,
   X,
   CrosshairSimple,
-  BookOpen,
-  CheckCircle
+  BookOpen
 } from "@phosphor-icons/react";
 import { Home } from "lucide-react";
 import { api } from "../../services/api";
@@ -359,7 +358,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
                   Panduan Simulasi
                 </h2>
                 <p className="text-xs text-[#2b211e]/75 mt-1 leading-relaxed">
-                  Tiga langkah taktis menjalankan pemodelan dispersi atmosferik dan menganalisis proyeksi dampak warga.
+                  Tiga langkah taktis menjalankan pemodelan dispersi atmosferik dan menganalisis proyeksi.
                 </p>
               </div>
 
@@ -395,23 +394,19 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
                   3
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-xs font-bold text-[#140f0e] mb-0.5">Lihat Proyeksi Dampak</h4>
+                  <h4 className="text-xs font-bold text-[#140f0e] mb-0.5">Lihat Proyeksi</h4>
                   <p className="text-[11px] text-[#2b211e]/75 leading-relaxed">
-                    Akses analisis hasil paparan penduduk, fasilitas publik, dan AI melalui tombol <strong>"Proyeksi Dampak"</strong> di pojok kanan atas.
+                    Akses analisis hasil paparan penduduk, fasilitas publik, dan AI melalui tombol <strong>"Proyeksi"</strong> di pojok kanan atas.
                   </p>
                 </div>
               </div>
 
               {/* 3. Footer Aksi */}
-              <div className="pt-2 flex items-center justify-between border-t border-[#2b211e]/10 gap-3">
-                <div className="flex items-center gap-1.5 text-[11px] text-[#2b211e]/65">
-                  <CheckCircle size={14} weight="bold" className="text-emerald-700 shrink-0" />
-                  <span>Sistem Siaga Bencana <strong>HELALOKA</strong></span>
-                </div>
+              <div className="pt-2 flex items-center justify-end border-t border-[#2b211e]/10">
                 <button
                   type="button"
                   onClick={closeHelp}
-                  className="px-5 py-2 bg-[#EB895B] hover:bg-[#DA6556] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer font-button active:scale-98"
+                  className="px-6 py-2 bg-[#EB895B] hover:bg-[#DA6556] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer font-button active:scale-98"
                 >
                   Paham
                 </button>

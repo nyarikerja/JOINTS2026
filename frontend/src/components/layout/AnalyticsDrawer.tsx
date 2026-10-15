@@ -131,7 +131,7 @@ export const AnalyticsDrawer: React.FC<AnalyticsDrawerProps> = ({
             </div>
             <h3 className="font-bold text-[#2b211e] mb-1">Simulasi Belum Dijalankan</h3>
             <p className="text-[11px] text-[#2b211e]/70 leading-relaxed max-w-[260px]">
-              Silakan pilih kejadian di Pusat Kendali lalu tekan <strong>Mulai Simulasi</strong> untuk melihat proyeksi dampak.
+              Silakan pilih kejadian di Pusat Kendali lalu tekan <strong>Mulai Simulasi</strong> untuk melihat proyeksi.
             </p>
           </div>
         ) : (
