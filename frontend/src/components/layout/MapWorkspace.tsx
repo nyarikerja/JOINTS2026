@@ -182,7 +182,6 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
   const schoolsLayerRef = useRef<L.GeoJSON | null>(null);
   const hospitalsLayerRef = useRef<L.GeoJSON | null>(null);
   const airportsLayerRef = useRef<L.GeoJSON | null>(null);
-  const impactedFacilitiesLayerRef = useRef<L.GeoJSON | null>(null);
   const focusedHospitalMarkerRef = useRef<L.Marker | null>(null);
   const evacHospitalMarkerRef = useRef<L.Marker | null>(null);
   const plumeLayerRef = useRef<L.GeoJSON | null>(null);
