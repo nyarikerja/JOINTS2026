@@ -1,4 +1,4 @@
-# UdaraSiaga: Laporan Verifikasi Sumber Data (SOURCES.md)
+# Laporan Verifikasi Sumber Data HELALOKA
 
 Diperbarui otomatis oleh `scripts/check_sources.py` pada **2026-10-05 13:22:09 UTC**.
 Aturan referensi: Temuan hasil `scripts/check_sources.py` di file ini **menang atas `SPEC.md`**, dan `SPEC.md` menang atas ingatan agent.

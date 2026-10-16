@@ -1,4 +1,4 @@
-# Panduan Induk Pitch Deck UdaraSiaga — JOINTS UGM 2026 (v2: Master Blueprint & Script Playbook)
+# Panduan Pitch Deck HELALOKA (JOINTS UGM 2026)
 
 **Kompetisi:** JOINTS UGM 2026 (Information Technology Competition)  
 **Tema Utama:** Sustainability (Sub-fokus: Lingkungan Hidup, Resiliensi Perubahan Iklim & Bencana Atmosfer)  
@@ -33,18 +33,18 @@ Sebelum menyusun slide grafis, buka dan pelajari gaya tata letak (*layout*), kon
 
 ## 2. Tabel Master Blueprint 12 Slide Utama
 
-| # | Nama Slide | Alokasi Waktu | Pesan Inti untuk UdaraSiaga | Framework Rujukan | Elemen Visual Utama |
+| # | Nama Slide | Alokasi Waktu | Pesan Inti untuk HELALOKA | Framework Rujukan | Elemen Visual Utama |
 |---|---|:---:|---|---|---|
-| **1** | **Hook & Judul** | 0:30 | Satu platform intelejen atmosferik multi-bahaya untuk melindungi jutaan nafas anak sekolah dan memandu evakuasi medis darurat. | Guy Kawasaki (Title Slide) | Logo taktis UdaraSiaga, peta latar gelap kontur abu, status `SIAGA 24/7`, tagline resmi. |
+| **1** | **Hook & Judul** | 0:30 | Satu platform intelejen atmosferik multi-bahaya untuk melindungi jutaan nafas anak sekolah dan memandu evakuasi medis darurat. | Guy Kawasaki (Title Slide) | Logo taktis HELALOKA, peta latar gelap kontur abu, status `SIAGA 24/7`, tagline resmi. |
 | **2** | **The Crisis (Problem)** | 1:00 | Paradoks data bencana: data satelit melimpah, tetapi saat letusan/karhutla terjadi, kepala sekolah bingung kapan meliburkan siswa dan ambulans terjebak rute abu pekat. | Sequoia Problem + Sendai Framework | Foto kontras hujan abu Anak Krakatau / kabut asap, 3 angka krisis (ISPA, hari sekolah hilang, korban salah evakuasi). |
 | **3** | **Why Now & The Critical Gap** | 0:45 | Ketiadaan jembatan operasional antara data mentah sains (VONA, FIRMS, BMKG) dengan keputusan taktis di tingkat kecamatan dan garda depan. | Sequoia "Why Now" | Diagram alir gap: "Data Mentah $\to$ Kebingungan Lapangan $\to$ Dampak Fatal Tanpa Prediksi Spasial". |
-| **4** | **The Solution: UdaraSiaga** | 1:00 | Satu platform, satu mesin dispersi fisika Lagrangian RK2, mengintegrasikan 70 gunung api dan 36 kawasan hutan nasional menjadi aksi dini terpadu. | Y Combinator Solution | Tampilan antarmuka layar penuh (*Full Mockup UI*), arsitektur modular terpadu, 3 pilar: Sains, Aksi, Edukasi. |
+| **4** | **The Solution: HELALOKA** | 1:00 | Satu platform, satu mesin dispersi fisika Lagrangian RK2, mengintegrasikan 70 gunung api dan 36 kawasan hutan nasional menjadi aksi dini terpadu. | Y Combinator Solution | Tampilan antarmuka layar penuh (*Full Mockup UI*), arsitektur modular terpadu, 3 pilar: Sains, Aksi, Edukasi. |
 | **5** | **Live Product Demo & Workflow** | 1:30 | Alur komando taktis: Skenario otomatis $\to$ Kontur ansambel P90/P50/P05 $\to$ Wadah hierarki kecamatan $\to$ Rute riil OSRM faskes aman $\to$ AI briefing BNPB & cetak A4. | Double Diamond Design Process | Cuplikan video UI / *Step-by-step UI Walkthrough* menampilkan Model 2-Tab Emas dan perutean jalan raya OSRM. |
 | **6** | **Underlying Magic & Arsitektur** | 1:30 | Arsitektur data berkinerja tinggi: Ingest satelit, database SQLite spasial R*Tree, integrasi OSRM real-road, dan Google Gemini AI berintegritas tanpa halusinasi. | C4 Model (Container & Component) + Kawasaki Magic | Diagram Arsitektur C4 interaktif, logo sumber resmi (PVMBG, BMKG, FIRMS, WorldPop, OSRM, Gemini). |
 | **7** | **Integritas Sains & Validasi** | 1:00 | Kejujuran sains: Rentang ketidakpastian P5–P50–P95, formula empiris Mastin et al. 2009, validasi spasial FSS Letusan Krakatau 2026, dan katalog 24 asumsi terbuka. | NASA TRL (TRL 6 Prototype) + Validasi FSS | Grafik kurva dispersi Gaussian, matriks validasi FSS per kabupaten, label transparansi skenario hipotetis. |
 | **8** | **Multi-Sectoral Impact & SDGs** | 1:00 | Kuantifikasi dampak riil: Intervensi pemadaman titik api pangkas 41% paparan, pengamanan 98 sekolah ke PJJ, kontribusi nyata terhadap SDG 3, 4, 11, 13, dan 15. | Theory of Change + UN SDGs | Ikon resmi 5 SDGs, diagram intervensi *before-after* delta warga terlindungi & tonase CO2e dicegah. |
 | **9** | **Pengguna & Kelayakan Implementasi** | 1:00 | Rencana adopsi praktis bersama BPBD, Disdik, dan Dinkes. Biaya operasional rendah, kemampuan offline 100% saat jaringan bencana lumpuh. | Lean Canvas + Pilot Implementation Roadmap | Peta jalan pilot project Kabupaten Lampung Selatan / Sleman, perbandingan biaya sistem vs kerugian ekonomi ISPA. |
-| **10** | **Diferensiasi & Matriks Kompetitif** | 0:45 | UdaraSiaga vs VONA Magma vs NASA FIRMS vs Aplikasi Cuaca Komersial. Kami bukan sekadar penampil titik, melainkan pengambil keputusan taktis. | Kawasaki Competitive Matrix (2x2 Matrix) | Kuadran 2x2: Sumbu X (Data Mentah vs Keputusan Taktis), Sumbu Y (Satu Bahaya vs Multi-Bahaya Spasial Terpadu). |
+| **10** | **Diferensiasi & Matriks Kompetitif** | 0:45 | HELALOKA vs VONA Magma vs NASA FIRMS vs Aplikasi Cuaca Komersial. Kami bukan sekadar penampil titik, melainkan pengambil keputusan taktis. | Kawasaki Competitive Matrix (2x2 Matrix) | Kuadran 2x2: Sumbu X (Data Mentah vs Keputusan Taktis), Sumbu Y (Satu Bahaya vs Multi-Bahaya Spasial Terpadu). |
 | **11** | **Roadmap Pengembangan & Risiko** | 0:45 | Roadmap 3 fase: *Now* (Prototype Hackathon siap uji), *Next* (Integrasi sensor IoT lapangan & LoRa), *Later* (Sistem peringatan dini nasional terotomatisasi). | YC Traction & Execution Plan | Diagram timeline 2026–2027, tabel mitigasi risiko etika data & pemadaman jaringan telekomunikasi. |
 | **12** | **Tim Pengembang & Penutup** | 0:45 | Profil keahlian tim (Data Science, Backend Engineering, GIS/UI), ringkasan pesan moral, dan ajakan kolaborasi mewujudkan Indonesia Siaga Bencana. | Sequoia Team + Kawasaki Closing Call-to-Action | Foto tim profesional, pembagian peran kunci, tagline penutup yang mengulang hook slide 1, QR code repo GitHub. |
 
@@ -56,10 +56,10 @@ Sebelum menyusun slide grafis, buka dan pelajari gaya tata letak (*layout*), kon
 - **Tujuan:** Menarik perhatian juri dalam 5 detik pertama dengan pernyataan misi yang kuat, profesional, dan relevan dengan tema Sustainability.
 - **Tata Letak Visual:**
   - Latar belakang: Gelap taktis (`#0b0f19`) dengan siluet kontur dispersi partikel halus dan kilatan sensor satelit.
-  - Sisi Kiri: Logo resmi UdaraSiaga, lencana status hijau berkedip `SIAGA 24/7`, sub-judul *"Sistem Intelejen Sebaran Atmosfer Multi-Bahaya & Panduan Evakuasi Dini Berbasis Sains"*.
+  - Sisi Kiri: Logo resmi HELALOKA, lencana status hijau berkedip `SIAGA 24/7`, sub-judul *"Sistem Intelejen Sebaran Atmosfer Multi-Bahaya & Panduan Evakuasi Dini Berbasis Sains"*.
   - Sisi Kanan: Ticker telemetri nasional: *"70 Gunung Api (level MAGMA langsung) | 36 Kawasan Hutan Konservasi | Grid Penduduk 1 km"*.
 - **Naskah Presenter:**
-  > *"Selamat pagi Dewan Juri yang terhormat. Setiap kali gunung api erupsi atau kebakaran hutan gambut melanda, jutaan anak sekolah dan warga rentan menghirup udara beracun tanpa tahu kapan bahaya tiba di depan pintu mereka. Kami mempersembahkan **UdaraSiaga**: platform intelejen atmosferik terpadu yang mentransformasi miliaran data satelit mentah menjadi instruksi evakuasi taktis dan kebijakan sekolah otomatis demi menyelamatkan generasi masa depan Indonesia."*
+  > *"Selamat pagi Dewan Juri yang terhormat. Setiap kali gunung api erupsi atau kebakaran hutan gambut melanda, jutaan anak sekolah dan warga rentan menghirup udara beracun tanpa tahu kapan bahaya tiba di depan pintu mereka. Kami mempersembahkan **HELALOKA**: platform intelejen atmosferik terpadu yang mentransformasi miliaran data satelit mentah menjadi instruksi evakuasi taktis dan kebijakan sekolah otomatis demi menyelamatkan generasi masa depan Indonesia."*
 - **Faktor Penilaian Juri:** Kesan pertama yang sangat terstruktur, berwibawa, dan langsung menyentuh urgensi kemanusiaan.
 
 ---
@@ -88,8 +88,8 @@ Sebelum menyusun slide grafis, buka dan pelajari gaya tata letak (*layout*), kon
 
 ---
 
-### Slide 4: The Solution: Platform UdaraSiaga (Durasi: 1:00)
-- **Tujuan:** Memperkenalkan UdaraSiaga sebagai solusi komprehensif dengan pendekatan *One Engine, Dual Hazard, Unified Action*.
+### Slide 4: The Solution: Platform HELALOKA (Durasi: 1:00)
+- **Tujuan:** Memperkenalkan HELALOKA sebagai solusi komprehensif dengan pendekatan *One Engine, Dual Hazard, Unified Action*.
 - **Tata Letak Visual:**
   - Mockup UI Beresolusi Tinggi menampilkan Peta Taktis Gelap, poligon kontur multi-probabilitas P90/P50/P5, dan laci analitik aksi dini.
   - 3 Nilai Utama:
@@ -97,7 +97,7 @@ Sebelum menyusun slide grafis, buka dan pelajari gaya tata letak (*layout*), kon
     - **Hierarki Yurisdiksi Spasial:** Mengelompokkan dampak langsung per kecamatan (bukan sekadar titik acak).
     - **Protokol Tanggap Multi-Sektor:** Otomatisasi rekomendasi PJJ Daring sekolah, triase faskes aman, dan edukasi APD medis Kemenkes.
 - **Naskah Presenter:**
-  > *"UdaraSiaga hadir mengisi jurang tersebut. Kami membangun satu arsitektur terpadu berskala nasional yang mencakup 70 gunung api aktif dan 36 kawasan hutan lindung. Dengan memadukan model dispersi partikel Lagrangian Runge-Kutta orde 2 dan grid demografi WorldPop 100 meter, UdaraSiaga tidak hanya memetakan kemana abu bergerak, tetapi langsung menerbitkan rekomendasi: kecamatan mana yang wajib PJJ, rumah sakit mana yang bebas abu, dan rute jalan mana yang aman dilalui ambulans."*
+  > *"HELALOKA hadir mengisi jurang tersebut. Kami membangun satu arsitektur terpadu berskala nasional yang mencakup 70 gunung api aktif dan 36 kawasan hutan lindung. Dengan memadukan model dispersi partikel Lagrangian Runge-Kutta orde 2 dan grid demografi WorldPop 100 meter, HELALOKA tidak hanya memetakan kemana abu bergerak, tetapi langsung menerbitkan rekomendasi: kecamatan mana yang wajib PJJ, rumah sakit mana yang bebas abu, dan rute jalan mana yang aman dilalui ambulans."*
 
 ---
 
@@ -128,14 +128,14 @@ Sebelum menyusun slide grafis, buka dan pelajari gaya tata letak (*layout*), kon
 ---
 
 ### Slide 7: Integritas Sains & Validasi Ilmiah (Durasi: 1:00)
-- **Tujuan:** Membangun kredibilitas akademis dan membedakan UdaraSiaga dari aplikasi main-main atau visualisasi fiktif.
+- **Tujuan:** Membangun kredibilitas akademis dan membedakan HELALOKA dari aplikasi main-main atau visualisasi fiktif.
 - **Tata Letak Visual:**
   - **Formula Empiris Mastin et al. 2009:** Laju Erupsi Massa ($\dot{M} = 140.85 \cdot H^{4.15}\text{ kg/s}$) dihitung berdasarkan tinggi kolom di atas lubang kawah (*above vent level*).
   - **Rentang Ketidakpastian Ansambel (P5–P50–P95):** Seluruh metrik populasi disajikan dalam rentang jujur, bukan angka tunggal palsu.
   - **Uji Akurasi Historis Lapis 3 (FSS):** Validasi Fractions Skill Score terhadap sebaran letusan historis Anak Krakatau dan Merapi menunjukkan kesesuaian tinggi dengan data satelit Himawari.
   - **Etika & Penonaktifan Kategori ISPU:** Penjelasan transparan bahwa kategori ISPU dinonaktifkan demi integritas etika ilmiah selama faktor emisi gambut belum memiliki verifikasi primer (*peer-reviewed*).
 - **Naskah Presenter:**
-  > *"Integritas sains adalah komitmen mutlak UdaraSiaga. Kami tidak mengarang angka. Emisi massa letusan dihitung langsung menggunakan persamaan empiris Mastin et al. 2009 yang dipublikasikan di Journal of Volcanology. Kami menolak memberikan satu angka populasi tunggal yang menyesatkan; seluruh dampak disajikan dalam rentang ansambel P5 hingga P95. Bahkan, sesuai kode etik ilmiah, kami sengaja menonaktifkan konversi kategori ISPU pada karhutla gambut karena faktor emisi partikulat di literatur masih berstatus asumsi kasar. Kejujuran metodologi inilah yang membuat rekomendasi kami dapat dipertanggungjawabkan di meja komando BNPB."*
+  > *"Integritas sains adalah komitmen mutlak HELALOKA. Kami tidak mengarang angka. Emisi massa letusan dihitung langsung menggunakan persamaan empiris Mastin et al. 2009 yang dipublikasikan di Journal of Volcanology. Kami menolak memberikan satu angka populasi tunggal yang menyesatkan; seluruh dampak disajikan dalam rentang ansambel P5 hingga P95. Bahkan, sesuai kode etik ilmiah, kami sengaja menonaktifkan konversi kategori ISPU pada karhutla gambut karena faktor emisi partikulat di literatur masih berstatus asumsi kasar. Kejujuran metodologi inilah yang membuat rekomendasi kami dapat dipertanggungjawabkan di meja komando BNPB."*
 
 ---
 
@@ -148,7 +148,7 @@ Sebelum menyusun slide grafis, buka dan pelajari gaya tata letak (*layout*), kon
     3. **SDG 11 (Sustainable Cities & Communities):** Peningkatan ketangguhan perkotaan dan desa melalui koridor rute evakuasi jalan raya riil ke RS penyangga bebas abu.
     4. **SDG 13 & 15 (Climate Action & Life on Land):** Fitur simulasi intervensi pemadaman titik api karhutla membuktikan penurunan paparan warga hingga 41% dan mencegah pelepasan ribuan ton gas rumah kaca ($CO_2e$) dari kubah gambut tropis.
 - **Naskah Presenter:**
-  > *"UdaraSiaga memberikan dampak terukur bagi agenda pembangunan berkelanjutan Indonesia. Dari sisi kesehatan, kami melindungi mata dan paru-paru generasi muda dengan panduan APD medis berstandar Kemenkes dan PERDAMI. Dari sisi pendidikan, kami menjamin keberlanjutan proses belajar melalui pengalihan PJJ Daring yang tepat waktu. Dan pada kebakaran hutan, fitur simulasi intervensi kami memberikan panduan pemadaman prioritas satgas udara yang mampu memangkas paparan asap hingga 41% sekaligus mencegah emisi karbon gambut skala masif."*
+  > *"HELALOKA memberikan dampak terukur bagi agenda pembangunan berkelanjutan Indonesia. Dari sisi kesehatan, kami melindungi mata dan paru-paru generasi muda dengan panduan APD medis berstandar Kemenkes dan PERDAMI. Dari sisi pendidikan, kami menjamin keberlanjutan proses belajar melalui pengalihan PJJ Daring yang tepat waktu. Dan pada kebakaran hutan, fitur simulasi intervensi kami memberikan panduan pemadaman prioritas satgas udara yang mampu memangkas paparan asap hingga 41% sekaligus mencegah emisi karbon gambut skala masif."*
 
 ---
 
@@ -163,12 +163,12 @@ Sebelum menyusun slide grafis, buka dan pelajari gaya tata letak (*layout*), kon
     - Tahap Pilot 1: Kabupaten Lampung Selatan (Kawasan Rawan Bencana G. Anak Krakatau) & Kabupaten Sleman (G. Merapi).
     - Biaya Server & Operasional: Ekstrem rendah (arsitektur nir-daemon, SQLite lokal teroptimasi, berjalan lancar di workstation standar BPBD daerah).
 - **Naskah Presenter:**
-  > *"Siapa yang akan mengoperasikan UdaraSiaga? Sistem ini dirancang untuk alur birokrasi nyata di Indonesia: Pusdalops BPBD menjalankan analisis skenario, Dinas Pendidikan menerbitkan surat edaran PJJ daring otomatis, dan Dinas Kesehatan mengunci rujukan RS bebas abu. Karena arsitekturnya yang ringan dan tanpa dependensi server mahal, sistem ini sangat layak diimplementasikan langsung sebagai proyek percontohan di wilayah rawan bencana seperti Kabupaten Lampung Selatan atau Sleman dengan biaya anggaran daerah yang mendekati nol."*
+  > *"Siapa yang akan mengoperasikan HELALOKA? Sistem ini dirancang untuk alur birokrasi nyata di Indonesia: Pusdalops BPBD menjalankan analisis skenario, Dinas Pendidikan menerbitkan surat edaran PJJ daring otomatis, dan Dinas Kesehatan mengunci rujukan RS bebas abu. Karena arsitekturnya yang ringan dan tanpa dependensi server mahal, sistem ini sangat layak diimplementasikan langsung sebagai proyek percontohan di wilayah rawan bencana seperti Kabupaten Lampung Selatan atau Sleman dengan biaya anggaran daerah yang mendekati nol."*
 
 ---
 
 ### Slide 10: Diferensiasi & Matriks Kompetitif (Durasi: 0:45)
-- **Tujuan:** Menegaskan posisi UdaraSiaga di atas platform pemantau yang sudah ada.
+- **Tujuan:** Menegaskan posisi HELALOKA di atas platform pemantau yang sudah ada.
 - **Tata Letak Visual:**
   - Matriks Kuadran 2x2 (Competitive Landscape):
     - **Sumbu Horizontal:** *Data Mentah Pasif* vs *Pengambilan Keputusan Aksi Dini Taktis*
@@ -177,9 +177,9 @@ Sebelum menyusun slide grafis, buka dan pelajari gaya tata letak (*layout*), kon
     - Magma VONA / PVMBG: Kiri Atas (Sangat otoritatif, tapi hanya erupsi & format teks penerbangan).
     - NASA FIRMS: Kiri Bawah (Hanya titik panas karhutla pasif).
     - Aplikasi Cuaca Umum (Windy/AccuWeather): Tengah Kiri (Prakiraan angin umum, tanpa dampak demografi/sekolah).
-    - **UdaraSiaga: Kanan Atas (Juara Kuadran): Multi-bahaya, satu mesin fisika, langsung menjadi keputusan taktis sekolah & medis.**
+    - **HELALOKA: Kanan Atas (Juara Kuadran): Multi-bahaya, satu mesin fisika, langsung menjadi keputusan taktis sekolah & medis.**
 - **Naskah Presenter:**
-  > *"Di mana posisi kami dibanding solusi yang ada? Platform resmi seperti Magma PVMBG dan NASA FIRMS luar biasa dalam menghasilkan data pengamatan, namun mereka berhenti pada pelaporan status. Sementara aplikasi cuaca umum tidak memiliki pemodelan dispersi partikel mikro dan data fasilitas publik. UdaraSiaga berada di kuadran terdepan: kami mengambil data terbaik dari mereka semua, memprosesnya melalui mesin fisika, dan langsung mengubahnya menjadi rencana aksi taktis bagi manusia di lapangan."*
+  > *"Di mana posisi kami dibanding solusi yang ada? Platform resmi seperti Magma PVMBG dan NASA FIRMS luar biasa dalam menghasilkan data pengamatan, namun mereka berhenti pada pelaporan status. Sementara aplikasi cuaca umum tidak memiliki pemodelan dispersi partikel mikro dan data fasilitas publik. HELALOKA berada di kuadran terdepan: kami mengambil data terbaik dari mereka semua, memprosesnya melalui mesin fisika, dan langsung mengubahnya menjadi rencana aksi taktis bagi manusia di lapangan."*
 
 ---
 
@@ -194,7 +194,7 @@ Sebelum menyusun slide grafis, buka dan pelajari gaya tata letak (*layout*), kon
     - *Risiko internet lumpuh* $\to$ Teratasi 100% via offline caching & SQLite R*Tree.
     - *Risiko kepanikan publik* $\to$ Penegasan label skenario simulasi & narasi resmi Pusdalops BNPB.
 - **Naskah Presenter:**
-  > *"Kami telah menyiapkan peta jalan yang terukur. Prototipe yang kami bawa ke JOINTS 2026 ini telah mencapai TRL 6 dan siap diuji coba. Ke depan, kami akan mengintegrasikan sensor kualitas udara IoT berbiaya rendah dan transmisi radio LoRa untuk wilayah tanpa sinyal seluler. Kami juga mengantisipasi seluruh risiko operasional dengan menanamkan disclaimer otoritatif bahwa UdaraSiaga adalah instrumen pengambil keputusan pendukung, yang memperkuat—bukan menggantikan—otoritas resmi BMKG dan PVMBG."*
+  > *"Kami telah menyiapkan peta jalan yang terukur. Prototipe yang kami bawa ke JOINTS 2026 ini telah mencapai TRL 6 dan siap diuji coba. Ke depan, kami akan mengintegrasikan sensor kualitas udara IoT berbiaya rendah dan transmisi radio LoRa untuk wilayah tanpa sinyal seluler. Kami juga mengantisipasi seluruh risiko operasional dengan menanamkan disclaimer otoritatif bahwa HELALOKA adalah instrumen pengambil keputusan pendukung, yang memperkuat—bukan menggantikan—otoritas resmi BMKG dan PVMBG."*
 
 ---
 
@@ -208,7 +208,7 @@ Sebelum menyusun slide grafis, buka dan pelajari gaya tata letak (*layout*), kon
   - Call to Action: *"Sains yang baik tidak boleh berhenti di jurnal. Sains yang baik harus menyelamatkan nyawa di daratan."*
   - QR Code Tautan Repositori GitHub & Demo Aplikasi.
 - **Naskah Presenter:**
-  > *"UdaraSiaga dibangun oleh tim lintas disiplin yang memadukan keahlian pemodelan fisika atmosfer, rekayasa basis data spasial berkecepatan tinggi, dan perancangan antarmuka komando tanggap darurat. Kami percaya bahwa sains yang baik tidak boleh hanya tersimpan di dalam jurnal penelitian atau ruang server. Sains yang baik harus hadir di tengah kepulan abu dan asap, memandu kepala sekolah, melindungi anak-anak kita, dan menyelamatkan nyawa. Terima kasih, kami siap untuk sesi tanya jawab."*
+  > *"HELALOKA dibangun oleh tim lintas disiplin yang memadukan keahlian pemodelan fisika atmosfer, rekayasa basis data spasial berkecepatan tinggi, dan perancangan antarmuka komando tanggap darurat. Kami percaya bahwa sains yang baik tidak boleh hanya tersimpan di dalam jurnal penelitian atau ruang server. Sains yang baik harus hadir di tengah kepulan abu dan asap, memandu kepala sekolah, melindungi anak-anak kita, dan menyelamatkan nyawa. Terima kasih, kami siap untuk sesi tanya jawab."*
 
 ---
 
@@ -231,7 +231,7 @@ Siapkan 4 slide lampiran (*Appendix*) di bagian akhir berkas PDF. Begitu dewan j
     - **Sourced (Otoritatif Primer):** D01 (Angin permukaan Open-Meteo), D09 (NASA FIRMS FRP), D18 (Grid WorldPop 1 km 2020), D24 (Formula Mastin JVGR 2009).
     - **Sourced Secondary:** D05 (VONA MAGMA ESDM), D15 (Baku mutu ISPU Permen LHK 14/2020).
     - **Assumption Placeholder (Transparan):** D13b (Faktor emisi PM2.5 gambut) yang secara etis kami nyatakan belum berstatus primer sehingga konversi ISPU sengaja dinonaktifkan.
-  - Ini membuktikan UdaraSiaga adalah proyek yang jujur secara akademis dan tidak melakukan manipulasi data (*scientific integrity*).
+  - Ini membuktikan HELALOKA adalah proyek yang jujur secara akademis dan tidak melakukan manipulasi data (*scientific integrity*).
 
 ### Appendix A3: Resiliensi Teknis, Toleransi Kerusakan Jaringan, & Offline Guard
 - **Pertanyaan Juri:** *"Ketika bencana besar terjadi, listrik dan menara BTS mati. Apakah platform kalian masih bisa digunakan?"*

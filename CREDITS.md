@@ -1,4 +1,4 @@
-# Kredit dan Atribusi (HelaLoka)
+# Kredit dan Atribusi HELALOKA
 
 ## Kode yang diadaptasi (MIT)
 
@@ -55,6 +55,6 @@ Semua visual lain (sungai, perahu, gerbang candi bentar, jembatan, teratai, judu
 
 ## Lisensi Proyek
 
-Kode sumber proyek HelaLoka / UdaraSiaga Indonesia dilisensikan di bawah [MIT License](LICENSE).  
-Hak Cipta (c) 2026 Arya Refman & Tim HelaLoka / UdaraSiaga Indonesia (JOINTS UGM 2026).
+Kode sumber proyek HELALOKA Indonesia dilisensikan di bawah [MIT License](LICENSE).  
+Hak Cipta (c) 2026 Arya Refman & Tim HELALOKA Indonesia (JOINTS UGM 2026).
 

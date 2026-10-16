@@ -1,413 +1,318 @@
 <div align="center">
+  <img src="frontend/public/gunung.png" width="120" alt="Logo HELALOKA" />
 
-  <img src="frontend/public/gunung.png" width="130" alt="Logo UdaraSiaga Indonesia" />
+  <h1>HELALOKA Indonesia</h1>
 
-  # 🌋 UdaraSiaga Indonesia 🌲
-  ### Platform Komando Pemodelan Sebaran Atmosfer Multi-Bahaya & Sistem Pendukung Keputusan Aksi Dini
+  <p><strong>Simulasi sebaran abu vulkanik dan asap kebakaran hutan untuk keputusan aksi dini</strong></p>
 
-  <p align="center">
-    <i>Satu Mesin Fisika Lagrangian Terpadu untuk Erupsi Gunung Api (Abu Silika) & Kebakaran Hutan/Lahan (Asap PM2.5) dengan Cakupan 1-Indonesia</i>
-  </p>
+  <p>Hackathon JOINTS UGM 2026</p>
 
-  <p align="center">
-    <b>Dikembangkan untuk Hackathon JOINTS UGM 2026</b><br/>
-    <i>Track: Multi-Hazard Atmospheric Dispersion & Early Action Decision Support</i>
-  </p>
-
-  <!-- Badges -->
-  <p align="center">
-    <img src="https://img.shields.io/badge/Status-SIAGA%2024%2F7-emerald?style=for-the-badge&logo=satellite" alt="Status Siaga" />
+  <p>
+    <a href="https://helaloka.up.railway.app/"><img src="https://img.shields.io/badge/Demo-helaloka.up.railway.app-EB895B?style=for-the-badge&logo=railway&logoColor=white" alt="Demo langsung" /></a>
     <img src="https://img.shields.io/badge/Frontend-React%2019%20%7C%20TypeScript%20%7C%20Vite-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="Frontend" />
-    <img src="https://img.shields.io/badge/Backend-FastAPI%20%7C%20Python%203.10+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="Backend" />
-    <img src="https://img.shields.io/badge/GIS%20Engine-Leaflet%20%7C%20R*Tree%20Spatial-10b981?style=for-the-badge&logo=leaflet&logoColor=white" alt="Leaflet GIS" />
-    <img src="https://img.shields.io/badge/AI%20Advisory-Google%20Gemini%20%7C%20Featherless-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Gemini AI" />
-    <img src="https://img.shields.io/badge/Tests-40%2F40%20PASSED%20(100%25)-success?style=for-the-badge&logo=pytest&logoColor=white" alt="Test Status" />
+    <img src="https://img.shields.io/badge/Backend-FastAPI%20%7C%20Python%203.10%2B-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="Backend" />
+    <img src="https://img.shields.io/badge/Peta-Leaflet%20%7C%20SQLite%20R*Tree-199900?style=for-the-badge&logo=leaflet&logoColor=white" alt="Peta" />
+    <img src="https://img.shields.io/badge/AI-Featherless%20(Qwen)-7C3AED?style=for-the-badge" alt="AI" />
+    <img src="https://img.shields.io/badge/Tes-44%20lulus-2EA44F?style=for-the-badge&logo=pytest&logoColor=white" alt="Tes" />
     <img src="https://img.shields.io/badge/Lisensi-MIT-blue?style=for-the-badge" alt="Lisensi MIT" />
   </p>
 
-  <p align="center">
-    <a href="#-panduan-menjalankan-cepat-quickstart"><strong>Panduan Instalasi</strong></a> •
-    <a href="#-fitur-utama-platform"><strong>Fitur Utama</strong></a> •
-    <a href="#-arsitektur-antarmuka-the-4-zone-command-canvas"><strong>Arsitektur UI</strong></a> •
-    <a href="#-alur-simulasi--metodologi-sains"><strong>Metodologi Fisika</strong></a> •
-    <a href="#-katalog-data-otoritatif"><strong>Sumber Data</strong></a> •
-    <a href="#-dokumentasi-rest-api"><strong>Dokumentasi API</strong></a>
+  <p>
+    <a href="#menjalankan-secara-lokal"><strong>Menjalankan</strong></a> ·
+    <a href="#fitur"><strong>Fitur</strong></a> ·
+    <a href="#tampilan"><strong>Tampilan</strong></a> ·
+    <a href="#arsitektur"><strong>Arsitektur</strong></a> ·
+    <a href="#metode-ilmiah"><strong>Metode</strong></a> ·
+    <a href="#sumber-data"><strong>Sumber data</strong></a> ·
+    <a href="#api"><strong>API</strong></a>
   </p>
 
+  <img src="docs/screenshots/06-proyeksi-wilayah.jpg" width="900" alt="Aplikasi HELALOKA: sebaran asap TN Sebangau dan panel Proyeksi" />
 </div>
 
----
-
 > [!IMPORTANT]
-> **DISCLAIMER OTORITAS RESMI:**  
-> **UdaraSiaga Indonesia** adalah platform estimasi sains terkomputasi untuk simulasi dinamika atmosferik, perencanaan kontinjensi, dan protokol kesiapsiagaan aksi dini (*Early Action Protocol*). Platform ini **BUKAN PERINGATAN DARURAT RESMI PEMERINTAH**.  
-> Untuk penetapan status kedaruratan, penetapan status hukum bencana, dan komando evakuasi wajib di lapangan, seluruh instansi dan masyarakat **wajib merujuk pada arahan otoritatif resmi** dari **PVMBG Badan Geologi**, **BMKG**, dan **BNPB / BPBD**.
+> HELALOKA adalah alat estimasi ilmiah untuk belajar, merencanakan, dan bersiap. HELALOKA **bukan peringatan resmi**. Untuk status bencana, perintah evakuasi, dan keputusan di lapangan, rujuk PVMBG Badan Geologi, BMKG, serta BNPB/BPBD.
 
----
+## Daftar isi
 
-## 📖 Daftar Isi
+1. [Masalah](#masalah)
+2. [Ringkasan](#ringkasan)
+3. [Fitur](#fitur)
+4. [Tampilan](#tampilan)
+5. [Coba dalam tiga langkah](#coba-dalam-tiga-langkah)
+6. [Menjalankan secara lokal](#menjalankan-secara-lokal)
+7. [Arsitektur](#arsitektur)
+8. [Metode ilmiah](#metode-ilmiah)
+9. [Validasi dan keterbatasan](#validasi-dan-keterbatasan)
+10. [Sumber data](#sumber-data)
+11. [API](#api)
+12. [Pengujian](#pengujian)
+13. [Struktur repositori](#struktur-repositori)
+14. [Dokumentasi lain](#dokumentasi-lain)
+15. [Tim](#tim)
+16. [Lisensi dan atribusi](#lisensi-dan-atribusi)
 
-1. [Tentang Platform UdaraSiaga](#-tentang-platform-udarasiaga)
-2. [Panduan Menjalankan Cepat (Quickstart)](#-panduan-menjalankan-cepat-quickstart)
-3. [Fitur Utama Platform](#-fitur-utama-platform)
-4. [Arsitektur Antarmuka: The 4-Zone Command Canvas](#-arsitektur-antarmuka-the-4-zone-command-canvas)
-5. [Alur Simulasi & Metodologi Sains](#-alur-simulasi--metodologi-sains)
-6. [Katalog Data Otoritatif](#-katalog-data-otoritatif)
-7. [Dokumentasi REST API](#-dokumentasi-rest-api)
-8. [Verifikasi Sains, Akurasi & Pengujian](#-verifikasi-sains-akurasi--pengujian)
-9. [Struktur Repositori](#-struktur-repositori)
-10. [Lisensi & Atribusi](#-lisensi--atribusi)
+## Masalah
 
----
+Setiap musim kemarau, Indonesia menghadapi dua ancaman dari udara. Pada 2026 keduanya terjadi dalam satu bulan:
 
-## 🌟 Tentang Platform UdaraSiaga
+| Kejadian | Angka | Sumber |
+| :--- | :--- | :--- |
+| Asap karhutla, Palangka Raya, 30 September 2026 | PM2,5 **1.199 µg/m³**, kategori berbahaya (batas berbahaya 300) | detikHealth, data KLH |
+| Infeksi saluran pernapasan akibat asap | **174.694 kasus ISPA**, 40 ribu di antaranya balita | Kemenkes melalui MerahPutih, 23 September 2026 |
+| Abu letusan Anak Krakatau, 5 September 2026 | **8 bandara ditutup** | iNews melalui RCTI+, 7 September 2026 |
 
-Indonesia berada di pertemuan tiga lempeng tektonik aktif dunia (*Ring of Fire*) sekaligus memiliki hamparan lahan gambut terluas di Asia Tenggara. Ketika letusan gunung api atau kebakaran hutan/lahan terjadi, tantangan terbesar bagi garda depan kebencanaan (BPBD, Dinas Pendidikan, dan Dinas Kesehatan) bukanlah ketiadaan data satelit, melainkan **ketiadaan jembatan operasional antara data mentah sains dengan keputusan taktis di tingkat tapak**.
+Datanya sebenarnya tersedia: titik api satelit, status gunung api, dan prakiraan angin. Yang terlambat adalah keputusan, karena data itu tersebar di banyak tempat dan belum diterjemahkan menjadi "siapa yang terdampak, kapan, dan apa yang harus dilakukan".
 
-**UdaraSiaga Indonesia** hadir menjawab tantangan tersebut dengan:
-- **Penyatuan Multi-Bahaya dalam Satu Mesin Fisika**: Menghapus fragmentasi sistem terpisah antara abu vulkanik dan asap karhutla melalui mesin partikel Lagrangian Runge-Kutta Ordo 2 (RK2).
-- **Cakupan Penuh 1-Indonesia**: 70 Gunung Api Aktif PVMBG Tipe A, 36 Kawasan Hutan Konservasi & Lahan Gambut Kritis, serta simulasi titik bebas (*free-click*) di seluruh kepulauan Nusantara.
-- **Kesiapsiagaan Berbasis Aksi Nyata**: Bukan sekadar peta visual pasif, melainkan pengambil keputusan taktis otomatis:
-  1. **Triase Pendidikan**: Mandat pembelajaran jarak jauh (PJJ Daring) untuk sekolah terpapar sesuai standar SPAB Kemendikbud-BNPB.
-  2. **Evakuasi Medis Bebas Abu**: Perutean ambulans darurat jalan raya nyata (OSRM) menuju rumah sakit aman di luar koridor paparan.
-  3. **AI Kesiapsiagaan Personal & Media**: Google Gemini AI untuk draf siaran pers resmi BPBD dan buletin darurat WhatsApp warga tanpa emoji kasual, serta **AI GPS Saya** independen untuk proteksi personal keluarga.
+## Ringkasan
 
----
+Saat gunung api meletus atau hutan terbakar, datanya sebenarnya sudah tersedia: titik api satelit, status gunung api, dan prakiraan angin. Yang sering terlambat adalah keputusan. HELALOKA menyatukan data tersebut menjadi satu ruang keputusan. Coba langsung di **[helaloka.up.railway.app](https://helaloka.up.railway.app/)**.
 
-## 🚀 Panduan Menjalankan Cepat (Quickstart)
+- **Satu mesin partikel untuk dua bahaya.** Abu vulkanik dan asap karhutla disimulasikan dengan mesin Lagrangian yang sama (integrasi Runge-Kutta orde 2).
+- **Cakupan seluruh Indonesia.** 70 gunung api dengan level MAGMA, 36 kawasan hutan dan lahan gambut rawan api, serta titik bebas di peta.
+- **Ketidakpastian ditampilkan apa adanya.** Simulasi berjalan sebagai ansambel cuaca (15 anggota, 51 untuk Anak Krakatau). Angka dampak selalu berupa rentang P5 / P50 / P95, tidak pernah satu angka tunggal.
+- **Hasil yang bisa langsung dipakai.** Sekolah dan fasilitas kesehatan di jalur paparan, rute ke rumah sakit di luar jalur, ringkasan siap cetak, dan panduan untuk warga berdasarkan lokasi GPS.
 
-Platform UdaraSiaga dirancang untuk kemudahan instalasi 1-klik (*Zero-Friction Launcher*).
+## Fitur
 
-### Opsi A: Peluncuran 1-Klik (Windows)
-Cukup jalankan berkas batch otomatis di folder *root*:
+| Fitur | Keterangan |
+| :--- | :--- |
+| Landing page dan loader | Scene 3D Three.js dengan tur gulir otomatis, lalu loader perjalanan sungai menuju aplikasi. |
+| Mode nasional | Kerangka waktu data seluruh Indonesia: **Histori**, **Saat ini** (titik api FIRMS 24 jam), dan **Prediksi** (lintasan angin, asap, dan abu hingga 72 jam). |
+| Pusat Kendali Simulasi | Pilih gunung api atau kawasan hutan, lalu jalankan dalam mode **Kondisi Nyata** (data langsung) atau **Uji Skenario** (tinggi kolom abu, arah angin, dan hujan dapat diubah; hasil diberi label skenario hipotetis). |
+| Horizon waktu | Putar atau geser sebaran dari H+0 sampai H+48 jam dengan kontur peluang 90%, 50%, dan 5%. |
+| Proyeksi: Wilayah | Penduduk, anak, dan lansia terpapar; sekolah dan fasilitas kesehatan berisiko; luas area; grafik tren paparan per jam; kualitas udara (CAMS/OpenAQ); efek pencucian hujan. |
+| Proyeksi: Fasilitas | Daftar sekolah dan rumah sakit dengan peluang paparan dan jam tiba, rekomendasi PJJ daring, serta rute jalan OSRM ke rumah sakit di luar jalur paparan. |
+| Proyeksi: Protokol & AI | Panduan tindakan dari model bahasa yang hanya memakai fakta terukur (titik api, lintasan angin, kualitas udara), ditambah standar masker Kemenkes. |
+| Cetak Ringkasan | Pratinjau dokumen A4 dua halaman: peta sebaran, tabel dampak, serta daftar sekolah dan rumah sakit rujukan. |
+| AI GPS | Warga cukup membuka ponsel untuk mengetahui status asap atau abu di lokasinya, perkiraan jam tiba, dan langkah untuk keluarga. |
+
+## Tampilan
+
+Semua gambar diambil dari aplikasi yang berjalan dengan data langsung pada 15 Oktober 2026.
+
+| | |
+| :---: | :---: |
+| <img src="docs/screenshots/01-landing.jpg" width="440" alt="Landing page" /><br/>**Landing page** dengan scene 3D dan tur gulir otomatis | <img src="docs/screenshots/02-loader.jpg" width="440" alt="Loader sungai" /><br/>**Loader 3D** perjalanan sungai menuju aplikasi |
+| <img src="docs/screenshots/03-saat-ini.jpg" width="440" alt="Mode Saat ini" /><br/>**Mode Saat ini**: kepadatan titik api FIRMS 24 jam | <img src="docs/screenshots/04-prediksi.jpg" width="440" alt="Mode Prediksi" /><br/>**Mode Prediksi**: lintasan asap dan abu hingga 72 jam |
+| <img src="docs/screenshots/05-sebaran-asap.jpg" width="440" alt="Sebaran asap" /><br/>**Simulasi karhutla** TN Sebangau, H+48 | <img src="docs/screenshots/06-proyeksi-wilayah.jpg" width="440" alt="Proyeksi Wilayah" /><br/>**Proyeksi: Wilayah**, penduduk P5/P50/P95, fasilitas, grafik tren, kualitas udara |
+| <img src="docs/screenshots/07-fasilitas-rute.jpg" width="440" alt="Fasilitas dan rute" /><br/>**Proyeksi: Fasilitas**, sekolah berisiko dan rute OSRM ke rumah sakit | <img src="docs/screenshots/08-cetak-ringkasan.jpg" width="440" alt="Cetak Ringkasan" /><br/>**Cetak Ringkasan**: pratinjau dokumen A4 dua halaman |
+| <img src="docs/screenshots/10-sebaran-abu.jpg" width="440" alt="Sebaran abu" /><br/>**Uji Skenario** Anak Krakatau 15 km, sebaran abu H+48 | <img src="docs/screenshots/09-ai-gps.jpg" width="200" alt="AI GPS di ponsel" /><br/>**AI GPS** di ponsel warga: status asap, ISPU, dan langkah keluarga |
+
+## Coba dalam tiga langkah
+
+1. Buka **[helaloka.up.railway.app/app](https://helaloka.up.railway.app/app/)**, atau mulai dari landing page lalu tekan **Jalankan simulasi**.
+2. Di **Pusat Kendali Simulasi**, pilih **Kebakaran Hutan**, lalu **TN Sebangau**, lalu **Mulai Simulasi**. Simulasi 15 anggota ansambel selesai dalam sekitar dua menit.
+3. Tekan **Proyeksi** di header untuk melihat penduduk, sekolah, dan fasilitas kesehatan yang terpapar, lalu tab **Fasilitas** untuk rute ke rumah sakit dan **Cetak Ringkasan** untuk dokumen A4.
+
+Untuk sudut pandang warga, buka aplikasi di ponsel dan tekan **AI GPS**. Untuk abu vulkanik, pilih **Gunung Api**, lalu **G. Anak Krakatau**, lalu **Uji Skenario**, dan geser tinggi kolom abu.
+
+## Menjalankan secara lokal
+
+Prasyarat: Python 3.10 atau lebih baru, dan Node.js 20 atau lebih baru.
+
+**Windows, satu klik**
+
 ```cmd
 run.bat
 ```
-*Script ini secara otomatis membuka jendela mandiri untuk Backend FastAPI (port 8000) dan Frontend Vite (port 5173).*
 
----
+Skrip ini membuka backend (port 8000) dan frontend (port 5173) di jendela terpisah.
 
-### Opsi B: Peluncuran Bersamaan via NPM
+**Backend dan frontend bersamaan**
+
 ```bash
-# Pasang dependensi dan jalankan backend + frontend secara paralel
 npm install
 npm run dev
 ```
 
----
+**Manual**
 
-### Opsi C: Peluncuran Manual Step-by-Step
-
-#### 1. Menjalankan Backend (FastAPI Python)
-Pastikan Python 3.10+ telah terpasang:
 ```bash
-# 1. Pindah ke direktori backend
+# Backend
 cd backend
-
-# 2. Pasang dependensi
 pip install -r requirements.txt
-
-# 3. Jalankan server backend uvicorn
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
-```
-* Backend REST API: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) (Interactive Swagger UI)
-* Status Layanan & Telemetri: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
 
-#### 2. Menjalankan Frontend (React + TypeScript + Vite)
-Buka terminal baru:
-```bash
-# 1. Pindah ke direktori frontend
+# Frontend (terminal lain)
 cd frontend
-
-# 2. Pasang paket npm
 npm install
-
-# 3. Jalankan Vite dev server
 npm run dev
 ```
-* Dashboard Web Utama: [http://localhost:5173](http://localhost:5173)
 
-#### 3. Menjalankan Pengujian Otomatis (*Test Suite*)
-```bash
-# Eksekusi seluruh 40 unit & physics test
-pytest tests/
+| Alamat | Isi |
+| :--- | :--- |
+| http://localhost:5173 | Landing page |
+| http://localhost:5173/app/ | Aplikasi simulasi |
+| http://127.0.0.1:8000/docs | Dokumentasi API (Swagger) |
+| http://127.0.0.1:8000/health | Status layanan |
 
-# Pemeriksaan linter kode Python (Ruff)
-ruff check app/ tests/
-```
-*Hasil Verifikasi: **40/40 PASSED (100%)**, 0 error, 0 warning.*
+**Konfigurasi.** Salin `backend/.env.example` menjadi `backend/.env`. Kunci API hanya disimpan di server dan tidak pernah dikirim ke frontend.
 
----
-
-## ⚡ Fitur Utama Platform
-
-| Fitur | Deskripsi Teknis | Nilai Tambah & Dampak |
+| Variabel | Wajib | Fungsi |
 | :--- | :--- | :--- |
-| **Mesin Fisika Lagrangian RK2** | Integrasi gerak partikel ordo 2 dengan adveksi angin ECMWF 51-anggota, difusi turbulen $80\text{ m}^2/\text{s}$, dan pencucian basah (*wet scavenging* $\Lambda = a R^b$). | Akurasi sebaran spasial teruji tanpa komputasi berat superkomputer. |
-| **Kontur 3-Tingkat Ansambel** | Ekstraksi kontur Gaussian multi-probabilitas: **P90** (Hampir Pasti $\ge 90\%$), **P50** (Kemungkinan Besar $\ge 50\%$), dan **P05** (Mungkin Terkena $\ge 5\%$). | Menghilangkan kepalsuan angka tunggal; menyajikan rentang ketidakpastian ilmiah. |
-| **Diferensiasi Multi-Bahaya** | Abu Vulkanik (Merah Silika `#ef4444`, Oranye `#f97316`) vs Asap Karhutla (Coklat Jelaga `#78350f`, Kuning Jerami `#a16207`). | Visual kognitif seketika: *Semakin tebal warna, semakin pekat konsentrasi partikulat*. |
-| **Panah Telemetri Selaras Simbol** | Vektor arah gerak angin di episentrum otomatis mengikuti warna status bahaya gunung/hutan (Level I Hijau, Level II Kuning, Level III Oranye, Level IV Merah). | Menghilangkan kebingungan visual; panah arah sebaran 100% harmonis dengan ikon peta. |
-| **AI GPS Saya (Personal Safety)** | Modal mandiri pendeteksi koordinat perangkat (`navigator.geolocation`) untuk mengecek apakah abu/asap mengarah ke lokasi tempat tinggal pengguna. | Akses 1-klik untuk warga tanpa perlu menjalankan simulasi gunung terlebih dahulu. Dilengkapi pemantau otomatis 15-menit. |
-| **Triase SPAB Sekolah** | Evaluasi sekolah terpapar: Peluang $\ge 90\%$ (Instruksi PJJ Daring wajib), $\ge 50\%$ (Larangan kegiatan luar ruang). | Melindungi ribuan siswa dari paparan silikosis & ISPA akut sesuai kerangka SPAB Kemendikbud. |
-| **Rute Evakuasi OSRM Jalan Nyata** | Perutean jalan raya berbelok riil menghubungkan sekolah/puskesmas ke RS rujukan di zona aman (bukan garis lurus menembus gunung/laut). | Estimasi jarak riil (km) dan waktu tempuh ambulans darurat (menit) yang realistis. |
-| **Hybrid LLM Advisory Engine** | Narasi siaran pers media BPBD & buletin WhatsApp warga menggunakan Google Gemini API (model `gemini-2.0-flash`), Featherless LLM, dan fallback template deterministik. | Arsitektur tanpa gagal (*Zero-Failure*); anti-halusinasi dengan grounding fakta telemetri 100%. |
+| `UDARASIAGA_OFFLINE` | ya | `0` untuk data langsung; `1` (bawaan) hanya memakai data lokal di `backend/data/events` |
+| `FIRMS_MAP_KEY` | untuk data langsung | Titik api NASA FIRMS ([daftar gratis](https://firms.modaps.eosdis.nasa.gov/api/map_key/)) |
+| `FEATHERLESS_API_KEY` | tidak | Ringkasan AI; tanpa kunci, ringkasan memakai templat deterministik |
+| `FEATHERLESS_MODEL`, `FEATHERLESS_BASE_URL` | tidak | Mengganti model atau endpoint LLM |
+| `OPENAQ_API_KEY` | tidak | Stasiun kualitas udara OpenAQ |
 
----
+**Docker** (sama dengan yang dipakai di Railway):
 
-## 🎨 Arsitektur Antarmuka: The 4-Zone Command Canvas
-
-Antarmuka web UdaraSiaga dibangun dengan filosofi **The 4-Zone Command Canvas** untuk meminimalkan beban kognitif (*cognitive load*) operator tanggap darurat:
-
-```text
-+---------------------------------------------------------------------------------------------------+
-| ZONA A: TACTICAL COMMAND HEADER                                                                   |
-| [Logo] UdaraSiaga  |  Status: SIAGA 24/7  |  KPI Satelit Langsung  |  AI GPS Saya  |  Reset  |  Laci |
-+---------------------------------------------------------------------------------------------------+
-| ZONA B: FLOATING CONTROLLER DOCK            | ZONA C: INTERACTIVE GIS WORKSPACE                   |
-| (Kiri Atas Peta)                            |                                                     |
-| - Pilihan Bahaya: Vulkanik / Karhutla       | - Peta Leaflet Dark / Exposure Canvas GPU           |
-| - 70 Gunung Api MAGMA (Level I-IV)          | - Poligon Plume 3-Tingkat (P90 / P50 / P05)         |
-| - 36 Kawasan Hutan & Lahan Gambut           | - Panah Vektor Angin Episentrum Selaras Level       |
-| - Mode Otomatis / Coba-coba (Eksperimen)    | - Titik Hotspot FIRMS & KRB Geologi PVMBG           |
-| - Tombol Eksekusi [Mulai Simulasi]          | +-------------------------------------------------+ |
-|                                             | | TIMELINE PLAYER (T+0 s.d. T+48 Jam)             | |
-|                                             | +-------------------------------------------------+ |
-|                                             +-----------------------------------------------------+
-|                                             | ZONA D: TABBED INSPECTION DOCK (Laci Kanan)         |
-|                                             | [Tab 1: Wilayah] - Populasi & Kecamatan Kontainer   |
-|                                             | [Tab 2: Fasilitas] - Sekolah SPAB & Rute Medis OSRM |
-|                                             | [Tab 3: Protokol & AI] - Siaran Pers Gemini & Cetak |
-+---------------------------------------------+-----------------------------------------------------+
+```bash
+docker build -t helaloka .
+docker run -p 7860:7860 --env-file backend/.env helaloka   # http://localhost:7860
 ```
 
-### Rincian Setiap Zona:
-1. **Zona A (Tactical Command Header)**:
-   - Identitas platform resmi dan penunjuk waktu ganda presisi tinggi (**WIB** dan **UTC**).
-   - Indikator telemetri nasional *live*: Gunung Level IV/III aktif dan Titik Api Satelit 24 Jam.
-   - Tombol cepat **`AI GPS Saya`** (deteksi keselamatan personal mandiri), **`Reset Default`**, **`Legenda`**, dan **`Proyeksi Dampak`**.
-2. **Zona B (Floating Controller Dock)**:
-   - Panel melayang ergonomis di kiri atas peta (*glassmorphism card*) dengan akordeon intuitif.
-   - Pilihan kejadian gunung berapi / kawasan hutan dengan penanda level warna otoritatif.
-   - Kontrol eksperimen: tinggi kolom letusan ($1 - 25\text{ km}$), pembalik arah angin, dan intensitas hujan pencuci ($0 - 50\text{ mm/jam}$).
-3. **Zona C (Interactive GIS Workspace)**:
-   - Peta interaktif Leaflet GPU Canvas dengan dukungan *smooth zoom* dan *inertia physics*.
-   - Marker penunjuk vektor angin dinamis di episentrum lengkap dengan *Telemetry Chip* arah sebaran dan kecepatan.
-   - Kontur probabilitas sebaran partikel dan sebaran titik api satelit FIRMS.
-   - Pemutar garis waktu (*Timeline Player*) melayang di bawah layar untuk scrubbing sebaran dari jam ke-0 ($T+0$) hingga jam ke-48 ($T+48$).
-4. **Zona D (Tabbed Inspection Dock - Proyeksi Dampak)**:
-   - Laci inspeksi geser (*slide-over*) di sisi kanan dengan 3 tab analitis terpadu:
-     - **Tab Wilayah**: Estimasi populasi terpapar rentang P5–P50–P95, kelompok rentan anak & lansia, emisi karbon kebakaran hutan ($CO_2e$), dan peringatan lahar dingin.
-     - **Tab Fasilitas**: Triase sekolah (PJJ daring) dan rumah sakit rujukan dengan visualisasi rute ambulans darurat jalan raya OSRM.
-     - **Tab Protokol & AI**: Draf siaran pers resmi media BPBD, buletin darurat WhatsApp warga, standar APD masker respirator N95 Kemenkes, serta tombol cetak dokumen A4.
-
----
-
-## 🔬 Alur Simulasi & Metodologi Sains
+## Arsitektur
 
 ```mermaid
-flowchart TD
-    subgraph S1["1. INGEST DATA OTORITATIF"]
-        A1["PVMBG MAGMA: Elevasi kawah, koordinat, level I-IV, laporan VONA"]
-        A2["NASA FIRMS NRT: Titik api VIIRS S-NPP / NOAA-20 / MODIS, FRP"]
-        A3["Open-Meteo Ensemble: Angin 51-anggota ECMWF IFS 0.25° & Presipitasi"]
-        A4["WorldPop 2020: Grid populasi 1 km & rasio demografi rentan"]
-        A5["OpenStreetMap: Sekolah, faskes, rumah sakit, bandara via Overpass"]
+flowchart LR
+    subgraph Sumber["Sumber data langsung"]
+        A1["MAGMA / VONA (PVMBG)"]
+        A2["NASA FIRMS NRT"]
+        A3["Open-Meteo Ensemble"]
+        A4["WorldPop 2020"]
+        A5["OpenStreetMap / OSRM"]
+        A6["CAMS / OpenAQ"]
     end
 
-    subgraph S2["2. BASIS DATA SPASIAL (SQLITE R*TREE)"]
-        B1[("SQLite Database: udarasiaga.db")]
-        B2{{"Indeks Spasial Virtual: R*Tree 2D"}}
-        B3["Query Viewport & Point-in-Polygon < 1 ms"]
-        B1 --- B2 --- B3
+    subgraph Backend["Backend (FastAPI)"]
+        B1["Layanan ingest dan cache"]
+        B2["Mesin partikel Lagrangian RK2"]
+        B3["Agregasi ansambel dan kontur peluang"]
+        B4["Dampak, rute, kualitas udara"]
+        B5["Ringkasan AI berbasis fakta"]
     end
 
-    subgraph S3["3. MESIN FISIKA PARTIKEL LAGRANGIAN RK2"]
-        C1["Laju Massa Vulkanik (Mastin et al. 2009): M = 140.85 * H^4.15 kg/s"]
-        C2["Laju Emisi Asap (Wooster et al. 2005): FRP to PM2.5 (0.27 - 0.45 kg/MJ)"]
-        C3["Integrasi Waktu Runge-Kutta 2 (RK2) + Difusi Turbulen (K = 80 m2/s)"]
-        C4["Pencucian Hujan (Wet Scavenging): Lambda = a * R^b & Evaluasi Lahar"]
+    subgraph Frontend["Frontend (React + Vite)"]
+        C1["Landing page dan loader"]
+        C2["Peta Leaflet dan mode nasional"]
+        C3["Proyeksi, cetak ringkasan, AI GPS"]
     end
 
-    subgraph S4["4. DAMPAK TAKTIS & KESIAPSIAGAAN (OUTPUT)"]
-        D1["Ekstraksi Kontur Probabilitas Gaussian (P90, P50, P05)"]
-        D2["Triase Sekolah SPAB Kemendikbud & Evakuasi Medis Bebas Abu OSRM"]
-        D3["AI Emergency Advisory (Google Gemini API & WhatsApp Bulletin)"]
-        D4["Pemeriksaan Lokasi Warga Personal (AI GPS Saya)"]
-    end
-
-    S1 --> S2
-    S2 --> S3
-    S3 --> S4
+    Sumber --> B1 --> B2 --> B3 --> B4 --> C3
+    B1 --> C2
+    B4 --> B5 --> C3
 ```
 
-### Formula Matematika & Fisika yang Digunakan:
+Tata letak aplikasi terdiri dari empat area:
 
-#### 1. Laju Pelepasan Massa Erupsi Vulkanik (*Mass Eruption Rate* / MER)
-Menggunakan formulasi empiris internasional dari **Mastin et al. (2009)**:
-$$\dot{M} = 140.85 \times H^{4.15} \quad [\text{kg/s}]$$
-*Di mana $H$ adalah tinggi kolom letusan di atas kawah (km). Untuk mengakomodasi dinamika vulkanik non-linier, sistem menerapkan variasi stokastik lognormal.*
+| Area | Komponen | Isi |
+| :--- | :--- | :--- |
+| Header | `TacticalHeader.tsx` | Merek, jumlah gunung Siaga/Awas, titik api 24 jam, jam WIB/UTC, Legenda, AI GPS, Proyeksi |
+| Pusat Kendali | `ControllerDock.tsx` | Jenis bencana, lokasi, mode, Mulai Simulasi, Cetak Ringkasan |
+| Peta | `MapWorkspace.tsx`, `NationalModes.tsx`, `TimelinePlayer.tsx` | Peta satelit atau kertas taktis, lapisan spasial, mode nasional, horizon waktu |
+| Proyeksi | `AnalyticsDrawer.tsx` dan `components/tabs/` | Tab Wilayah, Fasilitas, dan Protokol & AI |
 
-#### 2. Laju Emisi Partikulat $PM_{2.5}$ Kebakaran Hutan & Lahan
-Menggunakan konversi *Fire Radiative Power* (FRP) dari **Wooster et al. (2005)**:
-$$E_{PM2.5} = \text{FRP} \times C_{smoke} \quad [\text{kg/s}]$$
-*Di mana $C_{smoke}$ dimodelkan menggunakan distribusi probabilitas segitiga ($0.27 - 0.37 - 0.45\text{ kg/MJ}$).*
+## Metode ilmiah
 
-#### 3. Adveksi & Difusi Atmosferik Partikel Lagrangian RK2
-Posisi tiap paket partikel dihitung pada tiap langkah waktu $\Delta t$ menggunakan skema numerik Runge-Kutta Ordo 2 (titik tengah):
-$$\vec{x}^* = \vec{x}(t) + \frac{1}{2} \Delta t \cdot \vec{u}(\vec{x}(t), t)$$
-$$\vec{x}(t + \Delta t) = \vec{x}(t) + \Delta t \cdot \vec{u}(\vec{x}^*, t + \frac{1}{2}\Delta t) + \vec{\xi} \sqrt{2 K \Delta t}$$
-*Di mana $\vec{u}$ adalah vektor kecepatan angin interpolasi ECMWF multi-aras dan $\vec{\xi} \sim \mathcal{N}(0, 1)$ adalah gangguan acak difusi turbulen atmosfer ($K = 80\text{ m}^2/\text{s}$).*
+| Komponen | Pendekatan | Rujukan |
+| :--- | :--- | :--- |
+| Laju massa erupsi | $\dot{M} = 140{,}85 \times H^{4{,}15}$ kg/s, dengan $H$ tinggi kolom di atas kawah (km) | Mastin dkk. (2009) |
+| Emisi asap | PM2,5 dari Fire Radiative Power, FRP dirata-ratakan per lintasan satelit | Wooster dkk. (2005) |
+| Transportasi | Adveksi RK2 titik tengah dengan angin ansambel multi-aras, ditambah difusi turbulen acak | |
+| Pencucian hujan | $\Lambda = a \cdot R^{b}$ dengan $R$ intensitas hujan (mm/jam) | |
+| Ketidakpastian | Peluang tiap sel dari seluruh anggota ansambel; dampak dilaporkan sebagai P5 / P50 / P95 | |
 
-#### 4. Pencucian Partikel oleh Hujan (*Wet Scavenging*)
-Fraksi partikel yang terendapkan oleh guyuran hujan dihitung melalui koefisien pencucian:
-$$\Lambda = a \cdot R^b \quad [\text{s}^{-1}]$$
-*Di mana $R$ adalah intensitas curah hujan ($\text{mm/jam}$), $a = 1.0 \times 10^{-4}$, dan $b = 0.8$.*
+Mode Kondisi Nyata memakai sumber bertingkat sehingga semua gunung api dan kawasan hutan di katalog dapat disimulasikan. Urutannya: VONA berabu 24 jam terakhir, riwayat VONA, erupsi terakhir di Smithsonian GVP, lalu asumsi VEI 2. Untuk kebakaran: FIRMS 24 jam, hari kebakaran terakhir dalam 7 hari, lalu arsip VIIRS hingga 2 tahun. Tingkatan yang dipakai selalu ditampilkan di hasil. Rincian ada di [backend/README.md](backend/README.md) dan [backend/docs/SPEC.md](backend/docs/SPEC.md).
 
----
+## Validasi dan keterbatasan
 
-## 📊 Katalog Data Otoritatif
+**Validasi.** Endpoint `GET /validation/{event_id}?run_id=` membandingkan hasil run dengan laporan dampak lapangan. Untuk letusan Anak Krakatau 5 September 2026, pembandingnya adalah wilayah yang dilaporkan terdampak hujan abu (BNPB melalui ANTARA, Kabupaten Lampung Selatan) dan koridor bandara. Skor hanya dihitung dari run yang benar-benar dijalankan, tidak ada skor tetap. Untuk karhutla belum ada data lapangan yang bisa dibandingkan, sehingga statusnya dilaporkan `not_testable`.
 
-Seluruh informasi spasial dan meteorologi yang ditampilkan oleh platform ditarik langsung dari sumber resmi pemerintah dan lembaga sains internasional:
+**Keterbatasan** yang sengaja ditampilkan apa adanya:
+- Kategori ISPU dari model emisi belum dihitung, karena faktor emisi PM2,5 belum terverifikasi. Kualitas udara yang ditampilkan berasal dari model CAMS dan stasiun OpenAQ.
+- Dampak lahan pertanian dan sumber air belum tersedia (belum ada data tutupan lahan), sehingga tidak ditampilkan.
+- Ringkasan AI hanya merangkum fakta terukur dan perlu ditinjau manusia. Di tab Protokol & AI, ringkasan dibuat untuk titik sumber kejadian, belum memakai hasil simulasi.
+- Kualitas simulasi bergantung pada prakiraan angin ansambel; rentang P5 sampai P95 menunjukkan seberapa besar ketidakpastian itu.
 
-| Kategori | Parameter Data | Sumber Otoritatif | Pembaruan |
-| :--- | :--- | :--- | :--- |
-| **Vulkanologi** | Level aktivitas (I–IV), koordinat vent kawah, elevasi puncak, radius KRB, waktu erupsi VONA | **PVMBG Badan Geologi** (MAGMA Indonesia) | Tiap jam (Level) / 10 menit (VONA) |
-| **Karhutla** | Titik api aktif (*hotspots*), radiasi daya termal (*Fire Radiative Power* / FRP), keyakinan deteksi | **NASA FIRMS NRT** (VIIRS S-NPP, NOAA-20, NOAA-21, MODIS) | Tiap 15 menit |
-| **Meteorologi** | Vektor angin multi-aras ($u, v$), kecepatan, arah kardinal, curah hujan presipitasi | **Open-Meteo API** (ECMWF IFS 0,25°, 51 anggota ansambel) | Tiap 3 jam |
-| **Demografi** | Estimasi kepadatan penduduk grid 1 km, proporsi rentan anak ($<15$ th) dan lansia ($\ge 65$ th) | **WorldPop 2020** (UN-adjusted) | Sensus Terbuka |
-| **Aset Publik** | Titik koordinat sekolah dasar/menengah, puskesmas, klinik, rumah sakit rujukan, bandara | **OpenStreetMap Contributors** (via Overpass API) | Cache spasial 30 hari |
-| **Jalan Raya** | Jaringan jalan raya berbelok riil untuk rute ambulans darurat | **OSRM (Open Source Routing Machine)** | Real-road routing |
-| **Kecerdasan Buatan** | Pengayaan narasi siaran pers media & siaran buletin darurat warga | **Google Gemini API** (`gemini-2.0-flash` / `AQ.` key) & **Featherless AI** | *On-Demand* |
+## Sumber data
 
----
+| Data | Sumber | Pembaruan |
+| :--- | :--- | :--- |
+| Level gunung api dan VONA | MAGMA Indonesia, PVMBG Badan Geologi | tiap jam (level), 10 menit (VONA) |
+| Titik api dan FRP | NASA FIRMS NRT (VIIRS S-NPP, NOAA-20, NOAA-21, MODIS) | tiap 15 menit |
+| Angin dan hujan | Open-Meteo Ensemble, ECMWF IFS 0,25° | per run dan tiap 3 jam |
+| Kualitas udara | Copernicus CAMS melalui Open-Meteo, stasiun OpenAQ | per permintaan |
+| Penduduk | WorldPop 2020, grid 1 km | statis |
+| Sekolah, faskes, bandara | OpenStreetMap melalui Overpass; cadangan basis data fasilitas nasional bila tile belum tersedia | cache 30 hari |
+| Rute jalan | OSRM | per permintaan |
+| Ringkasan AI | Featherless (Qwen), dengan cadangan templat deterministik | per permintaan |
 
-## 📡 Dokumentasi REST API
+Data yang belum tersedia (misalnya kategori ISPU dari model emisi, lahan pertanian, sumber air) tidak ditampilkan, bukan diisi angka perkiraan.
 
-Backend FastAPI menyediakan antarmuka REST API berperforma tinggi. Dokumentasi interaktif OpenAPI Swagger dapat diakses di `http://127.0.0.1:8000/docs`.
+## API
 
-### Ringkasan Endpoint Utama:
+Dokumentasi lengkap ada di [backend/docs/API_CONTRACT.md](backend/docs/API_CONTRACT.md) dan di `/docs` saat server berjalan.
 
-#### 1. Data Spasial & Titik Bahaya
-- `GET /layers/volcanoes`: Mengambil daftar 70 gunung api lengkap dengan koordinat, elevasi, level MAGMA, dan radius bahaya KRB.
-- `GET /layers/forests`: Mengambil daftar 36 kawasan hutan konservasi dengan sinkronisasi level bahaya I–IV berbasis titik api FIRMS 24 jam.
-- `GET /layers/hotspots`: Mengambil titik api satelit NASA FIRMS (Filter BBOX atau per kawasan).
-- `GET /layers/facilities`: Mengambil fasilitas publik (sekolah, faskes, bandara) dalam radius observasi.
+| Endpoint | Fungsi |
+| :--- | :--- |
+| `POST /simulate` | Menjalankan simulasi ansambel |
+| `GET /runs/{run_id}/tiers?t={jam}` | Kontur peluang per jam |
+| `GET /runs/{run_id}/impact` | Penduduk, kelompok rentan, fasilitas, dan luas terpapar |
+| `GET /runs/{run_id}/facilities-impacted` | Sekolah dan rumah sakit terdampak beserta rujukannya |
+| `GET /runs/{run_id}/evacuation-route` | Rute jalan OSRM ke rumah sakit di luar jalur paparan |
+| `GET /advice/nearby?lat=&lon=` | Ringkasan AI untuk satu lokasi |
+| `GET /layers/{nama}`, `/layers/wind`, `/layers/smoke-paths`, `/layers/heatmap` | Lapisan peta dan data mode nasional |
 
-#### 2. Eksekusi Simulasi
-- `POST /simulation/run`: Menjalankan pemodelan dispersi partikel Lagrangian RK2.
-  ```json
-  {
-    "hazard": "volcano",
-    "event_id": "merapi_yogyakarta",
-    "mode": "auto",
-    "overrides": {
-      "column_height_km": 12.0,
-      "wind_reverse_troposphere": false,
-      "rain_scavenging_mm_h": 0
-    }
-  }
-  ```
-- `GET /simulation/{run_id}/tiers`: Mengambil poligon kontur multi-probabilitas (P90, P50, P05) per jam simulasi.
-- `GET /simulation/{run_id}/wind/{hour}`: Mengambil data vektor angin dan arah sebaran pada jam tertentu.
+## Pengujian
 
-#### 3. Analisis Dampak & Aksi Dini
-- `GET /runs/{run_id}/impact`: Mengambil estimasi populasi terpapar rentang P5–P50–P95, kelompok rentan anak/lansia, dan emisi karbon.
-- `GET /runs/{run_id}/facilities`: Mengambil daftar sekolah terdampak triase PJJ daring dan rumah sakit rujukan di zona aman.
-- `GET /runs/{run_id}/evacuation-route`: Menghitung rute jalan raya riil OSRM dari sekolah terdampak ke rumah sakit rujukan terdekat.
-- `GET /runs/{run_id}/emergency-advisory`: Menghasilkan draf siaran pers resmi media BPBD dan broadcast WhatsApp warga via Google Gemini AI.
+```bash
+cd backend
+pytest            # 44 tes: fisika, kontrak API, integritas data, basis data spasial
+ruff check app tests
+```
 
-#### 4. Kesiapsiagaan Personal Warga
-- `GET /advice/nearby?lat={lat}&lon={lon}&lang=id`: Menganalisis ancaman abu vulkanik atau asap karhutla pada koordinat GPS pengguna secara langsung.
+```bash
+cd frontend
+npm run build     # pemeriksaan tipe TypeScript dan build produksi
+```
 
----
-
-## ✅ Verifikasi Sains, Akurasi & Pengujian
-
-Platform UdaraSiaga menjalani pengujian ketat sebelum dirilis:
-- **Pengujian Unit & Fisika**: 40 pengujian otomatis (*pytest*) mencakup validasi rumus Mastin, Wooster, integrasi RK2, dan penanganan kondisi batas darurat.
-- **Validasi Lapangan Historis (FSS)**: Evaluasi kinerja spasial menggunakan metrik *Fractions Skill Score* (FSS) terhadap data sebaran erupsi historis Gunung Anak Krakatau 2026.
-- **Kepatuhan Etika Data**:
-  - Menolak interpolasi palsu kategori ISPU di luar jangkauan sensor stasiun pemantau fisik.
-  - Tidak pernah menampilkan angka tunggal untuk populasi terdampak; selalu menyajikan rentang estimasi P5–P50–P95.
-  - Memisahkan anomali termal kawah gunung api dari titik api kebakaran vegetasi.
-
----
-
-## 📂 Struktur Repositori
+## Struktur repositori
 
 ```text
 JOINTS2026/
-├── run.bat                         # Peluncur 1-klik otomatis untuk Windows
-├── run.ps1                         # Peluncur PowerShell
-├── package.json                    # Script root dev runner (concurrently)
-├── README.md                       # Dokumentasi induk platform (berkas ini)
-├── CREDITS.md                      # Atribusi lisensi dan pustaka pihak ketiga
-│
-├── backend/                        # Layanan Mikro Sains & REST API (FastAPI)
-│   ├── .env                        # Konfigurasi kunci API (Gemini, FIRMS, Featherless)
-│   ├── requirements.txt            # Dependensi Python (FastAPI, NumPy, SciPy, Shapely)
-│   ├── pytest.ini                  # Konfigurasi test suite
-│   ├── app/
-│   │   ├── main.py                 # Entry point server FastAPI
-│   │   ├── api/                    # Handler rute REST API
-│   │   │   ├── layers.py           # Endpoint gunung, hutan, hotspot, faskes
-│   │   │   ├── simulation.py       # Endpoint eksekusi simulasi dispersi
-│   │   │   ├── lapis2.py           # Endpoint dampak, rute OSRM, emisi karbon
-│   │   │   └── advice.py           # Endpoint analisis koordinat GPS warga
-│   │   ├── engine/                 # Inti komputasi fisika atmosfer
-│   │   │   ├── simulator.py        # Mesin partikel Lagrangian RK2
-│   │   │   └── mastin.py           # Formulasi MER erupsi vulkanik
-│   │   ├── impact/                 # Modul analisis dampak & AI
-│   │   │   └── gemini_advisory.py  # Google Gemini AI Advisory Engine
-│   │   └── services/               # Integrasi API eksternal (MAGMA, FIRMS, Open-Meteo)
-│   └── tests/                      # 40 berkas pengujian otomatis pytest
-│
-├── frontend/                       # Antarmuka Web Taktis (React 19 + TypeScript + Vite)
-│   ├── index.html                  # Dokumen HTML utama
-│   ├── vite.config.ts              # Konfigurasi Vite & Tailwind CSS
-│   ├── package.json                # Dependensi frontend
-│   ├── public/                     # Aset statis & logo
-│   │   ├── gunung.png              # Logo resmi gunung api
-│   │   ├── hutan.png               # Ikon kawasan hutan
-│   │   ├── titik_api.png           # Ikon titik api satelit FIRMS
-│   │   ├── school.png              # Ikon sekolah SPAB
-│   │   └── hospital.png            # Ikon fasilitas kesehatan
-│   └── src/
-│       ├── App.tsx                 # Root layout container 4-zona
-│       ├── main.tsx                # Entry point React
-│       ├── index.css               # Desain sistem & tokens CSS
-│       ├── components/
-│       │   ├── layout/
-│       │   │   ├── TacticalHeader.tsx    # Zona A: Header taktis, live ticker, jam ganda
-│       │   │   ├── ControllerDock.tsx    # Zona B: Pusat kendali parameter simulasi
-│       │   │   ├── MapWorkspace.tsx      # Zona C: Kanvas peta Leaflet & panah vektor
-│       │   │   ├── TimelinePlayer.tsx    # Zona C: Slider scrubber waktu 48 jam
-│       │   │   ├── AnalyticsDrawer.tsx   # Zona D: Laci samping analitik 3-tab
-│       │   │   ├── GpsAdvisoryModal.tsx  # Modal mandiri AI GPS Saya (Personal Safety)
-│       │   │   └── LegendModal.tsx       # Modal legenda resmi PVMBG & FIRMS
-│       │   ├── tabs/
-│       │   │   ├── TabImpact.tsx         # Tab 1: Dampak wilayah & populasi rentan
-│       │   │   ├── TabFacilities.tsx     # Tab 2: Triase sekolah & rute evakuasi OSRM
-│       │   │   └── TabProtocolAI.tsx     # Tab 3: Draf siaran pers Gemini & standar APD
-│       │   └── ui/                       # Komponen mikro UI (akordeon, tombol, chip)
-│       └── services/
-│           └── api.ts                    # Klien HTTP type-safe menuju backend
-│
-└── docs/                           # Berkas presentasi, arsitektur, dan panduan lomba
-    ├── Arsitektur_dan_Sumber_Data_UdaraSiaga.html
-    └── Pembagian_Pitch_Deck_UdaraSiaga_v2_ContohVisual.md
+├── README.md               Dokumen ini
+├── CREDITS.md              Atribusi kode, aset, dan pustaka
+├── LICENSE                 Lisensi MIT
+├── Dockerfile              Image produksi (build frontend, lalu backend gunicorn); dipakai deploy Railway
+├── render.yaml             Konfigurasi deploy Render (alternatif)
+├── run.bat, run.ps1        Peluncur lokal untuk Windows
+├── package.json            Menjalankan backend dan frontend bersamaan
+├── scripts/                deploy_hf.ps1 (alternatif: deploy ke Hugging Face Spaces)
+├── docs/                   Materi presentasi, arsitektur, dan screenshots/
+├── backend/                API FastAPI dan mesin simulasi (lihat backend/README.md)
+│   ├── app/                api, engine, impact, ingest, llm, services, db, schemas
+│   ├── config/             Asumsi ilmiah dan parameter bahaya
+│   ├── data/               Basis data SQLite dan lapisan spasial
+│   ├── docs/               Spesifikasi, kontrak API, sumber data, basis data
+│   └── tests/              Pengujian pytest
+└── frontend/               Landing page dan aplikasi React (lihat frontend/README.md)
+    ├── index.html          Landing page
+    ├── app/                Halaman aplikasi (/app/)
+    ├── loader/             Sumber loader 3D
+    ├── public/             Aset statis, termasuk landing/
+    └── src/                Kode React
 ```
 
----
+## Dokumentasi lain
 
-## 📜 Lisensi & Atribusi
+| Dokumen | Isi |
+| :--- | :--- |
+| [backend/README.md](backend/README.md) | Menjalankan backend, struktur kode, aturan data langsung |
+| [backend/docs/SPEC.md](backend/docs/SPEC.md) | Spesifikasi teknis backend |
+| [backend/docs/API_CONTRACT.md](backend/docs/API_CONTRACT.md) | Kontrak REST API |
+| [backend/docs/SOURCES.md](backend/docs/SOURCES.md) | Verifikasi sumber data dan konstanta |
+| [backend/docs/DATABASE_ARCHITECTURE.md](backend/docs/DATABASE_ARCHITECTURE.md) | Basis data spasial SQLite dan R*Tree |
+| [frontend/README.md](frontend/README.md) | Menjalankan frontend dan struktur kode |
+| [frontend/docs/LANDING.md](frontend/docs/LANDING.md) | Landing page dan riwayat perubahannya |
+| [docs/PITCH_DECK.md](docs/PITCH_DECK.md) | Panduan pitch deck dan naskah presentasi |
 
-Proyek ini dilisensikan di bawah lisensi terbuka [MIT License](LICENSE).  
-Seluruh atribusi data geospasial, model numerik, dan pustaka komputasi terbuka tercantum secara transparan di berkas [CREDITS.md](CREDITS.md).
+## Tim
 
----
+Tim **geminitolonggeneratemykisahstorysayauntuksaya** untuk Hackathon JOINTS UGM 2026. Kode sumber: [github.com/nyarikerja/JOINTS2026](https://github.com/nyarikerja/JOINTS2026).
 
-<div align="center">
-  <p><b>UdaraSiaga Indonesia — Mengubah Sains Atmosferik Menjadi Aksi Perlindungan Nyata Bagi Anak Bangsa</b></p>
-  <p><i>Dikembangkan dengan dedikasi untuk Resiliensi Bencana Indonesia • JOINTS UGM 2026</i></p>
-</div>
+## Lisensi dan atribusi
+
+Kode dirilis dengan [lisensi MIT](LICENSE). Atribusi data, model, dan pustaka pihak ketiga tercantum di [CREDITS.md](CREDITS.md).

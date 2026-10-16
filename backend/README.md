@@ -1,13 +1,14 @@
-# UdaraSiaga: Backend Simulator Sebaran Abu Vulkanik & Asap Karhutla
+# HELALOKA Backend
 
-Platform komputasi dan pemodelan dispersi partikulat atmosferik untuk erupsi gunung api dan kebakaran hutan/lahan berbasis mesin partikel Lagrangian terintegrasi. Dikembangkan untuk Hackathon JOINTS UGM 2026.
+Simulator sebaran abu vulkanik dan asap karhutla, beserta REST API-nya.
 
-> **Pernyataan Penyangkalan (Disclaimer):**
-> Aplikasi ini merupakan sistem pemodelan sains terkomputasi untuk pembelajaran, perencanaan mitigasi kontinjensi, dan protokol kesiapsiagaan aksi dini. Aplikasi ini **BUKAN PERINGATAN RESMI**. Untuk keputusan darurat dan status kebencanaan resmi di lapangan, seluruh pihak wajib merujuk pada arahan otoritatif dari Pusat Vulkanologi dan Mitigasi Bencana Geologi (PVMBG), Badan Meteorologi Klimatologi dan Geofisika (BMKG), dan Badan Nasional Penanggulangan Bencana (BNPB / BPBD).
+Satu mesin partikel Lagrangian dipakai untuk erupsi gunung api dan kebakaran hutan/lahan. Dikembangkan untuk Hackathon JOINTS UGM 2026. Nama kode internal proyek ini adalah UdaraSiaga, sehingga nama itu masih muncul di beberapa berkas, variabel lingkungan (`UDARASIAGA_OFFLINE`), dan basis data (`udarasiaga.db`).
 
----
+> [!IMPORTANT]
+> Aplikasi ini adalah pemodelan ilmiah untuk belajar, merencanakan, dan bersiap. Aplikasi ini **bukan peringatan resmi**. Untuk keputusan darurat dan status kebencanaan resmi di lapangan, seluruh pihak wajib merujuk pada arahan otoritatif dari Pusat Vulkanologi dan Mitigasi Bencana Geologi (PVMBG), Badan Meteorologi Klimatologi dan Geofisika (BMKG), dan Badan Nasional Penanggulangan Bencana (BNPB / BPBD).
 
-## 1. Arsitektur Komputasi & Mesin Dispersi
+
+## 1. Arsitektur
 
 ```mermaid
 graph TD
@@ -16,7 +17,7 @@ graph TD
         A2[NASA FIRMS: Deteksi Titik Api NRT VIIRS / MODIS]
         A3[Open-Meteo Ensemble: Angin Multi-Aras u, v & Hujan]
         A4[WorldPop 2020: Grid Penduduk 1 km]
-        A5[Kemenkes & Kemendikbud: Faskes & Sekolah Posko]
+        A5[OpenStreetMap: Sekolah, Faskes, Bandara]
     end
 
     subgraph Storage["2. Basis Data Spasial Terpusat (udarasiaga.db)"]
@@ -38,8 +39,7 @@ graph TD
         D2[Hierarki Spasial: Kecamatan sebagai Wadah Induk]
         D3[Triase Sekolah: Pertimbangkan PJJ >= 90%, Batasi Luar Ruang >= 50%]
         D4[Routing Jalan Raya Riil OSRM ke RS Rujukan Aman]
-        D5[Ringkasan AI Warga: Featherless Qwen3.6]
-        D6[Mitigasi APD Medis N95, Larangan Softlens & Air Minum]
+        D5[Ringkasan AI Warga: Featherless Qwen, cadangan templat]
         D7[Ekspor Lembar Rencana Aksi Darurat Cetak A4 / PDF]
     end
 
@@ -48,15 +48,11 @@ graph TD
     Physics --> Impact
 ```
 
----
 
-## 2. Panduan Menjalankan Sistem
+## 2. Menjalankan
 
-### Persyaratan Lingkungan
-* Python versi 3.10 atau yang lebih baru.
-* Sistem operasi: Linux, macOS, atau Microsoft Windows.
+Prasyarat: Python 3.10 atau lebih baru (Linux, macOS, atau Windows). Kunci API disimpan di `backend/.env`.
 
-### Menjalankan Server Backend
 ```bash
 # 1. Masuk ke direktori backend
 cd backend
@@ -68,30 +64,27 @@ pip install -r requirements.txt
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-* **Dokumentasi REST API Interaktif (Swagger UI)**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-* **Dokumentasi ReDoc**: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
-* **Pemeriksaan Kesehatan Sistem**: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
-* **Antarmuka Pengujian Mandiri**: [http://127.0.0.1:8000/dummy](http://127.0.0.1:8000/dummy)
+| Alamat | Isi |
+| :--- | :--- |
+| http://127.0.0.1:8000/docs | Dokumentasi API (Swagger) |
+| http://127.0.0.1:8000/redoc | Dokumentasi API (ReDoc) |
+| http://127.0.0.1:8000/health | Status layanan |
+| http://127.0.0.1:8000/dummy | Antarmuka uji sederhana (`frontend-dummy/`) |
 
----
 
-## 3. Eksekusi Pengujian Otomatis & Pemeriksaan Kode
+## 3. Pengujian
 
-Rangkaian pengujian terintegrasi mencakup validasi matematika fisika, skema Pydantic v2, endpoint API lapis 2 & 3, serta integritas kueri indeks spasial R\*Tree:
+Pengujian mencakup persamaan fisika, skema Pydantic v2, endpoint API lapis 2 dan 3, parser MAGMA, serta kueri indeks spasial R\*Tree.
 
 ```bash
-# Menjalankan seluruh pengujian unit dan sains (37 tes terdaftar)
-pytest
-
-# Menjalankan linter kode berbasis Ruff
+pytest              # 44 tes
 ruff check app tests
 ```
 
-*Status Verifikasi Saat Ini (11 Okt 2026):* **40 passed**, 0 error linter (ruff F/E9).
+Status 15 Oktober 2026: 44 tes lulus, ruff bersih.
 
----
 
-## 4. Struktur Direktori Berstandar Best Practice
+## 4. Struktur direktori
 
 ```
 backend/
@@ -99,7 +92,7 @@ backend/
 ├── requirements.txt           # Dependensi pustaka Python produksi
 ├── pytest.ini                 # Konfigurasi rangkaian pengujian otomatis
 ├── app/
-│   ├── api/                   # Router REST API (health, events, simulate, layers, attributions)
+│   ├── api/                   # Router REST API (health, events, simulate, layers, map_modes, advice, lapis2, lapis3)
 │   ├── core/                  # Konfigurasi, proteksi offline, generator nomor acak deterministik
 │   ├── db/                    # Arsitektur basis data spasial terpusat
 │   │   ├── __init__.py
@@ -111,12 +104,14 @@ backend/
 │   │       ├── forest_repo.py    # Manajemen 36 hutan dan geometri poligon batas riil
 │   │       └── hotspot_repo.py   # Kueri titik api satelit NASA FIRMS
 │   ├── engine/                # Mesin adveksi Runge-Kutta 2, difusi turbulen, wet scavenging
-│   ├── impact/                # Estimasi dampak, routing OSRM, Gemini AI advisory, ekspor PDF
-│   │   ├── advisory.py        # Protokol tanggap multi-sektor & mesin darurat BNPB
-│   │   ├── gemini_advisory.py # Integrasi Google Gemini AI briefing & WhatsApp broadcast
+│   ├── impact/                # Estimasi dampak, paparan fasilitas, rute OSRM, ekspor
+│   │   ├── exposure.py        # Paparan penduduk dan fasilitas per ambang peluang
+│   │   ├── advisory.py        # Saran tindakan multi-sektor
 │   │   ├── routing.py         # Mesin rute jalan raya riil OSRM OpenStreetMap
 │   │   └── export.py          # Generator lembar rencana aksi tanggap darurat format cetak A4
-│   ├── ingest/                # Modul ingest telemetri (Open-Meteo, FIRMS, OSM Overpass)
+│   ├── ingest/                # Ingest per run (Open-Meteo, FIRMS, OSM Overpass)
+│   ├── llm/brief.py           # Ringkasan AI warga berbasis fakta (Featherless, cadangan templat)
+│   ├── services/              # Data langsung: FIRMS, MAGMA/VONA, GVP, grid angin, kualitas udara, fasilitas OSM
 │   ├── main.py                # Titik masuk aplikasi FastAPI dan lifespan otomatis
 │   └── schemas/               # Validasi kontrak request/response Pydantic v2
 ├── config/
@@ -143,12 +138,12 @@ backend/
     ├── test_integrity.py      # Pengujian kepatuhan kontrak dan integritas data
     ├── test_lapis2.py         # Pengujian endpoint simulasi dan estimasi dampak
     ├── test_lapis3.py         # Pengujian validasi historis dan analisis sensitivitas
+    ├── test_magma_parser.py   # Pengujian parser halaman MAGMA dan VONA
     └── test_physics.py        # Pengujian persamaan Mastin 2009 dan konversi FRP Wooster
 ```
 
----
 
-## 5. Ringkasan Basis Data Spasial Terkelola
+## 5. Basis data spasial
 
 Detail lengkap arsitektur basis data tersedia pada dokumen [docs/DATABASE_ARCHITECTURE.md](docs/DATABASE_ARCHITECTURE.md).
 
@@ -181,15 +176,12 @@ classDiagram
     }
 ```
 
-* **70 Gunung Api**: Elevasi puncak, koordinat kawah, dan radius katalog; level aktivitas disalin dari MAGMA tiap jam (`app/services/magma_status.py`).
-* **36 Kawasan Hutan & Lahan Gambut**: Terdaftar dengan koordinat sentroid, luas hektare, tingkat kerawanan, dan poligon batas spasial resmi.
-* **2.039 Fasilitas Publik Nasional**:
-  * 1.332 Sekolah (SDN, SMPN, SMAN, SMKN) sebagai basis Tempat Evakuasi Sementara (TES) BPBD di 38 provinsi.
-  * 628 Fasilitas Kesehatan (RSUP, RSUD rujukan, dan Puskesmas ring-1 tanggap darurat).
-  * 79 Bandar Udara (komersial internasional, domestik utama, dan perintis Nusantara).
-* **1.680 Titik Api Satelit**: Deteksi sensor satelit NASA FIRMS VIIRS & MODIS.
+- **70 gunung api**: elevasi puncak, koordinat kawah, dan radius katalog. Level aktivitas disalin dari MAGMA tiap jam (`app/services/magma_status.py`).
+- **36 kawasan hutan dan lahan gambut**: koordinat sentroid, luas, tingkat kerawanan, dan poligon batas.
+- **Fasilitas publik** (sekolah, faskes, bandara) diambil dari OpenStreetMap per tile 1° (`app/services/osm_facilities.py`). Bila tile belum terunduh atau hasilnya kosong, data dilengkapi dari basis data fasilitas nasional (`udarasiaga.db`, `data/layers/facilities_indonesia.json`).
+- **Titik api** dibaca langsung dari NASA FIRMS (`app/services/firms_live.py`); tabel `hotspots` di basis data tidak lagi dipakai aplikasi.
 
-## Status Data Langsung (diperbarui 11 Oktober 2026)
+## 6. Data langsung dan aturan konsistensi
 
 Seluruh angka di aplikasi `/app/` berasal dari sumber langsung; tidak ada data contoh atau nilai karangan.
 
@@ -202,7 +194,8 @@ Seluruh angka di aplikasi `/app/` berasal dari sumber langsung; tidak ada data c
 | Grid angin nasional | Open-Meteo forecast | tiap 3 jam |
 | Penduduk | WorldPop 2020, 1 km, UN-adjusted (diunduh otomatis) | statis (sensus) |
 | Sekolah, faskes, bandara | OpenStreetMap via Overpass, cache per tile 1° | unduh latar, 30 hari |
-| Ringkasan AI warga | LLM Featherless (Qwen3.6) dari fakta di atas | per permintaan |
+| Kualitas udara | Copernicus CAMS (Open-Meteo) dan stasiun OpenAQ | per permintaan |
+| Ringkasan AI warga | LLM Featherless (Qwen) dari fakta di atas, cadangan templat | per permintaan |
 
 Aturan yang menjaga konsistensi antar fitur:
 - **Mode Kondisi Nyata, sumber bertingkat.** Semua gunung api dan kawasan hutan katalog dapat disimulasikan:

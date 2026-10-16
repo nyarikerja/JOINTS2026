@@ -1,12 +1,12 @@
-# Arsitektur Basis Data Spasial Terpadu (UdaraSiaga Database Architecture)
+# Arsitektur Basis Data Spasial HELALOKA
 
-Dokumen ini memuat spesifikasi teknis, skema relasional, indeks spasial R*Tree, dan pola akses data (*Repository Pattern*) untuk sistem informasi geografis dan simulator sebaran atmosfer UdaraSiaga.
+Dokumen ini memuat spesifikasi teknis, skema relasional, indeks spasial R*Tree, dan pola akses data (*Repository Pattern*) untuk sistem informasi geografis dan simulator sebaran atmosfer HELALOKA.
 
 ---
 
 ## 1. Ringkasan Eksekutif & Rasional Desain
 
-Sistem UdaraSiaga mengintegrasikan data multi-bahaya berskala nasional yang mencakup seluruh 38 provinsi di Indonesia. Untuk memenuhi persyaratan performa tinggi tanpa latensi pada antarmuka peta taktis, arsitektur basis data bertransformasi dari berkas JSON datar (*flat files*) menjadi basis data relasional terindeks secara spasial (*Spatial Database*).
+Sistem HELALOKA mengintegrasikan data multi-bahaya berskala nasional yang mencakup seluruh 38 provinsi di Indonesia. Untuk memenuhi persyaratan performa tinggi tanpa latensi pada antarmuka peta taktis, arsitektur basis data bertransformasi dari berkas JSON datar (*flat files*) menjadi basis data relasional terindeks secara spasial (*Spatial Database*).
 
 ### Perbandingan Karakteristik Arsitektur
 
@@ -341,7 +341,7 @@ Rangkaian pengujian otomatis pada berkas [tests/test_database.py](file:///c:/Use
 
 ```mermaid
 gantt
-    title Latensi Rata-rata Operasi Basis Data UdaraSiaga
+    title Latensi Rata-rata Operasi Basis Data HELALOKA
     dateFormat X
     axisFormat %s ms
     section Operasi Basis Data

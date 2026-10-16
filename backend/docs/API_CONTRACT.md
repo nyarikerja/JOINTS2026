@@ -1,6 +1,6 @@
-# UdaraSiaga API Contract
+# Kontrak API HELALOKA
 
-Dokumen kontrak antarmuka pemrograman aplikasi (API Contract) UdaraSiaga Backend.
+Dokumen kontrak antarmuka pemrograman aplikasi (API Contract) HELALOKA Backend.
 Seluruh contoh respons bersumber dari fixture uji nyata di `docs/fixtures/`.
 
 ---
@@ -102,7 +102,7 @@ sequenceDiagram
 {
   "status": "healthy",
   "version": "0.1.0",
-  "disclaimer": "PERINGATAN: UdaraSiaga adalah perangkat lunak kesiapsiagaan...",
+  "disclaimer": "PERINGATAN: HELALOKA adalah perangkat lunak kesiapsiagaan...",
   "offline_mode": false,
   "sources": {
     "openmeteo": "cached_offline",
@@ -144,7 +144,7 @@ sequenceDiagram
   "members_source": "synthetic_spread",
   "n_members": 5,
   "horizon_hours": 6,
-  "disclaimer": "PERINGATAN: UdaraSiaga...",
+  "disclaimer": "PERINGATAN: HELALOKA...",
   "assumptions_used": [
     {
       "parameter": "mer_from_column_height",
@@ -219,7 +219,7 @@ sequenceDiagram
     "available": false,
     "reason": "D13b PM2.5 emission factor is currently placeholder; ISPU category calculation withheld."
   },
-  "disclaimer": "PERINGATAN: UdaraSiaga..."
+  "disclaimer": "PERINGATAN: HELALOKA..."
 }
 ```
 
@@ -482,7 +482,7 @@ sequenceDiagram
 - **Contoh Respons (lihat `docs/fixtures/sources.json`):**
 ```json
 {
-  "title": "Katalog Sumber Data UdaraSiaga",
+  "title": "Katalog Sumber Data HELALOKA",
   "verified_sources": [
     { "id": "D01", "name": "Open-Meteo Weather API", "status": "S", "license": "CC BY 4.0" },
     { "id": "D03", "name": "NASA FIRMS (MODIS & VIIRS)", "status": "S", "license": "NASA Open Data Policy" },
@@ -527,7 +527,7 @@ sequenceDiagram
   },
   "advice": { ... },
   "assumptions_used": [ ... ],
-  "disclaimer": "PERINGATAN: UdaraSiaga..."
+  "disclaimer": "PERINGATAN: HELALOKA..."
 }
 ```
 
