@@ -193,8 +193,9 @@ export const TabProtocolAI: React.FC<TabProtocolAIProps> = ({
   const scenarioKey: Scenario = (data?.scenario as Scenario) || (hazard === "volcano" ? "ash_threat" : "prevention");
   const scStyle = SCENARIO_STYLE[scenarioKey] || SCENARIO_STYLE.ash_threat;
 
-  // Fallback brief cerdas jika API sedang memuat atau server offline
-  const activeBrief = brief || (point ? {
+  // Panduan umum hanya bila server AI gagal (bukan saat memuat), supaya tidak tampil seolah hasil AI
+  const isGeneric = !brief && !!error && !loading;
+  const activeBrief = brief || (isGeneric && point ? {
     headline: hazard === "volcano"
       ? `Panduan mitigasi taktis keselamatan di sekitar ${cleanPlaceName || "kawasan gunung"}`
       : `Panduan pencegahan kebakaran untuk keluarga di dekat ${cleanPlaceName || "kawasan hutan"}`,
@@ -247,6 +248,12 @@ export const TabProtocolAI: React.FC<TabProtocolAIProps> = ({
         </div>
       )}
 
+      {loading && !brief && (
+        <div className="bg-white border border-[#2b211e]/10 rounded-xl p-4 text-center text-[11px] text-[#2b211e]/70 animate-pulse">
+          AI sedang membaca titik api, lintasan angin, dan kualitas udara di lokasi ini...
+        </div>
+      )}
+
       {/* 2. Kartu Hasil AI: Protokol Taktis di Zona Episentrum (Menggantikan Draf Siaran Pers & Buletin) */}
       {activeBrief && (
         <div className={`bg-white border rounded-xl p-3 shadow-xs space-y-2.5 ${scStyle.borderCls}`}>
@@ -254,6 +261,7 @@ export const TabProtocolAI: React.FC<TabProtocolAIProps> = ({
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider ${scStyle.cls}`}>
               {scStyle.id}
             </span>
+            {isGeneric && <span className="text-[9px] text-[#2b211e]/50">Panduan umum · AI tidak tersedia</span>}
           </div>
 
           <h4 className="text-[12px] font-bold text-[#140f0e] leading-snug">

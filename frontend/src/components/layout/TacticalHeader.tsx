@@ -137,7 +137,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
   return (
     <>
       <header
-      className="h-[52px] backdrop-blur-md px-4 flex items-center justify-between z-[1100] shrink-0"
+      className="h-[52px] backdrop-blur-md px-3 sm:px-4 flex items-center justify-between z-[1100] shrink-0"
       style={{
         backgroundColor: "#EB895B",
         borderBottom: "1px solid rgba(161, 70, 70, 0.35)",
@@ -163,7 +163,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
         />
         <div className="flex items-center gap-1.5">
           <span className="font-heading text-lg tracking-tight" style={{ color: "#140f0e" }}>HELALOKA</span>
-          <span className="font-subheading text-[10px] px-1.5 py-0.5 rounded tracking-wider text-white shadow-xs" style={{ backgroundColor: "#A14646" }}>
+          <span className="hidden sm:inline font-subheading text-[10px] px-1.5 py-0.5 rounded tracking-wider text-white shadow-xs" style={{ backgroundColor: "#A14646" }}>
             INDONESIA
           </span>
         </div>
@@ -208,7 +208,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
       </div>
 
       {/* Jam Digital Ganda & Tombol Aksi */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-1.5 sm:gap-2.5">
         <div className="text-right font-mono text-xs hidden sm:block leading-tight">
           <div className="font-bold" style={{ color: "#140f0e" }}>{clockWib}</div>
           <div className="text-[10px]" style={{ color: "rgba(20, 15, 14, 0.75)" }}>{clockUtc}</div>
@@ -217,7 +217,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
         {/* Tombol Kembali ke Landing Page */}
         <a
           href="/"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs hover:brightness-105 active:scale-95 no-underline bg-[#F5EFE3]"
+          className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs hover:brightness-105 active:scale-95 no-underline bg-[#F5EFE3]"
           style={{
             border: "1px solid rgba(20, 15, 14, 0.12)",
             color: "#140f0e",
@@ -260,7 +260,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
         {/* Tombol Legenda */}
         <button
           onClick={onToggleLegend}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs hover:brightness-105 active:scale-95"
+          className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs hover:brightness-105 active:scale-95"
           style={isLegendOpen ? {
             background: "#140f0e",
             color: "#F5EFE3",
@@ -275,14 +275,14 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
           title="Buka / Tutup Keterangan Peta Status Gunung & Ancaman Udara"
         >
           <Stack size={15} weight={isLegendOpen ? "fill" : "duotone"} style={{ color: isLegendOpen ? "#F5EFE3" : "#DA6556" }} />
-          <span>Legenda</span>
+          <span className="hidden sm:inline">Legenda</span>
         </button>
 
         {/* Tombol AI Cek GPS (Pindah ke tengah antara Legenda dan Proyeksi) */}
         {onOpenGpsModal && (
           <button
             onClick={onOpenGpsModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs hover:brightness-105 active:scale-95"
+            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs hover:brightness-105 active:scale-95"
             style={{
               background: "#F5EFE3",
               border: "1px solid rgba(20, 15, 14, 0.12)",
@@ -299,7 +299,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
         {/* Tombol Proyeksi */}
         <button
           onClick={onToggleDrawer}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs hover:brightness-105 active:scale-95"
+          className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs hover:brightness-105 active:scale-95"
           style={isDrawerOpen ? {
             background: "#140f0e",
             color: "#F5EFE3",
@@ -314,7 +314,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
           title="Buka / Tutup Proyeksi"
         >
           <SidebarSimple size={15} weight={isDrawerOpen ? "fill" : "duotone"} style={{ color: isDrawerOpen ? "#F5EFE3" : "#140f0e" }} />
-          <span>Proyeksi</span>
+          <span className="hidden sm:inline">Proyeksi</span>
         </button>
       </div>
     </header>

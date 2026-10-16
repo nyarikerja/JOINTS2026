@@ -174,6 +174,12 @@ def get_nearby_advice(
         smoke_forecast = {"source": "titik api di sekitar lokasi", "closest_km": hotspots["nearest_km"],
                           "hours_from_now": None, "near_source": True}
 
+    # Udara di lokasi sudah buruk sekarang: lintasan yang "tiba ±N jam" lagi tidak boleh dibaca
+    # seolah asapnya belum datang.
+    if smoke_forecast is not None and cams.get("ispu_now") in bad:
+        smoke_forecast["air_unhealthy_now"] = True
+        smoke_forecast["ispu_now"] = cams.get("ispu_now")
+
     if smoke_forecast is None and (cams.get("ispu_now") in bad or cams.get("ispu_max_forecast") in bad):
         smoke_forecast = {"source": "model kualitas udara CAMS", "closest_km": 0.0, "hours_from_now": None,
                           "near_source": True, "ispu_now": cams.get("ispu_now"),

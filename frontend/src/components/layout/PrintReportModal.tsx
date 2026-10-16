@@ -19,6 +19,7 @@ interface PrintReportModalProps {
   facilities: FacilitiesImpactResponse | null;
   advisory?: any;
   hourlyTiersCache?: Record<string | number, any> | null;
+  nMembers?: number;
 }
 
 export const PrintReportModal: React.FC<PrintReportModalProps> = ({
@@ -30,7 +31,8 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
   impact,
   facilities,
   advisory,
-  hourlyTiersCache
+  hourlyTiersCache,
+  nMembers
 }) => {
   const printAreaRef = useRef<HTMLDivElement>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -191,11 +193,22 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
   };
 
   const fmtCropland = () => {
-    if (!cropland) return "44.694 / 72.236 / 98.161 Ha";
     if (typeof cropland === "object") {
       return `${Math.round(cropland.min || 0).toLocaleString("id-ID")} / ${Math.round(cropland.median || 0).toLocaleString("id-ID")} / ${Math.round(cropland.max || 0).toLocaleString("id-ID")} Ha`;
     }
     return `${Number(cropland).toLocaleString("id-ID")} Ha`;
+  };
+
+  // Nama wilayah unik (abaikan "-" dan beda huruf besar/spasi, mis. "Palangka Raya" = "palangkaraya")
+  const uniqueNames = (names: any[]) => {
+    const seen = new Set<string>();
+    return names.filter((n): n is string => {
+      if (typeof n !== "string" || !n.trim() || n.trim() === "-") return false;
+      const k = n.toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
   };
 
   // 2. Daftar Fasilitas Sekolah & Rujukan (untuk Halaman 2) dengan filter & deduplikasi
@@ -221,9 +234,9 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
 
   // Wilayah Prioritas dinamis berdasarkan advisory atau faskes/sekolah riil
   const priorityDistricts = advisory?.affected_districts && advisory.affected_districts.length > 0
-    ? advisory.affected_districts.slice(0, 3).map((d: any) => d.district || d).join(", ")
+    ? uniqueNames(advisory.affected_districts.map((d: any) => d.district || d)).slice(0, 3).join(", ")
     : (rawSchools.length > 0 
-        ? Array.from(new Set(rawSchools.map(s => s.district).filter(Boolean))).slice(0, 3).join(", ") 
+        ? uniqueNames(rawSchools.map(s => s.district)).slice(0, 3).join(", ") 
         : (isFire ? "Wilayah & Pemukiman Terdampak Asap" : "Kawasan Rawan Bencana (KRB) Terdekat")
       );
 
@@ -328,7 +341,7 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
                     MODEL PREDIKSI
                   </span>
                   <strong className="text-[11px] font-bold text-slate-900 leading-snug break-words">
-                    15 Skenario Ansambel
+                    {nMembers ?? 15} Skenario Ansambel
                   </strong>
                 </div>
                 <div className="flex flex-col">
@@ -426,7 +439,7 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
                         Total daratan tertutup jejak partikel konsentrasi tinggi.
                       </td>
                     </tr>
-                    <tr>
+                    {cropland && <tr>
                       <td className="py-2 px-3 font-bold text-slate-900">
                         Sektor Pertanian (Sawah &amp; Kebun)
                       </td>
@@ -436,7 +449,7 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
                       <td className="py-2 px-3 text-slate-600 text-[9px]">
                         Risiko kerusakan vegetasi dan gagal panen.
                       </td>
-                    </tr>
+                    </tr>}
                   </tbody>
                 </table>
               </div>
@@ -494,7 +507,7 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
                   <span>PETUNJUK TINDAKAN DARURAT SATUAN PENDIDIKAN &amp; FASKES:</span>
                 </div>
                 <p>
-                  Satuan pendidikan pada zona terdampak dengan rekomendasi <strong>PJJ DARING</strong> wajib menghentikan aktivitas pembelajaran tatap muka paling lambat 6 jam sebelum jam tiba (ETA) polutan atmosferik. Seluruh fasilitas rujukan di zona hijau/aman telah disiagakan dengan buffer stock obat-obatan pernapasan, oksigen medis, dan ruang dekontaminasi.
+                  Satuan pendidikan pada zona terdampak dengan rekomendasi <strong>PJJ DARING</strong> wajib menghentikan aktivitas pembelajaran tatap muka paling lambat 6 jam sebelum jam tiba (ETA) polutan atmosferik. Seluruh fasilitas rujukan di zona hijau/aman perlu disiagakan dengan buffer stock obat-obatan pernapasan, oksigen medis, dan ruang dekontaminasi.
                 </p>
               </div>
 

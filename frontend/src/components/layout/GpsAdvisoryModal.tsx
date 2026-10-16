@@ -18,6 +18,14 @@ interface GpsAdvisoryModalProps {
 
 type Scenario = "ash_threat" | "smoke_threat" | "prevention" | "clear";
 
+const ISPU_LABEL: Record<string, string> = {
+  baik: "Baik",
+  sedang: "Sedang",
+  tidak_sehat: "Tidak Sehat",
+  sangat_tidak_sehat: "Sangat Tidak Sehat",
+  berbahaya: "Berbahaya"
+};
+
 const SCENARIO_STYLE: Record<Scenario, { id: string; en: string; badgeCls: string }> = {
   ash_threat: {
     id: "Ancaman Abu Vulkanik",
@@ -50,6 +58,7 @@ export const GpsAdvisoryModal: React.FC<GpsAdvisoryModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [gpsDetecting, setGpsDetecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isFallback, setIsFallback] = useState(false);
 
   // Ambil lokasi GPS secara otomatis saat modal pertama kali dibuka
   const detectGps = useCallback(() => {
@@ -64,6 +73,7 @@ export const GpsAdvisoryModal: React.FC<GpsAdvisoryModalProps> = ({
       (pos) => {
         const { latitude, longitude } = pos.coords;
         setPoint({ lat: latitude, lon: longitude });
+        setIsFallback(false);
         setGpsDetecting(false);
       },
       (err) => {
@@ -71,6 +81,7 @@ export const GpsAdvisoryModal: React.FC<GpsAdvisoryModalProps> = ({
         // Fallback default ke wilayah Jawa Timur jika izin ditolak
         if (!point) {
           setPoint({ lat: -7.2899, lon: 112.7979 });
+          setIsFallback(true);
           setError("Izin akses GPS tidak aktif. Menampilkan simulasi koordinat Jawa Timur (-7.2899°, 112.7979°).");
         } else {
           setError(`Gagal mendeteksi lokasi GPS: ${err.message}`);
@@ -128,10 +139,12 @@ export const GpsAdvisoryModal: React.FC<GpsAdvisoryModalProps> = ({
           {/* 1. Baris Atas: Badge Status di Kiri, Logo HELALOKA & Tombol Tutup di Kanan */}
           <div className="flex items-center justify-between gap-3">
             {/* Pill Status Bahaya */}
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10.5px] font-bold tracking-wide uppercase shadow-2xs ${scStyle.badgeCls}`}>
-              <ShieldWarning size={13} weight="fill" />
-              <span>{scStyle.id}</span>
-            </span>
+            {data && !loading ? (
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10.5px] font-bold tracking-wide uppercase shadow-2xs ${scStyle.badgeCls}`}>
+                <ShieldWarning size={13} weight="fill" />
+                <span>{scStyle.id}</span>
+              </span>
+            ) : <span />}
 
             {/* Logo & Close Button */}
             <div className="flex items-center gap-1.5">
@@ -165,7 +178,7 @@ export const GpsAdvisoryModal: React.FC<GpsAdvisoryModalProps> = ({
                   <strong className="font-mono text-[#140f0e]">
                     {point ? `${point.lat.toFixed(4)}°, ${point.lon.toFixed(4)}°` : "Mendeteksi..."}
                   </strong>
-                  {point && " • Jawa Timur"}
+                  {point && isFallback && " • Jawa Timur (contoh)"}
                 </span>
               </div>
 
@@ -248,13 +261,25 @@ export const GpsAdvisoryModal: React.FC<GpsAdvisoryModalProps> = ({
                     {facts.hotspots && (
                       <div className="flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                        <span>Deteksi Titik Api FIRMS (24 Jam): <strong>{facts.hotspots.within_50km}</strong> titik (terdekat {facts.hotspots.nearest_km || "2.7"} km)</span>
+                        <span>Titik api FIRMS (24 jam, radius 50 km): <strong>{facts.hotspots.within_50km}</strong> titik{facts.hotspots.nearest_km != null && <> · terdekat {facts.hotspots.nearest_km} km</>}</span>
                       </div>
                     )}
                     {facts.smoke_forecast && (
                       <div className="flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0" />
-                        <span>Proyeksi Arah Asap: {facts.smoke_forecast.source} {facts.smoke_forecast.near_source ? `berada di radius ${facts.smoke_forecast.closest_km} km` : `melintas ±${facts.smoke_forecast.closest_km} km`}</span>
+                        <span>Lintasan asap: {facts.smoke_forecast.source} · {facts.smoke_forecast.near_source ? `sumber ±${facts.smoke_forecast.closest_km} km dari sini` : <>melintas ±{facts.smoke_forecast.closest_km} km dari sini{facts.smoke_forecast.hours_from_now != null && <> dalam <strong>±{facts.smoke_forecast.hours_from_now} jam</strong></>}</>}</span>
+                      </div>
+                    )}
+                    {facts.ash_forecast && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0" />
+                        <span>Lintasan abu: {facts.ash_forecast.source} · {facts.ash_forecast.near_source ? `±${facts.ash_forecast.closest_km} km dari sini` : <>melintas ±{facts.ash_forecast.closest_km} km{facts.ash_forecast.hours_from_now != null && <> dalam <strong>±{facts.ash_forecast.hours_from_now} jam</strong></>}</>}</span>
+                      </div>
+                    )}
+                    {facts.air_quality?.cams_ispu_now && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-sky-600 shrink-0" />
+                        <span>Kualitas udara (model CAMS): sekarang <strong>{ISPU_LABEL[facts.air_quality.cams_ispu_now] || facts.air_quality.cams_ispu_now}</strong>{facts.air_quality.cams_pm25_24h_now != null && <> (PM2.5 {Math.round(facts.air_quality.cams_pm25_24h_now)} µg/m³)</>}{facts.air_quality.cams_ispu_max_next_48h && <> · puncak 48 jam: <strong>{ISPU_LABEL[facts.air_quality.cams_ispu_max_next_48h] || facts.air_quality.cams_ispu_max_next_48h}</strong></>}</span>
                       </div>
                     )}
                   </div>
@@ -269,7 +294,7 @@ export const GpsAdvisoryModal: React.FC<GpsAdvisoryModalProps> = ({
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Clock size={14} weight="bold" className="text-[#EB895B]" />
-                  <span>Pembaruan: <strong>Real-Time GPS</strong></span>
+                  <span>Dianalisis: <strong>{brief.generated_at ? new Date(brief.generated_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" }) + " WIB" : "-"}</strong></span>
                 </div>
               </div>
 

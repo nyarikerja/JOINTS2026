@@ -139,6 +139,9 @@ def _template(req: BriefRequest) -> dict[str, Any]:
         head = "Asap kebakaran hutan mengarah ke area ini" if id_ else "Wildfire smoke may reach this area"
         parts = [(f"Ada {hs.get('within_50km', 0)} titik api dalam radius 50 km (terdekat {_fmt(hs.get('nearest_km'), lang)} km)."
                   if id_ else f"There are {hs.get('within_50km', 0)} fire detections within 50 km (nearest {_fmt(hs.get('nearest_km'), lang)} km).")]
+        if smoke and smoke.get("air_unhealthy_now"):
+            cat = str(smoke.get("ispu_now", "")).replace("_", " ")
+            parts.append(f"Udara di sini sudah {cat} sekarang." if id_ else f"The air here is already {cat} now.")
         if smoke:
             parts.append(_pass_text("asap" if id_ else "Smoke", smoke, lang))
     elif sc == "prevention":
@@ -168,13 +171,16 @@ def _system_prompt(lang: Lang) -> str:
         "'G. Merapi' is 'Mount Merapi' in English, 'TN Sebangau' is 'Sebangau National Park' in English.\n"
         "4. Meaning of the facts: hotspots are satellite fire detections near the location; smoke_forecast and "
         "ash_forecast say how close a forecast plume passes and in how many hours; fire_prone_forest is a nearby "
-        "area at risk of burning, not a confirmed fire; volcanoes_nearby carry the official MAGMA level and, when "
+        "area at risk of burning, not a confirmed fire (never call it the smoke source: the smoke comes from "
+        "smoke_forecast.source, named exactly as given without the part after '•'); volcanoes_nearby carry the official MAGMA level and, when "
         "present, the time of the latest VONA with an observed ash cloud; hotspots.crater_thermal_anomalies are "
         "satellite heat detections at an active crater (lava), not vegetation fires or smoke; air_quality holds "
         "PM2.5 24-hour means and official ISPU categories (baik, sedang, tidak_sehat, sangat_tidak_sehat, berbahaya) "
         "from the CAMS model and the nearest OpenAQ station; mention the ISPU category when it is tidak_sehat or worse.\n"
         "5. hours_from_now is null when the location is next to the source itself (near_source true): say the "
-        "location is close to the source instead of giving an arrival time.\n"
+        "location is close to the source instead of giving an arrival time. When smoke_forecast.air_unhealthy_now "
+        "is true, the air here is already unhealthy now: say so first, and describe the forecast plume as more "
+        "smoke still coming, never as smoke that has not arrived yet.\n"
         "6. Calm, plain language for parents. No markdown. No dates in the headline. Do not use official alert words "
         "(warning, alert, Awas, Siaga, Waspada, Peringatan) in the headline.\n"
         "7. It is not an official warning; do not call it one.\n"

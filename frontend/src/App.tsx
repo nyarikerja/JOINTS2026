@@ -618,6 +618,7 @@ export const App: React.FC = () => {
           facilities={facilitiesData}
           advisory={advisoryData}
           hourlyTiersCache={hourlyTiersCache}
+          nMembers={eventId === "anak_krakatau_2026_09" ? 51 : 15}
         />
 
         {/* Modal AI Siaga Lokasi Personal (GPS Saya) */}
