@@ -1,16 +1,17 @@
-# Environment & Secrets (AGENTS.md Prinsip 5)
+# ---------------------------------------------------------------- Rahasia (AGENTS.md prinsip 5)
 .env
 .env.*
 !.env.example
 
-# IDE & AI Assistant Caches
+# ---------------------------------------------------------------- Editor dan asisten AI
 .cursor/
 .claude/
 .deepeval/
 .vscode/
 .idea/
+.playwright-mcp/
 
-# Python Caches & Compiled Files
+# ---------------------------------------------------------------- Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -19,33 +20,12 @@ __pycache__/
 .ruff_cache/
 .coverage
 htmlcov/
-*.log
 .venv/
 venv/
 **/.venv/
 **/venv/
 
-# SQLite Journal & Shared Memory Files
-*.sqlite
-*.db-wal
-*.db-shm
-*.sqlite-wal
-*.sqlite-shm
-
-# Large Simulation Outputs & Temporary Caches
-data/runs/*.json
-**/data/runs/*.json
-**/data/runs/*.npz
-data/raw/
-**/data/raw/
-**/data/events/custom_*/
-important-file/
-
-# OS Specific
-.DS_Store
-Thumbs.db
-
-# Frontend Dependencies & Build Artifacts
+# ---------------------------------------------------------------- Node dan hasil build frontend
 node_modules/
 **/node_modules/
 dist/
@@ -58,40 +38,46 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Archives & MCP Caches
-.playwright-mcp
-*.zip
-
-# Temporary screenshots & root assets
-image*.png
-image copy*.png
-
-# Cache data langsung (diunduh ulang otomatis oleh backend)
-backend/data/layers/osm_facilities/
-backend/data/layers/firms_live_snapshot.npz
-backend/data/layers/wind_grid_snapshot.json
-backend/data/layers/worldpop/
-backend/data/events/*/weather_live.json
-backend/data/layers/gvp_eruptions.json
-backend/data/layers/firms_history/
-**/data/runs/*.npz
-/*.jpg
-reference_repos/
-**/_backup_*
-frontend/public/loading/
-frontend-original/
-
-
-
-# Cache data langsung (diunduh ulang otomatis oleh backend)
-backend/data/layers/osm_facilities/
-backend/data/layers/firms_live_snapshot.npz
-backend/data/layers/wind_grid_snapshot.json
-backend/data/layers/worldpop/
-backend/data/events/*/weather_live.json
-backend/data/layers/gvp_eruptions.json
-backend/data/layers/firms_history/
-
-demo-video/
+# ---------------------------------------------------------------- Basis data dan cadangannya
+# udarasiaga.db sengaja dilacak (katalog gunung, hutan, fasilitas). Berkas di bawah ini tidak.
+*.sqlite
+*.db-wal
+*.db-shm
+*.sqlite-wal
+*.sqlite-shm
 *.bak
 *.backup_*
+backend/data/joints.db
+
+# ---------------------------------------------------------------- Keluaran simulasi
+data/runs/*.json
+**/data/runs/*.json
+**/data/runs/*.npz
+data/raw/
+**/data/raw/
+**/data/events/custom_*/
+
+# ---------------------------------------------------------------- Cache data langsung (diunduh ulang otomatis oleh backend)
+backend/data/layers/osm_facilities/
+backend/data/layers/firms_live_snapshot.npz
+backend/data/layers/wind_grid_snapshot.json
+backend/data/layers/worldpop/
+backend/data/layers/gvp_eruptions.json
+backend/data/layers/firms_history/
+backend/data/events/*/weather_live.json
+
+# ---------------------------------------------------------------- Berkas kerja lokal (tidak untuk repositori)
+*.log
+*.zip
+image*.png
+/*.jpg
+**/_backup_*
+important-file/
+reference_repos/
+frontend-original/
+frontend/public/loading/
+demo-video/
+
+# ---------------------------------------------------------------- Sistem operasi
+.DS_Store
+Thumbs.db
